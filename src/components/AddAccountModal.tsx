@@ -119,7 +119,7 @@ export function AddAccountModal({ open, onClose, onSubmit }: AddAccountModalProp
   };
 
   return (
-    <Modal open={open} onClose={closeAndReset} title="Add account" width={520}>
+    <Modal open={open} onClose={closeAndReset} title="Add account" width={680}>
       <form className="add-account-form" onSubmit={submit}>
         <section className="form-block">
           <label htmlFor="account-chain">Select chain</label>

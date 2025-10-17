@@ -111,7 +111,7 @@ export interface ExtensionSettings {
 }
 
 export const DEFAULT_SETTINGS: ExtensionSettings = {
-  apiBaseUrl: "http://localhost:8000",
+  apiBaseUrl: "https://grove-api.onrender.com",
   usdPerPokt: 0.22,
   preferFiat: true,
   defaultTipUsd: 1

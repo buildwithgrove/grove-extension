@@ -2,12 +2,22 @@
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#43cea2" />
-      <stop offset="100%" stop-color="#185a9d" />
+      <stop offset="100%" stop-color="#2d8f6b" />
     </linearGradient>
   </defs>
   <rect width="128" height="128" rx="26" fill="url(#bg)"/>
-  <path
-    d="M89 62c0 19-13 33-33 33-18 0-33-14-33-33s15-33 35-33c9 0 18 3 24 9l-10 12c-4-4-9-6-14-6-10 0-17 6-17 18 0 10 6 18 16 18 7 0 12-3 15-9H56V55h33v7z"
-    fill="#ffffff"
-  />
+  <!-- Herb/leaf design -->
+  <!-- Main stem -->
+  <path d="M 64 90 Q 62 70 60 50 Q 59 30 58 20" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+  <!-- Left leaves -->
+  <path d="M 58 35 Q 45 35 38 42 Q 35 45 38 48 Q 45 50 58 45" fill="#ffffff" opacity="0.9"/>
+  <path d="M 59 50 Q 46 52 39 59 Q 36 62 39 65 Q 46 67 59 60" fill="#ffffff" opacity="0.85"/>
+  <path d="M 60 65 Q 47 68 40 75 Q 37 78 40 81 Q 47 83 60 75" fill="#ffffff" opacity="0.8"/>
+
+  <!-- Right leaves -->
+  <path d="M 60 30 Q 73 28 80 35 Q 83 38 80 41 Q 73 43 60 40" fill="#ffffff" opacity="0.95"/>
+  <path d="M 60 45 Q 73 45 80 52 Q 83 55 80 58 Q 73 60 60 55" fill="#ffffff" opacity="0.9"/>
+  <path d="M 61 60 Q 74 62 81 69 Q 84 72 81 75 Q 74 77 61 70" fill="#ffffff" opacity="0.85"/>
+  <path d="M 62 75 Q 75 78 82 85 Q 85 88 82 91 Q 75 93 62 85" fill="#ffffff" opacity="0.8"/>
 </svg>
