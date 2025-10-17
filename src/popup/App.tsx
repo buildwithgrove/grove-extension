@@ -228,11 +228,7 @@ function TipExperience() {
   return (
     <div className="popup-shell">
       <header className="popup-header">
-        {emptyState ? (
-          <button className="primary" onClick={() => setAddOpen(true)}>
-            Add your first account
-          </button>
-        ) : (
+        {!emptyState && (
           <AccountDropdown
             accounts={accounts}
             activeId={activeAccountId}
@@ -268,20 +264,33 @@ function TipExperience() {
       )}
 
       <footer className="popup-footer">
-        <span>
-          API: {settings.apiBaseUrl}
+        <span className="api-label">
+          API: {settings.apiBaseUrl === "https://grove-api.onrender.com" ? "🌿 Grove Cloud" : settings.apiBaseUrl === "http://localhost:8000" ? "Local" : "Custom"}
         </span>
-        <button
-          className="link"
-          onClick={() => {
-            const next = window.prompt("Grove API base URL", settings.apiBaseUrl);
-            if (next) {
-              void updateSettings({ apiBaseUrl: next.trim() });
-            }
-          }}
-        >
-          Change
-        </button>
+        <div className="api-controls">
+          <button
+            className="link"
+            onClick={() => {
+              const isCloud = settings.apiBaseUrl === "https://grove-api.onrender.com";
+              void updateSettings({
+                apiBaseUrl: isCloud ? "http://localhost:8000" : "https://grove-api.onrender.com"
+              });
+            }}
+          >
+            {settings.apiBaseUrl === "https://grove-api.onrender.com" ? "Local" : "Cloud"}
+          </button>
+          <button
+            className="link"
+            onClick={() => {
+              const next = window.prompt("Grove API base URL", settings.apiBaseUrl);
+              if (next) {
+                void updateSettings({ apiBaseUrl: next.trim() });
+              }
+            }}
+          >
+            Custom
+          </button>
+        </div>
       </footer>
 
       <AddAccountModal open={isAddOpen} onClose={() => setAddOpen(false)} onSubmit={addAccountHandler} />

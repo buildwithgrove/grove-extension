@@ -84,8 +84,7 @@ Run `make help` to see the streamlined task list:
 - `make setup` – Alias for `make quickstart`
 
 **🛠️ Development**
-- `make dev` – Start Vite on `http://localhost:5173`
-- `make run_dev` – Print the popup/options URLs served by Vite
+- `make dev` – Start Vite and print the popup/options URLs
 - `make preview` – Preview the production build locally
 
 **📦 Build**

@@ -26,9 +26,8 @@ export const SUPPORTED_CHAINS: ChainMetadata[] = [
     kind: "pokt",
     description: "Tip with native Pocket Network tokens",
     accent: "#2d8f6b",
-    supportsX402: false,
-    defaultUsdPerUnit: 0.22,
-    comingSoon: true
+    supportsX402: true,
+    defaultUsdPerUnit: 0.22
   },
   {
     id: "zcash-mainnet",
@@ -52,8 +51,9 @@ export const SUPPORTED_CHAINS: ChainMetadata[] = [
     kind: "evm",
     description: "Direct ETH tips via x402",
     accent: "#5b6ef5",
-    supportsX402: true,
-    defaultUsdPerUnit: 3500
+    supportsX402: false,
+    defaultUsdPerUnit: 3500,
+    comingSoon: true
   },
   {
     id: "base-mainnet",
@@ -69,7 +69,7 @@ export const SUPPORTED_CHAINS: ChainMetadata[] = [
   }
 ];
 
-export const DEFAULT_CHAIN_ID: ChainId = "base-mainnet";
+export const DEFAULT_CHAIN_ID: ChainId = "pocket-mainnet";
 
 export interface AccountRecord {
   id: string;

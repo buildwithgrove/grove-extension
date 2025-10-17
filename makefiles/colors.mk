@@ -1,8 +1,7 @@
-##########################
-### ANSI Color Codes   ###
-##########################
+####################
+### ANSI Colors  ###
+####################
 
-# Basic colors
 GREEN := \033[0;32m
 YELLOW := \033[1;33m
 BLUE := \033[0;34m
@@ -13,19 +12,15 @@ BOLD := \033[1m
 DIM := \033[2m
 RESET := \033[0m
 
-# Unicode symbols
 CHECK := ✓
 CROSS := ✗
 WARN := ⚠️
 INFO := ℹ️
 ARROW := →
-ROCKET := 🚀
-PACKAGE := 📦
-GEAR := ⚙️
 
-##########################
-### Print Helpers      ###
-##########################
+####################
+### Print Helpers ##
+####################
 
 define print_success
 	@printf "$(GREEN)$(BOLD) $(CHECK) %s$(RESET)\n" "$(1)"

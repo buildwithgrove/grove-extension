@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { useAccounts } from "../hooks/useAccounts";
 import { ChainId, SUPPORTED_CHAINS } from "../types";
@@ -25,17 +25,30 @@ export function AddAccountModal({ open, onClose, onSubmit }: AddAccountModalProp
   const [label, setLabel] = useState("");
   const [address, setAddress] = useState("");
   const [privateKey, setPrivateKey] = useState("");
-  const [memo, setMemo] = useState("");
   const [error, setError] = useState<string | undefined>();
   const [status, setStatus] = useState<"idle" | "validating" | "submitting">("idle");
   const [importSource, setImportSource] = useState<"text" | "file" | "clipboard">("text");
 
   const chainMeta = useMemo(() => SUPPORTED_CHAINS.find(chain => chain.id === chainId)!, [chainId]);
   const addressRequired = requiresManualAddress(chainMeta);
-  const derivedAddress = useMemo(() => {
-    const { address: derived, valid } = validatePrivateKey(chainId, privateKey);
-    return valid ? derived : undefined;
-  }, [chainId, privateKey]);
+  const [derivedAddress, setDerivedAddress] = useState<string | undefined>();
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!addressRequired && privateKey) {
+      (async () => {
+        const result = await validatePrivateKey(chainId, privateKey);
+        if (!cancelled && result.valid && result.address) {
+          setDerivedAddress(result.address);
+        } else if (!cancelled) {
+          setDerivedAddress(undefined);
+        }
+      })();
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [chainId, privateKey, addressRequired]);
 
   const effectiveAddress = addressRequired ? address.trim() : derivedAddress ?? address.trim();
 
@@ -53,7 +66,6 @@ export function AddAccountModal({ open, onClose, onSubmit }: AddAccountModalProp
     setLabel("");
     setAddress("");
     setPrivateKey("");
-    setMemo("");
     setError(undefined);
     setStatus("idle");
     setImportSource("text");
@@ -95,7 +107,6 @@ export function AddAccountModal({ open, onClose, onSubmit }: AddAccountModalProp
         chainId,
         privateKey: validation.normalizedKey,
         address: effectiveAddress,
-        memo: memo.trim() || undefined,
         importedFrom: importSource
       });
       closeAndReset();
@@ -214,17 +225,6 @@ export function AddAccountModal({ open, onClose, onSubmit }: AddAccountModalProp
             <code>{derivedAddress}</code>
           </section>
         )}
-
-        <section className="form-block">
-          <label htmlFor="account-memo">Notes (optional)</label>
-          <textarea
-            id="account-memo"
-            placeholder="Why this account exists, custody notes, etc."
-            value={memo}
-            onChange={event => setMemo(event.target.value)}
-            rows={3}
-          />
-        </section>
 
         {error && <div className="form-error">{error}</div>}
 

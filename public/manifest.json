@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Grove Tipper",
-  "short_name": "GroveTip",
+  "name": "🌿 Grove Tipper",
+  "short_name": "🌿 GroveTip",
   "description": "Demo chrome extension that lets agents tip humans via the Grove API.",
   "version": "0.1.0",
   "icons": {
