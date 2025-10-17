@@ -253,8 +253,7 @@ function TipExperience() {
             setCustomOpen(true);
           }}
           onTip={() => {
-            setCustomMode("confirm");
-            setCustomOpen(true);
+            void runTip();
           }}
           isBusy={isTipLoading}
           tipResult={tipResult}

@@ -8,6 +8,12 @@ build_prod: ## Create production bundle
 	$(Q)$(NPM) run build
 	$(call print_success,Build complete - output in dist/)
 
+.PHONY: build_watch
+build_watch: ## Build and watch for changes (use with chrome://extensions reload)
+	$(call print_info_section,Building and watching for changes)
+	$(call print_warning,After changes, click reload icon in chrome://extensions)
+	$(Q)$(NPM) run build:watch
+
 .PHONY: clean_dist
 clean_dist: ## Remove dist/ output
 	$(call print_warning,Removing dist/ directory)
