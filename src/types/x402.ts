@@ -22,12 +22,19 @@ export interface PaymentRequiredResponseDto {
 }
 
 export interface TipResponseDto {
-  tip_id: string;
-  status: string;
-  chain: string;
-  tx_hash: string;
-  to: string;
-  from: string;
+  result: {
+    tip_id: string;
+    status: string;
+    chain: string;
+    tipper_tx_hash: string;
+    settlement_tx_hash: string;
+    to: string;
+    from: string;
+    amount_sent: string;
+    amount_received: string;
+    fee_amount: string;
+    denomination: string;
+  };
 }
 
 export interface SettledPaymentHeader {

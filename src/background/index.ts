@@ -1,7 +1,12 @@
+// Polyfills must be imported first
+import "./polyfills";
+
 import { DEFAULT_SETTINGS, ExtensionSettings, SUPPORTED_CHAINS } from "../types";
 import { RuntimeMessage, RuntimeResponse } from "../types/messages";
 import { PaymentRequiredResponseDto, PaymentRequirementsDto, TipResponseDto, SettledPaymentHeader } from "../types/x402";
 import { createExactEvmPaymentHeader } from "../lib/x402";
+import { createCosmosPaymentHeader } from "../lib/cosmosX402";
+import { createSignedPoktTransaction } from "../lib/poktSigner";
 
 const SUCCESS_CODES = new Set([200, 201, 204]);
 let cachedSettings: ExtensionSettings = DEFAULT_SETTINGS;
@@ -76,9 +81,10 @@ async function processTip(payload: Extract<RuntimeMessage, { type: "RUN_TIP" }>[
   const chain = SUPPORTED_CHAINS.find(item => item.id === account.chainId);
   const amountForRequest = computeTipAmountString(amountUsd, chain);
 
-  const requestBody = {
-    domain: normaliseDomain(domain) ?? `https://${domain}`,
-    amountPokt: amountForRequest,
+  let requestBody: any = {
+    domainURL: normaliseDomain(domain) ?? `https://${domain}`,
+    amount: amountForRequest,
+    denomination: chain?.currency ?? "POKT",
     memo
   };
 
@@ -95,13 +101,23 @@ async function processTip(payload: Extract<RuntimeMessage, { type: "RUN_TIP" }>[
 
   if (SUCCESS_CODES.has(initialResponse.status)) {
     const parsed = (await safeJson(initialResponse)) as TipResponseDto | undefined;
+    const receipt = parsed?.result;
     return {
       type: "TIP_RESULT",
       result: {
         success: true,
         message: "Tip processed successfully.",
-        tipId: parsed?.tip_id,
-        txHash: parsed?.tx_hash
+        tipId: receipt?.tip_id,
+        txHash: receipt?.tipper_tx_hash,
+        tipperTxHash: receipt?.tipper_tx_hash,
+        settlementTxHash: receipt?.settlement_tx_hash,
+        to: receipt?.to,
+        from: receipt?.from,
+        amountSent: receipt?.amount_sent,
+        amountReceived: receipt?.amount_received,
+        feeAmount: receipt?.fee_amount,
+        denomination: receipt?.denomination,
+        chain: receipt?.chain
       }
     };
   }
@@ -131,24 +147,75 @@ async function processTip(payload: Extract<RuntimeMessage, { type: "RUN_TIP" }>[
     };
   }
 
-  if (account.chainId === "pocket-mainnet" || account.chainId === "zcash-mainnet") {
+  // Block unsupported chains
+  if (account.chainId === "zcash-mainnet") {
     return {
       type: "TIP_RESULT",
       result: {
         success: false,
         statusCode: 501,
-        message: "Direct x402 signing for this chain is not yet available."
+        message: "Zcash signing is not yet available."
       }
     };
   }
 
-  const { header } = await createExactEvmPaymentHeader(account.privateKey, requirement, paymentRequired.x402Version);
+  // Handle POKT vs EVM chains differently
+  let paymentHeader: string;
+  let signedTransaction: string | undefined;
+
+  if (account.chainId === "pocket-mainnet") {
+    // POKT (Cosmos chain) signing
+    // Create X-PAYMENT header for Cosmos
+    const { header } = await createCosmosPaymentHeader(
+      account.privateKey,
+      requirement,
+      paymentRequired.x402Version
+    );
+    paymentHeader = header;
+
+    // Create signed POKT transaction
+    // TODO: Get POKT RPC URL from settings
+    // Note: CosmJS requires Tendermint RPC (HTTP), not gRPC
+    // Using Shannon mainnet RPC endpoint
+    const poktRpcUrl = "https://shannon-grove-rpc.mainnet.poktroll.com";
+    try {
+      signedTransaction = await createSignedPoktTransaction(
+        account.privateKey,
+        {
+          toAddress: requirement.payTo,
+          amount: requirement.maxAmountRequired,
+          memo: memo || "",
+        },
+        poktRpcUrl
+      );
+    } catch (error) {
+      console.error("Failed to sign POKT transaction:", error);
+      return {
+        type: "TIP_RESULT",
+        result: {
+          success: false,
+          statusCode: 500,
+          message: `Failed to sign POKT transaction: ${error instanceof Error ? error.message : String(error)}`
+        }
+      };
+    }
+
+    // Add signedTransaction to request body
+    requestBody = {
+      ...requestBody,
+      signedTransaction,
+    };
+  } else {
+    // EVM chain signing
+    const { header } = await createExactEvmPaymentHeader(account.privateKey, requirement, paymentRequired.x402Version);
+    paymentHeader = header;
+  }
 
   const settlementResponse = await fetch(endpoint, {
     method: "POST",
     headers: {
       ...commonHeaders,
-      "X-PAYMENT": header
+      "X-PAYMENT": paymentHeader
     },
     body: JSON.stringify(requestBody)
   });
@@ -166,6 +233,7 @@ async function processTip(payload: Extract<RuntimeMessage, { type: "RUN_TIP" }>[
   }
 
   const tipReceipt = settlementBody as TipResponseDto | undefined;
+  const receipt = tipReceipt?.result;
   const paymentResponseHeader = settlementResponse.headers.get("X-PAYMENT-RESPONSE");
   const settlementHeader = paymentResponseHeader ? decodeSettlementHeader(paymentResponseHeader) : undefined;
 
@@ -174,8 +242,17 @@ async function processTip(payload: Extract<RuntimeMessage, { type: "RUN_TIP" }>[
     result: {
       success: true,
       message: "Tip settled via Grove.",
-      tipId: tipReceipt?.tip_id,
-      txHash: settlementHeader?.transaction ?? tipReceipt?.tx_hash
+      tipId: receipt?.tip_id,
+      txHash: settlementHeader?.transaction ?? receipt?.tipper_tx_hash,
+      tipperTxHash: receipt?.tipper_tx_hash,
+      settlementTxHash: receipt?.settlement_tx_hash,
+      to: receipt?.to,
+      from: receipt?.from,
+      amountSent: receipt?.amount_sent,
+      amountReceived: receipt?.amount_received,
+      feeAmount: receipt?.fee_amount,
+      denomination: receipt?.denomination,
+      chain: receipt?.chain
     }
   };
 }

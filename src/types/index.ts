@@ -114,7 +114,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   apiBaseUrl: "https://grove-api.onrender.com",
   usdPerPokt: 0.22,
   preferFiat: true,
-  defaultTipUsd: 1
+  defaultTipUsd: 0.50
 };
 
 export interface TipPreset {
@@ -124,6 +124,8 @@ export interface TipPreset {
 }
 
 export const TIP_PRESETS: TipPreset[] = [
+  { id: "usd-0.25", label: "$0.25", amountUsd: 0.25 },
+  { id: "usd-0.50", label: "$0.50", amountUsd: 0.50 },
   { id: "usd-1", label: "$1", amountUsd: 1 },
   { id: "usd-2", label: "$2", amountUsd: 2 },
   { id: "usd-10", label: "$10", amountUsd: 10 }
@@ -140,4 +142,14 @@ export interface TipResult {
   txHash?: string;
   tipId?: string;
   statusCode?: number;
+  // Detailed transaction info (when successful)
+  tipperTxHash?: string;
+  settlementTxHash?: string;
+  to?: string;
+  from?: string;
+  amountSent?: string;
+  amountReceived?: string;
+  feeAmount?: string;
+  denomination?: string;
+  chain?: string;
 }

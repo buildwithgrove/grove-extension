@@ -12,12 +12,16 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
+    "@cosmjs/encoding": "^0.36.1",
+    "@cosmjs/proto-signing": "^0.36.1",
+    "@cosmjs/stargate": "^0.36.1",
     "@noble/ed25519": "^3.0.0",
     "@noble/hashes": "^2.0.1",
     "@noble/secp256k1": "^3.0.0",
     "@scure/base": "^2.0.0",
     "@tanstack/react-query": "^5.62.8",
     "classnames": "^2.5.1",
+    "cosmjs-types": "^0.10.1",
     "immer": "^10.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

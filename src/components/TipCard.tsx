@@ -35,11 +35,32 @@ export function TipCard({
   const statusMessage = useMemo(() => {
     if (!tipResult) return undefined;
     if (tipResult.success) {
+      // Build detailed success message
+      const parts: string[] = [];
+
+      if (tipResult.amountSent && tipResult.denomination) {
+        parts.push(`Sent ${tipResult.amountSent} ${tipResult.denomination}`);
+      }
+
+      if (tipResult.amountReceived) {
+        parts.push(`Receiver got ${tipResult.amountReceived} ${tipResult.denomination || ''}`);
+      }
+
+      if (tipResult.feeAmount) {
+        parts.push(`Fee: ${tipResult.feeAmount} ${tipResult.denomination || ''}`);
+      }
+
+      if (tipResult.tipperTxHash) {
+        parts.push(`Payment Tx: ${shortHash(tipResult.tipperTxHash)}`);
+      }
+
+      if (tipResult.settlementTxHash && tipResult.settlementTxHash !== tipResult.tipperTxHash) {
+        parts.push(`Settlement Tx: ${shortHash(tipResult.settlementTxHash)}`);
+      }
+
       return {
         tone: "success" as const,
-        text: chain
-          ? `Tip authorized for ${chain.shortLabel}.` + (tipResult.txHash ? ` Tx: ${shortHash(tipResult.txHash)}` : "")
-          : "Tip sent successfully."
+        text: parts.length > 0 ? parts.join(" • ") : "Tip sent successfully."
       };
     }
     return {
