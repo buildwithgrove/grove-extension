@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { useAccounts } from "../hooks/useAccounts";
-import { ChainId, SUPPORTED_CHAINS } from "../types";
+import { ChainId, DEFAULT_CHAIN_ID, SUPPORTED_CHAINS } from "../types";
 import { validatePrivateKey, requiresManualAddress } from "../utils/account";
 import { Modal } from "./Modal";
 import { ChainBadge } from "./ChainBadge";
@@ -21,7 +21,7 @@ interface AddAccountModalProps {
 
 export function AddAccountModal({ open, onClose, onSubmit }: AddAccountModalProps) {
   const { accounts } = useAccounts();
-  const [chainId, setChainId] = useState<ChainId>(accounts[0]?.chainId ?? SUPPORTED_CHAINS[SUPPORTED_CHAINS.length - 1].id);
+  const [chainId, setChainId] = useState<ChainId>(DEFAULT_CHAIN_ID);
   const [label, setLabel] = useState("");
   const [address, setAddress] = useState("");
   const [privateKey, setPrivateKey] = useState("");
@@ -62,7 +62,7 @@ export function AddAccountModal({ open, onClose, onSubmit }: AddAccountModalProp
   };
 
   const resetState = () => {
-    setChainId(SUPPORTED_CHAINS[SUPPORTED_CHAINS.length - 1].id);
+    setChainId(DEFAULT_CHAIN_ID);
     setLabel("");
     setAddress("");
     setPrivateKey("");
@@ -81,7 +81,7 @@ export function AddAccountModal({ open, onClose, onSubmit }: AddAccountModalProp
     setStatus("validating");
     setError(undefined);
 
-    const validation = validatePrivateKey(chainId, privateKey);
+    const validation = await validatePrivateKey(chainId, privateKey);
     if (!validation.valid || !validation.normalizedKey) {
       setError(validation.message ?? "Private key is not valid for the selected chain.");
       setStatus("idle");

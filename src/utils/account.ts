@@ -1,6 +1,8 @@
 import { Hex, isHex, keccak256, sha256 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { getPublicKey } from "@noble/ed25519";
+import * as secp256k1 from "@noble/secp256k1";
+import { sha256 as nobleSha256 } from "@noble/hashes/sha2.js";
+import { ripemd160 } from "@noble/hashes/legacy.js";
 import { bech32 } from "@scure/base";
 
 import { ChainId, ChainMetadata, SUPPORTED_CHAINS } from "../types";
@@ -29,7 +31,22 @@ export function normalizeHexKey(privateKey: string): Hex | undefined {
   return undefined;
 }
 
-async function derivePoktAddress(privateKeyHex: string): Promise<string> {
+function hexToBytes(hex: string): Uint8Array {
+  const cleanHex = hex.startsWith("0x") ? hex.slice(2) : hex;
+  const bytes = new Uint8Array(cleanHex.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(cleanHex.slice(i * 2, i * 2 + 2), 16);
+  }
+  return bytes;
+}
+
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes)
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function derivePoktAddress(privateKeyHex: string): string {
   try {
     // Remove 0x prefix if present
     const cleanKey = privateKeyHex.startsWith("0x") ? privateKeyHex.slice(2) : privateKeyHex;
@@ -39,18 +56,17 @@ async function derivePoktAddress(privateKeyHex: string): Promise<string> {
       throw new Error("POKT private key must be 32 bytes");
     }
 
-    // Get Ed25519 public key (32 bytes)
-    const publicKeyBytes = await getPublicKey(cleanKey);
+    // Convert private key hex to bytes
+    const privateKeyBytes = hexToBytes(cleanKey);
 
-    // Convert to hex for SHA256
-    const publicKeyHex = `0x${Buffer.from(publicKeyBytes).toString("hex")}` as Hex;
+    // Get secp256k1 public key (33 bytes compressed)
+    const publicKeyBytes = secp256k1.getPublicKey(privateKeyBytes, true);
 
-    // Hash with SHA256 and take first 20 bytes (SHA256-20)
-    const hash = sha256(publicKeyHex);
-    const address20Bytes = hash.slice(0, 42); // 0x + 40 chars = 20 bytes
+    // Hash with SHA256
+    const sha = nobleSha256(publicKeyBytes);
 
-    // Convert to bytes array for bech32 encoding
-    const addressBytes = Buffer.from(address20Bytes.slice(2), "hex");
+    // Hash with RIPEMD160 to get 20-byte address
+    const addressBytes = ripemd160(sha);
 
     // Encode with bech32 using "pokt" prefix
     const words = bech32.toWords(addressBytes);
@@ -96,7 +112,7 @@ export async function validatePrivateKey(chainId: ChainId, privateKey: string): 
     }
 
     try {
-      const address = await derivePoktAddress(normalized);
+      const address = derivePoktAddress(normalized);
       return {
         valid: true,
         normalizedKey: normalized,
