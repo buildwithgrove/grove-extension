@@ -13,7 +13,6 @@
         "https://x.com/*"
       ],
       "js": [
-        "src/parsers/address.js",
         "src/adapters/base.js",
         "src/adapters/twitter.js",
         "src/ui/button.js",

@@ -13,27 +13,11 @@ class BaseAdapter {
   }
 
   /**
-   * Extract bio/description text from profile
-   * @returns {string|null} - Bio text or null if not found
-   */
-  extractBio() {
-    throw new Error('extractBio() must be implemented by subclass');
-  }
-
-  /**
    * Get the DOM element where the tip button should be placed
    * @returns {Element|null} - Target element or null if not found
    */
   getButtonPlacement() {
     throw new Error('getButtonPlacement() must be implemented by subclass');
-  }
-
-  /**
-   * Get user identifier (username, handle, etc.)
-   * @returns {string|null} - User identifier or null if not found
-   */
-  getUserIdentifier() {
-    throw new Error('getUserIdentifier() must be implemented by subclass');
   }
 
   /**

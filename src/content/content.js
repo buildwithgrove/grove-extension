@@ -43,23 +43,7 @@
       }
     }
 
-    // Extract bio
-    const bio = currentAdapter.extractBio();
-    if (!bio) {
-      console.log('[Grove Extension] No bio found');
-      return;
-    }
-
-    console.log('[Grove Extension] Bio extracted');
-
-    // Check if bio contains any addresses (to decide whether to show button)
-    const hasAddresses = AddressParser.hasAddresses(bio);
-    if (!hasAddresses) {
-      console.log('[Grove Extension] No addresses found in bio');
-      return;
-    }
-
-    console.log('[Grove Extension] Address found in bio - showing tip button');
+    console.log('[Grove Extension] Profile loaded - showing tip button');
 
     // Get button placement location
     const placement = currentAdapter.getButtonPlacement();
@@ -68,7 +52,7 @@
       return;
     }
 
-    // Create and inject tip button (simplified - just needs callback)
+    // Create and inject tip button
     currentButton = new TipButton(handleTipClick);
 
     const button = currentButton.create();
