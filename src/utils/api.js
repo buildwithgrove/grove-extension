@@ -53,7 +53,11 @@ class GroveAPI {
    * @returns {Promise<Object>} - API response
    */
   static async sendTip(pageUrl, tipAmount = this.DEFAULT_TIP_AMOUNT, groveApiJwt = this.GROVE_API_JWT) {
+    // Get base URL based on environment
+    const baseURL = await this.getBaseURL();
+
     console.log('[Grove Extension] Sending tip...');
+    console.log('[Grove Extension] Environment:', baseURL);
     console.log('[Grove Extension] Page URL:', pageUrl);
     console.log('[Grove Extension] Tip amount:', `$${tipAmount}`);
 
@@ -61,7 +65,7 @@ class GroveAPI {
     const tipDomain = this.buildTipDomainFromURL(pageUrl);
     console.log('[Grove Extension] Tip domain:', tipDomain);
 
-    const apiUrl = `${this.BASE_URL}/v1/tip/${encodeURIComponent(tipDomain)}/${tipAmount}`;
+    const apiUrl = `${baseURL}/v1/tip/${encodeURIComponent(tipDomain)}/${tipAmount}`;
 
     try {
       const response = await fetch(apiUrl, {
