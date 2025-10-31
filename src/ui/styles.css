@@ -1,6 +1,6 @@
 /**
  * Grove Tip Button Styles
- * Apple-like sleek and glowing design
+ * Green metallic design with shine and pulse
  */
 
 .grove-tip-button-wrapper {
@@ -16,24 +16,27 @@
   align-items: center;
   justify-content: center;
   padding: 8px 24px;
+  position: relative;
+  overflow: hidden;
 
   /* Typography */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   color: #ffffff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 
-  /* Background with gradient */
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
+  /* Green metallic gradient */
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
 
-  /* Shadow for depth */
+  /* Metallic shadow */
   box-shadow:
-    0 2px 8px rgba(102, 126, 234, 0.3),
-    0 4px 16px rgba(118, 75, 162, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    0 2px 8px rgba(16, 185, 129, 0.4),
+    0 4px 16px rgba(5, 150, 105, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
 
   /* Smooth transitions */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -49,55 +52,89 @@
   outline: none;
   -webkit-appearance: none;
   -moz-appearance: none;
+
+  /* Run animations */
+  animation: grove-pulse 2s ease-in-out infinite;
+}
+
+/* Metallic shine effect */
+.grove-tip-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: grove-shine 3s ease-in-out infinite;
 }
 
 /* Hover state */
 .grove-tip-button:hover {
-  transform: translateY(-1px);
+  transform: translateY(-1px) scale(1.02);
   box-shadow:
-    0 4px 12px rgba(102, 126, 234, 0.4),
-    0 8px 24px rgba(118, 75, 162, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    0 4px 12px rgba(16, 185, 129, 0.5),
+    0 8px 24px rgba(5, 150, 105, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
 }
 
 /* Active/pressed state */
 .grove-tip-button:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
   box-shadow:
-    0 1px 4px rgba(102, 126, 234, 0.3),
-    0 2px 8px rgba(118, 75, 162, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 1px 4px rgba(16, 185, 129, 0.4),
+    0 2px 8px rgba(5, 150, 105, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 /* Focus state for accessibility */
 .grove-tip-button:focus-visible {
-  outline: 2px solid #667eea;
+  outline: 2px solid #10b981;
   outline-offset: 2px;
 }
 
-/* Subtle glow animation */
-@keyframes grove-glow {
+/* Metallic shine animation */
+@keyframes grove-shine {
+  0% {
+    left: -100%;
+  }
+  20% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Pulse animation - subtle size change */
+@keyframes grove-pulse {
   0%, 100% {
+    transform: scale(1);
     box-shadow:
-      0 2px 8px rgba(102, 126, 234, 0.3),
-      0 4px 16px rgba(118, 75, 162, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      0 2px 8px rgba(16, 185, 129, 0.4),
+      0 4px 16px rgba(5, 150, 105, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
   }
   50% {
+    transform: scale(1.05);
     box-shadow:
-      0 2px 12px rgba(102, 126, 234, 0.4),
-      0 4px 20px rgba(118, 75, 162, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      0 4px 12px rgba(16, 185, 129, 0.5),
+      0 6px 20px rgba(5, 150, 105, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
   }
 }
 
-.grove-tip-button {
-  animation: grove-glow 3s ease-in-out infinite;
-}
-
-/* Disable animation on hover to keep it stable */
+/* Keep animations on hover */
 .grove-tip-button:hover {
-  animation: none;
+  animation: grove-pulse 2s ease-in-out infinite;
 }
 
 /**

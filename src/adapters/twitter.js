@@ -15,6 +15,16 @@ class TwitterAdapter extends BaseAdapter {
   }
 
   /**
+   * Extract bio from Twitter profile
+   * @returns {string|null}
+   */
+  extractBio() {
+    // Twitter profile bio is in a div with data-testid="UserDescription"
+    const bioElement = document.querySelector('[data-testid="UserDescription"]');
+    return bioElement ? bioElement.textContent : null;
+  }
+
+  /**
    * Get placement for tip button (near username in header)
    * @returns {Element|null}
    */
@@ -56,9 +66,9 @@ class TwitterAdapter extends BaseAdapter {
    * @returns {Promise<boolean>}
    */
   async waitForProfileLoad() {
-    // Wait for user actions to appear (indicates profile is loaded)
-    const actionsElement = await this.waitForElement('[data-testid="userActions"]', 8000);
-    return actionsElement !== null;
+    // Wait for bio to appear (indicates profile is loaded)
+    const bioElement = await this.waitForElement('[data-testid="UserDescription"]', 8000);
+    return bioElement !== null;
   }
 }
 

@@ -21,7 +21,7 @@ class TipButton {
     // Create button element
     this.button = document.createElement('button');
     this.button.className = 'grove-tip-button';
-    this.button.textContent = 'Tip';
+    this.button.textContent = 'Tip 🌿';
     this.button.id = 'grove-tip-button';
 
     // Add click handler
@@ -63,7 +63,39 @@ class TipButton {
     wrapper.className = 'grove-tip-button-wrapper';
     wrapper.appendChild(this.button);
 
-    targetElement.appendChild(wrapper);
+    // Get all children of the target container
+    const children = Array.from(targetElement.children);
+
+    // Look for the dropdown menu (usually has overflow menu icon or three dots)
+    // It's typically the last or second-to-last child
+    let insertBeforeElement = null;
+
+    // Try to find dropdown by looking for elements with specific attributes
+    for (let i = children.length - 1; i >= 0; i--) {
+      const child = children[i];
+      const button = child.querySelector('button');
+      if (button) {
+        const ariaLabel = button.getAttribute('aria-label');
+        // Look for "More" or similar labels in the last elements
+        if (ariaLabel && ariaLabel.toLowerCase().includes('more')) {
+          insertBeforeElement = child;
+          break;
+        }
+      }
+    }
+
+    // If we found the dropdown, insert before it
+    // Otherwise, insert as second-to-last (before the last button which is likely the dropdown)
+    if (insertBeforeElement) {
+      targetElement.insertBefore(wrapper, insertBeforeElement);
+    } else if (children.length > 0) {
+      // Insert before last child (usually the dropdown/more button)
+      targetElement.insertBefore(wrapper, children[children.length - 1]);
+    } else {
+      // Fallback: just append
+      targetElement.appendChild(wrapper);
+    }
+
     return true;
   }
 

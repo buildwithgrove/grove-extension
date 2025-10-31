@@ -34,41 +34,68 @@
     console.log(`[Grove Extension] Platform detected: ${currentAdapter.getPlatformName()}`);
 
     // Check if we're on a profile page
-    if (!currentAdapter.detectProfilePage()) {
-      console.log('[Grove Extension] Not a profile page');
+    try {
+      if (!currentAdapter.detectProfilePage()) {
+        console.log('[Grove Extension] Not a profile page');
+        return;
+      }
+    } catch (error) {
+      console.error('[Grove Extension] Error detecting profile page:', error);
       return;
     }
 
     console.log('[Grove Extension] Profile page detected');
 
     // Wait for profile to load (if adapter supports it)
-    if (typeof currentAdapter.waitForProfileLoad === 'function') {
-      const loaded = await currentAdapter.waitForProfileLoad();
-      if (!loaded) {
-        console.log('[Grove Extension] Profile load timeout');
+    try {
+      if (typeof currentAdapter.waitForProfileLoad === 'function') {
+        const loaded = await currentAdapter.waitForProfileLoad();
+        if (!loaded) {
+          console.log('[Grove Extension] Profile load timeout');
+          return;
+        }
+      }
+
+      console.log('[Grove Extension] Profile loaded');
+
+      // Extract bio to check for addresses
+      const bio = currentAdapter.extractBio();
+      if (!bio) {
+        console.log('[Grove Extension] No bio found - not showing button');
         return;
       }
-    }
 
-    console.log('[Grove Extension] Profile loaded - showing tip button');
+      console.log('[Grove Extension] Bio extracted');
 
-    // Get button placement location
-    const placement = currentAdapter.getButtonPlacement();
-    if (!placement) {
-      console.log('[Grove Extension] Could not find button placement location');
-      return;
-    }
+      // Check if bio contains tippable address
+      const hasAddress = AddressParser.hasAddresses(bio);
+      if (!hasAddress) {
+        console.log('[Grove Extension] No tippable address found in bio - not showing button');
+        return;
+      }
 
-    // Create and inject tip button
-    currentButton = new TipButton(handleTipClick);
+      console.log('[Grove Extension] Tippable address detected - showing button');
 
-    const button = currentButton.create();
-    const injected = currentButton.inject(placement);
+      // Get button placement location
+      const placement = currentAdapter.getButtonPlacement();
+      if (!placement) {
+        console.log('[Grove Extension] Could not find button placement location');
+        return;
+      }
 
-    if (injected) {
-      console.log('[Grove Extension] Tip button injected successfully');
-    } else {
-      console.log('[Grove Extension] Failed to inject tip button');
+      // Create and inject tip button
+      currentButton = new TipButton(handleTipClick);
+
+      const button = currentButton.create();
+      const injected = currentButton.inject(placement);
+
+      if (injected) {
+        console.log('[Grove Extension] Tip button injected successfully');
+      } else {
+        console.log('[Grove Extension] Failed to inject tip button');
+      }
+    } catch (error) {
+      console.error('[Grove Extension] Error during initialization:', error);
     }
   }
 
