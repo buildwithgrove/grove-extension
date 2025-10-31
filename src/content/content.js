@@ -9,12 +9,19 @@
   // State
   let currentButton = null;
   let currentAdapter = null;
+  let envToggle = null;
 
   /**
    * Initialize the extension
    */
   async function init() {
     console.log('[Grove Extension] Initializing...');
+
+    // Create environment toggle (developer mode)
+    if (!envToggle) {
+      envToggle = new EnvironmentToggle();
+      envToggle.create();
+    }
 
     // Detect platform and create appropriate adapter
     currentAdapter = detectPlatform();

@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "description": "Enable tipping on social platforms with crypto addresses",
   "permissions": [
-    "activeTab"
+    "activeTab",
+    "storage"
   ],
   "content_scripts": [
     {
@@ -16,6 +17,7 @@
         "src/adapters/base.js",
         "src/adapters/twitter.js",
         "src/ui/button.js",
+        "src/ui/env-toggle.js",
         "src/utils/api.js",
         "src/content/content.js"
       ],

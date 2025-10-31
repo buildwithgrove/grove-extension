@@ -99,3 +99,110 @@
 .grove-tip-button:hover {
   animation: none;
 }
+
+/**
+ * Environment Toggle Styles
+ * Developer mode toggle for switching between local and prod
+ */
+
+.grove-env-toggle {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 999999;
+}
+
+.grove-env-toggle-button {
+  /* Base styling */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+
+  /* Typography */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+  /* Background - darker, more subtle */
+  background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+
+  /* Shadow for depth */
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+
+  /* Smooth transitions */
+  transition: all 0.2s ease;
+
+  /* Cursor */
+  cursor: pointer;
+
+  /* Prevent text selection */
+  user-select: none;
+  -webkit-user-select: none;
+
+  /* Remove default button styles */
+  outline: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  /* Semi-transparent */
+  opacity: 0.7;
+}
+
+/* Hover state */
+.grove-env-toggle-button:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Active/pressed state */
+.grove-env-toggle-button:active {
+  transform: translateY(0);
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/**
+ * Toast Notification Styles
+ */
+
+.grove-env-toast {
+  position: fixed;
+  bottom: 70px;
+  right: 16px;
+  z-index: 1000000;
+
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  border-radius: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+  /* Fade in animation */
+  animation: grove-toast-fade-in 0.2s ease;
+}
+
+@keyframes grove-toast-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

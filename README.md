@@ -19,6 +19,7 @@ Chrome extension that enables cryptocurrency tipping on social platforms.
 - Integrated with Grove API for tip processing
 - Default tip amount: $0.05
 - Simple: Add JWT, press tip
+- **Developer Mode**: Toggle between localhost and production (bottom right)
 
 ## Supported Platforms
 
@@ -109,6 +110,21 @@ Authorization: Bearer {GROVE_API_JWT}
 **Authentication**: JWT token (TODO: Store in `chrome.storage.local`)
 
 **Simplicity**: No frontend address parsing. Just show button, add JWT, press tip.
+
+### Developer Mode <!-- omit in toc -->
+
+A small toggle appears in the bottom right corner of any page where the extension is active.
+
+**Toggle Behavior**:
+- Click to switch between `🏠 LOCAL` and `🌍 PROD`
+- Setting persists across sessions (stored in `chrome.storage.local`)
+- Shows toast notification when environment changes
+
+**API Endpoints**:
+- **Production**: `https://api.grove.city`
+- **Localhost**: `http://localhost:3000`
+
+**Location**: `env-toggle.js:1` and `api.js:19`
 
 ## Adding New Platforms
 
