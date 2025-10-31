@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Grove Tip Extension",
+  "version": "1.0.0",
+  "description": "Enable tipping on social platforms with crypto addresses",
+  "permissions": [
+    "activeTab"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://twitter.com/*",
+        "https://x.com/*"
+      ],
+      "js": [
+        "src/parsers/address.js",
+        "src/adapters/base.js",
+        "src/adapters/twitter.js",
+        "src/ui/button.js",
+        "src/utils/api.js",
+        "src/content/content.js"
+      ],
+      "css": [
+        "src/ui/styles.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
