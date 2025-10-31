@@ -4,62 +4,93 @@
  */
 
 class GroveAPI {
+  // API Configuration
+  static BASE_URL = 'https://api.grove.city';
+  static DEFAULT_TIP_AMOUNT = 0.05; // $0.05 default
+
+  // TODO: Store this in chrome.storage.local later
+  static GROVE_API_JWT = ''; // Placeholder for now
+
   /**
-   * Send a tip to the specified address
-   * @param {Object} tipData - Tip information
-   * @param {string} tipData.address - Recipient address
-   * @param {string} tipData.token - Token type (e.g., "USDC")
-   * @param {string} tipData.network - Network (e.g., "base")
-   * @param {string} tipData.platform - Social platform (e.g., "twitter")
-   * @param {string} tipData.userIdentifier - Username/handle
-   * @returns {Promise<Object>} - API response
+   * Build tip domain from current page URL
+   * Simplifies the URL to a clean domain/path format
+   * @param {string} url - Full URL (e.g., "https://twitter.com/olshansky")
+   * @returns {string} - Formatted tip domain (e.g., "twitter.com/olshansky")
    */
-  static async sendTip(tipData) {
-    // TODO: Implement actual API call to Grove backend
-    // For now, this is a placeholder that logs the data
-
-    console.log('[Grove Extension] Tip button clicked!');
-    console.log('[Grove Extension] Tip data:', {
-      recipient: tipData.userIdentifier,
-      platform: tipData.platform,
-      token: tipData.token,
-      network: tipData.network,
-      address: tipData.address
-    });
-
-    // TODO_IN_THIS_PR: Replace with actual API endpoint
-    // Example implementation:
-    // const response = await fetch('https://api.grove.com/v1/tip', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify(tipData)
-    // });
-    // return await response.json();
-
-    // Placeholder response
-    return {
-      success: true,
-      message: 'Tip placeholder executed (no actual transaction)',
-      data: tipData
-    };
+  static buildTipDomainFromURL(url) {
+    try {
+      const urlObj = new URL(url);
+      // Remove protocol and www, keep hostname and pathname
+      const domain = urlObj.hostname.replace(/^www\./, '');
+      const path = urlObj.pathname.replace(/\/$/, ''); // Remove trailing slash
+      return `${domain}${path}`;
+    } catch (error) {
+      console.error('[Grove Extension] Invalid URL:', url);
+      return url;
+    }
   }
 
   /**
-   * Validate tip data before sending
-   * @param {Object} tipData - Tip information to validate
-   * @returns {boolean} - True if valid
+   * Send a tip to the current page URL
+   * @param {string} pageUrl - Full page URL (e.g., "https://twitter.com/olshansky")
+   * @param {number} tipAmount - Tip amount in dollars (default: 0.05)
+   * @param {string} groveApiJwt - JWT token for authentication
+   * @returns {Promise<Object>} - API response
    */
-  static validateTipData(tipData) {
-    return !!(
-      tipData &&
-      tipData.address &&
-      tipData.token &&
-      tipData.network &&
-      tipData.platform &&
-      tipData.userIdentifier
-    );
+  static async sendTip(pageUrl, tipAmount = this.DEFAULT_TIP_AMOUNT, groveApiJwt = this.GROVE_API_JWT) {
+    console.log('[Grove Extension] Sending tip...');
+    console.log('[Grove Extension] Page URL:', pageUrl);
+    console.log('[Grove Extension] Tip amount:', `$${tipAmount}`);
+
+    // Build tip domain from URL
+    const tipDomain = this.buildTipDomainFromURL(pageUrl);
+    console.log('[Grove Extension] Tip domain:', tipDomain);
+
+    const apiUrl = `${this.BASE_URL}/v1/tip/${encodeURIComponent(tipDomain)}/${tipAmount}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groveApiJwt}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `API request failed with status ${response.status}`);
+      }
+
+      console.log('[Grove Extension] Tip successful:', data);
+      return {
+        success: true,
+        data: data
+      };
+
+    } catch (error) {
+      console.error('[Grove Extension] Tip failed:', error);
+
+      // Show user-friendly error
+      this.showError(`Tip failed: ${error.message}`);
+
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Show error message to user
+   * TODO: Replace with proper UI notification (toast, modal, etc.)
+   * @param {string} message - Error message
+   */
+  static showError(message) {
+    // For now, use browser alert
+    // TODO_IN_THIS_PR: Implement better UI feedback (toast notification)
+    alert(`Grove Tip Extension Error:\n\n${message}`);
   }
 }
 

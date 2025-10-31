@@ -52,26 +52,14 @@
 
     console.log('[Grove Extension] Bio extracted');
 
-    // Parse addresses from bio
-    const addresses = AddressParser.parse(bio);
-    if (addresses.length === 0) {
+    // Check if bio contains any addresses (to decide whether to show button)
+    const hasAddresses = AddressParser.hasAddresses(bio);
+    if (!hasAddresses) {
       console.log('[Grove Extension] No addresses found in bio');
       return;
     }
 
-    console.log(`[Grove Extension] Found ${addresses.length} address(es):`, addresses);
-
-    // Use the first address found
-    const addressData = addresses[0];
-
-    // Get user identifier
-    const userIdentifier = currentAdapter.getUserIdentifier();
-    if (!userIdentifier) {
-      console.log('[Grove Extension] Could not determine user identifier');
-      return;
-    }
-
-    console.log(`[Grove Extension] User: ${userIdentifier}`);
+    console.log('[Grove Extension] Address found in bio - showing tip button');
 
     // Get button placement location
     const placement = currentAdapter.getButtonPlacement();
@@ -80,13 +68,8 @@
       return;
     }
 
-    // Create and inject tip button
-    currentButton = new TipButton(
-      addressData,
-      currentAdapter.getPlatformName(),
-      userIdentifier,
-      handleTipClick
-    );
+    // Create and inject tip button (simplified - just needs callback)
+    currentButton = new TipButton(handleTipClick);
 
     const button = currentButton.create();
     const injected = currentButton.inject(placement);
@@ -122,26 +105,23 @@
 
   /**
    * Handle tip button click
-   * @param {Object} tipData - Tip information
    */
-  async function handleTipClick(tipData) {
+  async function handleTipClick() {
     console.log('[Grove Extension] Processing tip...');
 
-    // Validate data
-    if (!GroveAPI.validateTipData(tipData)) {
-      console.error('[Grove Extension] Invalid tip data', tipData);
-      return;
-    }
+    // Get current page URL
+    const pageUrl = window.location.href;
 
-    // Send tip via API
-    try {
-      const response = await GroveAPI.sendTip(tipData);
-      console.log('[Grove Extension] Tip response:', response);
+    // Send tip via API (just URL and default amount)
+    const response = await GroveAPI.sendTip(pageUrl);
 
-      // TODO_IN_THIS_PR: Add user feedback (toast notification, etc.)
-    } catch (error) {
-      console.error('[Grove Extension] Tip failed:', error);
-      // TODO_IN_THIS_PR: Add error handling UI
+    // Handle response
+    if (response.success) {
+      console.log('[Grove Extension] Tip successful!', response.data);
+      // TODO_IN_THIS_PR: Add success feedback (toast notification, etc.)
+    } else {
+      console.error('[Grove Extension] Tip failed:', response.error);
+      // Error already shown by GroveAPI.showError()
     }
   }
 

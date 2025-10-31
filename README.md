@@ -17,6 +17,8 @@ Chrome extension that enables cryptocurrency tipping on social platforms.
 - Injects sleek, Apple-like "Tip" button on profiles
 - Modular adapter system for easy platform integration
 - Currently supports `TOKEN(network): 0xADDRESS` format
+- Integrated with Grove API for tip processing
+- Default tip amount: $0.05
 
 ## Supported Platforms
 
@@ -67,11 +69,13 @@ grove_extension/
 
 ### Key Files <!-- omit in toc -->
 
-- `content.js:31` - Platform detection logic
-- `address.js:14` - Address parsing regex
+- `content.js:85` - Platform detection logic
+- `content.js:109` - Tip button click handler (sends URL)
+- `address.js:14` - Address detection regex (for showing button)
 - `twitter.js:32` - Twitter bio extraction
-- `button.js:48` - Button injection logic
-- `api.js:16` - API placeholder (TODO)
+- `button.js:20` - Simplified button component
+- `api.js:40` - Grove API tip endpoint
+- `api.js:20` - URL to tip domain converter
 
 ## Architecture
 
@@ -91,13 +95,40 @@ Currently supports: `TOKEN(network): 0xADDRESS`
 
 Example: `USDC(base): 0x9ab39B84aC4DE6D705C5f051c07db8fE72890953`
 
+### API Integration <!-- omit in toc -->
+
+The extension sends tips via the Grove API:
+
+```bash
+POST https://api.grove.city/v1/tip/{TIP_DOMAIN}/{TIP_AMOUNT}
+Authorization: Bearer {GROVE_API_JWT}
+```
+
+**How it works**:
+1. Extension checks if bio contains `TOKEN(network): 0xADDRESS` pattern
+2. If found, shows tip button
+3. When clicked, sends current page URL to API
+4. Backend extracts address from profile and processes tip
+
+**Tip Domain Format** (`api.js:20`):
+- Extracts from URL: `https://twitter.com/olshansky` → `twitter.com/olshansky`
+- Removes protocol, www, and trailing slashes
+
+**Default Tip Amount**: $0.05
+
+**Authentication**: JWT token (TODO: Store in `chrome.storage.local`)
+
+**Simplicity**: Frontend only checks for address presence and sends URL. Backend handles all address extraction and validation.
+
 ## Adding New Platforms
 
 1. Create new adapter in `src/adapters/platform.js`
 2. Extend `BaseAdapter` class
 3. Implement required methods
-4. Add platform detection in `content.js:31`
+4. Add platform detection in `content.js:85`
 5. Update manifest.json with new URL patterns
+
+**Note**: No need to modify API logic - it automatically extracts domain from any URL
 
 ### Example <!-- omit in toc -->
 

@@ -6,15 +6,9 @@
 class TipButton {
   /**
    * Create a new tip button
-   * @param {Object} addressData - Address information {token, network, address}
-   * @param {string} platform - Platform name
-   * @param {string} userIdentifier - User handle/username
    * @param {Function} onClickCallback - Callback function when button is clicked
    */
-  constructor(addressData, platform, userIdentifier, onClickCallback) {
-    this.addressData = addressData;
-    this.platform = platform;
-    this.userIdentifier = userIdentifier;
+  constructor(onClickCallback) {
     this.onClickCallback = onClickCallback;
     this.button = null;
   }
@@ -28,7 +22,7 @@ class TipButton {
     this.button = document.createElement('button');
     this.button.className = 'grove-tip-button';
     this.button.textContent = 'Tip';
-    this.button.id = `grove-tip-${this.userIdentifier}`;
+    this.button.id = 'grove-tip-button';
 
     // Add click handler
     this.button.addEventListener('click', (e) => {
@@ -45,13 +39,7 @@ class TipButton {
    */
   handleClick() {
     if (this.onClickCallback) {
-      this.onClickCallback({
-        address: this.addressData.address,
-        token: this.addressData.token,
-        network: this.addressData.network,
-        platform: this.platform,
-        userIdentifier: this.userIdentifier
-      });
+      this.onClickCallback();
     }
   }
 
