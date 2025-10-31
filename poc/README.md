@@ -11,8 +11,8 @@
 
 ```bash
 npm install
-npm run dev   # optional: open http://localhost:5173/popup.html or /options.html
-npm run build # emits production bundle in dist/
+npm run dev
+npm run build
 ```
 
 **Load the unpacked extension**:

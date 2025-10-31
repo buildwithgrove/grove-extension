@@ -5,11 +5,26 @@
 
 class GroveAPI {
   // API Configuration
-  static BASE_URL = 'https://api.grove.city';
+  static PROD_URL = 'https://api.grove.city';
+  static LOCAL_URL = 'http://localhost:3000';
   static DEFAULT_TIP_AMOUNT = 0.05; // $0.05 default
 
   // TODO: Store this in chrome.storage.local later
   static GROVE_API_JWT = ''; // Placeholder for now
+
+  /**
+   * Get the base URL based on environment setting
+   * @returns {Promise<string>} - Base URL
+   */
+  static async getBaseURL() {
+    try {
+      const env = await EnvironmentToggle.getEnvironment();
+      return env === 'local' ? this.LOCAL_URL : this.PROD_URL;
+    } catch (error) {
+      console.log('[Grove Extension] Could not get environment, using prod');
+      return this.PROD_URL;
+    }
+  }
 
   /**
    * Build tip domain from current page URL
