@@ -30,30 +30,28 @@ class TwitterAdapter extends BaseAdapter {
    */
   getButtonPlacement() {
     // Look for the profile header actions area
-    // This is typically where Follow/Following button lives on other profiles
-    let actionsContainer = document.querySelector('[data-testid="userActions"]');
-
-    if (actionsContainer) {
-      return actionsContainer;
+    // data-testid="userActions" is the "More" button - we want its parent container
+    const userActionsButton = document.querySelector('[data-testid="userActions"]');
+    if (userActionsButton && userActionsButton.parentElement) {
+      console.log('[TwitterAdapter] Found userActions button, returning parent container');
+      return userActionsButton.parentElement;
     }
 
     // On your own profile, look for the area with "Edit profile" button
-    // It's usually in a div near the profile header
-    const editProfileButton = document.querySelector('[data-testid*="edit"], [aria-label*="Edit"]');
-    if (editProfileButton) {
-      // Get the parent container that holds the edit profile button
-      actionsContainer = editProfileButton.parentElement;
-      if (actionsContainer) {
-        return actionsContainer;
-      }
+    const editProfileButton = document.querySelector('[data-testid="editProfileButton"]');
+    if (editProfileButton && editProfileButton.parentElement) {
+      console.log('[TwitterAdapter] Found editProfileButton, returning parent container');
+      return editProfileButton.parentElement;
     }
 
-    // Another fallback: look for any button container in the header area
-    const headerButtons = document.querySelector('div[role="button"]');
-    if (headerButtons && headerButtons.parentElement) {
-      return headerButtons.parentElement;
+    // Another fallback: look for Following/Follow button and get its parent
+    const followButton = document.querySelector('[data-testid*="follow"]');
+    if (followButton && followButton.parentElement) {
+      console.log('[TwitterAdapter] Found follow button, returning parent container');
+      return followButton.parentElement;
     }
 
+    console.log('[TwitterAdapter] No suitable container found');
     return null;
   }
 

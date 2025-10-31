@@ -89,20 +89,29 @@ class TipButton {
     const children = Array.from(targetElement.children);
     console.log('[TipButton] Target container has', children.length, 'children');
 
-    // Look for the dropdown menu (usually has overflow menu icon or three dots)
-    // It's typically the last or second-to-last child
+    // Look for a good insertion point
+    // On other people's profiles: insert before "More" button (data-testid="userActions")
+    // On own profile: insert before "Edit profile" button (data-testid="editProfileButton")
     let insertBeforeElement = null;
 
-    // Try to find dropdown by looking for elements with specific attributes
-    for (let i = children.length - 1; i >= 0; i--) {
+    // Try to find the "More" button or other action buttons
+    for (let i = 0; i < children.length; i++) {
       const child = children[i];
-      const button = child.querySelector('button');
-      if (button) {
-        const ariaLabel = button.getAttribute('aria-label');
-        // Look for "More" or similar labels in the last elements
-        if (ariaLabel && ariaLabel.toLowerCase().includes('more')) {
+
+      // Check if this child is a button or contains a button with specific attributes
+      const childButton = child.tagName === 'BUTTON' ? child : child.querySelector('button');
+
+      if (childButton) {
+        const ariaLabel = childButton.getAttribute('aria-label');
+        const testId = childButton.getAttribute('data-testid');
+
+        // Insert before "More" button, Edit profile, or Follow/Following buttons
+        if ((ariaLabel && ariaLabel.toLowerCase().includes('more')) ||
+            (testId && testId === 'userActions') ||
+            (ariaLabel && (ariaLabel.includes('Follow') || ariaLabel.includes('Message'))) ||
+            (testId && testId.includes('follow'))) {
           insertBeforeElement = child;
-          console.log('[TipButton] Found "More" button, will insert before it');
+          console.log('[TipButton] Found insertion point before:', ariaLabel || testId);
           break;
         }
       }
@@ -111,11 +120,11 @@ class TipButton {
     // Insert button directly without wrapper to match Twitter's button structure
     if (insertBeforeElement) {
       targetElement.insertBefore(this.button, insertBeforeElement);
-      console.log('[TipButton] Inserted before "More" button');
+      console.log('[TipButton] Inserted before target element');
     } else if (children.length > 0) {
-      // Insert before last child (usually the dropdown/more button)
-      targetElement.insertBefore(this.button, children[children.length - 1]);
-      console.log('[TipButton] Inserted before last child');
+      // Fallback: Insert at the beginning
+      targetElement.insertBefore(this.button, children[0]);
+      console.log('[TipButton] Inserted at beginning');
     } else {
       // Fallback: just append
       targetElement.appendChild(this.button);
