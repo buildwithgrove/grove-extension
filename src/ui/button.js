@@ -18,11 +18,49 @@ class TipButton {
    * @returns {HTMLElement}
    */
   create() {
-    // Create button element
+    console.log('[TipButton] Creating button with Twitter structure...');
+
+    // Create button element matching Twitter's structure exactly
     this.button = document.createElement('button');
-    this.button.className = 'grove-tip-button';
-    this.button.textContent = 'Tip 🌿';
+    this.button.setAttribute('aria-label', 'Send a tip');
+    this.button.setAttribute('role', 'button');
+    this.button.setAttribute('type', 'button');
+    this.button.className = 'css-175oi2r r-sdzlij r-1phboty r-rs99b7 r-lrvibr r-6gpygo r-1wron08 r-2yi16 r-1qi8awa r-1loqt21 r-o7ynqc r-6416eg r-1ny4l3l grove-tip-button';
+    this.button.style.borderColor = 'rgb(83, 100, 113)';
+    this.button.style.backgroundColor = 'rgba(0, 0, 0, 0)';
     this.button.id = 'grove-tip-button';
+
+    // Create inner div matching Twitter's structure
+    const innerDiv = document.createElement('div');
+    innerDiv.setAttribute('dir', 'ltr');
+    innerDiv.className = 'css-146c3p1 r-bcqeeo r-qvutc0 r-37j5jr r-q4m81j r-a023e6 r-rjixqe r-b88u0q r-1awozwy r-6koalj r-18u37iz r-16y2uox r-1777fci';
+    innerDiv.style.color = 'rgb(239, 243, 244)';
+
+    // Create SVG icon (using money/tip icon)
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('class', 'r-4qtqp9 r-yyyyoo r-dnmrzs r-bnwqim r-lrvibr r-m6rgpd r-z80fyv r-19wmn03');
+    svg.style.color = 'rgb(239, 243, 244)';
+
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M23 3v14h-2V5H5V3h18zM10 17c1.1 0 2-1.34 2-3s-.9-3-2-3-2 1.34-2 3 .9 3 2 3zM1 7h18v14H1V7zm16 10c-1.1 0-2 .9-2 2h2v-2zm-2-8c0 1.1.9 2 2 2V9h-2zM3 11c1.1 0 2-.9 2-2H3v2zm0 4c2.21 0 4 1.79 4 4h6c0-2.21 1.79-4 4-4v-2c-2.21 0-4-1.79-4-4H7c0 2.21-1.79 4-4 4v2zm0 4h2c0-1.1-.9-2-2-2v2z');
+
+    g.appendChild(path);
+    svg.appendChild(g);
+
+    // Create text span
+    const textSpan = document.createElement('span');
+    textSpan.className = 'css-1jxf684 r-dnmrzs r-1udh08x r-1udbk01 r-3s2u2q r-bcqeeo r-1ttztb7 r-qvutc0 r-poiln3 r-a023e6 r-rjixqe';
+    textSpan.textContent = 'Tip 🌿';
+
+    // Assemble the structure
+    innerDiv.appendChild(svg);
+    innerDiv.appendChild(textSpan);
+    this.button.appendChild(innerDiv);
+
+    console.log('[TipButton] Button created successfully', this.button);
 
     // Add click handler
     this.button.addEventListener('click', (e) => {
@@ -49,22 +87,22 @@ class TipButton {
    * @returns {boolean} - True if injection successful
    */
   inject(targetElement) {
+    console.log('[TipButton] Injecting button...', { targetElement, button: this.button });
+
     if (!targetElement || !this.button) {
+      console.log('[TipButton] Injection failed: missing target or button');
       return false;
     }
 
     // Check if button already exists
     if (document.getElementById(this.button.id)) {
+      console.log('[TipButton] Button already exists in DOM');
       return false;
     }
 
-    // Create wrapper for better positioning
-    const wrapper = document.createElement('div');
-    wrapper.className = 'grove-tip-button-wrapper';
-    wrapper.appendChild(this.button);
-
     // Get all children of the target container
     const children = Array.from(targetElement.children);
+    console.log('[TipButton] Target container has', children.length, 'children');
 
     // Look for the dropdown menu (usually has overflow menu icon or three dots)
     // It's typically the last or second-to-last child
@@ -79,23 +117,27 @@ class TipButton {
         // Look for "More" or similar labels in the last elements
         if (ariaLabel && ariaLabel.toLowerCase().includes('more')) {
           insertBeforeElement = child;
+          console.log('[TipButton] Found "More" button, will insert before it');
           break;
         }
       }
     }
 
-    // If we found the dropdown, insert before it
-    // Otherwise, insert as second-to-last (before the last button which is likely the dropdown)
+    // Insert button directly without wrapper to match Twitter's button structure
     if (insertBeforeElement) {
-      targetElement.insertBefore(wrapper, insertBeforeElement);
+      targetElement.insertBefore(this.button, insertBeforeElement);
+      console.log('[TipButton] Inserted before "More" button');
     } else if (children.length > 0) {
       // Insert before last child (usually the dropdown/more button)
-      targetElement.insertBefore(wrapper, children[children.length - 1]);
+      targetElement.insertBefore(this.button, children[children.length - 1]);
+      console.log('[TipButton] Inserted before last child');
     } else {
       // Fallback: just append
-      targetElement.appendChild(wrapper);
+      targetElement.appendChild(this.button);
+      console.log('[TipButton] Appended to container');
     }
 
+    console.log('[TipButton] Button injected successfully');
     return true;
   }
 
@@ -104,7 +146,7 @@ class TipButton {
    */
   remove() {
     if (this.button && this.button.parentElement) {
-      this.button.parentElement.remove();
+      this.button.remove();
     }
   }
 }

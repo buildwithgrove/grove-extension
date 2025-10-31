@@ -30,24 +30,28 @@ class TwitterAdapter extends BaseAdapter {
    */
   getButtonPlacement() {
     // Look for the profile header actions area
-    // This is typically where Follow/Following button lives
-    const actionsContainer = document.querySelector('[data-testid="userActions"]');
+    // This is typically where Follow/Following button lives on other profiles
+    let actionsContainer = document.querySelector('[data-testid="userActions"]');
 
     if (actionsContainer) {
       return actionsContainer;
     }
 
-    // Fallback: look for the primary column header area
-    const headerArea = document.querySelector('[data-testid="UserName"]');
-    if (headerArea) {
-      // Find parent container that has the action buttons
-      let parent = headerArea;
-      for (let i = 0; i < 5; i++) {
-        parent = parent.parentElement;
-        if (parent && parent.querySelector('[data-testid="userActions"]')) {
-          return parent.querySelector('[data-testid="userActions"]');
-        }
+    // On your own profile, look for the area with "Edit profile" button
+    // It's usually in a div near the profile header
+    const editProfileButton = document.querySelector('[data-testid*="edit"], [aria-label*="Edit"]');
+    if (editProfileButton) {
+      // Get the parent container that holds the edit profile button
+      actionsContainer = editProfileButton.parentElement;
+      if (actionsContainer) {
+        return actionsContainer;
       }
+    }
+
+    // Another fallback: look for any button container in the header area
+    const headerButtons = document.querySelector('div[role="button"]');
+    if (headerButtons && headerButtons.parentElement) {
+      return headerButtons.parentElement;
     }
 
     return null;
