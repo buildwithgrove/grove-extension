@@ -10,6 +10,7 @@ Chrome extension that enables cryptocurrency tipping on social platforms.
 - [Development](#development)
 - [Architecture](#architecture)
 - [Adding New Platforms](#adding-new-platforms)
+- [TODOs](#todos)
 
 ## Features
 
@@ -156,3 +157,45 @@ class MyPlatformAdapter extends BaseAdapter {
   }
 }
 ```
+
+## TODOs
+
+### Extension Popup <!-- omit in toc -->
+
+- [ ] Create popup UI when clicking chrome extension icon
+  - [ ] Check if `GROVE_API_JWT` is loaded
+  - [ ] If JWT exists: Display current balance
+  - [ ] If no JWT: Link to [grove.city/api](https://grove.city/api) to create one
+  - [ ] Add button to create EVM wallet in app OR link to external wallet creation
+
+### Tip Button Enhancement <!-- omit in toc -->
+
+- [ ] Extract and refine the Tip button component
+- [ ] Enhance styling to make it an "internet standard" quality button
+- [ ] Ensure reusability across platforms
+
+### Platform Adapters <!-- omit in toc -->
+
+Build adapters for the following platforms:
+
+- [x] Twitter/X
+- [ ] YouTube
+- [ ] Reddit
+- [ ] Instagram
+- [ ] TikTok
+- [ ] PornHub
+- [ ] OnlyFans
+- [ ] GitHub (placeholder exists, needs implementation)
+
+### User Experience <!-- omit in toc -->
+
+- [ ] Move PROD/localhost toggle to a better location
+- [ ] Link users to explorer: [x402scan.com/server/170d2ee7-73b4-457f-aa48-dbab753f6d5f](https://www.x402scan.com/server/170d2ee7-73b4-457f-aa48-dbab753f6d5f)
+- [ ] Link users to ecosystem: [x402.org/ecosystem](https://www.x402.org/ecosystem?category=services-endpoints)
+
+### Future Considerations <!-- omit in toc -->
+
+- Wallet management integration
+- Balance display and refresh mechanism
+- Multi-wallet support
+- Tip history tracking
