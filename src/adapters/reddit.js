@@ -1,48 +1,81 @@
 /**
  * Reddit Adapter
- * Handles Reddit profile pages
- *
- * TODO: Implement Reddit profile detection and address extraction
+ * Handles Reddit profile pages and hover cards
  */
 
 class RedditAdapter extends BaseAdapter {
   /**
-   * Check if current page is a Reddit profile page
+   * Check if current page is a Reddit profile page or has hover cards
    * @returns {boolean}
    */
   detectProfilePage() {
-    // TODO: Implement Reddit profile page detection
-    // Example: Match reddit.com/user/username
-    return false;
+    const url = window.location.href;
+    // Match reddit.com/user/username or reddit.com/u/username
+    return /^https:\/\/(www\.)?reddit\.com\/(user|u)\/[^\/]+\/?$/.test(url);
   }
 
   /**
    * Extract bio from Reddit profile
+   * Looks in both hover cards and full profile pages
    * @returns {string|null}
    */
   extractBio() {
-    // TODO: Implement bio extraction from Reddit profile
-    // Look for the "About" section or profile description
+    // Try to find bio in hover card first
+    const hoverCard = document.querySelector('[data-testid="user-hover-card"]');
+    if (hoverCard) {
+      // Bio is in a span element with whitespace-normal class
+      const bioSpan = hoverCard.querySelector('.whitespace-normal');
+      if (bioSpan) {
+        return bioSpan.textContent;
+      }
+    }
+
+    // Fallback: look for bio on full profile page
+    // Reddit profile bios are typically in a div with specific classes
+    const profileBio = document.querySelector('[data-testid="profile-bio"]');
+    if (profileBio) {
+      return profileBio.textContent;
+    }
+
     return null;
   }
 
   /**
    * Get placement for tip button
+   * Places button in the hover card karma section
    * @returns {Element|null}
    */
   getButtonPlacement() {
-    // TODO: Determine best placement on Reddit profile
-    // Possibly in the profile header or sidebar
+    // Look for the hover card
+    const hoverCard = document.querySelector('[data-testid="user-hover-card"]');
+    if (hoverCard) {
+      // Find the karma stats container (flex-row with post/comment karma)
+      const karmaContainer = hoverCard.querySelector('.flex.flex-row.mt-md.text-neutral-content');
+      if (karmaContainer) {
+        console.log('[RedditAdapter] Found karma container for button placement');
+        return karmaContainer;
+      }
+    }
+
+    // Fallback: look on full profile page
+    // Find profile header actions area
+    const profileActions = document.querySelector('[data-testid="profile-actions"]');
+    if (profileActions) {
+      console.log('[RedditAdapter] Found profile actions for button placement');
+      return profileActions;
+    }
+
+    console.log('[RedditAdapter] No suitable container found');
     return null;
   }
 
   /**
-   * Get Reddit username
+   * Get Reddit username from URL
    * @returns {string|null}
    */
   getUserIdentifier() {
-    // TODO: Extract username from URL or page content
-    return null;
+    const match = window.location.pathname.match(/\/(user|u)\/([^\/]+)/);
+    return match ? match[2] : null;
   }
 
   /**
@@ -51,6 +84,22 @@ class RedditAdapter extends BaseAdapter {
    */
   getPlatformName() {
     return 'reddit';
+  }
+
+  /**
+   * Wait for profile to fully load
+   * @returns {Promise<boolean>}
+   */
+  async waitForProfileLoad() {
+    // Wait for hover card or profile page to appear
+    const hoverCard = await this.waitForElement('[data-testid="user-hover-card"]', 3000);
+    if (hoverCard) {
+      return true;
+    }
+
+    // Fallback to full profile page
+    const profileBio = await this.waitForElement('[data-testid="profile-bio"]', 5000);
+    return profileBio !== null;
   }
 }
 

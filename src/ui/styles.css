@@ -161,6 +161,158 @@
 }
 
 /**
+ * Reddit-specific button styles
+ * Positioned to the right of profile image in the flex row
+ */
+.grove-tip-button-reddit {
+  /* Margin to push to the right, with some spacing from edge */
+  margin-left: auto !important;
+  margin-right: 8px !important;
+
+  /* Reset styles - made slightly bigger */
+  padding: 8px 20px 12px 20px !important;
+
+  /* Green button styling */
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 24px !important;
+
+  /* Shadow - metallic effect */
+  box-shadow:
+    0 2px 8px rgba(16, 185, 129, 0.4),
+    0 4px 16px rgba(5, 150, 105, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
+
+  /* Transitions */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+
+  /* Cursor */
+  cursor: pointer !important;
+
+  /* Flex layout */
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+
+  /* Clip shine effect to button bounds */
+  overflow: hidden !important;
+  position: relative !important;
+
+  /* Run animations */
+  animation: grove-reddit-pulse 2s ease-in-out infinite;
+
+  /* Prevent flex shrink */
+  flex-shrink: 0 !important;
+}
+
+/* White flash effect for Reddit button */
+.grove-tip-button-reddit::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: grove-shine 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+  border-radius: 24px;
+}
+
+.grove-tip-button-reddit .grove-tip-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  position: relative;
+  z-index: 3;
+  width: 100%;
+}
+
+.grove-tip-button-reddit .grove-tip-value {
+  font-weight: 700;
+  font-size: 14px;
+  color: #ffffff !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  position: relative;
+  z-index: 3;
+  text-align: center;
+  line-height: 1;
+  transform: translateY(-1px);
+}
+
+.grove-tip-button-reddit .grove-tip-label {
+  display: none; /* Hide the label in compact button */
+}
+
+.grove-tip-button-reddit:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow:
+    0 4px 12px rgba(16, 185, 129, 0.5),
+    0 8px 24px rgba(5, 150, 105, 0.4) !important;
+}
+
+/* Make hover card container positioned for absolute button */
+[data-testid="user-hover-card"] .p-md.flex.flex-col {
+  position: relative !important;
+}
+
+/* Reddit pulse animation for the button */
+@keyframes grove-reddit-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Reddit ad mode - more prominent pulse */
+.grove-tip-button-reddit.grove-ad-mode {
+  animation: grove-reddit-pulse-ad 2s ease-in-out infinite;
+}
+
+/* Reddit ad mode - faster white flash (2x frequency) */
+.grove-tip-button-reddit.grove-ad-mode::before {
+  animation: grove-shine 1.5s ease-in-out infinite;
+}
+
+@keyframes grove-reddit-pulse-ad {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow:
+      0 2px 8px rgba(16, 185, 129, 0.4),
+      0 4px 16px rgba(5, 150, 105, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow:
+      0 6px 16px rgba(16, 185, 129, 0.6),
+      0 10px 28px rgba(5, 150, 105, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* Keep hover working with ad mode */
+.grove-tip-button-reddit.grove-ad-mode:hover {
+  transform: translateY(-1px);
+}
+
+.grove-tip-button-reddit:hover {
+  animation: grove-reddit-pulse 2s ease-in-out infinite;
+}
+
+/**
  * Environment Toggle Styles
  * Developer mode toggle for switching between local and prod
  */

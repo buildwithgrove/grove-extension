@@ -7,10 +7,12 @@ class TipButton {
   /**
    * Create a new tip button
    * @param {Function} onClickCallback - Callback function when button is clicked
+   * @param {string} platform - Platform name (twitter, reddit, etc.)
    */
-  constructor(onClickCallback) {
+  constructor(onClickCallback, platform = 'twitter') {
     this.onClickCallback = onClickCallback;
     this.button = null;
+    this.platform = platform;
   }
 
   /**
@@ -18,6 +20,20 @@ class TipButton {
    * @returns {HTMLElement}
    */
   create() {
+    console.log(`[TipButton] Creating button for ${this.platform}...`);
+
+    if (this.platform === 'reddit') {
+      return this.createRedditButton();
+    }
+
+    return this.createTwitterButton();
+  }
+
+  /**
+   * Create Twitter-style button
+   * @returns {HTMLElement}
+   */
+  createTwitterButton() {
     console.log('[TipButton] Creating button with Twitter structure...');
 
     // Create button element matching Twitter's structure exactly
@@ -45,7 +61,53 @@ class TipButton {
     innerDiv.appendChild(textSpan);
     this.button.appendChild(innerDiv);
 
-    console.log('[TipButton] Button created successfully', this.button);
+    console.log('[TipButton] Twitter button created successfully', this.button);
+
+    // Add click handler
+    this.button.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.handleClick();
+    });
+
+    return this.button;
+  }
+
+  /**
+   * Create Reddit-style button (matches karma display layout)
+   * @returns {HTMLElement}
+   */
+  createRedditButton() {
+    console.log('[TipButton] Creating button with Reddit structure...');
+
+    // Create button element matching Reddit's karma layout
+    this.button = document.createElement('button');
+    this.button.setAttribute('aria-label', 'Send a tip');
+    this.button.setAttribute('role', 'button');
+    this.button.setAttribute('type', 'button');
+    this.button.className = 'flex flex-col grove-tip-button-reddit';
+    this.button.id = 'grove-tip-button';
+
+    // Create inner container
+    const innerDiv = document.createElement('div');
+    innerDiv.className = 'grove-tip-inner';
+
+    // Create value span (the "Tip 🌿" text)
+    const valueSpan = document.createElement('span');
+    valueSpan.className = 'grove-tip-value font-semibold text-14';
+    valueSpan.textContent = 'Tip 🌿';
+
+    // Create label span (like "Post karma", "Comment karma")
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'grove-tip-label text-neutral-content-weak text-12';
+    labelSpan.textContent = 'Send crypto';
+
+    // Assemble the structure
+    innerDiv.appendChild(valueSpan);
+    innerDiv.appendChild(labelSpan);
+    this.button.appendChild(innerDiv);
+
+    console.log('[TipButton] Reddit button created successfully', this.button);
 
     // Add click handler
     this.button.addEventListener('click', (e) => {

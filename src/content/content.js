@@ -13,6 +13,7 @@
   let currentButton = null;
   let currentAdapter = null;
   let envToggle = null;
+  let hoverCardObserver = null;
 
   /**
    * Initialize the extension
@@ -37,6 +38,13 @@
     console.log(
       `[Grove Extension] Platform detected: ${currentAdapter.getPlatformName()}`
     );
+
+    // For Reddit, watch for hover cards appearing
+    if (currentAdapter.getPlatformName() === "reddit") {
+      console.log("[Grove Extension] Setting up Reddit hover card observer");
+      setupRedditHoverCardObserver();
+      return;
+    }
 
     // Check if we're on a profile page
     try {
@@ -95,7 +103,8 @@
       }
 
       // Create and inject tip button
-      currentButton = new TipButton(handleTipClick);
+      const platformName = currentAdapter.getPlatformName();
+      currentButton = new TipButton(handleTipClick, platformName);
 
       const button = currentButton.create();
 
@@ -127,12 +136,13 @@
       return new TwitterAdapter();
     }
 
+    if (hostname.includes("reddit.com")) {
+      return new RedditAdapter();
+    }
+
     // TODO: Add more platform adapters
     // if (hostname.includes('github.com')) {
     //   return new GitHubAdapter();
-    // }
-    // if (hostname.includes('reddit.com')) {
-    //   return new RedditAdapter();
     // }
 
     return null;
@@ -161,12 +171,113 @@
   }
 
   /**
+   * Setup observer for Reddit hover cards
+   * Reddit hover cards appear dynamically, so we need to watch for them
+   */
+  function setupRedditHoverCardObserver() {
+    // Clean up existing observer
+    if (hoverCardObserver) {
+      hoverCardObserver.disconnect();
+    }
+
+    hoverCardObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            // Check if this is a hover card
+            const hoverCard = node.querySelector
+              ? node.querySelector('[data-testid="user-hover-card"]')
+              : null;
+
+            if (hoverCard || (node.dataset && node.dataset.testid === "user-hover-card")) {
+              console.log("[Grove Extension] Reddit hover card detected!");
+              injectButtonIntoHoverCard(hoverCard || node);
+            }
+          }
+        }
+      }
+    });
+
+    // Start observing the document body for new elements
+    hoverCardObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    console.log("[Grove Extension] Reddit hover card observer started");
+  }
+
+  /**
+   * Inject button into Reddit hover card
+   * @param {Element} hoverCard - The hover card element
+   */
+  async function injectButtonIntoHoverCard(hoverCard) {
+    console.log("[Grove Extension] Processing hover card...");
+
+    // Check if button already exists in this hover card
+    if (hoverCard.querySelector("#grove-tip-button")) {
+      console.log("[Grove Extension] Button already exists in hover card");
+      return;
+    }
+
+    // Extract bio from hover card
+    const bioSpan = hoverCard.querySelector(".whitespace-normal");
+    if (!bioSpan) {
+      console.log("[Grove Extension] No bio found in hover card");
+      return;
+    }
+
+    const bio = bioSpan.textContent;
+    console.log("[Grove Extension] Bio extracted:", bio);
+
+    // Check if bio contains tippable address
+    const hasAddress = AddressParser.hasAddresses(bio);
+    if (!hasAddress) {
+      console.log("[Grove Extension] No tippable address found in hover card bio");
+      return;
+    }
+
+    console.log("[Grove Extension] Tippable address detected in hover card!");
+
+    // Find the main content div that contains everything
+    const contentDiv = hoverCard.querySelector(".p-md.flex.flex-col");
+    if (!contentDiv) {
+      console.log("[Grove Extension] Could not find content div in hover card");
+      return;
+    }
+
+    // Find the top row with avatar and user info
+    const topRow = contentDiv.querySelector(".flex.flex-row.justify-items-start.items-center");
+    if (!topRow) {
+      console.log("[Grove Extension] Could not find top row in hover card");
+      return;
+    }
+
+    // Create and inject tip button
+    const tipButton = new TipButton(handleTipClick, "reddit");
+    const button = tipButton.create();
+
+    // Apply advertising mode class if enabled
+    if (ADVERTISING_MODE) {
+      button.classList.add("grove-ad-mode");
+    }
+
+    // Append button to the end of the top row (after user info)
+    topRow.appendChild(button);
+    console.log("[Grove Extension] Tip button appended to top row");
+  }
+
+  /**
    * Clean up when page changes
    */
   function cleanup() {
     if (currentButton) {
       currentButton.remove();
       currentButton = null;
+    }
+    if (hoverCardObserver) {
+      hoverCardObserver.disconnect();
+      hoverCardObserver = null;
     }
     currentAdapter = null;
   }
