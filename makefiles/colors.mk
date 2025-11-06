@@ -1,6 +1,8 @@
-####################
-### ANSI Colors  ###
-####################
+##########################
+### Color Definitions  ###
+##########################
+
+# Basic ANSI colors & print helpers
 
 GREEN := \033[0;32m
 YELLOW := \033[1;33m
@@ -18,16 +20,12 @@ WARN := ⚠️
 INFO := ℹ️
 ARROW := →
 
-####################
-### Print Helpers ##
-####################
-
 define print_success
-	@printf "$(GREEN)$(BOLD) $(CHECK) %s$(RESET)\n" "$(1)"
+	@printf "$(GREEN)$(BOLD)$(CHECK) %s$(RESET)\n" "$(1)"
 endef
 
 define print_error
-	@printf "$(RED)$(BOLD) $(CROSS) %s$(RESET)\n" "$(1)"
+	@printf "$(RED)$(BOLD)$(CROSS) %s$(RESET)\n" "$(1)"
 endef
 
 define print_warning

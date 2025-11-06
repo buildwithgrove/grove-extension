@@ -1,27 +1,52 @@
 ##########################
-### Build & Quality    ###
+### Extension Build    ###
 ##########################
 
-.PHONY: build_prod
-build_prod: ## Create production bundle
-	$(call print_info_section,Building production bundle)
-	$(Q)$(NPM) run build
-	$(call print_success,Build complete - output in dist/)
+# Extension metadata
+EXTENSION_NAME := grove-extension
+VERSION := 1.0.0
 
-.PHONY: build_watch
-build_watch: ## Build and watch for changes (use with chrome://extensions reload)
-	$(call print_info_section,Building and watching for changes)
-	$(call print_warning,After changes, click reload icon in chrome://extensions)
-	$(Q)$(NPM) run build:watch
+# Build artifacts
+ZIP_FILE := $(BUILD_DIR)/$(EXTENSION_NAME)-v$(VERSION).zip
 
-.PHONY: clean_dist
-clean_dist: ## Remove dist/ output
-	$(call print_warning,Removing dist/ directory)
-	$(Q)rm -rf dist
-	$(call print_success,dist/ removed)
+# Files to include in extension
+INCLUDE_FILES := \
+	manifest.json \
+	popup.html \
+	popup.css \
+	popup.js \
+	README.md \
+	icons \
+	src
 
-.PHONY: clean_all
-clean_all: clean_dist ## Clean all build artifacts
-	$(call print_warning,Removing all build artifacts)
-	$(Q)rm -rf node_modules
-	$(call print_success,All build artifacts removed)
+# Files to exclude from zip
+EXCLUDE_PATTERNS := \
+	.git \
+	.DS_Store \
+	*.log \
+	node_modules \
+	poc \
+	makefiles \
+	logo.png \
+	package*.json \
+	Makefile \
+	$(BUILD_DIR)
+
+.PHONY: build_zip_extension
+build_zip_extension: clean_build $(BUILD_DIR) ## Create extension zip for Chrome Web Store
+	$(call print_info_section,Building Grove Extension v$(VERSION))
+	$(call print_info,Creating zip file: $(ZIP_FILE))
+	$(Q)zip -r $(ZIP_FILE) $(INCLUDE_FILES) -x $(EXCLUDE_PATTERNS)
+	$(call print_success,Extension packaged successfully!)
+	@printf "$(CYAN)$(BOLD)📦 Output:$(RESET) $(ZIP_FILE)\n"
+	@printf "\n"
+	@printf "$(YELLOW)$(BOLD)Next steps:$(RESET)\n"
+	@printf "  1. Go to $(CYAN)https://chrome.google.com/webstore/devconsole$(RESET)\n"
+	@printf "  2. Upload $(CYAN)$(ZIP_FILE)$(RESET)\n"
+	@printf "\n"
+
+.PHONY: clean_build
+clean_build: ## Clean build artifacts
+	$(call print_warning,Removing build artifacts)
+	$(Q)rm -rf $(BUILD_DIR)
+	$(call print_success,Build directory cleaned)

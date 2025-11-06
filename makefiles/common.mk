@@ -1,6 +1,8 @@
-############################
-### Shell & Make Config  ###
-############################
+##########################
+### Common Utilities   ###
+##########################
+
+# Strict shell + sane make defaults
 
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
@@ -8,26 +10,25 @@ MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
 # VERBOSE=1 to show commands
+
 ifdef VERBOSE
 	Q :=
 else
 	Q := @
 endif
 
-############################
-### Common Variables     ###
-############################
+# Timestamp & common dirs
 
 TIMESTAMP := $(shell date '+%Y-%m-%d %H:%M:%S')
 ROOT_DIR := $(shell pwd)
 BUILD_DIR := $(ROOT_DIR)/build
 DIST_DIR := $(ROOT_DIR)/dist
-DOCS_DIR := $(ROOT_DIR)/docs
 TMP_DIR := $(ROOT_DIR)/tmp
 
-############################
-### Helper Functions     ###
-############################
+$(BUILD_DIR) $(DIST_DIR) $(TMP_DIR):
+	$(Q)mkdir -p $@
+
+# Guards & checks
 
 define check_command
 	@command -v $(1) >/dev/null 2>&1 || { \
@@ -51,4 +52,3 @@ prompt_confirm: ## Prompt before continuing
 debug_vars: ## Print key variables
 	$(call print_info_section,Debug variables)
 	$(Q)printf "ROOT_DIR=%s\nBUILD_DIR=%s\nDIST_DIR=%s\nTMP_DIR=%s\n" "$(ROOT_DIR)" "$(BUILD_DIR)" "$(DIST_DIR)" "$(TMP_DIR)"
-	$(Q)printf "NPM=%s\n" "$(NPM)"
