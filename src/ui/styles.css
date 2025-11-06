@@ -313,6 +313,97 @@
 }
 
 /**
+ * Reddit Profile Page Button Styles
+ * Matches Reddit's Share button style
+ */
+.grove-tip-button-reddit-profile {
+  /* Green button styling - matches our gradient */
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+
+  /* Metallic shadow */
+  box-shadow:
+    0 2px 8px rgba(16, 185, 129, 0.4),
+    0 4px 16px rgba(5, 150, 105, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
+
+  /* Smooth transitions */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+
+  /* Cursor */
+  cursor: pointer !important;
+
+  /* Position for pseudo-elements */
+  position: relative;
+  overflow: hidden;
+
+  /* Run animations */
+  animation: grove-pulse 2s ease-in-out infinite;
+}
+
+/* Style the text inside */
+.grove-tip-button-reddit-profile span {
+  color: #ffffff !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  font-weight: 600 !important;
+}
+
+/* Metallic shine effect */
+.grove-tip-button-reddit-profile::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: grove-shine 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Ensure content is above shine effect */
+.grove-tip-button-reddit-profile > span {
+  position: relative;
+  z-index: 3;
+}
+
+/* Hover state */
+.grove-tip-button-reddit-profile:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow:
+    0 4px 12px rgba(16, 185, 129, 0.5),
+    0 8px 24px rgba(5, 150, 105, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Active/pressed state */
+.grove-tip-button-reddit-profile:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow:
+    0 1px 4px rgba(16, 185, 129, 0.4),
+    0 2px 8px rgba(5, 150, 105, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Advertising mode - more prominent pulse animation */
+.grove-tip-button-reddit-profile.grove-ad-mode {
+  animation: grove-pulse-ad 2s ease-in-out infinite;
+}
+
+/* Advertising mode - faster shine animation */
+.grove-tip-button-reddit-profile.grove-ad-mode::before {
+  animation: grove-shine 1.5s ease-in-out infinite;
+}
+
+/**
  * Environment Toggle Styles
  * Developer mode toggle for switching between local and prod
  */

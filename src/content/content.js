@@ -39,10 +39,16 @@
       `[Grove Extension] Platform detected: ${currentAdapter.getPlatformName()}`
     );
 
-    // For Reddit, watch for hover cards appearing
+    // For Reddit, handle both hover cards and profile pages
     if (currentAdapter.getPlatformName() === "reddit") {
       console.log("[Grove Extension] Setting up Reddit hover card observer");
       setupRedditHoverCardObserver();
+
+      // Also check if we're on a profile page and handle it
+      if (currentAdapter.detectProfilePage()) {
+        console.log("[Grove Extension] Reddit profile page detected, initializing button");
+        await initializeProfileButton();
+      }
       return;
     }
 
@@ -59,8 +65,42 @@
 
     console.log("[Grove Extension] Profile page detected");
 
-    // Wait for profile to load (if adapter supports it)
+    // Initialize profile button
+    await initializeProfileButton();
+  }
+
+  /**
+   * Detect which platform we're on and return appropriate adapter
+   * @returns {BaseAdapter|null}
+   */
+  function detectPlatform() {
+    const hostname = window.location.hostname;
+
+    if (hostname.includes("twitter.com") || hostname.includes("x.com")) {
+      return new TwitterAdapter();
+    }
+
+    if (hostname.includes("reddit.com")) {
+      return new RedditAdapter();
+    }
+
+    // TODO: Add more platform adapters
+    // if (hostname.includes('github.com')) {
+    //   return new GitHubAdapter();
+    // }
+
+    return null;
+  }
+
+  /**
+   * Initialize profile button (reusable for different profile types)
+   * Handles profile page logic for extracting bio, checking for addresses, and injecting button
+   */
+  async function initializeProfileButton() {
+    console.log("[Grove Extension] Initializing profile button...");
+
     try {
+      // Wait for profile to load (if adapter supports it)
       if (typeof currentAdapter.waitForProfileLoad === "function") {
         const loaded = await currentAdapter.waitForProfileLoad();
         if (!loaded) {
@@ -121,31 +161,8 @@
         console.log("[Grove Extension] Failed to inject tip button");
       }
     } catch (error) {
-      console.error("[Grove Extension] Error during initialization:", error);
+      console.error("[Grove Extension] Error initializing profile button:", error);
     }
-  }
-
-  /**
-   * Detect which platform we're on and return appropriate adapter
-   * @returns {BaseAdapter|null}
-   */
-  function detectPlatform() {
-    const hostname = window.location.hostname;
-
-    if (hostname.includes("twitter.com") || hostname.includes("x.com")) {
-      return new TwitterAdapter();
-    }
-
-    if (hostname.includes("reddit.com")) {
-      return new RedditAdapter();
-    }
-
-    // TODO: Add more platform adapters
-    // if (hostname.includes('github.com')) {
-    //   return new GitHubAdapter();
-    // }
-
-    return null;
   }
 
   /**

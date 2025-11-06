@@ -30,8 +30,13 @@ class RedditAdapter extends BaseAdapter {
       }
     }
 
-    // Fallback: look for bio on full profile page
-    // Reddit profile bios are typically in a div with specific classes
+    // Look for bio on full profile page using data-testid
+    const profileDescription = document.querySelector('[data-testid="profile-description"]');
+    if (profileDescription) {
+      return profileDescription.textContent;
+    }
+
+    // Fallback: look for bio on full profile page (legacy selector)
     const profileBio = document.querySelector('[data-testid="profile-bio"]');
     if (profileBio) {
       return profileBio.textContent;
@@ -42,7 +47,7 @@ class RedditAdapter extends BaseAdapter {
 
   /**
    * Get placement for tip button
-   * Places button in the hover card karma section
+   * Places button in the hover card karma section or full profile page
    * @returns {Element|null}
    */
   getButtonPlacement() {
@@ -57,8 +62,19 @@ class RedditAdapter extends BaseAdapter {
       }
     }
 
-    // Fallback: look on full profile page
-    // Find profile header actions area
+    // Look on full profile page - find the div with class "p-md" containing profile info
+    // This is the section that has the username, share button, followers, etc.
+    const profileSection = document.querySelector('div.p-md');
+    if (profileSection) {
+      // Find the div that contains the "Share" button
+      const shareButtonContainer = profileSection.querySelector('.flex.items-center.gap-xs');
+      if (shareButtonContainer) {
+        console.log('[RedditAdapter] Found share button container for button placement');
+        return shareButtonContainer;
+      }
+    }
+
+    // Fallback: look for profile actions area (legacy selector)
     const profileActions = document.querySelector('[data-testid="profile-actions"]');
     if (profileActions) {
       console.log('[RedditAdapter] Found profile actions for button placement');
@@ -97,7 +113,13 @@ class RedditAdapter extends BaseAdapter {
       return true;
     }
 
-    // Fallback to full profile page
+    // Wait for full profile page - look for profile description
+    const profileDescription = await this.waitForElement('[data-testid="profile-description"]', 5000);
+    if (profileDescription) {
+      return true;
+    }
+
+    // Fallback to legacy profile page selector
     const profileBio = await this.waitForElement('[data-testid="profile-bio"]', 5000);
     return profileBio !== null;
   }

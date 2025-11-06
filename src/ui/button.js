@@ -74,11 +74,30 @@ class TipButton {
   }
 
   /**
-   * Create Reddit-style button (matches karma display layout)
+   * Create Reddit-style button
+   * Creates different styles based on context (hover card vs profile page)
    * @returns {HTMLElement}
    */
   createRedditButton() {
     console.log('[TipButton] Creating button with Reddit structure...');
+
+    // Check if we're on a hover card or profile page
+    const isHoverCard = !!document.querySelector('[data-testid="user-hover-card"]');
+    const isProfilePage = /^https:\/\/(www\.)?reddit\.com\/(user|u)\/[^\/]+\/?$/.test(window.location.href);
+
+    if (isProfilePage) {
+      return this.createRedditProfileButton();
+    } else {
+      return this.createRedditHoverCardButton();
+    }
+  }
+
+  /**
+   * Create Reddit hover card button (matches karma display layout)
+   * @returns {HTMLElement}
+   */
+  createRedditHoverCardButton() {
+    console.log('[TipButton] Creating Reddit hover card button...');
 
     // Create button element matching Reddit's karma layout
     this.button = document.createElement('button');
@@ -107,7 +126,52 @@ class TipButton {
     innerDiv.appendChild(labelSpan);
     this.button.appendChild(innerDiv);
 
-    console.log('[TipButton] Reddit button created successfully', this.button);
+    console.log('[TipButton] Reddit hover card button created successfully', this.button);
+
+    // Add click handler
+    this.button.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.handleClick();
+    });
+
+    return this.button;
+  }
+
+  /**
+   * Create Reddit profile page button (matches Share button style)
+   * @returns {HTMLElement}
+   */
+  createRedditProfileButton() {
+    console.log('[TipButton] Creating Reddit profile page button...');
+
+    // Create button element matching Reddit's Share button style
+    this.button = document.createElement('button');
+    this.button.setAttribute('aria-label', 'Send a tip');
+    this.button.setAttribute('rpl', '');
+    this.button.className = 'button-small px-[var(--rem10)] button-secondary items-center justify-center button inline-flex grove-tip-button-reddit-profile';
+    this.button.id = 'grove-tip-button';
+
+    // Create span wrapper
+    const spanWrapper = document.createElement('span');
+    spanWrapper.className = 'flex items-center justify-center';
+
+    // Create icon span (using leaf emoji as icon)
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'flex me-xs';
+    iconSpan.textContent = '🌿';
+
+    // Create text span
+    const textSpan = document.createElement('span');
+    textSpan.className = 'flex items-center gap-xs';
+    textSpan.textContent = 'Tip';
+
+    // Assemble the structure
+    spanWrapper.appendChild(iconSpan);
+    spanWrapper.appendChild(textSpan);
+    this.button.appendChild(spanWrapper);
+
+    console.log('[TipButton] Reddit profile button created successfully', this.button);
 
     // Add click handler
     this.button.addEventListener('click', (e) => {
