@@ -23,11 +23,13 @@ const jwtStatus = document.getElementById('jwtStatus');
 // Storage keys
 const STORAGE_KEYS = {
   JWT: 'GROVE_API_JWT',
-  TIP_AMOUNT: 'GROVE_TIP_AMOUNT'
+  TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
+  ENVIRONMENT: 'groveEnvironment'
 };
 
 // Default values
 const DEFAULT_TIP_AMOUNT = 0.10;
+const DEFAULT_ENVIRONMENT = 'prod';
 
 /**
  * Initialize the popup
@@ -35,6 +37,7 @@ const DEFAULT_TIP_AMOUNT = 0.10;
 async function init() {
   await loadJWTStatus();
   await loadTipAmount();
+  await loadEnvironmentStatus();
   setupEventListeners();
 }
 
@@ -55,6 +58,12 @@ function setupEventListeners() {
   tipAmountDisplay.addEventListener('click', showTipAmountEdit);
   saveTipAmount.addEventListener('click', handleSaveTipAmount);
   cancelTipAmount.addEventListener('click', hideTipAmountEdit);
+
+  // Environment toggle
+  const toggleEnvBtn = document.getElementById('toggleEnvBtn');
+  if (toggleEnvBtn) {
+    toggleEnvBtn.addEventListener('click', handleToggleEnvironment);
+  }
 
   // Close menu when clicking outside
   navMenu.addEventListener('click', (e) => {
@@ -287,6 +296,65 @@ function showToast(message) {
     toast.classList.remove('show');
     setTimeout(() => toast.remove(), 300);
   }, 2000);
+}
+
+/**
+ * Load and display environment status
+ */
+async function loadEnvironmentStatus() {
+  try {
+    const result = await chrome.storage.local.get([STORAGE_KEYS.ENVIRONMENT]);
+    const environment = result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENVIRONMENT;
+
+    updateEnvironmentUI(environment);
+  } catch (error) {
+    console.error('[Grove Extension] Error loading environment:', error);
+    updateEnvironmentUI(DEFAULT_ENVIRONMENT);
+  }
+}
+
+/**
+ * Update environment UI elements
+ */
+function updateEnvironmentUI(environment) {
+  const envStatus = document.getElementById('envStatus');
+  const toggleEnvLabel = document.getElementById('toggleEnvLabel');
+
+  if (!envStatus || !toggleEnvLabel) return;
+
+  const isProd = environment === 'prod';
+  const icon = isProd ? '🌍' : '🏠';
+  const label = isProd ? 'Production' : 'Localhost';
+  const toggleText = isProd ? 'Switch to Localhost' : 'Switch to Production';
+
+  envStatus.innerHTML = `
+    <div class="env-badge ${isProd ? 'env-prod' : 'env-local'}">
+      <span class="env-icon">${icon}</span>
+      <span class="env-label">${label}</span>
+    </div>
+  `;
+
+  toggleEnvLabel.textContent = toggleText;
+}
+
+/**
+ * Handle environment toggle
+ */
+async function handleToggleEnvironment() {
+  try {
+    const result = await chrome.storage.local.get([STORAGE_KEYS.ENVIRONMENT]);
+    const currentEnv = result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENVIRONMENT;
+    const newEnv = currentEnv === 'prod' ? 'local' : 'prod';
+
+    await chrome.storage.local.set({ [STORAGE_KEYS.ENVIRONMENT]: newEnv });
+    updateEnvironmentUI(newEnv);
+
+    const envName = newEnv === 'prod' ? 'Production' : 'Localhost';
+    showToast(`Switched to ${envName}`);
+  } catch (error) {
+    console.error('[Grove Extension] Error toggling environment:', error);
+    alert('Failed to switch environment. Please try again.');
+  }
 }
 
 // Initialize on load

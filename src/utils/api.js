@@ -18,7 +18,8 @@ class GroveAPI {
    */
   static async getBaseURL() {
     try {
-      const env = await EnvironmentToggle.getEnvironment();
+      const result = await chrome.storage.local.get(['groveEnvironment']);
+      const env = result.groveEnvironment || 'prod';
       return env === 'local' ? this.LOCAL_URL : this.PROD_URL;
     } catch (error) {
       console.log('[Grove Extension] Could not get environment, using prod');

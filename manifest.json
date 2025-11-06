@@ -18,7 +18,6 @@
         "src/adapters/base.js",
         "src/adapters/twitter.js",
         "src/ui/button.js",
-        "src/ui/env-toggle.js",
         "src/utils/api.js",
         "src/content/content.js"
       ],
@@ -37,7 +36,6 @@
         "src/adapters/base.js",
         "src/adapters/reddit.js",
         "src/ui/button.js",
-        "src/ui/env-toggle.js",
         "src/utils/api.js",
         "src/content/content.js"
       ],
