@@ -61,6 +61,7 @@ class GroveAPI {
     console.log('[Grove Extension] Environment:', baseURL);
     console.log('[Grove Extension] Page URL:', pageUrl);
     console.log('[Grove Extension] Tip amount:', `$${tipAmount}`);
+    console.log('[Grove Extension] JWT present:', groveApiJwt ? 'Yes' : 'No');
 
     // Build tip domain from URL
     const tipDomain = this.buildTipDomainFromURL(pageUrl);
@@ -70,6 +71,7 @@ class GroveAPI {
     const apiUrl = `${baseURL}/v1/tip/${encodeURIComponent(tipDomain)}/${tipAmount}`;
 
     console.log('[Grove Extension] API URL:', apiUrl);
+    console.log('[Grove Extension] Authorization header:', groveApiJwt ? 'Bearer [REDACTED]' : 'None');
 
     try {
       const response = await fetch(apiUrl, {

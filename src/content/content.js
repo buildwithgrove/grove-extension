@@ -178,6 +178,9 @@
       jwt = result.GROVE_API_JWT || '';
       tipAmount = result.GROVE_TIP_AMOUNT || 0.05;
 
+      console.log("[Grove Extension] JWT loaded:", jwt ? 'Yes' : 'No');
+      console.log("[Grove Extension] Tip amount:", tipAmount);
+
       if (!jwt) {
         console.error("[Grove Extension] No JWT token found. Please configure in settings.");
         if (currentButton) {
@@ -195,6 +198,7 @@
 
     // Get current page URL
     const pageUrl = window.location.href;
+    console.log("[Grove Extension] Sending tip for URL:", pageUrl);
 
     // Send tip via API with JWT and amount
     const response = await GroveAPI.sendTip(pageUrl, tipAmount, jwt);
@@ -303,11 +307,34 @@
       // Show loading animation
       tipButton.setLoading();
 
+      // Get JWT and tip amount from storage
+      let jwt = '';
+      let tipAmount = 0.05; // default
+
+      try {
+        const result = await chrome.storage.local.get(['GROVE_API_JWT', 'GROVE_TIP_AMOUNT']);
+        jwt = result.GROVE_API_JWT || '';
+        tipAmount = result.GROVE_TIP_AMOUNT || 0.05;
+
+        console.log("[Grove Extension] JWT loaded:", jwt ? 'Yes' : 'No');
+        console.log("[Grove Extension] Tip amount:", tipAmount);
+
+        if (!jwt) {
+          console.error("[Grove Extension] No JWT token found. Please configure in settings.");
+          tipButton.setError();
+          return;
+        }
+      } catch (error) {
+        console.error("[Grove Extension] Error loading settings:", error);
+        tipButton.setError();
+        return;
+      }
+
       // Get current page URL
       const pageUrl = window.location.href;
 
-      // Send tip via API
-      const response = await GroveAPI.sendTip(pageUrl);
+      // Send tip via API with JWT and amount
+      const response = await GroveAPI.sendTip(pageUrl, tipAmount, jwt);
 
       // Handle response with animations
       if (response.success) {
