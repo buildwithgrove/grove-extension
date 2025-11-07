@@ -126,6 +126,7 @@ async function loadJWTStatus() {
             <button class="btn-icon" id="editJwt" title="Edit token">✏️</button>
           </div>
           <div class="jwt-actions">
+            <button class="btn btn-small" id="copyJwt">Copy Token</button>
             <button class="btn btn-small btn-danger" id="removeJwt">Remove Token</button>
           </div>
         </div>
@@ -133,6 +134,7 @@ async function loadJWTStatus() {
 
       // Add event listeners for JWT actions
       document.getElementById('editJwt').addEventListener('click', showJWTInput);
+      document.getElementById('copyJwt').addEventListener('click', () => copyJWT(jwt));
       document.getElementById('removeJwt').addEventListener('click', removeJWT);
     } else {
       // No JWT - show setup instructions
@@ -218,6 +220,19 @@ async function removeJWT() {
   } catch (error) {
     console.error('[Grove Extension] Error removing JWT:', error);
     alert('Failed to remove token. Please try again.');
+  }
+}
+
+/**
+ * Copy JWT token to clipboard
+ */
+async function copyJWT(jwt) {
+  try {
+    await navigator.clipboard.writeText(jwt);
+    showToast('Token copied to clipboard!');
+  } catch (error) {
+    console.error('[Grove Extension] Error copying JWT:', error);
+    alert('Failed to copy token. Please try again.');
   }
 }
 
