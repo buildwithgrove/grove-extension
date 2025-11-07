@@ -22,6 +22,7 @@
         "src/content/content.js"
       ],
       "css": [
+        "src/ui/animate.min.css",
         "src/ui/styles.css"
       ],
       "run_at": "document_idle"
@@ -40,6 +41,7 @@
         "src/content/content.js"
       ],
       "css": [
+        "src/ui/animate.min.css",
         "src/ui/styles.css"
       ],
       "run_at": "document_idle"

@@ -164,19 +164,28 @@
   async function handleTipClick() {
     console.log("[Grove Extension] Processing tip...");
 
+    // Show loading animation
+    if (currentButton) {
+      currentButton.setLoading();
+    }
+
     // Get current page URL
     const pageUrl = window.location.href;
 
     // Send tip via API (just URL and default amount)
     const response = await GroveAPI.sendTip(pageUrl);
 
-    // Handle response
+    // Handle response with animations
     if (response.success) {
       console.log("[Grove Extension] Tip successful!", response.data);
-      // TODO_IN_THIS_PR: Add success feedback (toast notification, etc.)
+      if (currentButton) {
+        currentButton.setSuccess();
+      }
     } else {
       console.error("[Grove Extension] Tip failed:", response.error);
-      // Error already shown by GroveAPI.showError()
+      if (currentButton) {
+        currentButton.setError();
+      }
     }
   }
 
@@ -263,8 +272,29 @@
       return;
     }
 
-    // Create and inject tip button
-    const tipButton = new TipButton(handleTipClick, "reddit");
+    // Create and inject tip button with click handler
+    const tipButton = new TipButton(async () => {
+      console.log("[Grove Extension] Processing hover card tip...");
+
+      // Show loading animation
+      tipButton.setLoading();
+
+      // Get current page URL
+      const pageUrl = window.location.href;
+
+      // Send tip via API
+      const response = await GroveAPI.sendTip(pageUrl);
+
+      // Handle response with animations
+      if (response.success) {
+        console.log("[Grove Extension] Tip successful!", response.data);
+        tipButton.setSuccess();
+      } else {
+        console.error("[Grove Extension] Tip failed:", response.error);
+        tipButton.setError();
+      }
+    }, "reddit");
+
     const button = tipButton.create();
 
     // Apply advertising mode class if enabled

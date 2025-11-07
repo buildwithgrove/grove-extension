@@ -193,6 +193,110 @@ class TipButton {
   }
 
   /**
+   * Set button to loading state
+   */
+  setLoading() {
+    if (!this.button) return;
+
+    // Store original state
+    this.originalText = this.button.textContent || this.button.innerText;
+    this.button.disabled = true;
+    this.button.style.cursor = 'wait';
+
+    // Remove any existing state classes
+    this.button.classList.remove('animate__bounceIn', 'animate__shakeX', 'grove-tip-success', 'grove-tip-error');
+
+    // Add pulsing animation
+    this.button.classList.add('animate__animated', 'animate__pulse', 'animate__infinite');
+
+    // Update button text based on platform
+    const innerContent = this.button.querySelector('span') || this.button;
+    if (this.platform === 'reddit') {
+      innerContent.textContent = 'Sending...🌿';
+    } else {
+      innerContent.textContent = 'Sending...🌿';
+    }
+  }
+
+  /**
+   * Set button to success state
+   */
+  setSuccess() {
+    if (!this.button) return;
+
+    // Remove loading state
+    this.button.disabled = false;
+    this.button.style.cursor = 'pointer';
+    this.button.classList.remove('animate__pulse', 'animate__infinite', 'grove-tip-error');
+
+    // Add success animation and styling
+    this.button.classList.add('animate__bounceIn', 'grove-tip-success');
+
+    // Update button text
+    const innerContent = this.button.querySelector('span') || this.button;
+    innerContent.textContent = 'Sent! ✓';
+
+    // Reset after 2 seconds
+    setTimeout(() => {
+      this.resetState();
+    }, 2000);
+  }
+
+  /**
+   * Set button to error state
+   */
+  setError() {
+    if (!this.button) return;
+
+    // Remove loading state
+    this.button.disabled = false;
+    this.button.style.cursor = 'pointer';
+    this.button.classList.remove('animate__pulse', 'animate__infinite', 'grove-tip-success');
+
+    // Add error animation and styling
+    this.button.classList.add('animate__shakeX', 'grove-tip-error');
+
+    // Update button text
+    const innerContent = this.button.querySelector('span') || this.button;
+    innerContent.textContent = 'Failed ✗';
+
+    // Reset after 2 seconds
+    setTimeout(() => {
+      this.resetState();
+    }, 2000);
+  }
+
+  /**
+   * Reset button to original state
+   */
+  resetState() {
+    if (!this.button) return;
+
+    // Remove all state classes
+    this.button.classList.remove(
+      'animate__animated',
+      'animate__pulse',
+      'animate__infinite',
+      'animate__bounceIn',
+      'animate__shakeX',
+      'grove-tip-success',
+      'grove-tip-error'
+    );
+
+    // Reset button properties
+    this.button.disabled = false;
+    this.button.style.cursor = 'pointer';
+
+    // Restore original text
+    const innerContent = this.button.querySelector('span') || this.button;
+    if (this.originalText) {
+      innerContent.textContent = this.originalText;
+    } else {
+      innerContent.textContent = this.platform === 'reddit' ? 'Tip 🌿' : 'Tip 🌿';
+    }
+  }
+
+  /**
    * Inject button into the DOM at target location
    * @param {Element} targetElement - Element to append button to
    * @returns {boolean} - True if injection successful

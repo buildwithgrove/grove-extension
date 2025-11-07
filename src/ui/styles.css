@@ -403,3 +403,51 @@
   animation: grove-shine 1.5s ease-in-out infinite;
 }
 
+/**
+ * State-specific styles for success and error
+ */
+
+/* Success state - bright green */
+.grove-tip-success {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%) !important;
+  box-shadow:
+    0 4px 16px rgba(34, 197, 94, 0.6),
+    0 8px 32px rgba(22, 163, 74, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Error state - red gradient */
+.grove-tip-error {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%) !important;
+  box-shadow:
+    0 4px 16px rgba(239, 68, 68, 0.6),
+    0 8px 32px rgba(220, 38, 38, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Loading state - keep pulsing but with slightly different shadow */
+.grove-tip-button.animate__infinite {
+  box-shadow:
+    0 2px 12px rgba(16, 185, 129, 0.5),
+    0 4px 24px rgba(5, 150, 105, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Disabled state styling */
+.grove-tip-button:disabled,
+.grove-tip-button-reddit:disabled,
+.grove-tip-button-reddit-profile:disabled {
+  opacity: 0.7;
+  cursor: wait !important;
+}
+
+/* Animate.css override - make animations faster */
+.grove-tip-button.animate__animated,
+.grove-tip-button-reddit.animate__animated,
+.grove-tip-button-reddit-profile.animate__animated {
+  --animate-duration: 0.6s;
+}
+

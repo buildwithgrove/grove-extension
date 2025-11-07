@@ -95,29 +95,11 @@ class GroveAPI {
     } catch (error) {
       console.error('[Grove Extension] Tip failed:', error);
 
-      // Show user-friendly error
-      let errorMessage = error.message;
-      if (error.message === 'Failed to fetch') {
-        errorMessage = 'Cannot connect to Grove API. Make sure the backend is running.';
-      }
-      this.showError(`Tip failed: ${errorMessage}`);
-
       return {
         success: false,
         error: error.message
       };
     }
-  }
-
-  /**
-   * Show error message to user
-   * TODO: Replace with proper UI notification (toast, modal, etc.)
-   * @param {string} message - Error message
-   */
-  static showError(message) {
-    // For now, use browser alert
-    // TODO_IN_THIS_PR: Implement better UI feedback (toast notification)
-    alert(`Grove Tip Extension Error:\n\n${message}`);
   }
 }
 
