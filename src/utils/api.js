@@ -7,7 +7,7 @@ class GroveAPI {
   // API Configuration
   static PROD_URL = 'https://api.grove.city';
   static LOCAL_URL = 'http://localhost:3000';
-  static DEFAULT_TIP_AMOUNT = 0.05; // $0.05 default
+  static DEFAULT_TIP_AMOUNT = 0.01; // $0.01 default
 
   // TODO: Store this in chrome.storage.local later
   static GROVE_API_JWT = ''; // Placeholder for now
@@ -66,7 +66,10 @@ class GroveAPI {
     const tipDomain = this.buildTipDomainFromURL(pageUrl);
     console.log('[Grove Extension] Tip domain:', tipDomain);
 
-    const apiUrl = `${baseURL}/v1/tip/${encodeURIComponent(tipDomain)}/${tipAmount}`;
+    // Build API URL: {baseURL}/{url}/{amount}
+    const apiUrl = `${baseURL}/${encodeURIComponent(tipDomain)}/${tipAmount}`;
+
+    console.log('[Grove Extension] API URL:', apiUrl);
 
     try {
       const response = await fetch(apiUrl, {
