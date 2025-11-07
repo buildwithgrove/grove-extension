@@ -25,9 +25,11 @@ Chrome extension that enables cryptocurrency tipping on social platforms.
 ## Supported Platforms
 
 ### Active <!-- omit in toc -->
+
 - **Twitter/X**: Fully implemented
 
 ### Planned <!-- omit in toc -->
+
 - GitHub (placeholder)
 - Reddit (placeholder)
 - Instagram
@@ -96,6 +98,7 @@ Authorization: Bearer {GROVE_API_JWT}
 ```
 
 **How it works**:
+
 1. Extension detects profile page
 2. Shows tip button on all profiles
 3. User adds JWT and clicks tip
@@ -103,6 +106,7 @@ Authorization: Bearer {GROVE_API_JWT}
 5. Backend determines if profile is tippable and processes payment
 
 **Tip Domain Format** (`api.js:20`):
+
 - Extracts from URL: `https://twitter.com/olshansky` → `twitter.com/olshansky`
 - Removes protocol, www, and trailing slashes
 
@@ -117,11 +121,13 @@ Authorization: Bearer {GROVE_API_JWT}
 A small toggle appears in the bottom right corner of any page where the extension is active.
 
 **Toggle Behavior**:
+
 - Click to switch between `🏠 LOCAL` and `🌍 PROD`
 - Setting persists across sessions (stored in `chrome.storage.local`)
 - Shows toast notification when environment changes
 
 **API Endpoints**:
+
 - **Production**: `https://api.grove.city`
 - **Localhost**: `http://localhost:3000`
 
@@ -149,11 +155,11 @@ class MyPlatformAdapter extends BaseAdapter {
 
   getButtonPlacement() {
     // Return DOM element for button placement
-    return document.querySelector('.profile-actions');
+    return document.querySelector(".profile-actions");
   }
 
   getPlatformName() {
-    return 'myplatform';
+    return "myplatform";
   }
 }
 ```

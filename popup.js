@@ -325,6 +325,7 @@ function updateEnvironmentUI(environment) {
   const isProd = environment === 'prod';
   const icon = isProd ? '🌍' : '🏠';
   const label = isProd ? 'Production' : 'Localhost';
+  const url = isProd ? 'api.grove.city' : 'localhost:8000';
   const toggleText = isProd ? 'Switch to Localhost' : 'Switch to Production';
 
   envStatus.innerHTML = `
@@ -332,6 +333,7 @@ function updateEnvironmentUI(environment) {
       <span class="env-icon">${icon}</span>
       <span class="env-label">${label}</span>
     </div>
+    <p class="env-url">${url}</p>
   `;
 
   toggleEnvLabel.textContent = toggleText;
