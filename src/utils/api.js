@@ -9,6 +9,22 @@ class GroveAPI {
   static LOCAL_URL = 'http://localhost:8000';
   static DEFAULT_TIP_AMOUNT = 0.05; // $0.05 default
 
+  // Chain RPC Endpoints
+  static CHAIN_RPC_ENDPOINTS = {
+    'base': {
+      name: 'Base',
+      chainId: 8453,
+      rpcUrl: 'https://mainnet.base.org',
+      explorerUrl: 'https://basescan.org'
+    },
+    'base-sepolia': {
+      name: 'Base Sepolia',
+      chainId: 84532,
+      rpcUrl: 'https://sepolia.base.org',
+      explorerUrl: 'https://sepolia.basescan.org'
+    }
+  };
+
   // TODO: Store this in chrome.storage.local later
   static GROVE_API_JWT = ''; // Placeholder for now
 
@@ -24,6 +40,77 @@ class GroveAPI {
     } catch (error) {
       console.log('[Grove Extension] Could not get environment, using prod');
       return this.PROD_URL;
+    }
+  }
+
+  /**
+   * Get the current chain configuration
+   * @returns {Promise<Object>} - Chain configuration with RPC endpoints
+   */
+  static async getChainConfig() {
+    try {
+      const result = await chrome.storage.local.get(['groveChain']);
+      const chain = result.groveChain || 'base';
+      return this.CHAIN_RPC_ENDPOINTS[chain] || this.CHAIN_RPC_ENDPOINTS['base'];
+    } catch (error) {
+      console.log('[Grove Extension] Could not get chain, using base');
+      return this.CHAIN_RPC_ENDPOINTS['base'];
+    }
+  }
+
+  /**
+   * Get the current chain's RPC URL
+   * @returns {Promise<string>} - RPC URL for the selected chain
+   */
+  static async getRpcUrl() {
+    const config = await this.getChainConfig();
+    return config.rpcUrl;
+  }
+
+  /**
+   * Get balance for an address on the current chain
+   * @param {string} address - Wallet address
+   * @returns {Promise<string>} - Balance in ETH
+   */
+  static async getBalance(address) {
+    const rpcUrl = await this.getRpcUrl();
+    const chainConfig = await this.getChainConfig();
+
+    console.log('[Grove Extension] Fetching balance...');
+    console.log('[Grove Extension] Chain:', chainConfig.name);
+    console.log('[Grove Extension] RPC URL:', rpcUrl);
+    console.log('[Grove Extension] Address:', address);
+
+    try {
+      const response = await fetch(rpcUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'eth_getBalance',
+          params: [address, 'latest'],
+          id: 1
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error.message || 'RPC request failed');
+      }
+
+      // Convert from wei to ETH
+      const balanceWei = BigInt(data.result);
+      const balanceEth = Number(balanceWei) / 1e18;
+
+      console.log('[Grove Extension] Balance fetched:', balanceEth, 'ETH');
+      return balanceEth.toFixed(6);
+
+    } catch (error) {
+      console.error('[Grove Extension] Balance fetch failed:', error);
+      throw error;
     }
   }
 

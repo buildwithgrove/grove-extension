@@ -20,16 +20,44 @@ const cancelTipAmount = document.getElementById('cancelTipAmount');
 // JWT status container
 const jwtStatus = document.getElementById('jwtStatus');
 
+// Chain selector elements
+const chainSelectorBtn = document.getElementById('chainSelectorBtn');
+const chainDropdown = document.getElementById('chainDropdown');
+const chainName = document.getElementById('chainName');
+const chainOptions = document.querySelectorAll('.chain-option');
+
+// Balance elements
+const walletAddressInput = document.getElementById('walletAddressInput');
+const checkBalanceBtn = document.getElementById('checkBalanceBtn');
+const balanceDisplay = document.getElementById('balanceDisplay');
+
 // Storage keys
 const STORAGE_KEYS = {
   JWT: 'GROVE_API_JWT',
   TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
-  ENVIRONMENT: 'groveEnvironment'
+  ENVIRONMENT: 'groveEnvironment',
+  CHAIN: 'groveChain',
+  WALLET_ADDRESS: 'groveWalletAddress'
 };
 
 // Default values
 const DEFAULT_TIP_AMOUNT = 0.10;
 const DEFAULT_ENVIRONMENT = 'prod';
+const DEFAULT_CHAIN = 'base';
+
+// Chain configuration
+const CHAIN_CONFIG = {
+  'base': {
+    name: 'Base',
+    icon: '🔵',
+    type: 'Mainnet'
+  },
+  'base-sepolia': {
+    name: 'Base Sepolia',
+    icon: '🔶',
+    type: 'Testnet'
+  }
+};
 
 /**
  * Initialize the popup
@@ -38,6 +66,8 @@ async function init() {
   await loadJWTStatus();
   await loadTipAmount();
   await loadEnvironmentStatus();
+  await loadChainStatus();
+  await loadWalletAddress();
   setupEventListeners();
 }
 
@@ -65,10 +95,31 @@ function setupEventListeners() {
     toggleEnvBtn.addEventListener('click', handleToggleEnvironment);
   }
 
+  // Chain selector
+  chainSelectorBtn.addEventListener('click', toggleChainDropdown);
+  chainOptions.forEach(option => {
+    option.addEventListener('click', handleChainSelection);
+  });
+
+  // Balance checker
+  checkBalanceBtn.addEventListener('click', handleCheckBalance);
+  walletAddressInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      handleCheckBalance();
+    }
+  });
+
   // Close menu when clicking outside
   navMenu.addEventListener('click', (e) => {
     if (e.target === navMenu) {
       closeMenu();
+    }
+  });
+
+  // Close chain dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!chainSelectorBtn.contains(e.target) && !chainDropdown.contains(e.target)) {
+      closeChainDropdown();
     }
   });
 }
@@ -371,6 +422,184 @@ async function handleToggleEnvironment() {
   } catch (error) {
     console.error('[Grove Extension] Error toggling environment:', error);
     alert('Failed to switch environment. Please try again.');
+  }
+}
+
+/**
+ * Load and display chain status
+ */
+async function loadChainStatus() {
+  try {
+    const result = await chrome.storage.local.get([STORAGE_KEYS.CHAIN]);
+    const chain = result[STORAGE_KEYS.CHAIN] || DEFAULT_CHAIN;
+    updateChainUI(chain);
+  } catch (error) {
+    console.error('[Grove Extension] Error loading chain:', error);
+    updateChainUI(DEFAULT_CHAIN);
+  }
+}
+
+/**
+ * Update chain UI elements
+ */
+function updateChainUI(chain) {
+  const config = CHAIN_CONFIG[chain] || CHAIN_CONFIG[DEFAULT_CHAIN];
+  chainName.textContent = config.name;
+
+  // Update active state on chain options
+  chainOptions.forEach(option => {
+    const optionChain = option.dataset.chain;
+    if (optionChain === chain) {
+      option.classList.add('active');
+    } else {
+      option.classList.remove('active');
+    }
+  });
+}
+
+/**
+ * Toggle chain dropdown
+ */
+function toggleChainDropdown(e) {
+  e.stopPropagation();
+  chainDropdown.classList.toggle('hidden');
+  chainSelectorBtn.classList.toggle('active');
+}
+
+/**
+ * Close chain dropdown
+ */
+function closeChainDropdown() {
+  chainDropdown.classList.add('hidden');
+  chainSelectorBtn.classList.remove('active');
+}
+
+/**
+ * Handle chain selection
+ */
+async function handleChainSelection(e) {
+  const selectedChain = e.currentTarget.dataset.chain;
+
+  if (!selectedChain || !CHAIN_CONFIG[selectedChain]) {
+    console.error('[Grove Extension] Invalid chain selected:', selectedChain);
+    return;
+  }
+
+  try {
+    await chrome.storage.local.set({ [STORAGE_KEYS.CHAIN]: selectedChain });
+    updateChainUI(selectedChain);
+    closeChainDropdown();
+
+    const config = CHAIN_CONFIG[selectedChain];
+    showToast(`Switched to ${config.name}`);
+
+    // Refresh balance if address is present
+    const address = walletAddressInput.value.trim();
+    if (address && address.startsWith('0x')) {
+      await displayBalance(address);
+    }
+  } catch (error) {
+    console.error('[Grove Extension] Error switching chain:', error);
+    alert('Failed to switch chain. Please try again.');
+  }
+}
+
+/**
+ * Load saved wallet address
+ */
+async function loadWalletAddress() {
+  try {
+    const result = await chrome.storage.local.get([STORAGE_KEYS.WALLET_ADDRESS]);
+    const address = result[STORAGE_KEYS.WALLET_ADDRESS];
+
+    if (address) {
+      walletAddressInput.value = address;
+      // Auto-load balance if we have a saved address
+      await displayBalance(address);
+    }
+  } catch (error) {
+    console.error('[Grove Extension] Error loading wallet address:', error);
+  }
+}
+
+/**
+ * Handle check balance button click
+ */
+async function handleCheckBalance() {
+  const address = walletAddressInput.value.trim();
+
+  if (!address) {
+    alert('Please enter a wallet address');
+    return;
+  }
+
+  if (!address.startsWith('0x') || address.length !== 42) {
+    alert('Please enter a valid Ethereum address (0x...)');
+    return;
+  }
+
+  try {
+    // Save address for future use
+    await chrome.storage.local.set({ [STORAGE_KEYS.WALLET_ADDRESS]: address });
+
+    // Display balance
+    await displayBalance(address);
+  } catch (error) {
+    console.error('[Grove Extension] Error checking balance:', error);
+    alert('Failed to check balance. Please try again.');
+  }
+}
+
+/**
+ * Display balance for an address
+ */
+async function displayBalance(address) {
+  // Show loading state
+  balanceDisplay.classList.remove('hidden');
+  balanceDisplay.innerHTML = '<div class="balance-loading">Loading balances...</div>';
+
+  try {
+    // Fetch balances using the helper function from balance.js
+    const result = await getBalances(address);
+
+    // Check for errors
+    if (result.eth.error && result.usdc.error) {
+      throw new Error('Failed to fetch balances');
+    }
+
+    // Display results
+    balanceDisplay.innerHTML = `
+      <div class="balance-network">
+        <span class="balance-network-name">${result.network.name}</span>
+        <span class="balance-network-chain">Chain ID: ${result.network.chainId}</span>
+      </div>
+      <div class="balance-items">
+        <div class="balance-item">
+          <span class="balance-label">
+            <span class="balance-currency">ETH</span>
+            Ethereum
+          </span>
+          <span class="balance-value">${result.eth.formatted}</span>
+        </div>
+        <div class="balance-item">
+          <span class="balance-label">
+            <span class="balance-currency">USDC</span>
+            USD Coin
+          </span>
+          <span class="balance-value">${result.usdc.formatted}</span>
+        </div>
+      </div>
+    `;
+
+    console.log('[Grove Extension] Balance display updated');
+
+  } catch (error) {
+    console.error('[Grove Extension] Error displaying balance:', error);
+    balanceDisplay.innerHTML = `
+      <div class="balance-error">
+        Failed to fetch balances. Please check the address and try again.
+      </div>
+    `;
   }
 }
 

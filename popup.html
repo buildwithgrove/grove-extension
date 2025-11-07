@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Grove Extension</title>
   <link rel="stylesheet" href="popup.css">
+  <script src="src/config/networks.js"></script>
+  <script src="src/utils/balance.js"></script>
 </head>
 <body>
   <!-- Header with hamburger menu -->
@@ -15,6 +17,29 @@
       <span></span>
     </button>
     <h1 class="logo">Grove</h1>
+    <div class="chain-selector-container">
+      <button class="chain-selector-button" id="chainSelectorBtn" aria-label="Select chain">
+        <span class="chain-icon">⛓️</span>
+        <span class="chain-name" id="chainName">Base</span>
+        <span class="chain-dropdown-icon">▼</span>
+      </button>
+      <div class="chain-dropdown hidden" id="chainDropdown">
+        <div class="chain-option" data-chain="base">
+          <span class="chain-option-icon">🔵</span>
+          <div class="chain-option-info">
+            <div class="chain-option-name">Base</div>
+            <div class="chain-option-type">Mainnet</div>
+          </div>
+        </div>
+        <div class="chain-option" data-chain="base-sepolia">
+          <span class="chain-option-icon">🔶</span>
+          <div class="chain-option-info">
+            <div class="chain-option-name">Base Sepolia</div>
+            <div class="chain-option-type">Testnet</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </header>
 
   <!-- Navigation Menu -->
@@ -46,12 +71,6 @@
         </div>
       </div>
 
-      <!-- Balance Section -->
-      <div class="section">
-        <h3 class="section-title">Balance</h3>
-        <div class="coming-soon-badge">Coming Soon</div>
-      </div>
-
       <!-- Tip Amount Section -->
       <div class="section">
         <h3 class="section-title">Default Tip Amount</h3>
@@ -70,6 +89,28 @@
           <div class="tip-amount-buttons">
             <button class="btn btn-small" id="saveTipAmount">Save</button>
             <button class="btn btn-small btn-secondary" id="cancelTipAmount">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Balance Section -->
+      <div class="section">
+        <h3 class="section-title">
+          Balance
+          <span class="coming-soon-badge coming-soon-inline">Coming Soon</span>
+        </h3>
+        <div id="balanceContainer">
+          <div class="balance-input-container">
+            <input
+              type="text"
+              id="walletAddressInput"
+              class="input"
+              placeholder="Enter wallet address (0x...)"
+            >
+            <button class="btn btn-small" id="checkBalanceBtn">Check Balance</button>
+          </div>
+          <div id="balanceDisplay" class="balance-display hidden">
+            <!-- Will be populated by JavaScript -->
           </div>
         </div>
       </div>
@@ -125,9 +166,30 @@
     <!-- Learn More Page -->
     <div class="page" id="learn-more">
       <h2 class="page-title">Learn More</h2>
-      <div class="placeholder-content">
-        <div class="coming-soon-badge">Coming Soon</div>
-        <p class="placeholder-text">Additional resources and documentation coming soon.</p>
+
+      <div class="section">
+        <h3 class="section-title">Resources</h3>
+        <div class="learn-more-links">
+          <a href="https://grove.city/" target="_blank" class="learn-more-card">
+            <div class="learn-more-icon">🌐</div>
+            <div class="learn-more-content">
+              <div class="learn-more-title">Landing Page</div>
+              <div class="learn-more-description">Learn about Grove and how it works</div>
+              <div class="learn-more-url">grove.city</div>
+            </div>
+            <div class="learn-more-arrow">→</div>
+          </a>
+
+          <a href="https://buildwith.grove.city/" target="_blank" class="learn-more-card">
+            <div class="learn-more-icon">📦</div>
+            <div class="learn-more-content">
+              <div class="learn-more-title">Product Deck</div>
+              <div class="learn-more-description">Explore the Grove product and features</div>
+              <div class="learn-more-url">buildwith.grove.city</div>
+            </div>
+            <div class="learn-more-arrow">→</div>
+          </a>
+        </div>
       </div>
     </div>
 
