@@ -26,6 +26,10 @@ class TipButton {
       return this.createRedditButton();
     }
 
+    if (this.platform === 'youtube') {
+      return this.createYouTubeButton();
+    }
+
     return this.createTwitterButton();
   }
 
@@ -184,6 +188,98 @@ class TipButton {
   }
 
   /**
+   * Create YouTube-style button
+   * Matches YouTube's action buttons (Share, Download) using yt-button-shape
+   * @returns {HTMLElement}
+   */
+  createYouTubeButton() {
+    console.log('[TipButton] Creating YouTube button...');
+
+    // Create yt-button-view-model wrapper
+    const buttonViewModel = document.createElement('yt-button-view-model');
+    buttonViewModel.className = 'ytd-menu-renderer';
+    buttonViewModel.id = 'grove-tip-button';
+
+    // Create button-view-model wrapper
+    const buttonViewModelInner = document.createElement('button-view-model');
+    buttonViewModelInner.className = 'ytSpecButtonViewModelHost style-scope ytd-menu-renderer';
+
+    // Create the actual button
+    this.button = document.createElement('button');
+    this.button.className = 'yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-m yt-spec-button-shape-next--icon-leading yt-spec-button-shape-next--enable-backdrop-filter-experiment grove-tip-button-youtube';
+    this.button.setAttribute('aria-label', 'Send a tip');
+    this.button.setAttribute('title', '');
+    this.button.setAttribute('aria-disabled', 'false');
+
+    // Create icon div
+    const iconDiv = document.createElement('div');
+    iconDiv.setAttribute('aria-hidden', 'true');
+    iconDiv.className = 'yt-spec-button-shape-next__icon';
+
+    // Create icon span (using the leaf emoji as icon)
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'ytIconWrapperHost';
+    iconSpan.style.width = '24px';
+    iconSpan.style.height = '24px';
+    iconSpan.style.fontSize = '18px';
+    iconSpan.style.display = 'flex';
+    iconSpan.style.alignItems = 'center';
+    iconSpan.style.justifyContent = 'center';
+    iconSpan.textContent = '🌿';
+
+    // Assemble icon structure
+    iconDiv.appendChild(iconSpan);
+
+    // Create button text content div
+    const textDiv = document.createElement('div');
+    textDiv.className = 'yt-spec-button-shape-next__button-text-content';
+
+    // Create text span
+    const textSpan = document.createElement('span');
+    textSpan.className = 'yt-core-attributed-string yt-core-attributed-string--white-space-no-wrap';
+    textSpan.setAttribute('role', 'text');
+    textSpan.textContent = 'Tip';
+
+    // Assemble text structure
+    textDiv.appendChild(textSpan);
+
+    // Create touch feedback shape (YouTube's ripple effect)
+    const touchFeedback = document.createElement('yt-touch-feedback-shape');
+    touchFeedback.setAttribute('aria-hidden', 'true');
+    touchFeedback.className = 'yt-spec-touch-feedback-shape yt-spec-touch-feedback-shape--touch-response';
+
+    const strokeDiv = document.createElement('div');
+    strokeDiv.className = 'yt-spec-touch-feedback-shape__stroke';
+
+    const fillDiv = document.createElement('div');
+    fillDiv.className = 'yt-spec-touch-feedback-shape__fill';
+
+    touchFeedback.appendChild(strokeDiv);
+    touchFeedback.appendChild(fillDiv);
+
+    // Assemble button structure
+    this.button.appendChild(iconDiv);
+    this.button.appendChild(textDiv);
+    this.button.appendChild(touchFeedback);
+
+    // Assemble wrapper structure
+    buttonViewModelInner.appendChild(this.button);
+    buttonViewModel.appendChild(buttonViewModelInner);
+
+    console.log('[TipButton] YouTube button created successfully', buttonViewModel);
+
+    // Add click handler to the actual button
+    this.button.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.handleClick();
+    });
+
+    // Return the wrapper so we can inject it properly
+    return buttonViewModel;
+  }
+
+  /**
    * Handle button click
    */
   handleClick() {
@@ -210,11 +306,15 @@ class TipButton {
     this.button.classList.add('animate__animated', 'animate__pulse', 'animate__infinite');
 
     // Update button text based on platform
-    const innerContent = this.button.querySelector('span') || this.button;
-    if (this.platform === 'reddit') {
-      innerContent.textContent = 'Sending...🌿';
+    let textElement;
+    if (this.platform === 'youtube') {
+      textElement = this.button.querySelector('.yt-core-attributed-string');
     } else {
-      innerContent.textContent = 'Sending...🌿';
+      textElement = this.button.querySelector('span') || this.button;
+    }
+
+    if (textElement) {
+      textElement.textContent = 'Sending...';
     }
   }
 
@@ -233,8 +333,16 @@ class TipButton {
     this.button.classList.add('animate__bounceIn', 'grove-tip-success');
 
     // Update button text
-    const innerContent = this.button.querySelector('span') || this.button;
-    innerContent.textContent = 'Sent! ✓';
+    let textElement;
+    if (this.platform === 'youtube') {
+      textElement = this.button.querySelector('.yt-core-attributed-string');
+    } else {
+      textElement = this.button.querySelector('span') || this.button;
+    }
+
+    if (textElement) {
+      textElement.textContent = 'Sent! ✓';
+    }
 
     // Reset after 2 seconds
     setTimeout(() => {
@@ -257,8 +365,16 @@ class TipButton {
     this.button.classList.add('animate__shakeX', 'grove-tip-error');
 
     // Update button text
-    const innerContent = this.button.querySelector('span') || this.button;
-    innerContent.textContent = 'Failed ✗';
+    let textElement;
+    if (this.platform === 'youtube') {
+      textElement = this.button.querySelector('.yt-core-attributed-string');
+    } else {
+      textElement = this.button.querySelector('span') || this.button;
+    }
+
+    if (textElement) {
+      textElement.textContent = 'Failed ✗';
+    }
 
     // Reset after 2 seconds
     setTimeout(() => {
@@ -288,11 +404,19 @@ class TipButton {
     this.button.style.cursor = 'pointer';
 
     // Restore original text
-    const innerContent = this.button.querySelector('span') || this.button;
-    if (this.originalText) {
-      innerContent.textContent = this.originalText;
+    let textElement;
+    if (this.platform === 'youtube') {
+      textElement = this.button.querySelector('.yt-core-attributed-string');
+      if (textElement) {
+        textElement.textContent = 'Tip';
+      }
     } else {
-      innerContent.textContent = this.platform === 'reddit' ? 'Tip 🌿' : 'Tip 🌿';
+      textElement = this.button.querySelector('span') || this.button;
+      if (this.originalText) {
+        textElement.textContent = this.originalText;
+      } else {
+        textElement.textContent = this.platform === 'reddit' ? 'Tip 🌿' : 'Tip 🌿';
+      }
     }
   }
 

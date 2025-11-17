@@ -77,6 +77,10 @@
       return new RedditAdapter();
     }
 
+    if (hostname.includes("youtube.com") || hostname.includes("youtu.be")) {
+      return new YouTubeAdapter();
+    }
+
     // TODO: Add more platform adapters
     // if (hostname.includes('github.com')) {
     //   return new GitHubAdapter();

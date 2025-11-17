@@ -41,8 +41,8 @@ Chrome extension that enables cryptocurrency tipping on social platforms.
 Build adapters for the following platforms:
 
 - [x] Twitter/X
-- [ ] YouTube
-- [ ] Reddit
+- [x] YouTube
+- [x] Reddit
 - [ ] Instagram
 - [ ] TikTok
 - [ ] PornHub

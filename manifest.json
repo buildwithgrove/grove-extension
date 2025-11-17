@@ -45,6 +45,26 @@
         "src/ui/styles.css"
       ],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://youtube.com/*",
+        "https://youtu.be/*"
+      ],
+      "js": [
+        "src/parsers/address.js",
+        "src/adapters/base.js",
+        "src/adapters/youtube.js",
+        "src/ui/button.js",
+        "src/utils/api.js",
+        "src/content/content.js"
+      ],
+      "css": [
+        "src/ui/animate.min.css",
+        "src/ui/styles.css"
+      ],
+      "run_at": "document_idle"
     }
   ],
   "icons": {
