@@ -77,6 +77,10 @@
       return new RedditAdapter();
     }
 
+    if (hostname.includes("youtube.com") || hostname.includes("youtu.be")) {
+      return new YouTubeAdapter();
+    }
+
     // TODO: Add more platform adapters
     // if (hostname.includes('github.com')) {
     //   return new GitHubAdapter();
@@ -106,25 +110,31 @@
 
       // Extract bio to check for addresses
       const bio = currentAdapter.extractBio();
-      if (!bio) {
-        console.log("[Grove Extension] No bio found - not showing button");
-        return;
-      }
 
-      console.log("[Grove Extension] Bio extracted");
+      // TEMPORARY: Skip address validation for YouTube to test button placement
+      if (currentAdapter.getPlatformName() === 'youtube') {
+        console.log("[Grove Extension] YouTube detected - showing button for testing (no address check)");
+      } else {
+        if (!bio) {
+          console.log("[Grove Extension] No bio found - not showing button");
+          return;
+        }
 
-      // Check if bio contains tippable address
-      const hasAddress = AddressParser.hasAddresses(bio);
-      if (!hasAddress) {
+        console.log("[Grove Extension] Bio extracted");
+
+        // Check if bio contains tippable address
+        const hasAddress = AddressParser.hasAddresses(bio);
+        if (!hasAddress) {
+          console.log(
+            "[Grove Extension] No tippable address found in bio - not showing button"
+          );
+          return;
+        }
+
         console.log(
-          "[Grove Extension] No tippable address found in bio - not showing button"
+          "[Grove Extension] Tippable address detected - showing button"
         );
-        return;
       }
-
-      console.log(
-        "[Grove Extension] Tippable address detected - showing button"
-      );
 
       // Get button placement location
       const placement = currentAdapter.getButtonPlacement();
