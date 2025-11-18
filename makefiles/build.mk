@@ -42,7 +42,8 @@ build_zip_extension: clean_build $(BUILD_DIR) ## Create extension zip for Chrome
 	@printf "\n"
 	@printf "$(YELLOW)$(BOLD)Next steps:$(RESET)\n"
 	@printf "  1. Go to $(CYAN)https://chrome.google.com/webstore/devconsole$(RESET)\n"
-	@printf "  2. Upload $(CYAN)$(ZIP_FILE)$(RESET)\n"
+	@printf "  2. Ensure you are logged in with the group publisher.\n"
+	@printf "  3. Upload $(CYAN)$(ZIP_FILE)$(RESET)\n"
 	@printf "\n"
 
 .PHONY: clean_build

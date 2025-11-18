@@ -4,6 +4,11 @@ Chrome extension that enables cryptocurrency tipping on social platforms.
 
 - [Development](#development)
 - [Production](#production)
+- [Adding Support for New Platforms](#adding-support-for-new-platforms)
+  - [Step 1: Capture Platform Structure](#step-1-capture-platform-structure)
+  - [Step 2: Use AI to Generate the Adapter](#step-2-use-ai-to-generate-the-adapter)
+  - [Step 3: Integration Checklist](#step-3-integration-checklist)
+  - [Example Reference: YouTube Implementation](#example-reference-youtube-implementation)
 - [TODOs](#todos)
 
 ## Development
@@ -12,7 +17,7 @@ Chrome extension that enables cryptocurrency tipping on social platforms.
 2. Enable `Developer mode`
 3. Click `Load unpacked`
 4. Select the `grove_extension` directory
-5. Install [Extensions Reloader](https://chromewebstore.google.com/detail/extensions-reloader/fimgfedafeadlieiabdeeaodndnlbhid) to quickly reload extension after code changes (click `Reload` button)
+5. Install [Extensions Reloader](https://chrome.google.com/webstore/devconsole/dae6b43a-3491-4dd0-8565-a29acfbd30f3/dlebkjfkgbobnfhdjkkmfllelijafkpn/edit) to quickly reload extension after code changes (click `Reload` button)
 
 ## Production
 
@@ -27,6 +32,7 @@ To add the Tip button to a new social platform, follow this workflow:
 ### Step 1: Capture Platform Structure
 
 1. **Take a screenshot** of where you want the button to appear
+
    - Navigate to a profile/video/post page on the target platform
    - Take a screenshot showing the action buttons area (Share, Like, etc.)
    - This helps visualize the desired button placement
@@ -90,6 +96,7 @@ After generating the adapter code:
 ### Example Reference: YouTube Implementation
 
 Our YouTube conversation demonstrates this workflow:
+
 1. Screenshot provided showing Like/Dislike/Share buttons
 2. HTML structure shared from the `#top-level-buttons-computed` container
 3. AI generated:
