@@ -83,3 +83,8 @@ Each requested host corresponds to a supported tipping platform. The extension c
 - https://x.com/fredt_io
 
 4. Tip us!
+
+## Videos
+
+- https://youtu.be/stTdShTiNjA
+- https://drive.google.com/file/d/1IPwEMbypqSai7ElMroJOeACSJtV3xylB/view?usp=drive_link
