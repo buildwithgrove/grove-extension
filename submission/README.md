@@ -37,15 +37,9 @@ Grove Extension has a single, narrow purpose: Enable users to send micro-tips to
 
 The extension identifies creator profiles on supported websites (X/Twitter, Reddit, YouTube) and adds a tip button to their pages. When clicked, users can select a tip amount and send payment directly to the creator using stablecoin infrastructure. All functionality serves this one purpose—facilitating quick, low-friction monetary appreciation for online creators.
 
-### Q2: ActiveTab Justification
+### Q2: ActiveTab Permission
 
-The activeTab permission is required to:
-
-- Detect when users are viewing a creator's profile or content page on supported platforms (X, Reddit, YouTube)
-- Inject the Grove tip button into the currently active page's DOM
-- Read the creator's username/handle from the page to associate the tip with the correct recipient
-
-This permission is essential for the extension's core purpose—users can only tip creators on pages they are actively viewing.
+The extension no longer requests the `activeTab` permission. All functionality runs inside declaratively registered `content_scripts` that already have access to the specified host domains, so runtime tab access is unnecessary.
 
 ### Q3: Storage Justification
 

@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Tip anyone, anywhere.",
   "description_extended": "An extension that lets you tip anyone online.",
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["storage"],
   "content_scripts": [
     {
       "matches": ["https://twitter.com/*", "https://x.com/*"],
