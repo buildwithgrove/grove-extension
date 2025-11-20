@@ -51,59 +51,90 @@
 
     <!-- Tip Page (Home) -->
     <div class="page active" id="tab-home">
-      <!-- Balance Card -->
-      <div class="balance-card">
-        <div class="balance-label">Total Balance</div>
-        <div class="balance-amount-wrapper">
-          <span class="currency-symbol">$</span>
-          <span class="balance-amount">0.00</span>
-        </div>
-        <div class="wallet-address-container">
-          <span class="wallet-address">0x...</span>
-          <button class="copy-address-btn" aria-label="Copy address">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-          </button>
+      
+      <!-- Onboarding / No Token State -->
+      <div id="onboardingState" class="hidden">
+        <div class="onboarding-card">
+          <div class="onboarding-icon">👋</div>
+          <h3>Welcome to Grove</h3>
+          <p>Connect your account to start tipping and tracking your balance.</p>
+          <button class="btn-primary btn-full" id="setupTokenBtn">Connect Account</button>
         </div>
       </div>
 
-      <!-- Quick Actions -->
-      <div class="quick-actions">
-        <button class="action-btn" id="action-send">
-          <div class="action-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+      <!-- Connected State -->
+      <div id="connectedState">
+        <!-- Balance Card -->
+        <div class="balance-card">
+          <div class="balance-label">Total Balance</div>
+          <div class="balance-amount-wrapper">
+            <span class="currency-symbol">$</span>
+            <span class="balance-amount" id="balanceAmount">0.00</span>
           </div>
-          <span>Send</span>
-        </button>
-        <button class="action-btn" id="action-receive">
-          <div class="action-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+          <div class="wallet-address-container" id="walletAddressContainer">
+            <span class="wallet-address" id="walletAddressDisplay">0x...</span>
+            <button class="copy-address-btn" id="copyAddressBtn" aria-label="Copy address">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+            <button class="edit-address-btn" id="editAddressBtn" aria-label="Edit address">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+            </button>
           </div>
-          <span>Receive</span>
-        </button>
-        <button class="action-btn" id="action-buy">
-          <div class="action-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-          </div>
-          <span>Buy</span>
-        </button>
-      </div>
-
-      <!-- Default Tip Settings -->
-      <div class="section-card">
-        <div class="card-header">
-          <h3>Default Tip</h3>
-          <button class="edit-btn" id="editTipAmount">Edit</button>
         </div>
-        <div class="tip-display-large" id="tipAmountDisplay">$0.10</div>
-        
-        <div class="tip-edit-form hidden" id="tipAmountEdit">
+
+        <!-- Address Edit Form (Modal-like inline) -->
+        <div id="addressEditForm" class="section-card hidden">
+          <div class="card-header">
+            <h3>Wallet Address</h3>
+          </div>
           <div class="input-group">
-            <span class="input-prefix">$</span>
-            <input type="number" id="tipAmountInput" step="0.01" min="0.01" value="0.10" placeholder="0.00">
+            <input type="text" id="walletAddressInput" placeholder="Enter wallet address (0x...)" class="code-input">
           </div>
           <div class="form-actions">
-            <button class="btn-secondary btn-sm" id="cancelTipAmount">Cancel</button>
-            <button class="btn-primary btn-sm" id="saveTipAmount">Save</button>
+            <button class="btn-secondary btn-sm" id="cancelAddressEdit">Cancel</button>
+            <button class="btn-primary btn-sm" id="saveAddressEdit">Save</button>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+          <button class="action-btn" id="action-send">
+            <div class="action-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+            </div>
+            <span>Send</span>
+          </button>
+          <button class="action-btn" id="action-receive">
+            <div class="action-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+            </div>
+            <span>Receive</span>
+          </button>
+          <button class="action-btn" id="action-buy">
+            <div class="action-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+            </div>
+            <span>Buy</span>
+          </button>
+        </div>
+
+        <!-- Default Tip Settings -->
+        <div class="section-card">
+          <div class="card-header">
+            <h3>Default Tip</h3>
+            <button class="edit-btn" id="editTipAmount">Edit</button>
+          </div>
+          <div class="tip-display-large" id="tipAmountDisplay">$0.10</div>
+          
+          <div class="tip-edit-form hidden" id="tipAmountEdit">
+            <div class="input-group">
+              <span class="input-prefix">$</span>
+              <input type="number" id="tipAmountInput" step="0.01" min="0.01" value="0.10" placeholder="0.00">
+            </div>
+            <div class="form-actions">
+              <button class="btn-secondary btn-sm" id="cancelTipAmount">Cancel</button>
+              <button class="btn-primary btn-sm" id="saveTipAmount">Save</button>
+            </div>
           </div>
         </div>
       </div>
@@ -121,13 +152,19 @@
         <div class="step-list">
           <div class="step-item">
             <div class="step-number">1</div>
-            <div class="step-content">Copy your Base address</div>
+            <div class="step-content">
+              Create an account on <strong>Base</strong> network using <a href="https://metamask.io" target="_blank" class="link-accent">MetaMask</a> or <a href="https://www.keplr.app" target="_blank" class="link-accent">Keplr</a>
+            </div>
           </div>
           <div class="step-item">
             <div class="step-number">2</div>
+            <div class="step-content">Copy your Base wallet address</div>
+          </div>
+          <div class="step-item">
+            <div class="step-number">3</div>
             <div class="step-content">
-              Add to bio:
-              <div class="code-block">USDC(base): 0x...</div>
+              Add this to your social media bio:
+              <div class="code-block">USDC(base): 0xYourAddress</div>
             </div>
           </div>
         </div>
@@ -137,6 +174,35 @@
     <!-- Settings Page -->
     <div class="page" id="tab-settings">
       <h2 class="page-title">Settings</h2>
+
+      <div class="settings-group">
+        <div class="settings-label">Account</div>
+        
+        <!-- JWT Management -->
+        <div class="settings-item-column" id="jwtSettingsSection">
+          <div class="settings-row">
+            <div class="settings-icon">🔑</div>
+            <div class="settings-info">
+              <div class="settings-name">API Token</div>
+              <div class="settings-desc" id="jwtStatusDisplay">Not connected</div>
+            </div>
+            <button class="btn-text" id="manageJwtBtn">Manage</button>
+          </div>
+          
+          <!-- JWT Edit Form (Hidden by default) -->
+          <div class="jwt-edit-container hidden" id="jwtEditContainer">
+            <p class="info-text-sm">Get your token from <a href="https://www.x402scan.com/server/170d2ee7-73b4-457f-aa48-dbab753f6d5f" target="_blank" class="link-accent">x402scan.com</a></p>
+            <div class="input-group">
+              <input type="password" id="jwtInput" class="code-input" placeholder="Paste JWT Token">
+            </div>
+            <div class="form-actions">
+              <button class="btn-danger btn-sm hidden" id="removeJwtBtn">Remove</button>
+              <button class="btn-secondary btn-sm" id="cancelJwtBtn">Cancel</button>
+              <button class="btn-primary btn-sm" id="saveJwtBtn">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
       
       <div class="settings-group">
         <div class="settings-label">Resources</div>
@@ -187,7 +253,7 @@
     </button>
     <button class="nav-item" data-target="tab-activity">
       <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-      <span class="nav-label">Activity</span>
+      <span class="nav-label">Get Tips</span>
     </button>
     <button class="nav-item" data-target="tab-settings">
       <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>

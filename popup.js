@@ -13,6 +13,11 @@ const chainDropdown = document.getElementById('chainDropdown');
 const chainName = document.getElementById('chainName');
 const chainOptions = document.querySelectorAll('.chain-option');
 
+// Home States
+const onboardingState = document.getElementById('onboardingState');
+const connectedState = document.getElementById('connectedState');
+const setupTokenBtn = document.getElementById('setupTokenBtn');
+
 // Tip amount
 const tipAmountDisplay = document.getElementById('tipAmountDisplay');
 const tipAmountEdit = document.getElementById('tipAmountEdit');
@@ -21,18 +26,33 @@ const saveTipAmount = document.getElementById('saveTipAmount');
 const cancelTipAmount = document.getElementById('cancelTipAmount');
 const editTipBtn = document.getElementById('editTipAmount');
 
+// Wallet Address
+const walletAddressDisplay = document.getElementById('walletAddressDisplay');
+const copyAddressBtn = document.getElementById('copyAddressBtn');
+const editAddressBtn = document.getElementById('editAddressBtn');
+const addressEditForm = document.getElementById('addressEditForm');
+const walletAddressInput = document.getElementById('walletAddressInput');
+const saveAddressEdit = document.getElementById('saveAddressEdit');
+const cancelAddressEdit = document.getElementById('cancelAddressEdit');
+const balanceAmount = document.getElementById('balanceAmount');
+
 // Settings
 const devModeToggle = document.getElementById('devModeCheckbox');
 const envStatusRow = document.getElementById('envStatusRow');
 const envStatus = document.getElementById('envStatus');
 
-// Balance
-const balanceAmount = document.querySelector('.balance-amount');
-const walletAddress = document.querySelector('.wallet-address');
-const copyAddressBtn = document.querySelector('.copy-address-btn');
+// JWT Management
+const jwtStatusDisplay = document.getElementById('jwtStatusDisplay');
+const manageJwtBtn = document.getElementById('manageJwtBtn');
+const jwtEditContainer = document.getElementById('jwtEditContainer');
+const jwtInput = document.getElementById('jwtInput');
+const saveJwtBtn = document.getElementById('saveJwtBtn');
+const cancelJwtBtn = document.getElementById('cancelJwtBtn');
+const removeJwtBtn = document.getElementById('removeJwtBtn');
 
 // Storage Keys
 const STORAGE_KEYS = {
+  JWT: 'GROVE_API_JWT',
   TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
   ENVIRONMENT: 'groveEnvironment',
   CHAIN: 'groveChain',
@@ -53,10 +73,11 @@ const CHAIN_CONFIG = {
  * Initialize Popup
  */
 async function init() {
+  await loadJWT();
   await loadTipAmount();
   await loadEnvironment();
   await loadChain();
-  await loadBalance(); // Placeholder or actual load if address exists
+  await loadWalletAddress();
   setupEventListeners();
 }
 
@@ -90,23 +111,46 @@ function setupEventListeners() {
   cancelTipAmount.addEventListener('click', hideTipEdit);
   saveTipAmount.addEventListener('click', saveTip);
 
-  // Dev Mode
-  devModeToggle.addEventListener('change', handleDevModeToggle);
-
-  // Quick Actions (Placeholders)
-  document.querySelectorAll('.action-btn').forEach(btn => {
-    btn.addEventListener('click', () => showToast('Coming Soon'));
-  });
-
-  // Copy Address
+  // Wallet Address
+  editAddressBtn.addEventListener('click', showAddressEdit);
+  cancelAddressEdit.addEventListener('click', hideAddressEdit);
+  saveAddressEdit.addEventListener('click', saveAddress);
+  
   copyAddressBtn.addEventListener('click', () => {
-    const address = walletAddress.textContent;
+    const address = walletAddressDisplay.textContent;
     if (address && address !== '0x...') {
       navigator.clipboard.writeText(address);
       showToast('Address copied');
     } else {
       showToast('No address to copy');
     }
+  });
+
+  // JWT
+  setupTokenBtn.addEventListener('click', () => {
+    // Navigate to settings and open edit
+    document.querySelector('[data-target="tab-settings"]').click();
+    showJwtEdit();
+  });
+  
+  manageJwtBtn.addEventListener('click', () => {
+    if (jwtEditContainer.classList.contains('hidden')) {
+      showJwtEdit();
+    } else {
+      hideJwtEdit();
+    }
+  });
+
+  saveJwtBtn.addEventListener('click', saveJwt);
+  cancelJwtBtn.addEventListener('click', hideJwtEdit);
+  removeJwtBtn.addEventListener('click', removeJwt);
+
+  // Dev Mode
+  devModeToggle.addEventListener('change', handleDevModeToggle);
+
+  // Quick Actions (Placeholders)
+  document.querySelectorAll('.action-btn').forEach(btn => {
+    btn.addEventListener('click', () => showToast('Coming Soon'));
   });
 }
 
@@ -131,10 +175,86 @@ function handleNavigation(e) {
 }
 
 /**
- * Load Tip Amount
+ * JWT & Auth State
+ */
+async function loadJWT() {
+    const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
+    const jwt = result[STORAGE_KEYS.JWT];
+
+  updateAuthState(jwt);
+}
+
+function updateAuthState(jwt) {
+    if (jwt && jwt.length > 0) {
+    // Connected
+    onboardingState.classList.add('hidden');
+    connectedState.classList.remove('hidden');
+    
+    // Settings Display
+    const first = jwt.substring(0, 6);
+    const last = jwt.substring(jwt.length - 4);
+    jwtStatusDisplay.textContent = `${first}...${last}`;
+    jwtStatusDisplay.style.color = 'var(--color-primary)';
+    jwtStatusDisplay.style.fontFamily = 'monospace';
+    
+    removeJwtBtn.classList.remove('hidden');
+    jwtInput.value = ''; // Clear input for security
+    } else {
+    // Not Connected
+    onboardingState.classList.remove('hidden');
+    connectedState.classList.add('hidden');
+    
+    jwtStatusDisplay.textContent = 'Not connected';
+    jwtStatusDisplay.style.color = 'var(--color-text-secondary)';
+    jwtStatusDisplay.style.fontFamily = 'inherit';
+    
+    removeJwtBtn.classList.add('hidden');
+  }
+}
+
+function showJwtEdit() {
+  jwtEditContainer.classList.remove('hidden');
+  jwtInput.focus();
+  manageJwtBtn.textContent = 'Close';
+}
+
+function hideJwtEdit() {
+  jwtEditContainer.classList.add('hidden');
+  manageJwtBtn.textContent = 'Manage';
+}
+
+async function saveJwt() {
+  const token = jwtInput.value.trim();
+  if (token) {
+    await chrome.storage.local.set({ [STORAGE_KEYS.JWT]: token });
+    updateAuthState(token);
+    hideJwtEdit();
+    showToast('Account connected');
+    
+    // Go back to home if we were onboarding
+    if (!onboardingState.classList.contains('hidden')) {
+      document.querySelector('[data-target="tab-home"]').click();
+    }
+  } else {
+    showToast('Please enter a token');
+  }
+}
+
+async function removeJwt() {
+  if (confirm('Are you sure you want to disconnect?')) {
+    await chrome.storage.local.remove(STORAGE_KEYS.JWT);
+    updateAuthState(null);
+    hideJwtEdit();
+    showToast('Account disconnected');
+    document.querySelector('[data-target="tab-home"]').click();
+  }
+}
+
+/**
+ * Tip Amount
  */
 async function loadTipAmount() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.TIP_AMOUNT]);
+    const result = await chrome.storage.local.get([STORAGE_KEYS.TIP_AMOUNT]);
   const amount = result[STORAGE_KEYS.TIP_AMOUNT] || DEFAULT_TIP_AMOUNT;
   updateTipUI(amount);
 }
@@ -170,6 +290,65 @@ async function saveTip() {
 }
 
 /**
+ * Wallet Address & Balance
+ */
+async function loadWalletAddress() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.WALLET_ADDRESS]);
+  const address = result[STORAGE_KEYS.WALLET_ADDRESS];
+  
+  if (address) {
+    updateAddressUI(address);
+    fetchBalance(address);
+  } else {
+    walletAddressDisplay.textContent = '0x...';
+  }
+}
+
+function updateAddressUI(address) {
+  const short = `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  walletAddressDisplay.textContent = short;
+  walletAddressInput.value = address;
+}
+
+function showAddressEdit() {
+  addressEditForm.classList.remove('hidden');
+  walletAddressInput.focus();
+}
+
+function hideAddressEdit() {
+  addressEditForm.classList.add('hidden');
+}
+
+async function saveAddress() {
+  const address = walletAddressInput.value.trim();
+  if (address.startsWith('0x') && address.length === 42) {
+    await chrome.storage.local.set({ [STORAGE_KEYS.WALLET_ADDRESS]: address });
+    updateAddressUI(address);
+    hideAddressEdit();
+    fetchBalance(address);
+    showToast('Address saved');
+  } else {
+    showToast('Invalid Ethereum address');
+  }
+}
+
+async function fetchBalance(address) {
+  // Use the balance.js util
+  balanceAmount.style.opacity = '0.5';
+  try {
+    const balances = await getBalances(address); // from balance.js
+    if (balances && balances.usdc) {
+      balanceAmount.textContent = balances.usdc.formatted;
+    }
+  } catch (e) {
+    console.error('Balance fetch failed', e);
+    balanceAmount.textContent = '0.00';
+  } finally {
+    balanceAmount.style.opacity = '1';
+  }
+}
+
+/**
  * Environment
  */
 async function loadEnvironment() {
@@ -189,8 +368,8 @@ async function loadEnvironment() {
 async function handleDevModeToggle(e) {
   const isLocal = e.target.checked;
   const newEnv = isLocal ? 'local' : 'prod';
-  
-  await chrome.storage.local.set({ [STORAGE_KEYS.ENVIRONMENT]: newEnv });
+
+    await chrome.storage.local.set({ [STORAGE_KEYS.ENVIRONMENT]: newEnv });
   
   if (isLocal) {
     envStatusRow.classList.remove('hidden');
@@ -206,17 +385,14 @@ async function handleDevModeToggle(e) {
  * Chain Selection
  */
 async function loadChain() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CHAIN]);
-  const chain = result[STORAGE_KEYS.CHAIN] || DEFAULT_CHAIN;
-  updateChainUI(chain);
+    const result = await chrome.storage.local.get([STORAGE_KEYS.CHAIN]);
+    const chain = result[STORAGE_KEYS.CHAIN] || DEFAULT_CHAIN;
+    updateChainUI(chain);
 }
 
 function updateChainUI(chain) {
   const config = CHAIN_CONFIG[chain] || CHAIN_CONFIG['base'];
   chainName.textContent = config.name;
-  
-  // Logic to update checkmarks in dropdown could go here
-  // For now we just update the header
 }
 
 async function handleChainSelection(e) {
@@ -226,27 +402,10 @@ async function handleChainSelection(e) {
   chainDropdown.classList.add('hidden');
   showToast(`Switched to ${CHAIN_CONFIG[chain].name}`);
   
-  // Reload balance if possible
-  loadBalance();
-}
-
-/**
- * Balance (Placeholder implementation matching previous logic)
- */
-async function loadBalance() {
-  // In a real scenario, we'd fetch the user's address or balances here.
-  // Since the previous code relied on manual input, we check for that.
-  const result = await chrome.storage.local.get([STORAGE_KEYS.WALLET_ADDRESS]);
-  const address = result[STORAGE_KEYS.WALLET_ADDRESS];
-  
-  if (address) {
-    walletAddress.textContent = `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-    // If we had the balance logic ready, we'd call it:
-    // const balances = await getBalances(address);
-    // balanceAmount.textContent = balances.usdc.formatted;
-    // For now, keep 0.00 or load from cache if available
-  } else {
-    walletAddress.textContent = '0x...';
+  // Reload balance
+  const addr = walletAddressInput.value.trim();
+  if (addr && addr.startsWith('0x')) {
+    fetchBalance(addr);
   }
 }
 
