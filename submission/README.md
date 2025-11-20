@@ -2,7 +2,7 @@
 
 ## Links
 
-- [Chrome Web Store](https://chrome.google.com/webstore/devconsole/e92086f1-e57f-4c07-8c4e-0c31fda2395a/dlebkjfkgbobnfhdjkkmfllelijafkpn/edit/listing)
+- [Chrome Web Store](https://chrome.google.com/webstore/devconsole/dae6b43a-3491-4dd0-8565-a29acfbd30f3/dlebkjfkgbobnfhdjkkmfllelijafkpn/edit/package)
 
 ## Description
 

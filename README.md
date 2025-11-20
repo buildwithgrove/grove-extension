@@ -22,7 +22,7 @@ Chrome extension that enables cryptocurrency tipping on social platforms.
 ## Production
 
 1. `make build_zip_extension`
-2. Go to [chrome.google.com/webstore/devconsole](https://chrome.google.com/webstore/devconsole)
+2. Go to [the Grove package upload](https://chrome.google.com/webstore/devconsole/dae6b43a-3491-4dd0-8565-a29acfbd30f3/dlebkjfkgbobnfhdjkkmfllelijafkpn/edit/package)
 3. Upload `./grove_extension/build/grove-extension-v1.0.0.zip`
 
 ## Adding Support for New Platforms
