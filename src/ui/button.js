@@ -48,14 +48,15 @@ class TipButton {
     this.button.className = 'grove-tip-button';
     this.button.id = 'grove-tip-button';
 
-    // Apply inline styles - black with green border, matching Twitter's button height
+    // Apply inline styles - black with green border, matching Twitter's button positioning exactly
     this.button.style.cssText = `
       background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%) !important;
       border: 2px solid #389f58 !important;
       border-radius: 9999px !important;
       padding: 0 16px !important;
-      height: 34px !important;
-      min-height: 34px !important;
+      height: 36px !important;
+      min-height: 36px !important;
+      max-height: 36px !important;
       min-width: 32px !important;
       position: relative !important;
       overflow: hidden !important;
@@ -67,7 +68,12 @@ class TipButton {
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
       box-shadow: 0 2px 8px rgba(56, 159, 88, 0.3) !important;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-      vertical-align: middle !important;
+      vertical-align: top !important;
+      align-self: flex-start !important;
+      flex-shrink: 0 !important;
+      margin-top: 0px !important;
+      margin-bottom: 0px !important;
+      line-height: 1 !important;
     `;
 
     // Create text span
@@ -607,9 +613,13 @@ class TipButton {
       return false;
     }
 
-    // Style the button to match Twitter's spacing
+    // Style the button to match Twitter's spacing and ensure proper alignment
     this.button.style.marginLeft = '8px';
     this.button.style.marginRight = '8px';
+    this.button.style.alignSelf = 'flex-start';
+    this.button.style.flexShrink = '0';
+    this.button.style.marginTop = '0px';
+    this.button.style.marginBottom = '0px';
 
     // Get all children of the target container
     const children = Array.from(targetElement.children);
