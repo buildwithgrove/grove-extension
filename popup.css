@@ -734,9 +734,13 @@ body.developer-mode .header {
 }
 
 .toggle-switch input {
+  position: absolute;
   opacity: 0;
-  width: 0;
-  height: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  z-index: 2;
+  margin: 0;
 }
 
 .slider {
@@ -749,6 +753,7 @@ body.developer-mode .header {
   background-color: var(--color-border);
   transition: .4s;
   border-radius: 34px;
+  pointer-events: none;
 }
 
 .slider:before {
@@ -763,11 +768,11 @@ body.developer-mode .header {
   border-radius: 50%;
 }
 
-input:checked + .slider {
+.toggle-switch input:checked ~ .slider {
   background-color: var(--color-primary);
 }
 
-input:checked + .slider:before {
+.toggle-switch input:checked ~ .slider:before {
   transform: translateX(20px);
 }
 
