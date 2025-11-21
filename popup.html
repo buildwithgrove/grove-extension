@@ -16,7 +16,6 @@
       <div class="logo-container">
         <img src="icons/icon48.png" alt="Grove" class="logo-icon">
         <h1 class="logo-text">Grove</h1>
-        <span class="test-badge hidden" id="testModeBadge">TEST</span>
       </div>
     </div>
     
@@ -31,7 +30,7 @@
         <svg class="chain-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
       <div class="chain-dropdown hidden" id="chainDropdown">
-        <div class="chain-option" data-chain="base">
+        <div class="chain-option mainnet-option" data-chain="base">
           <div class="chain-icon-wrapper">
             <svg class="chain-logo" width="24" height="24" viewBox="0 0 111 111" fill="none">
               <path d="M54.921 110.034C85.359 110.034 110.034 85.402 110.034 55.017C110.034 24.6319 85.359 0 54.921 0C26.0432 0 2.35281 22.1714 0 50.3923H72.8467V59.6416H3.9565e-07C2.35281 87.8625 26.0432 110.034 54.921 110.034Z" fill="#0052FF"/>
@@ -56,7 +55,7 @@
             <div class="chain-option-type">Testnet</div>
           </div>
         </div>
-        <div class="chain-option" data-chain="solana">
+        <div class="chain-option mainnet-option" data-chain="solana">
           <div class="chain-icon-wrapper">
             <svg class="chain-logo" width="24" height="24" viewBox="0 0 397 311" fill="none">
               <path d="M64.6 237.9C67.1 235.4 70.6 234 74.2 234H389.5C395.7 234 398.9 241.1 394.9 245.1L333.1 306.9C330.6 309.4 327.1 310.8 323.5 310.8H8.19999C2.09999 310.8 -1.20001 303.7 2.79999 299.7L64.6 237.9Z" fill="url(#paint0_linear)"/>
@@ -113,6 +112,11 @@
       </div>
     </div>
   </header>
+
+  <!-- Test Mode Banner -->
+  <div class="test-mode-banner hidden" id="testModeBanner">
+    <span>🧪 Test Mode - Using test networks only</span>
+  </div>
 
   <!-- Main Content Area -->
   <main class="content" id="mainContent">

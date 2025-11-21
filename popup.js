@@ -315,26 +315,26 @@ async function fetchBalance() {
 async function loadEnvironment() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.ENVIRONMENT]);
   const env = result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV;
-  const testBadge = document.getElementById('testModeBadge');
+  const testBanner = document.getElementById('testModeBanner');
 
   if (env === 'local') {
     if (devModeToggle) devModeToggle.checked = true;
     document.body.classList.add('developer-mode');
     if (envStatusRow) envStatusRow.classList.remove('hidden');
     if (envStatus) envStatus.textContent = 'Test Environment';
-    if (testBadge) testBadge.classList.remove('hidden');
+    if (testBanner) testBanner.classList.remove('hidden');
   } else {
     if (devModeToggle) devModeToggle.checked = false;
     document.body.classList.remove('developer-mode');
     if (envStatusRow) envStatusRow.classList.add('hidden');
-    if (testBadge) testBadge.classList.add('hidden');
+    if (testBanner) testBanner.classList.add('hidden');
   }
 }
 
 async function handleDevModeToggle(e) {
   const isDev = e.target.checked;
   const newEnv = isDev ? 'local' : 'prod';
-  const testBadge = document.getElementById('testModeBadge');
+  const testBanner = document.getElementById('testModeBanner');
 
   await chrome.storage.local.set({ [STORAGE_KEYS.ENVIRONMENT]: newEnv });
 
@@ -343,7 +343,7 @@ async function handleDevModeToggle(e) {
     document.body.classList.add('developer-mode');
     envStatusRow.classList.remove('hidden');
     envStatus.textContent = 'Test Environment';
-    if (testBadge) testBadge.classList.remove('hidden');
+    if (testBanner) testBanner.classList.remove('hidden');
     showToast('Developer Mode Enabled');
 
     // Check if current chain is a mainnet and switch to testnet
@@ -357,7 +357,7 @@ async function handleDevModeToggle(e) {
     // Disable developer mode
     document.body.classList.remove('developer-mode');
     envStatusRow.classList.add('hidden');
-    if (testBadge) testBadge.classList.add('hidden');
+    if (testBanner) testBanner.classList.add('hidden');
     showToast('Developer Mode Disabled');
 
     // Check if current chain is a testnet and switch to mainnet

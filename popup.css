@@ -95,31 +95,40 @@ body {
   letter-spacing: -0.5px;
 }
 
-/* Test Mode Badge */
-.test-badge {
+/* Test Mode Banner */
+.test-mode-banner {
   background-color: var(--color-accent);
   color: white;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  margin-left: 8px;
+  padding: 8px 16px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
-/* Hide testnets by default */
+.test-mode-banner span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Chain filtering for normal mode - hide testnets, show mainnets */
+.mainnet-option {
+  display: flex !important;
+}
+
 .testnet-option {
   display: none !important;
 }
 
-/* Show testnets in developer mode */
-body.developer-mode .testnet-option {
-  display: flex !important;
+/* Chain filtering for developer mode - hide mainnets, show testnets */
+body.developer-mode .mainnet-option {
+  display: none !important;
 }
 
-/* Test environment visual indicator */
-body.developer-mode .header {
-  border-bottom: 2px solid var(--color-accent);
+body.developer-mode .testnet-option {
+  display: flex !important;
 }
 
 /* Chain Selector */
