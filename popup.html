@@ -4,37 +4,104 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Grove Extension</title>
+  <link rel="icon" type="image/png" href="icons/icon48.png">
   <link rel="stylesheet" href="popup.css">
   <script src="src/config/networks.js"></script>
   <script src="src/utils/balance.js"></script>
 </head>
-<body>
-  <!-- Header with hamburger menu -->
+<body class="theme-dark">
+  <!-- Header -->
   <header class="header">
-    <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
-      <span></span>
-      <span></span>
-      <span></span>
-    </button>
-    <h1 class="logo">Grove</h1>
+    <div class="header-left">
+      <div class="logo-container">
+        <img src="icons/icon48.png" alt="Grove" class="logo-icon">
+        <h1 class="logo-text">Grove</h1>
+      </div>
+    </div>
+    
     <div class="chain-selector-container">
       <button class="chain-selector-button" id="chainSelectorBtn" aria-label="Select chain">
-        <span class="chain-icon">⛓️</span>
+        <span class="chain-dot"></span>
         <span class="chain-name" id="chainName">Base</span>
-        <span class="chain-dropdown-icon">▼</span>
+        <svg class="chain-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
       <div class="chain-dropdown hidden" id="chainDropdown">
         <div class="chain-option" data-chain="base">
-          <span class="chain-option-icon">🔵</span>
+          <div class="chain-icon-wrapper">
+            <svg class="chain-logo" width="24" height="24" viewBox="0 0 111 111" fill="none">
+              <path d="M54.921 110.034C85.359 110.034 110.034 85.402 110.034 55.017C110.034 24.6319 85.359 0 54.921 0C26.0432 0 2.35281 22.1714 0 50.3923H72.8467V59.6416H3.9565e-07C2.35281 87.8625 26.0432 110.034 54.921 110.034Z" fill="#0052FF"/>
+            </svg>
+          </div>
           <div class="chain-option-info">
             <div class="chain-option-name">Base</div>
             <div class="chain-option-type">Mainnet</div>
           </div>
+          <div class="chain-selected-check">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
         </div>
         <div class="chain-option" data-chain="base-sepolia">
-          <span class="chain-option-icon">🔶</span>
+          <div class="chain-icon-wrapper">
+            <svg class="chain-logo" width="24" height="24" viewBox="0 0 111 111" fill="none">
+              <path d="M54.921 110.034C85.359 110.034 110.034 85.402 110.034 55.017C110.034 24.6319 85.359 0 54.921 0C26.0432 0 2.35281 22.1714 0 50.3923H72.8467V59.6416H3.9565e-07C2.35281 87.8625 26.0432 110.034 54.921 110.034Z" fill="#0052FF" opacity="0.5"/>
+            </svg>
+          </div>
           <div class="chain-option-info">
             <div class="chain-option-name">Base Sepolia</div>
+            <div class="chain-option-type">Testnet</div>
+          </div>
+        </div>
+        <div class="chain-option" data-chain="solana">
+          <div class="chain-icon-wrapper">
+            <svg class="chain-logo" width="24" height="24" viewBox="0 0 397 311" fill="none">
+              <path d="M64.6 237.9C67.1 235.4 70.6 234 74.2 234H389.5C395.7 234 398.9 241.1 394.9 245.1L333.1 306.9C330.6 309.4 327.1 310.8 323.5 310.8H8.19999C2.09999 310.8 -1.20001 303.7 2.79999 299.7L64.6 237.9Z" fill="url(#paint0_linear)"/>
+              <path d="M64.6 3.8C67.2 1.3 70.6 0 74.2 0H389.5C395.7 0 398.9 7.1 394.9 11.1L333.1 72.9C330.5 75.4 327.1 76.8 323.5 76.8H8.19999C2.09999 76.8 -1.20001 69.7 2.79999 65.6L64.6 3.8Z" fill="url(#paint1_linear)"/>
+              <path d="M333.1 120.1C330.6 117.6 327.1 116.2 323.5 116.2H8.19999C2.09999 116.2 -1.20001 123.3 2.79999 127.3L64.6 189.1C67.1 191.6 70.5 193 74.2 193H389.5C395.7 193 398.9 185.9 394.9 181.9L333.1 120.1Z" fill="url(#paint2_linear)"/>
+              <defs>
+                <linearGradient id="paint0_linear" x1="360.9" y1="-37.6" x2="141.2" y2="383.2">
+                  <stop stop-color="#00FFA3"/>
+                  <stop offset="1" stop-color="#DC1FFF"/>
+                </linearGradient>
+                <linearGradient id="paint1_linear" x1="264.8" y1="-87.6" x2="45.09" y2="333.2">
+                  <stop stop-color="#00FFA3"/>
+                  <stop offset="1" stop-color="#DC1FFF"/>
+                </linearGradient>
+                <linearGradient id="paint2_linear" x1="312.5" y1="-62.7" x2="92.8" y2="358.1">
+                  <stop stop-color="#00FFA3"/>
+                  <stop offset="1" stop-color="#DC1FFF"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="chain-option-info">
+            <div class="chain-option-name">Solana</div>
+            <div class="chain-option-type">Mainnet</div>
+          </div>
+        </div>
+        <div class="chain-option" data-chain="solana-devnet">
+          <div class="chain-icon-wrapper">
+            <svg class="chain-logo" width="24" height="24" viewBox="0 0 397 311" fill="none" opacity="0.5">
+              <path d="M64.6 237.9C67.1 235.4 70.6 234 74.2 234H389.5C395.7 234 398.9 241.1 394.9 245.1L333.1 306.9C330.6 309.4 327.1 310.8 323.5 310.8H8.19999C2.09999 310.8 -1.20001 303.7 2.79999 299.7L64.6 237.9Z" fill="url(#paint0_linear_dev)"/>
+              <path d="M64.6 3.8C67.2 1.3 70.6 0 74.2 0H389.5C395.7 0 398.9 7.1 394.9 11.1L333.1 72.9C330.5 75.4 327.1 76.8 323.5 76.8H8.19999C2.09999 76.8 -1.20001 69.7 2.79999 65.6L64.6 3.8Z" fill="url(#paint1_linear_dev)"/>
+              <path d="M333.1 120.1C330.6 117.6 327.1 116.2 323.5 116.2H8.19999C2.09999 116.2 -1.20001 123.3 2.79999 127.3L64.6 189.1C67.1 191.6 70.5 193 74.2 193H389.5C395.7 193 398.9 185.9 394.9 181.9L333.1 120.1Z" fill="url(#paint2_linear_dev)"/>
+              <defs>
+                <linearGradient id="paint0_linear_dev" x1="360.9" y1="-37.6" x2="141.2" y2="383.2">
+                  <stop stop-color="#00FFA3"/>
+                  <stop offset="1" stop-color="#DC1FFF"/>
+                </linearGradient>
+                <linearGradient id="paint1_linear_dev" x1="264.8" y1="-87.6" x2="45.09" y2="333.2">
+                  <stop stop-color="#00FFA3"/>
+                  <stop offset="1" stop-color="#DC1FFF"/>
+                </linearGradient>
+                <linearGradient id="paint2_linear_dev" x1="312.5" y1="-62.7" x2="92.8" y2="358.1">
+                  <stop stop-color="#00FFA3"/>
+                  <stop offset="1" stop-color="#DC1FFF"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="chain-option-info">
+            <div class="chain-option-name">Solana Devnet</div>
             <div class="chain-option-type">Testnet</div>
           </div>
         </div>
@@ -42,177 +109,188 @@
     </div>
   </header>
 
-  <!-- Navigation Menu -->
-  <nav class="nav-menu" id="navMenu">
-    <button class="nav-close" id="navCloseBtn" aria-label="Close menu">×</button>
-    <ul class="nav-list">
-      <li><a href="#" class="nav-link active" data-page="tip-with-grove">Tip with Grove</a></li>
-      <li><a href="#" class="nav-link" data-page="get-tips">Get Tips</a></li>
-      <li><a href="#" class="nav-link" data-page="send-tips">Send Tips</a></li>
-      <li><a href="#" class="nav-link" data-page="contact">Contact</a></li>
-      <li><a href="#" class="nav-link" data-page="learn-more">Learn More</a></li>
-      <li class="nav-separator"></li>
-      <li><a href="#" class="nav-link" data-page="developer">Developer</a></li>
-    </ul>
-  </nav>
-
   <!-- Main Content Area -->
   <main class="content" id="mainContent">
 
-    <!-- Tip with Grove Page -->
-    <div class="page active" id="tip-with-grove">
-      <h2 class="page-title">Tip with Grove</h2>
-
-      <!-- JWT Token Section -->
-      <div class="section">
-        <h3 class="section-title">API Token</h3>
-        <div id="jwtStatus">
-          <!-- Will be populated by JavaScript -->
+    <!-- Tip Page (Home) -->
+    <div class="page active" id="tab-home">
+      
+      <!-- Onboarding / No Token State -->
+      <div id="onboardingState" class="hidden">
+        <div class="onboarding-card">
+          <div class="onboarding-icon">👋</div>
+          <h3>Welcome to Grove</h3>
+          <p>Connect your account to start tipping and tracking your balance.</p>
+          <button class="btn-primary btn-full" id="setupTokenBtn">Connect Account</button>
         </div>
       </div>
 
-      <!-- Tip Amount Section -->
-      <div class="section">
-        <h3 class="section-title">Default Tip Amount</h3>
-        <div class="tip-amount-container">
-          <button class="tip-amount-display" id="tipAmountDisplay">$0.10</button>
-        </div>
-        <div class="tip-amount-edit hidden" id="tipAmountEdit">
-          <input
-            type="number"
-            id="tipAmountInput"
-            step="0.01"
-            min="0.01"
-            value="0.10"
-            class="tip-amount-input"
-          >
-          <div class="tip-amount-buttons">
-            <button class="btn btn-small" id="saveTipAmount">Save</button>
-            <button class="btn btn-small btn-secondary" id="cancelTipAmount">Cancel</button>
+      <!-- Connected State -->
+      <div id="connectedState">
+        <!-- Balance Card -->
+        <div class="balance-card">
+          <div class="balance-label">Tipping Balance</div>
+          <div class="balance-amount-wrapper">
+            <span class="currency-symbol">$</span>
+            <span class="balance-amount" id="balanceAmount">0.00</span>
           </div>
+          <a href="https://grove.city" target="_blank" class="top-up-btn" id="topUpBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20m0-20L5 9m7-7l7 7"/></svg>
+            <span>Top Up</span>
+          </a>
         </div>
-      </div>
 
-      <!-- Balance Section -->
-      <div class="section">
-        <h3 class="section-title">
-          Balance
-          <span class="coming-soon-badge coming-soon-inline">Coming Soon</span>
-        </h3>
-        <div id="balanceContainer">
-          <div class="balance-input-container">
-            <input
-              type="text"
-              id="walletAddressInput"
-              class="input"
-              placeholder="Enter wallet address (0x...)"
-            >
-            <button class="btn btn-small" id="checkBalanceBtn">Check Balance</button>
+
+
+        <!-- Default Tip Settings -->
+        <div class="section-card">
+          <div class="card-header">
+            <h3>Default Tip</h3>
+            <button class="edit-btn" id="editTipAmount">Edit</button>
           </div>
-          <div id="balanceDisplay" class="balance-display hidden">
-            <!-- Will be populated by JavaScript -->
+          <div class="tip-display-large" id="tipAmountDisplay">$0.10</div>
+          
+          <div class="tip-edit-form hidden" id="tipAmountEdit">
+            <div class="input-group">
+              <span class="input-prefix">$</span>
+              <input type="number" id="tipAmountInput" step="0.01" min="0.01" value="0.10" placeholder="0.00">
+            </div>
+            <div class="form-actions">
+              <button class="btn-secondary btn-sm" id="cancelTipAmount">Cancel</button>
+              <button class="btn-primary btn-sm" id="saveTipAmount">Save</button>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Get Tips Page -->
-    <div class="page" id="get-tips">
+    <!-- Activity / Get Tips Page -->
+    <div class="page" id="tab-activity">
       <h2 class="page-title">Get Tips</h2>
 
-      <div class="section">
-        <h3 class="section-title">Setup Your Wallet</h3>
-        <ol class="instructions-list">
-          <li>Create an account on <strong>Base</strong> network using:
-            <ul>
-              <li><a href="https://metamask.io" target="_blank" class="link">MetaMask</a></li>
-              <li><a href="https://www.keplr.app" target="_blank" class="link">Keplr</a></li>
-            </ul>
-          </li>
-          <li>Copy your Base wallet address</li>
-          <li>Add this to your social media profile description:
-            <div class="code-snippet">USDC(base): 0xYourAddress</div>
-          </li>
-        </ol>
-      </div>
+      <div class="info-card compact">
+        <h3>Start receiving tips</h3>
+        <p class="info-subtitle">Add your wallet address to your social profiles</p>
 
-      <div class="section">
-        <h3 class="section-title">Alternative</h3>
-        <button class="btn btn-disabled" disabled>
-          <span class="coming-soon-inline">Coming Soon</span>
-          Generate Address
-        </button>
-      </div>
-    </div>
-
-    <!-- Send Tips Page -->
-    <div class="page" id="send-tips">
-      <h2 class="page-title">Send Tips</h2>
-      <div class="placeholder-content">
-        <div class="coming-soon-badge">Coming Soon</div>
-        <p class="placeholder-text">Send tips functionality will be available soon.</p>
-      </div>
-    </div>
-
-    <!-- Contact Page -->
-    <div class="page" id="contact">
-      <h2 class="page-title">Contact</h2>
-      <div class="placeholder-content">
-        <div class="coming-soon-badge">Coming Soon</div>
-        <p class="placeholder-text">Contact options will be available soon.</p>
-      </div>
-    </div>
-
-    <!-- Learn More Page -->
-    <div class="page" id="learn-more">
-      <h2 class="page-title">Learn More</h2>
-
-      <div class="section">
-        <h3 class="section-title">Resources</h3>
-        <div class="learn-more-links">
-          <a href="https://grove.city/" target="_blank" class="learn-more-card">
-            <div class="learn-more-icon">🌐</div>
-            <div class="learn-more-content">
-              <div class="learn-more-title">Landing Page</div>
-              <div class="learn-more-description">Learn about Grove and how it works</div>
-              <div class="learn-more-url">grove.city</div>
+        <div class="step-list compact">
+          <div class="step-item">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <strong>Get a wallet</strong>
+              <div class="wallet-options">
+                Popular options: <a href="https://phantom.app" target="_blank" class="link-accent">Phantom</a>,
+                <a href="https://metamask.io" target="_blank" class="link-accent">MetaMask</a>,
+                <a href="https://www.coinbase.com/wallet" target="_blank" class="link-accent">Coinbase Wallet</a>
+              </div>
             </div>
-            <div class="learn-more-arrow">→</div>
-          </a>
-
-          <a href="https://buildwith.grove.city/" target="_blank" class="learn-more-card">
-            <div class="learn-more-icon">📦</div>
-            <div class="learn-more-content">
-              <div class="learn-more-title">Product Deck</div>
-              <div class="learn-more-description">Explore the Grove product and features</div>
-              <div class="learn-more-url">buildwith.grove.city</div>
-            </div>
-            <div class="learn-more-arrow">→</div>
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Developer Page -->
-    <div class="page" id="developer">
-      <h2 class="page-title">Developer Settings</h2>
-
-      <!-- Environment Toggle Section -->
-      <div class="section">
-        <h3 class="section-title">API Environment</h3>
-        <div class="env-toggle-container">
-          <div class="env-status" id="envStatus">
-            <!-- Will be populated by JavaScript -->
           </div>
-          <button class="btn" id="toggleEnvBtn">
-            <span id="toggleEnvLabel">Switch to Localhost</span>
-          </button>
+          <div class="step-item">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <strong>Copy your wallet address</strong>
+              <div class="step-detail">Works with Base & Solana</div>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <strong>Add to your bio</strong>
+              <div class="step-detail">Paste your address(es) on your X, Reddit, and/or YouTube profiles</div>
+            </div>
+          </div>
         </div>
-        <p class="info-text">Switch between production and localhost for testing.</p>
+      </div>
+    </div>
+
+    <!-- Settings Page -->
+    <div class="page" id="tab-settings">
+      <h2 class="page-title">Settings</h2>
+
+      <div class="settings-group">
+        <div class="settings-label">Account</div>
+        
+        <!-- JWT Management -->
+        <div class="settings-item-column" id="jwtSettingsSection">
+          <div class="settings-row">
+            <div class="settings-icon">🔑</div>
+            <div class="settings-info">
+              <div class="settings-name">Secret Key</div>
+              <div class="settings-desc" id="jwtStatusDisplay">Not connected</div>
+            </div>
+            <button class="btn-text" id="manageJwtBtn">Manage</button>
+          </div>
+          
+          <!-- JWT Edit Form (Hidden by default) -->
+          <div class="jwt-edit-container hidden" id="jwtEditContainer">
+            <p class="info-text-sm">Get your key from <a href="https://grove.city" target="_blank" class="link-accent">grove.city</a></p>
+            <div class="input-group">
+              <input type="password" id="jwtInput" class="code-input" placeholder="Paste Secret Key">
+            </div>
+            <div class="form-actions">
+              <button class="btn-danger btn-sm hidden" id="removeJwtBtn">Remove</button>
+              <button class="btn-secondary btn-sm" id="cancelJwtBtn">Cancel</button>
+              <button class="btn-primary btn-sm" id="saveJwtBtn">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-label">Developer</div>
+        <div class="settings-item">
+          <div class="settings-icon">🛠️</div>
+          <div class="settings-info">
+            <div class="settings-name">Developer Mode</div>
+            <div class="settings-desc">Enable local testing</div>
+          </div>
+          <div class="toggle-switch" id="devModeToggle">
+            <input type="checkbox" id="devModeCheckbox">
+            <span class="slider"></span>
+          </div>
+        </div>
+        <div class="settings-item hidden" id="envStatusRow">
+          <div class="env-status-text" id="envStatus">Production</div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-label">Resources</div>
+        <a href="https://grove.city/" target="_blank" class="settings-item">
+          <div class="settings-icon">🌐</div>
+          <div class="settings-info">
+            <div class="settings-name">Grove Website</div>
+            <div class="settings-desc">grove.city</div>
+          </div>
+          <div class="settings-arrow">›</div>
+        </a>
+        <a href="https://grove.city/docs" target="_blank" class="settings-item">
+          <div class="settings-icon">📚</div>
+          <div class="settings-info">
+            <div class="settings-name">Documentation</div>
+            <div class="settings-desc">grove.city/docs</div>
+          </div>
+          <div class="settings-arrow">›</div>
+        </a>
       </div>
     </div>
 
   </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-target="tab-home">
+      <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-item" data-target="tab-activity">
+      <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+      <span class="nav-label">Get Tips</span>
+    </button>
+    <button class="nav-item" data-target="tab-settings">
+      <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      <span class="nav-label">Settings</span>
+    </button>
+  </nav>
 
   <script src="popup.js"></script>
 </body>

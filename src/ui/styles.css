@@ -1,557 +1,164 @@
 /**
  * Grove Tip Button Styles
- * Green metallic design with shine and pulse
- * Layered on top of Twitter's base button classes
+ * Modern, Clean, Phantom-inspired design
+ * Brand Color: #389f58 (Grove Green)
  */
 
+:root {
+  --grove-primary: #389f58;
+  --grove-primary-hover: #2f8549;
+  --grove-shadow: rgba(56, 159, 88, 0.3);
+}
+
+/* Base Button Style */
 .grove-tip-button {
-  /* Override Twitter's transparent background with our gradient */
-  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%) !important;
-
-  /* Override border color */
-  border-color: rgba(255, 255, 255, 0.2) !important;
-
-  /* Position for pseudo-elements */
+  background: var(--grove-primary) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
   position: relative;
   overflow: hidden;
-
-  /* Make button wider with more padding */
   padding-left: 16px !important;
   padding-right: 16px !important;
-
-  /* Metallic shadow */
-  box-shadow:
-    0 2px 8px rgba(16, 185, 129, 0.4),
-    0 4px 16px rgba(5, 150, 105, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
-
-  /* Smooth transitions */
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-
-  /* Run animations */
-  animation: grove-pulse 2s ease-in-out infinite;
+  box-shadow: 0 2px 8px var(--grove-shadow) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border-radius: 9999px !important; /* Pill shape */
 }
 
-/* Style the text inside */
 .grove-tip-button span {
   color: #ffffff !important;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  font-weight: 700 !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  letter-spacing: 0.3px;
 }
 
-/* Style the SVG icon */
 .grove-tip-button svg {
   color: #ffffff !important;
   fill: currentColor;
 }
 
-/* Metallic shine effect */
-.grove-tip-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.4) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  animation: grove-shine 3s ease-in-out infinite;
-}
-
 /* Hover state */
 .grove-tip-button:hover {
-  transform: translateY(-1px) scale(1.02);
-  box-shadow:
-    0 4px 12px rgba(16, 185, 129, 0.5),
-    0 8px 24px rgba(5, 150, 105, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  background: var(--grove-primary-hover) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--grove-shadow) !important;
 }
 
-/* Active/pressed state */
 .grove-tip-button:active {
-  transform: translateY(0) scale(0.98);
-  box-shadow:
-    0 1px 4px rgba(16, 185, 129, 0.4),
-    0 2px 8px rgba(5, 150, 105, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(0);
+  box-shadow: 0 1px 4px var(--grove-shadow) !important;
 }
 
-/* Focus state for accessibility */
+/* Focus state */
 .grove-tip-button:focus-visible {
-  outline: 2px solid #10b981;
+  outline: 2px solid var(--grove-primary);
   outline-offset: 2px;
 }
 
-/* Metallic shine animation */
-@keyframes grove-shine {
-  0% {
-    left: -100%;
-  }
-  20% {
-    left: 100%;
-  }
-  100% {
-    left: 100%;
-  }
-}
-
-/* Pulse animation - subtle size change (normal mode) */
-@keyframes grove-pulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow:
-      0 2px 8px rgba(16, 185, 129, 0.4),
-      0 4px 16px rgba(5, 150, 105, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow:
-      0 4px 12px rgba(16, 185, 129, 0.5),
-      0 6px 20px rgba(5, 150, 105, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.4),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-  }
-}
-
-/* Pulse animation - more prominent for advertising mode */
-@keyframes grove-pulse-ad {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow:
-      0 2px 8px rgba(16, 185, 129, 0.4),
-      0 4px 16px rgba(5, 150, 105, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-  }
-  50% {
-    transform: scale(1.15);
-    box-shadow:
-      0 6px 16px rgba(16, 185, 129, 0.6),
-      0 10px 28px rgba(5, 150, 105, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.5),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-  }
-}
-
-/* Keep animations on hover */
-.grove-tip-button:hover {
-  animation: grove-pulse 2s ease-in-out infinite;
-}
-
-/* Advertising mode - more prominent pulse animation */
-.grove-tip-button.grove-ad-mode {
-  animation: grove-pulse-ad 2s ease-in-out infinite;
-}
-
-.grove-tip-button.grove-ad-mode:hover {
-  animation: grove-pulse-ad 2s ease-in-out infinite;
-}
-
-/* Advertising mode - faster shine animation (2x frequency) */
-.grove-tip-button.grove-ad-mode::before {
-  animation: grove-shine 1.5s ease-in-out infinite;
-}
-
-/**
- * Reddit-specific button styles
- * Positioned to the right of profile image in the flex row
- */
+/* Reddit Button */
 .grove-tip-button-reddit {
-  /* Margin to push to the right, with some spacing from edge */
   margin-left: auto !important;
   margin-right: 8px !important;
-
-  /* Reset styles - made slightly bigger */
-  padding: 8px 20px 12px 20px !important;
-
-  /* Green button styling */
-  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-radius: 24px !important;
-
-  /* Shadow - metallic effect */
-  box-shadow:
-    0 2px 8px rgba(16, 185, 129, 0.4),
-    0 4px 16px rgba(5, 150, 105, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
-
-  /* Transitions */
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-
-  /* Cursor */
+  padding: 6px 16px !important;
+  background: var(--grove-primary) !important;
+  border-radius: 9999px !important;
+  color: white !important;
+  font-weight: 600 !important;
   cursor: pointer !important;
-
-  /* Flex layout */
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
-
-  /* Clip shine effect to button bounds */
-  overflow: hidden !important;
-  position: relative !important;
-
-  /* Run animations */
-  animation: grove-reddit-pulse 2s ease-in-out infinite;
-
-  /* Prevent flex shrink */
-  flex-shrink: 0 !important;
+  gap: 6px !important;
+  box-shadow: 0 2px 8px var(--grove-shadow) !important;
+  transition: all 0.2s ease !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
 }
 
-/* White flash effect for Reddit button */
-.grove-tip-button-reddit::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.5) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  animation: grove-shine 3s ease-in-out infinite;
-  pointer-events: none;
-  z-index: 2;
-  border-radius: 24px;
-}
-
-.grove-tip-button-reddit .grove-tip-inner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  position: relative;
-  z-index: 3;
-  width: 100%;
+.grove-tip-button-reddit:hover {
+  background: var(--grove-primary-hover) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--grove-shadow) !important;
 }
 
 .grove-tip-button-reddit .grove-tip-value {
   font-weight: 700;
-  font-size: 14px;
-  color: #ffffff !important;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  position: relative;
-  z-index: 3;
-  text-align: center;
-  line-height: 1;
-  transform: translateY(-1px);
+  color: white !important;
 }
 
-.grove-tip-button-reddit .grove-tip-label {
-  display: none; /* Hide the label in compact button */
-}
-
-.grove-tip-button-reddit:hover {
-  transform: translateY(-1px) scale(1.02);
-  box-shadow:
-    0 4px 12px rgba(16, 185, 129, 0.5),
-    0 8px 24px rgba(5, 150, 105, 0.4) !important;
-}
-
-/* Make hover card container positioned for absolute button */
-[data-testid="user-hover-card"] .p-md.flex.flex-col {
-  position: relative !important;
-}
-
-/* Reddit pulse animation for the button */
-@keyframes grove-reddit-pulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
-
-/* Reddit ad mode - more prominent pulse */
-.grove-tip-button-reddit.grove-ad-mode {
-  animation: grove-reddit-pulse-ad 2s ease-in-out infinite;
-}
-
-/* Reddit ad mode - faster white flash (2x frequency) */
-.grove-tip-button-reddit.grove-ad-mode::before {
-  animation: grove-shine 1.5s ease-in-out infinite;
-}
-
-@keyframes grove-reddit-pulse-ad {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow:
-      0 2px 8px rgba(16, 185, 129, 0.4),
-      0 4px 16px rgba(5, 150, 105, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-  }
-  50% {
-    transform: scale(1.15);
-    box-shadow:
-      0 6px 16px rgba(16, 185, 129, 0.6),
-      0 10px 28px rgba(5, 150, 105, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.5),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-  }
-}
-
-/* Keep hover working with ad mode */
-.grove-tip-button-reddit.grove-ad-mode:hover {
-  transform: translateY(-1px);
-}
-
-.grove-tip-button-reddit:hover {
-  animation: grove-reddit-pulse 2s ease-in-out infinite;
-}
-
-/**
- * Reddit Profile Page Button Styles
- * Matches Reddit's Share button style
- */
+/* Reddit Profile Button */
 .grove-tip-button-reddit-profile {
-  /* Green button styling - matches our gradient */
-  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-
-  /* Metallic shadow */
-  box-shadow:
-    0 2px 8px rgba(16, 185, 129, 0.4),
-    0 4px 16px rgba(5, 150, 105, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
-
-  /* Smooth transitions */
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-
-  /* Cursor */
-  cursor: pointer !important;
-
-  /* Position for pseudo-elements */
-  position: relative;
-  overflow: hidden;
-
-  /* Run animations */
-  animation: grove-pulse 2s ease-in-out infinite;
+  background: var(--grove-primary) !important;
+  border-radius: 9999px !important;
+  padding: 8px 20px !important;
+  color: white !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px var(--grove-shadow) !important;
+  transition: all 0.2s ease !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
 }
 
-/* Style the text inside */
-.grove-tip-button-reddit-profile span {
-  color: #ffffff !important;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+.grove-tip-button-reddit-profile:hover {
+  background: var(--grove-primary-hover) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--grove-shadow) !important;
+}
+
+/* YouTube Button */
+.grove-tip-button-youtube {
+  background: var(--grove-primary) !important;
+  border-radius: 18px !important; /* YouTube buttons are slightly less rounded usually, but keeping consistent */
+  padding: 0 16px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  color: white !important;
+  font-weight: 500 !important;
+  box-shadow: 0 2px 8px var(--grove-shadow) !important;
+  transition: all 0.2s ease !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  cursor: pointer !important;
+}
+
+.grove-tip-button-youtube:hover {
+  background: var(--grove-primary-hover) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--grove-shadow) !important;
+}
+
+.grove-tip-button-youtube .yt-core-attributed-string {
+  color: white !important;
   font-weight: 600 !important;
 }
 
-/* Metallic shine effect */
-.grove-tip-button-reddit-profile::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.4) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  animation: grove-shine 3s ease-in-out infinite;
-  pointer-events: none;
-  z-index: 2;
+.grove-tip-button-youtube .ytIconWrapperHost {
+  color: white !important;
+  margin-right: 6px;
 }
 
-/* Ensure content is above shine effect */
-.grove-tip-button-reddit-profile > span {
-  position: relative;
-  z-index: 3;
-}
-
-/* Hover state */
-.grove-tip-button-reddit-profile:hover {
-  transform: translateY(-1px) scale(1.02);
-  box-shadow:
-    0 4px 12px rgba(16, 185, 129, 0.5),
-    0 8px 24px rgba(5, 150, 105, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Active/pressed state */
-.grove-tip-button-reddit-profile:active {
-  transform: translateY(0) scale(0.98);
-  box-shadow:
-    0 1px 4px rgba(16, 185, 129, 0.4),
-    0 2px 8px rgba(5, 150, 105, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
-}
-
-/* Advertising mode - more prominent pulse animation */
-.grove-tip-button-reddit-profile.grove-ad-mode {
-  animation: grove-pulse-ad 2s ease-in-out infinite;
-}
-
-/* Advertising mode - faster shine animation */
-.grove-tip-button-reddit-profile.grove-ad-mode::before {
-  animation: grove-shine 1.5s ease-in-out infinite;
-}
-
-/**
- * State-specific styles for success and error
- */
-
-/* Success state - bright green */
+/* States */
 .grove-tip-success {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%) !important;
-  box-shadow:
-    0 4px 16px rgba(34, 197, 94, 0.6),
-    0 8px 32px rgba(22, 163, 74, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
+  background: #22c55e !important; /* Success Green */
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3) !important;
 }
 
-/* Error state - red gradient */
 .grove-tip-error {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%) !important;
-  box-shadow:
-    0 4px 16px rgba(239, 68, 68, 0.6),
-    0 8px 32px rgba(220, 38, 38, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
+  background: #ef4444 !important; /* Error Red */
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3) !important;
 }
 
-/* Loading state - keep pulsing but with slightly different shadow */
-.grove-tip-button.animate__infinite {
-  box-shadow:
-    0 2px 12px rgba(16, 185, 129, 0.5),
-    0 4px 24px rgba(5, 150, 105, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Disabled state styling */
 .grove-tip-button:disabled,
 .grove-tip-button-reddit:disabled,
-.grove-tip-button-reddit-profile:disabled {
-  opacity: 0.7;
-  cursor: wait !important;
-}
-
-/* Animate.css override - make animations faster */
-.grove-tip-button.animate__animated,
-.grove-tip-button-reddit.animate__animated,
-.grove-tip-button-reddit-profile.animate__animated,
-.grove-tip-button-youtube.animate__animated {
-  --animate-duration: 0.6s;
-}
-
-/**
- * YouTube-specific button styles
- * Matches YouTube's action button style (Share, Download)
- */
-.grove-tip-button-youtube {
-  /* Green button styling */
-  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-
-  /* Metallic shadow */
-  box-shadow:
-    0 2px 8px rgba(16, 185, 129, 0.4),
-    0 4px 16px rgba(5, 150, 105, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
-
-  /* Smooth transitions */
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-
-  /* Cursor */
-  cursor: pointer !important;
-
-  /* Position for pseudo-elements */
-  position: relative;
-  overflow: hidden;
-
-  /* Run animations */
-  animation: grove-pulse 2s ease-in-out infinite;
-}
-
-/* Style the text inside */
-.grove-tip-button-youtube .yt-core-attributed-string {
-  color: #ffffff !important;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  font-weight: 600 !important;
-}
-
-/* Style the icon */
-.grove-tip-button-youtube .ytIconWrapperHost {
-  color: #ffffff !important;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
-}
-
-/* Metallic shine effect */
-.grove-tip-button-youtube::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.4) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  animation: grove-shine 3s ease-in-out infinite;
-  pointer-events: none;
-  z-index: 2;
-}
-
-/* Ensure content is above shine effect */
-.grove-tip-button-youtube > div {
-  position: relative;
-  z-index: 3;
-}
-
-/* Hover state */
-.grove-tip-button-youtube:hover {
-  transform: translateY(-1px) scale(1.02);
-  box-shadow:
-    0 4px 12px rgba(16, 185, 129, 0.5),
-    0 8px 24px rgba(5, 150, 105, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Active/pressed state */
-.grove-tip-button-youtube:active {
-  transform: translateY(0) scale(0.98);
-  box-shadow:
-    0 1px 4px rgba(16, 185, 129, 0.4),
-    0 2px 8px rgba(5, 150, 105, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
-}
-
-/* Advertising mode - more prominent pulse animation */
-.grove-tip-button-youtube.grove-ad-mode {
-  animation: grove-pulse-ad 2s ease-in-out infinite;
-}
-
-/* Advertising mode - faster shine animation */
-.grove-tip-button-youtube.grove-ad-mode::before {
-  animation: grove-shine 1.5s ease-in-out infinite;
-}
-
-/* Disabled state styling */
 .grove-tip-button-youtube:disabled {
   opacity: 0.7;
   cursor: wait !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
+/* Animations (Subtle Pulse) */
+@keyframes grove-pulse-subtle {
+  0% { box-shadow: 0 0 0 0 rgba(56, 159, 88, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(56, 159, 88, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(56, 159, 88, 0); }
+}
+
+.grove-ad-mode {
+  animation: grove-pulse-subtle 2s infinite;
+}
