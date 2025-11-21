@@ -497,6 +497,60 @@ body.developer-mode .header {
   transform: scale(0.98);
 }
 
+/* Insight Card */
+.insight-card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin: 0 16px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.insight-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.insight-content {
+  flex: 1;
+}
+
+.insight-content h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 6px 0;
+  color: var(--color-text-primary);
+}
+
+.insight-content p {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+/* Demo Tip Button */
+.demo-tip-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background-color: #000000;
+  border: 2px solid var(--color-primary);
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 14px;
+  color: white;
+  box-shadow: 0 2px 8px rgba(56, 159, 88, 0.3);
+}
+
+.demo-tip-button .tip-emoji {
+  font-size: 16px;
+  filter: saturate(1.5);
+}
+
 /* Step Cards (Get Tips) */
 .step-cards {
   display: flex;

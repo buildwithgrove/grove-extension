@@ -125,7 +125,11 @@ function setupEventListeners() {
   removeJwtBtn.addEventListener('click', removeJwt);
 
   // Dev Mode
-  devModeToggle.addEventListener('change', handleDevModeToggle);
+  if (devModeToggle) {
+    devModeToggle.addEventListener('change', handleDevModeToggle);
+  } else {
+    console.error('Developer mode toggle not found');
+  }
 
   // Quick Actions (Placeholders)
   document.querySelectorAll('.action-btn').forEach(btn => {
@@ -314,15 +318,15 @@ async function loadEnvironment() {
   const testBadge = document.getElementById('testModeBadge');
 
   if (env === 'local') {
-    devModeToggle.checked = true;
+    if (devModeToggle) devModeToggle.checked = true;
     document.body.classList.add('developer-mode');
-    envStatusRow.classList.remove('hidden');
-    envStatus.textContent = 'Test Environment';
+    if (envStatusRow) envStatusRow.classList.remove('hidden');
+    if (envStatus) envStatus.textContent = 'Test Environment';
     if (testBadge) testBadge.classList.remove('hidden');
   } else {
-    devModeToggle.checked = false;
+    if (devModeToggle) devModeToggle.checked = false;
     document.body.classList.remove('developer-mode');
-    envStatusRow.classList.add('hidden');
+    if (envStatusRow) envStatusRow.classList.add('hidden');
     if (testBadge) testBadge.classList.add('hidden');
   }
 }
