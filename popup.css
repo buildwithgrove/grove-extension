@@ -525,6 +525,27 @@ body.developer-mode .header {
   filter: saturate(1.5);
 }
 
+/* Small Demo Tip Button for Step Card */
+.demo-tip-button-small {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background-color: #000000;
+  border: 2px solid var(--color-primary);
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 12px;
+  color: white;
+  box-shadow: 0 2px 6px rgba(56, 159, 88, 0.25);
+  margin-top: 8px;
+}
+
+.demo-tip-button-small .tip-emoji {
+  font-size: 14px;
+  filter: saturate(1.5);
+}
+
 /* Step Cards (Get Tips) */
 .step-cards {
   display: flex;
