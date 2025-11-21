@@ -335,7 +335,7 @@ class TipButton {
 
     // Create the actual button
     this.button = document.createElement('button');
-    this.button.className = 'yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-m yt-spec-button-shape-next--icon-leading yt-spec-button-shape-next--enable-backdrop-filter-experiment grove-tip-button-youtube';
+    this.button.className = 'yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-m yt-spec-button-shape-next--icon-trailing yt-spec-button-shape-next--enable-backdrop-filter-experiment grove-tip-button-youtube';
     this.button.setAttribute('aria-label', 'Send a tip');
     this.button.setAttribute('title', '');
     this.button.setAttribute('aria-disabled', 'false');
@@ -386,9 +386,9 @@ class TipButton {
     touchFeedback.appendChild(strokeDiv);
     touchFeedback.appendChild(fillDiv);
 
-    // Assemble button structure
-    this.button.appendChild(iconDiv);
+    // Assemble button structure (text first, then icon for trailing position)
     this.button.appendChild(textDiv);
+    this.button.appendChild(iconDiv);
     this.button.appendChild(touchFeedback);
 
     // Assemble wrapper structure
