@@ -40,30 +40,20 @@ class TipButton {
   createTwitterButton() {
     console.log('[TipButton] Creating button with Twitter structure...');
 
-    // Create button element matching Twitter's structure exactly
+    // Create button element - simplified structure for cleaner styling
     this.button = document.createElement('button');
     this.button.setAttribute('aria-label', 'Send a tip');
     this.button.setAttribute('role', 'button');
     this.button.setAttribute('type', 'button');
-    this.button.className = 'css-175oi2r r-sdzlij r-1phboty r-rs99b7 r-lrvibr r-6gpygo r-1wron08 r-2yi16 r-1qi8awa r-1loqt21 r-o7ynqc r-6416eg r-1ny4l3l grove-tip-button';
-    this.button.style.borderColor = 'rgb(83, 100, 113)';
-    this.button.style.backgroundColor = 'rgba(0, 0, 0, 0)';
+    this.button.className = 'grove-tip-button';
     this.button.id = 'grove-tip-button';
 
-    // Create inner div matching Twitter's structure
-    const innerDiv = document.createElement('div');
-    innerDiv.setAttribute('dir', 'ltr');
-    innerDiv.className = 'css-146c3p1 r-bcqeeo r-qvutc0 r-37j5jr r-q4m81j r-a023e6 r-rjixqe r-b88u0q r-1awozwy r-6koalj r-18u37iz r-16y2uox r-1777fci';
-    innerDiv.style.color = 'rgb(239, 243, 244)';
-
-    // Create text span (no SVG icon, just text)
+    // Create text span
     const textSpan = document.createElement('span');
-    textSpan.className = 'css-1jxf684 r-dnmrzs r-1udh08x r-1udbk01 r-3s2u2q r-bcqeeo r-1ttztb7 r-qvutc0 r-poiln3 r-a023e6 r-rjixqe';
-    textSpan.textContent = 'Tip 🌿';
+    textSpan.textContent = 'Tip';
 
     // Assemble the structure
-    innerDiv.appendChild(textSpan);
-    this.button.appendChild(innerDiv);
+    this.button.appendChild(textSpan);
 
     console.log('[TipButton] Twitter button created successfully', this.button);
 

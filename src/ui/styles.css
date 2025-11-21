@@ -12,34 +12,68 @@
   --grove-shadow-hover: rgba(56, 159, 88, 0.5);
 }
 
-/* Base Button Style - Black with Green Border */
+/* Base Button Style - Black with Green Border and Sheen */
 .grove-tip-button {
-  background: #000000 !important;
+  background: linear-gradient(135deg, #000000 0%, #0a0a0a 100%) !important;
   border: 2px solid var(--grove-primary) !important;
   position: relative;
   overflow: hidden;
-  padding: 8px 18px !important;
+  padding: 6px 16px !important;
   box-shadow: 0 2px 8px var(--grove-shadow) !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
   border-radius: 9999px !important;
   display: inline-flex !important;
   align-items: center !important;
+  justify-content: center !important;
   gap: 6px !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  cursor: pointer !important;
+  height: 32px !important;
+  min-width: 64px !important;
 }
 
-/* Add herb emoji before text */
-.grove-tip-button::after {
-  content: '🌿';
-  font-size: 16px;
-  order: -1;
-  filter: saturate(1.5);
+/* Sheen effect overlay */
+.grove-tip-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  transition: left 0.5s ease;
 }
 
-.grove-tip-button span {
+.grove-tip-button:hover::before {
+  left: 100%;
+}
+
+/* Text styling */
+.grove-tip-button span,
+.grove-tip-button div[dir="ltr"] {
   color: #ffffff !important;
   font-weight: 600 !important;
   font-size: 14px !important;
   letter-spacing: 0.3px;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  z-index: 1;
+  position: relative;
+}
+
+/* Add herb emoji to text content */
+.grove-tip-button span::after,
+.grove-tip-button div[dir="ltr"] span::after {
+  content: ' 🌿';
+  font-size: 16px;
+  filter: saturate(1.5);
+  margin-left: 2px;
 }
 
 .grove-tip-button svg {
@@ -48,7 +82,7 @@
 
 /* Enhanced Hover State */
 .grove-tip-button:hover {
-  background: #111111 !important;
+  background: linear-gradient(135deg, #0a0a0a 0%, #141414 100%) !important;
   border-color: var(--grove-primary-light) !important;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px var(--grove-shadow-hover) !important;
@@ -56,7 +90,7 @@
 
 .grove-tip-button:active {
   transform: translateY(0);
-  background: #000000 !important;
+  background: linear-gradient(135deg, #000000 0%, #0a0a0a 100%) !important;
   box-shadow: 0 1px 4px var(--grove-shadow) !important;
 }
 
@@ -66,12 +100,12 @@
   outline-offset: 2px;
 }
 
-/* Reddit Button - Black with Green Border */
+/* Reddit Button - Black with Green Border and Sheen */
 .grove-tip-button-reddit {
   margin-left: auto !important;
   margin-right: 8px !important;
   padding: 6px 16px !important;
-  background: #000000 !important;
+  background: linear-gradient(135deg, #000000 0%, #0a0a0a 100%) !important;
   border: 2px solid var(--grove-primary) !important;
   border-radius: 9999px !important;
   color: white !important;
@@ -86,14 +120,36 @@
   overflow: hidden;
 }
 
+/* Sheen effect for Reddit */
+.grove-tip-button-reddit::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  transition: left 0.5s ease;
+}
+
+.grove-tip-button-reddit:hover::after {
+  left: 100%;
+}
+
 .grove-tip-button-reddit::before {
   content: '🌿';
   font-size: 16px;
   filter: saturate(1.5);
+  z-index: 1;
 }
 
 .grove-tip-button-reddit:hover {
-  background: #111111 !important;
+  background: linear-gradient(135deg, #0a0a0a 0%, #141414 100%) !important;
   border-color: var(--grove-primary-light) !important;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px var(--grove-shadow-hover) !important;
@@ -104,9 +160,9 @@
   color: white !important;
 }
 
-/* Reddit Profile Button */
+/* Reddit Profile Button with Sheen */
 .grove-tip-button-reddit-profile {
-  background: #000000 !important;
+  background: linear-gradient(135deg, #000000 0%, #0a0a0a 100%) !important;
   border: 2px solid var(--grove-primary) !important;
   border-radius: 9999px !important;
   padding: 8px 20px !important;
@@ -117,24 +173,48 @@
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Sheen effect */
+.grove-tip-button-reddit-profile::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  transition: left 0.5s ease;
+}
+
+.grove-tip-button-reddit-profile:hover::after {
+  left: 100%;
 }
 
 .grove-tip-button-reddit-profile::before {
   content: '🌿';
   font-size: 16px;
   filter: saturate(1.5);
+  z-index: 1;
 }
 
 .grove-tip-button-reddit-profile:hover {
-  background: #111111 !important;
+  background: linear-gradient(135deg, #0a0a0a 0%, #141414 100%) !important;
   border-color: var(--grove-primary-light) !important;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px var(--grove-shadow-hover) !important;
 }
 
-/* YouTube Button - Black with Green Border */
+/* YouTube Button - Black with Green Border and Sheen */
 .grove-tip-button-youtube {
-  background: #000000 !important;
+  background: linear-gradient(135deg, #000000 0%, #0a0a0a 100%) !important;
   border: 2px solid var(--grove-primary) !important;
   border-radius: 20px !important;
   padding: 0 18px !important;
@@ -152,14 +232,36 @@
   overflow: hidden;
 }
 
+/* Sheen effect for YouTube */
+.grove-tip-button-youtube::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  transition: left 0.5s ease;
+}
+
+.grove-tip-button-youtube:hover::after {
+  left: 100%;
+}
+
 .grove-tip-button-youtube::before {
   content: '🌿';
   font-size: 16px;
   filter: saturate(1.5);
+  z-index: 1;
 }
 
 .grove-tip-button-youtube:hover {
-  background: #111111 !important;
+  background: linear-gradient(135deg, #0a0a0a 0%, #141414 100%) !important;
   border-color: var(--grove-primary-light) !important;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px var(--grove-shadow-hover) !important;
