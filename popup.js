@@ -31,8 +31,6 @@ const balanceAmount = document.getElementById('balanceAmount');
 
 // Settings
 const devModeToggle = document.getElementById('devModeCheckbox');
-const envStatusRow = document.getElementById('envStatusRow');
-const envStatus = document.getElementById('envStatus');
 
 // JWT Management
 const jwtStatusDisplay = document.getElementById('jwtStatusDisplay');
@@ -172,48 +170,55 @@ function updateAuthState(jwt) {
     // Connected
     onboardingState.classList.add('hidden');
     connectedState.classList.remove('hidden');
-    
-    // Settings Display
-    const first = jwt.substring(0, 6);
-    const last = jwt.substring(jwt.length - 4);
-    jwtStatusDisplay.textContent = `${first}...${last}`;
+
+    // Settings Display - show full key if short, truncate if long
+    if (jwt.length <= 20) {
+      jwtStatusDisplay.textContent = jwt;
+    } else {
+      const first = jwt.substring(0, 6);
+      const last = jwt.substring(jwt.length - 4);
+      jwtStatusDisplay.textContent = `${first}...${last}`;
+    }
     jwtStatusDisplay.style.color = 'var(--color-primary)';
     jwtStatusDisplay.style.fontFamily = 'monospace';
-    
+
     removeJwtBtn.classList.remove('hidden');
-    jwtInput.value = ''; // Clear input for security
     } else {
     // Not Connected
     onboardingState.classList.remove('hidden');
     connectedState.classList.add('hidden');
-    
+
     jwtStatusDisplay.textContent = 'Not connected';
     jwtStatusDisplay.style.color = 'var(--color-text-secondary)';
     jwtStatusDisplay.style.fontFamily = 'inherit';
-    
+
     removeJwtBtn.classList.add('hidden');
   }
 }
 
 async function showJwtEdit() {
   jwtEditContainer.classList.remove('hidden');
-  jwtInput.focus();
   manageJwtBtn.textContent = 'Close';
 
-  // Check if JWT exists to show/hide remove button
+  // Check if JWT exists to show/hide remove button and populate input
   const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
   const jwt = result[STORAGE_KEYS.JWT];
   if (jwt && jwt.length > 0) {
     removeJwtBtn.classList.remove('hidden');
+    jwtInput.value = jwt; // Show existing key in input
   } else {
     removeJwtBtn.classList.add('hidden');
+    jwtInput.value = '';
   }
+
+  jwtInput.focus();
 }
 
 function hideJwtEdit() {
   jwtEditContainer.classList.add('hidden');
   manageJwtBtn.textContent = 'Manage';
-  }
+  jwtInput.value = ''; // Clear input for security
+}
 
 async function saveJwt() {
   const token = jwtInput.value.trim();
@@ -320,13 +325,10 @@ async function loadEnvironment() {
   if (env === 'local') {
     if (devModeToggle) devModeToggle.checked = true;
     document.body.classList.add('developer-mode');
-    if (envStatusRow) envStatusRow.classList.remove('hidden');
-    if (envStatus) envStatus.textContent = 'Test Environment';
     if (testBanner) testBanner.classList.remove('hidden');
   } else {
     if (devModeToggle) devModeToggle.checked = false;
     document.body.classList.remove('developer-mode');
-    if (envStatusRow) envStatusRow.classList.add('hidden');
     if (testBanner) testBanner.classList.add('hidden');
   }
 }
@@ -341,8 +343,6 @@ async function handleDevModeToggle(e) {
   if (isDev) {
     // Enable developer mode
     document.body.classList.add('developer-mode');
-    envStatusRow.classList.remove('hidden');
-    envStatus.textContent = 'Test Environment';
     if (testBanner) testBanner.classList.remove('hidden');
     showToast('Developer Mode Enabled');
 
@@ -356,7 +356,6 @@ async function handleDevModeToggle(e) {
   } else {
     // Disable developer mode
     document.body.classList.remove('developer-mode');
-    envStatusRow.classList.add('hidden');
     if (testBanner) testBanner.classList.add('hidden');
     showToast('Developer Mode Disabled');
 
