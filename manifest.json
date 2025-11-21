@@ -2,8 +2,7 @@
   "manifest_version": 3,
   "name": "Grove - Tip Anyone, Anywhere",
   "version": "1.0.0",
-  "description": "Tip anyone, anywhere.",
-  "description_extended": "An extension that lets you tip anyone online.",
+  "description": "Tip anyone, anywhere - An extension that lets you tip anyone online.",
   "permissions": ["storage"],
   "content_scripts": [
     {
