@@ -82,17 +82,9 @@ body {
   gap: 8px;
 }
 
-.logo-icon {
-  width: 24px;
-  height: 24px;
+.logo-full {
+  height: 28px;
   object-fit: contain;
-  border-radius: 6px;
-}
-
-.logo-text {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
 }
 
 /* Test Mode Banner */
