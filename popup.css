@@ -538,12 +538,25 @@ body.developer-mode .header {
   font-size: 12px;
   color: white;
   box-shadow: 0 2px 6px rgba(56, 159, 88, 0.25);
-  margin-top: 8px;
+  flex-shrink: 0;
 }
 
 .demo-tip-button-small .tip-emoji {
   font-size: 14px;
   filter: saturate(1.5);
+}
+
+/* Special layout for step 4 with button */
+.step-card:last-child {
+  align-items: center;
+}
+
+.step-card:last-child .step-content {
+  flex: 1;
+}
+
+.step-card:last-child p {
+  margin-bottom: 0;
 }
 
 /* Step Cards (Get Tips) */
@@ -579,6 +592,7 @@ body.developer-mode .header {
 
 .step-content {
   flex: 1;
+  min-width: 0; /* Allow text to wrap */
 }
 
 .step-content h4 {
