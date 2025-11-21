@@ -239,21 +239,31 @@ async function loadTipAmount() {
 }
 
 function updateTipUI(amount) {
-  const formatted = `$${parseFloat(amount).toFixed(2)}`;
-  tipAmountDisplay.textContent = formatted;
-  tipAmountInput.value = parseFloat(amount).toFixed(2);
+  const formatted = parseFloat(amount).toFixed(2);
+  // Update the amount value span inside the display div
+  const amountSpan = tipAmountDisplay.querySelector('.amount-value');
+  if (amountSpan) {
+    amountSpan.textContent = formatted;
   }
+  tipAmountInput.value = formatted;
+}
 
 function showTipEdit() {
-  tipAmountDisplay.classList.add('hidden');
+  // Hide the entire card row
+  const cardRow = document.querySelector('#tipAmountDisplay').closest('.card-row');
+  if (cardRow) {
+    cardRow.classList.add('hidden');
+  }
   tipAmountEdit.classList.remove('hidden');
-  editTipBtn.classList.add('hidden');
 }
 
 function hideTipEdit() {
-  tipAmountDisplay.classList.remove('hidden');
+  // Show the entire card row
+  const cardRow = document.querySelector('#tipAmountDisplay').closest('.card-row');
+  if (cardRow) {
+    cardRow.classList.remove('hidden');
+  }
   tipAmountEdit.classList.add('hidden');
-  editTipBtn.classList.remove('hidden');
 }
 
 async function saveTip() {

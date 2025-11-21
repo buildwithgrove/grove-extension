@@ -128,28 +128,37 @@
       <!-- Connected State -->
       <div id="connectedState">
         <!-- Balance Card -->
-        <div class="balance-card">
-          <div class="balance-label">Tipping Balance</div>
-          <div class="balance-amount-wrapper">
-            <span class="currency-symbol">$</span>
-            <span class="balance-amount" id="balanceAmount">0.00</span>
+        <div class="section-card">
+          <div class="card-row">
+            <div class="card-content">
+              <div class="card-label">Tipping Balance</div>
+              <div class="amount-display">
+                <span class="currency-symbol">$</span>
+                <span class="amount-value" id="balanceAmount">0.00</span>
+              </div>
+            </div>
+            <a href="https://grove.city" target="_blank" class="card-action-btn primary" id="topUpBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20m0-20L5 9m7-7l7 7"/></svg>
+              <span>Top Up</span>
+            </a>
           </div>
-          <a href="https://grove.city" target="_blank" class="top-up-btn" id="topUpBtn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20m0-20L5 9m7-7l7 7"/></svg>
-            <span>Top Up</span>
-          </a>
         </div>
 
 
 
         <!-- Default Tip Settings -->
         <div class="section-card">
-          <div class="card-header">
-            <h3>Default Tip</h3>
-            <button class="edit-btn" id="editTipAmount">Edit</button>
+          <div class="card-row">
+            <div class="card-content">
+              <div class="card-label">Default Tip</div>
+              <div class="amount-display" id="tipAmountDisplay">
+                <span class="currency-symbol">$</span>
+                <span class="amount-value">0.10</span>
+              </div>
+            </div>
+            <button class="card-action-btn" id="editTipAmount">Edit</button>
           </div>
-          <div class="tip-display-large" id="tipAmountDisplay">$0.10</div>
-          
+
           <div class="tip-edit-form hidden" id="tipAmountEdit">
             <div class="input-group">
               <span class="input-prefix">$</span>
