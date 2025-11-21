@@ -20,7 +20,6 @@ class TipButton {
    * @returns {HTMLElement}
    */
   create() {
-    console.log(`[TipButton] Creating button for ${this.platform}...`);
 
     if (this.platform === 'reddit') {
       return this.createRedditButton();
@@ -38,7 +37,6 @@ class TipButton {
    * @returns {HTMLElement}
    */
   createTwitterButton() {
-    console.log('[TipButton] Creating button with Twitter structure...');
 
     // Create button element - simplified structure for cleaner styling
     this.button = document.createElement('button');
@@ -147,7 +145,6 @@ class TipButton {
     this.button.appendChild(sheenOverlay);
     this.button.appendChild(textSpan);
 
-    console.log('[TipButton] Twitter button created successfully', this.button);
 
     // Add click handler
     this.button.addEventListener('click', (e) => {
@@ -165,7 +162,6 @@ class TipButton {
    * @returns {HTMLElement}
    */
   createRedditButton() {
-    console.log('[TipButton] Creating button with Reddit structure...');
 
     // Check if we're on a hover card or profile page
     const isHoverCard = !!document.querySelector('[data-testid="user-hover-card"]');
@@ -183,7 +179,6 @@ class TipButton {
    * @returns {HTMLElement}
    */
   createRedditHoverCardButton() {
-    console.log('[TipButton] Creating Reddit hover card button...');
 
     // Create button element matching Reddit's karma layout
     this.button = document.createElement('button');
@@ -212,7 +207,6 @@ class TipButton {
     innerDiv.appendChild(labelSpan);
     this.button.appendChild(innerDiv);
 
-    console.log('[TipButton] Reddit hover card button created successfully', this.button);
 
     // Add click handler
     this.button.addEventListener('click', (e) => {
@@ -229,7 +223,6 @@ class TipButton {
    * @returns {HTMLElement}
    */
   createRedditProfileButton() {
-    console.log('[TipButton] Creating Reddit profile page button...');
 
     // Create button element with inline styles for consistency
     this.button = document.createElement('button');
@@ -313,7 +306,6 @@ class TipButton {
     this.button.appendChild(textSpan);
     this.button.appendChild(emojiSpan);
 
-    console.log('[TipButton] Reddit profile button created successfully', this.button);
 
     // Add click handler
     this.button.addEventListener('click', (e) => {
@@ -331,7 +323,6 @@ class TipButton {
    * @returns {HTMLElement}
    */
   createYouTubeButton() {
-    console.log('[TipButton] Creating YouTube button...');
 
     // Create yt-button-view-model wrapper
     const buttonViewModel = document.createElement('yt-button-view-model');
@@ -372,11 +363,11 @@ class TipButton {
     const textDiv = document.createElement('div');
     textDiv.className = 'yt-spec-button-shape-next__button-text-content';
 
-    // Create text span with emoji
+    // Create text span
     const textSpan = document.createElement('span');
     textSpan.className = 'yt-core-attributed-string yt-core-attributed-string--white-space-no-wrap';
     textSpan.setAttribute('role', 'text');
-    textSpan.textContent = 'Tip 🌿';
+    textSpan.textContent = 'Tip';
 
     // Assemble text structure
     textDiv.appendChild(textSpan);
@@ -404,7 +395,6 @@ class TipButton {
     buttonViewModelInner.appendChild(this.button);
     buttonViewModel.appendChild(buttonViewModelInner);
 
-    console.log('[TipButton] YouTube button created successfully', buttonViewModel);
 
     // Add click handler to the actual button
     this.button.addEventListener('click', (e) => {
@@ -546,7 +536,7 @@ class TipButton {
     if (this.platform === 'youtube') {
       textElement = this.button.querySelector('.yt-core-attributed-string');
       if (textElement) {
-        textElement.textContent = 'Tip 🌿';
+        textElement.textContent = 'Tip';
       }
     } else if (this.platform === 'twitter') {
       // For Twitter, update the main text span
@@ -600,16 +590,13 @@ class TipButton {
    * @returns {boolean} - True if injection successful
    */
   inject(targetElement) {
-    console.log('[TipButton] Injecting button...', { targetElement, button: this.button });
 
     if (!targetElement || !this.button) {
-      console.log('[TipButton] Injection failed: missing target or button');
       return false;
     }
 
     // Check if button already exists
     if (document.getElementById(this.button.id)) {
-      console.log('[TipButton] Button already exists in DOM');
       return false;
     }
 
@@ -623,7 +610,6 @@ class TipButton {
 
     // Get all children of the target container
     const children = Array.from(targetElement.children);
-    console.log('[TipButton] Target container has', children.length, 'children');
 
     // Find the last visible action button (usually the "More" button)
     let insertBeforeElement = null;
@@ -641,7 +627,6 @@ class TipButton {
         if ((ariaLabel && ariaLabel.toLowerCase().includes('more')) ||
             (testId && testId === 'userActions')) {
           insertBeforeElement = child;
-          console.log('[TipButton] Found More button, will insert before it');
           break;
         }
       }
@@ -662,7 +647,6 @@ class TipButton {
             if (i < children.length - 1) {
               insertBeforeElement = children[i + 1];
             }
-            console.log('[TipButton] Found Message/Follow button, inserting after');
             break;
           }
         }
@@ -672,14 +656,11 @@ class TipButton {
     // Insert the button
     if (insertBeforeElement) {
       targetElement.insertBefore(this.button, insertBeforeElement);
-      console.log('[TipButton] Inserted before element');
     } else {
       // Append at the end
       targetElement.appendChild(this.button);
-      console.log('[TipButton] Appended to container');
     }
 
-    console.log('[TipButton] Button injected successfully');
     return true;
   }
 
@@ -693,7 +674,6 @@ class TipButton {
   }
 }
 
-// Export for use in content scripts
 if (typeof window !== 'undefined') {
   window.TipButton = TipButton;
 }

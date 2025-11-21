@@ -33,25 +33,21 @@ class TwitterAdapter extends BaseAdapter {
     // data-testid="userActions" is the "More" button - we want its parent container
     const userActionsButton = document.querySelector('[data-testid="userActions"]');
     if (userActionsButton && userActionsButton.parentElement) {
-      console.log('[TwitterAdapter] Found userActions button, returning parent container');
       return userActionsButton.parentElement;
     }
 
     // On your own profile, look for the area with "Edit profile" button
     const editProfileButton = document.querySelector('[data-testid="editProfileButton"]');
     if (editProfileButton && editProfileButton.parentElement) {
-      console.log('[TwitterAdapter] Found editProfileButton, returning parent container');
       return editProfileButton.parentElement;
     }
 
     // Another fallback: look for Following/Follow button and get its parent
     const followButton = document.querySelector('[data-testid*="follow"]');
     if (followButton && followButton.parentElement) {
-      console.log('[TwitterAdapter] Found follow button, returning parent container');
       return followButton.parentElement;
     }
 
-    console.log('[TwitterAdapter] No suitable container found');
     return null;
   }
 
@@ -74,7 +70,6 @@ class TwitterAdapter extends BaseAdapter {
   }
 }
 
-// Export for use in content scripts
 if (typeof window !== 'undefined') {
   window.TwitterAdapter = TwitterAdapter;
 }

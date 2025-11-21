@@ -28,7 +28,6 @@ class AddressParser {
   }
 }
 
-// Export for use in content scripts
 if (typeof window !== 'undefined') {
   window.AddressParser = AddressParser;
 }

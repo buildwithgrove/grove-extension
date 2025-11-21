@@ -57,7 +57,6 @@ class RedditAdapter extends BaseAdapter {
       // Find the karma stats container (flex-row with post/comment karma)
       const karmaContainer = hoverCard.querySelector('.flex.flex-row.mt-md.text-neutral-content');
       if (karmaContainer) {
-        console.log('[RedditAdapter] Found karma container for button placement');
         return karmaContainer;
       }
     }
@@ -65,27 +64,22 @@ class RedditAdapter extends BaseAdapter {
     // Simple approach: find the username heading and place button after it
     const username = this.getUserIdentifier();
     if (username) {
-      console.log('[RedditAdapter] Looking for username:', username);
 
       // Check if button already exists
       if (document.querySelector('#grove-tip-button')) {
-        console.log('[RedditAdapter] Button already exists');
         return null;
       }
 
       // Look for the main username heading (usually h1)
       const headings = document.querySelectorAll('h1, h2, h3');
-      console.log('[RedditAdapter] Found', headings.length, 'headings');
 
       for (const heading of headings) {
         const headingText = heading.textContent ? heading.textContent.trim() : '';
-        console.log('[RedditAdapter] Checking heading:', headingText);
 
         // Check for exact match or partial match (in case URL is truncated)
         if (headingText.toLowerCase() === username.toLowerCase() ||
             headingText.toLowerCase().startsWith(username.toLowerCase()) ||
             username.toLowerCase().startsWith(headingText.toLowerCase())) {
-          console.log('[RedditAdapter] Found matching username heading');
 
           // Create a simple wrapper
           const buttonWrapper = document.createElement('div');
@@ -98,25 +92,20 @@ class RedditAdapter extends BaseAdapter {
           // Try to insert after the heading
           if (heading.parentNode) {
             heading.parentNode.insertBefore(buttonWrapper, heading.nextSibling);
-            console.log('[RedditAdapter] Successfully created wrapper after heading');
             return buttonWrapper;
           }
         }
       }
 
-      console.log('[RedditAdapter] No matching heading found');
     } else {
-      console.log('[RedditAdapter] No username extracted from URL');
     }
 
     // Fallback: look for profile actions area (legacy selector)
     const profileActions = document.querySelector('[data-testid="profile-actions"]');
     if (profileActions) {
-      console.log('[RedditAdapter] Found profile actions for button placement');
       return profileActions;
     }
 
-    console.log('[RedditAdapter] No suitable container found');
     return null;
   }
 
@@ -160,7 +149,6 @@ class RedditAdapter extends BaseAdapter {
   }
 }
 
-// Export for use in content scripts
 if (typeof window !== 'undefined') {
   window.RedditAdapter = RedditAdapter;
 }

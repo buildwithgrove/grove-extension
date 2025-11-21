@@ -50,7 +50,6 @@ class YouTubeAdapter extends BaseAdapter {
     // Look for the top-level-buttons-computed div which contains Like, Dislike, Share buttons
     const actionsContainer = document.querySelector('#top-level-buttons-computed');
     if (actionsContainer) {
-      console.log('[YouTubeAdapter] Found top-level-buttons-computed for button placement');
       return actionsContainer;
     }
 
@@ -59,7 +58,6 @@ class YouTubeAdapter extends BaseAdapter {
     if (menuRenderer) {
       const topLevelButtons = menuRenderer.querySelector('#top-level-buttons-computed');
       if (topLevelButtons) {
-        console.log('[YouTubeAdapter] Found top-level-buttons via menu-renderer');
         return topLevelButtons;
       }
     }
@@ -71,13 +69,11 @@ class YouTubeAdapter extends BaseAdapter {
       if (menu) {
         const buttons = menu.querySelector('#top-level-buttons-computed');
         if (buttons) {
-          console.log('[YouTubeAdapter] Found top-level-buttons via actions-inner');
           return buttons;
         }
       }
     }
 
-    console.log('[YouTubeAdapter] No suitable container found');
     return null;
   }
 
@@ -105,7 +101,6 @@ class YouTubeAdapter extends BaseAdapter {
   }
 }
 
-// Export for use in content scripts
 if (typeof window !== 'undefined') {
   window.YouTubeAdapter = YouTubeAdapter;
 }

@@ -4,12 +4,10 @@
  */
 
 class GroveAPI {
-  // API Configuration
   static PROD_URL = 'https://api.grove.city';
   static LOCAL_URL = 'http://localhost:8000';
   static DEFAULT_TIP_AMOUNT = 0.05; // $0.05 default
 
-  // Chain RPC Endpoints
   static CHAIN_RPC_ENDPOINTS = {
     'base': {
       name: 'Base',
@@ -25,7 +23,6 @@ class GroveAPI {
     }
   };
 
-  // TODO: Store this in chrome.storage.local later
   static GROVE_API_JWT = ''; // Placeholder for now
 
   /**
@@ -76,10 +73,6 @@ class GroveAPI {
     const rpcUrl = await this.getRpcUrl();
     const chainConfig = await this.getChainConfig();
 
-    console.log('[Grove Extension] Fetching balance...');
-    console.log('[Grove Extension] Chain:', chainConfig.name);
-    console.log('[Grove Extension] RPC URL:', rpcUrl);
-    console.log('[Grove Extension] Address:', address);
 
     try {
       const response = await fetch(rpcUrl, {
@@ -101,11 +94,9 @@ class GroveAPI {
         throw new Error(data.error.message || 'RPC request failed');
       }
 
-      // Convert from wei to ETH
       const balanceWei = BigInt(data.result);
       const balanceEth = Number(balanceWei) / 1e18;
 
-      console.log('[Grove Extension] Balance fetched:', balanceEth, 'ETH');
       return balanceEth.toFixed(6);
 
     } catch (error) {
@@ -123,7 +114,6 @@ class GroveAPI {
   static buildTipDomainFromURL(url) {
     try {
       const urlObj = new URL(url);
-      // Remove protocol and www, keep hostname and pathname
       const domain = urlObj.hostname.replace(/^www\./, '');
       const path = urlObj.pathname.replace(/\/$/, ''); // Remove trailing slash
       return `${domain}${path}`;
@@ -141,24 +131,13 @@ class GroveAPI {
    * @returns {Promise<Object>} - API response
    */
   static async sendTip(pageUrl, tipAmount = this.DEFAULT_TIP_AMOUNT, groveApiJwt = this.GROVE_API_JWT) {
-    // Get base URL based on environment
     const baseURL = await this.getBaseURL();
 
-    console.log('[Grove Extension] Sending tip...');
-    console.log('[Grove Extension] Environment:', baseURL);
-    console.log('[Grove Extension] Page URL:', pageUrl);
-    console.log('[Grove Extension] Tip amount:', `$${tipAmount}`);
-    console.log('[Grove Extension] JWT present:', groveApiJwt ? 'Yes' : 'No');
 
-    // Build tip domain from URL
     const tipDomain = this.buildTipDomainFromURL(pageUrl);
-    console.log('[Grove Extension] Tip domain:', tipDomain);
 
-    // Build API URL: {baseURL}/v1/tip/{url}/{amount}
     const apiUrl = `${baseURL}/v1/tip/${encodeURIComponent(tipDomain)}/${tipAmount}`;
 
-    console.log('[Grove Extension] API URL:', apiUrl);
-    console.log('[Grove Extension] Authorization header:', groveApiJwt ? 'Bearer [REDACTED]' : 'None');
 
     try {
       const response = await fetch(apiUrl, {
@@ -175,7 +154,6 @@ class GroveAPI {
         throw new Error(data.message || `API request failed with status ${response.status}`);
       }
 
-      console.log('[Grove Extension] Tip successful:', data);
       return {
         success: true,
         data: data
@@ -192,7 +170,6 @@ class GroveAPI {
   }
 }
 
-// Export for use in content scripts
 if (typeof window !== 'undefined') {
   window.GroveAPI = GroveAPI;
 }

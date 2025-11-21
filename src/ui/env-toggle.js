@@ -66,7 +66,6 @@ class EnvironmentToggle {
     // Inject into page
     document.body.appendChild(this.container);
 
-    console.log('[Grove Extension] Environment toggle created');
   }
 
   /**
@@ -108,7 +107,6 @@ class EnvironmentToggle {
   }
 }
 
-// Export for use in content scripts
 if (typeof window !== 'undefined') {
   window.EnvironmentToggle = EnvironmentToggle;
 }
