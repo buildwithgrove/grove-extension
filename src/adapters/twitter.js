@@ -25,64 +25,30 @@ class TwitterAdapter extends BaseAdapter {
   }
 
   /**
-   * Get placement for tip button (in the same row as action buttons, as first item)
+   * Get placement for tip button (near username in header)
    * @returns {Element|null}
    */
   getButtonPlacement() {
-    // Check if button already exists
-    if (document.querySelector('#grove-tip-button')) {
-      console.log('[TwitterAdapter] Button already exists');
-      return null;
+    // Look for the profile header actions area
+    // data-testid="userActions" is the "More" button - we want its parent container
+    const userActionsButton = document.querySelector('[data-testid="userActions"]');
+    if (userActionsButton && userActionsButton.parentElement) {
+      console.log('[TwitterAdapter] Found userActions button, returning parent container');
+      return userActionsButton.parentElement;
     }
 
-    // Look for the More/ellipsis button (three dots)
-    const moreButton = document.querySelector('[data-testid="userActions"]') ||
-                      document.querySelector('[aria-label="More"]');
-
-    if (moreButton && moreButton.parentElement) {
-      console.log('[TwitterAdapter] Found More button, inserting as first child');
-
-      // Get the parent container that holds all action buttons
-      const buttonContainer = moreButton.parentElement;
-
-      // Create a wrapper div for our button
-      const wrapper = document.createElement('div');
-      wrapper.style.cssText = `
-        display: inline-flex;
-        align-items: center;
-        margin-right: 8px;
-        position: relative;
-        top: -1px;
-      `;
-
-      // Insert our wrapper as the first child (leftmost position)
-      buttonContainer.insertBefore(wrapper, buttonContainer.firstChild);
-      return wrapper;
+    // On your own profile, look for the area with "Edit profile" button
+    const editProfileButton = document.querySelector('[data-testid="editProfileButton"]');
+    if (editProfileButton && editProfileButton.parentElement) {
+      console.log('[TwitterAdapter] Found editProfileButton, returning parent container');
+      return editProfileButton.parentElement;
     }
 
-    // Fallback: Look for any action button container
+    // Another fallback: look for Following/Follow button and get its parent
     const followButton = document.querySelector('[data-testid*="follow"]');
-    const messageButton = document.querySelector('[data-testid="sendDMButton"]');
-
-    const actionButton = followButton || messageButton;
-
-    if (actionButton && actionButton.parentElement) {
-      console.log('[TwitterAdapter] Found action button container');
-
-      const buttonContainer = actionButton.parentElement;
-
-      const wrapper = document.createElement('div');
-      wrapper.style.cssText = `
-        display: inline-flex;
-        align-items: center;
-        margin-right: 8px;
-        position: relative;
-        top: -1px;
-      `;
-
-      // Add as first child
-      buttonContainer.insertBefore(wrapper, buttonContainer.firstChild);
-      return wrapper;
+    if (followButton && followButton.parentElement) {
+      console.log('[TwitterAdapter] Found follow button, returning parent container');
+      return followButton.parentElement;
     }
 
     console.log('[TwitterAdapter] No suitable container found');

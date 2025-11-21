@@ -47,7 +47,7 @@ class RedditAdapter extends BaseAdapter {
 
   /**
    * Get placement for tip button
-   * Places button in the right sidebar next to username
+   * Places button in the hover card karma section or full profile page
    * @returns {Element|null}
    */
   getButtonPlacement() {
@@ -62,100 +62,58 @@ class RedditAdapter extends BaseAdapter {
       }
     }
 
-    // Check if button already exists
-    if (document.querySelector('#grove-tip-button')) {
-      console.log('[RedditAdapter] Button already exists');
-      return null;
-    }
+    // Simple approach: find the username heading and place button after it
+    const username = this.getUserIdentifier();
+    if (username) {
+      console.log('[RedditAdapter] Looking for username:', username);
 
-    // Strategy 1: Find the main profile header/banner area
-    const profileBanner = document.querySelector('[style*="banner"]') ||
-                         document.querySelector('[class*="banner"]') ||
-                         document.querySelector('div[style*="height: 94px"]') ||
-                         document.querySelector('div[style*="height: 128px"]');
-
-    if (profileBanner) {
-      console.log('[RedditAdapter] Found profile banner area');
-
-      // Create container positioned in top right
-      const buttonContainer = document.createElement('div');
-      buttonContainer.style.cssText = `
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        z-index: 10;
-      `;
-
-      // Make parent relative if needed
-      const parent = profileBanner.parentElement || profileBanner;
-      const currentPosition = window.getComputedStyle(parent).position;
-      if (currentPosition === 'static') {
-        parent.style.position = 'relative';
+      // Check if button already exists
+      if (document.querySelector('#grove-tip-button')) {
+        console.log('[RedditAdapter] Button already exists');
+        return null;
       }
 
-      parent.appendChild(buttonContainer);
-      return buttonContainer;
-    }
+      // Look for the main username heading (usually h1)
+      const headings = document.querySelectorAll('h1, h2, h3');
+      console.log('[RedditAdapter] Found', headings.length, 'headings');
 
-    // Strategy 2: Look for the profile header with avatar
-    const avatar = document.querySelector('img[alt*="Avatar"]') ||
-                  document.querySelector('[data-testid="profile-avatar"]') ||
-                  document.querySelector('img[src*="avatar"]');
+      for (const heading of headings) {
+        const headingText = heading.textContent ? heading.textContent.trim() : '';
+        console.log('[RedditAdapter] Checking heading:', headingText);
 
-    if (avatar) {
-      const profileHeader = avatar.closest('div').parentElement;
+        // Check for exact match or partial match (in case URL is truncated)
+        if (headingText.toLowerCase() === username.toLowerCase() ||
+            headingText.toLowerCase().startsWith(username.toLowerCase()) ||
+            username.toLowerCase().startsWith(headingText.toLowerCase())) {
+          console.log('[RedditAdapter] Found matching username heading');
 
-      if (profileHeader) {
-        console.log('[RedditAdapter] Found profile header via avatar');
+          // Create a simple wrapper
+          const buttonWrapper = document.createElement('div');
+          buttonWrapper.style.cssText = `
+            display: inline-block;
+            margin-left: 12px;
+            vertical-align: middle;
+          `;
 
-        // Create container for top right placement
-        const buttonContainer = document.createElement('div');
-        buttonContainer.style.cssText = `
-          position: absolute;
-          top: 12px;
-          right: 12px;
-          z-index: 10;
-        `;
-
-        // Make sure parent is positioned
-        const style = window.getComputedStyle(profileHeader);
-        if (style.position === 'static') {
-          profileHeader.style.position = 'relative';
+          // Try to insert after the heading
+          if (heading.parentNode) {
+            heading.parentNode.insertBefore(buttonWrapper, heading.nextSibling);
+            console.log('[RedditAdapter] Successfully created wrapper after heading');
+            return buttonWrapper;
+          }
         }
-
-        profileHeader.appendChild(buttonContainer);
-        return buttonContainer;
       }
+
+      console.log('[RedditAdapter] No matching heading found');
+    } else {
+      console.log('[RedditAdapter] No username extracted from URL');
     }
 
-    // Strategy 3: Find the main content area and place at top
-    const mainContent = document.querySelector('main') ||
-                       document.querySelector('[role="main"]') ||
-                       document.querySelector('#main-content');
-
-    if (mainContent) {
-      console.log('[RedditAdapter] Using main content area');
-
-      // Find the first major section
-      const firstSection = mainContent.querySelector('div > div') || mainContent.firstElementChild;
-
-      if (firstSection) {
-        const buttonContainer = document.createElement('div');
-        buttonContainer.style.cssText = `
-          position: absolute;
-          top: 12px;
-          right: 12px;
-          z-index: 10;
-        `;
-
-        // Position the parent
-        if (window.getComputedStyle(firstSection).position === 'static') {
-          firstSection.style.position = 'relative';
-        }
-
-        firstSection.appendChild(buttonContainer);
-        return buttonContainer;
-      }
+    // Fallback: look for profile actions area (legacy selector)
+    const profileActions = document.querySelector('[data-testid="profile-actions"]');
+    if (profileActions) {
+      console.log('[RedditAdapter] Found profile actions for button placement');
+      return profileActions;
     }
 
     console.log('[RedditAdapter] No suitable container found');
@@ -184,38 +142,21 @@ class RedditAdapter extends BaseAdapter {
    * @returns {Promise<boolean>}
    */
   async waitForProfileLoad() {
-    console.log('[RedditAdapter] Waiting for profile to load...');
-
-    // Wait for hover card
-    const hoverCard = await this.waitForElement('[data-testid="user-hover-card"]', 2000);
+    // Wait for hover card or profile page to appear
+    const hoverCard = await this.waitForElement('[data-testid="user-hover-card"]', 3000);
     if (hoverCard) {
-      console.log('[RedditAdapter] Found hover card');
       return true;
     }
 
-    // Wait for any h1 element (usually contains username)
-    const h1Element = await this.waitForElement('h1', 3000);
-    if (h1Element) {
-      console.log('[RedditAdapter] Found h1 element:', h1Element.textContent);
-      return true;
-    }
-
-    // Wait for profile description
-    const profileDescription = await this.waitForElement('[data-testid="profile-description"]', 2000);
+    // Wait for full profile page - look for profile description
+    const profileDescription = await this.waitForElement('[data-testid="profile-description"]', 5000);
     if (profileDescription) {
-      console.log('[RedditAdapter] Found profile description');
       return true;
     }
 
-    // Fallback to profile bio
-    const profileBio = await this.waitForElement('[data-testid="profile-bio"]', 2000);
-    if (profileBio) {
-      console.log('[RedditAdapter] Found profile bio');
-      return true;
-    }
-
-    console.log('[RedditAdapter] Profile load timeout - proceeding anyway');
-    return true; // Try to proceed anyway
+    // Fallback to legacy profile page selector
+    const profileBio = await this.waitForElement('[data-testid="profile-bio"]', 5000);
+    return profileBio !== null;
   }
 }
 

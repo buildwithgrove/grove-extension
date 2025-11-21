@@ -248,7 +248,8 @@ class TipButton {
       position: relative !important;
       overflow: hidden !important;
       white-space: nowrap !important;
-      margin: 4px !important;
+      margin-left: 8px !important;
+      margin-right: 4px !important;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     `;
 
@@ -569,10 +570,15 @@ class TipButton {
         // Hover card style
         valueSpan.textContent = 'Tip 🌿';
       } else {
-        // Profile button style
-        textElement = this.button.querySelector('span');
-        if (textElement) {
-          textElement.textContent = 'Tip 🌿';
+        // Profile button style - has separate text and emoji spans
+        const spans = this.button.querySelectorAll('span');
+        if (spans.length >= 2) {
+          // We have separate spans - reset each individually
+          spans[0].textContent = 'Tip'; // Text span
+          spans[1].textContent = '🌿';   // Emoji span
+        } else if (spans.length === 1) {
+          // Fallback - single span with both text and emoji
+          spans[0].textContent = 'Tip 🌿';
         }
       }
     } else {
