@@ -95,6 +95,33 @@ body {
   letter-spacing: -0.5px;
 }
 
+/* Test Mode Badge */
+.test-badge {
+  background-color: var(--color-accent);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-left: 8px;
+}
+
+/* Hide testnets by default */
+.testnet-option {
+  display: none !important;
+}
+
+/* Show testnets in developer mode */
+body.developer-mode .testnet-option {
+  display: flex !important;
+}
+
+/* Test environment visual indicator */
+body.developer-mode .header {
+  border-bottom: 2px solid var(--color-accent);
+}
+
 /* Chain Selector */
 .chain-selector-container {
   position: relative;
@@ -119,11 +146,17 @@ body {
   background-color: var(--color-surface-hover);
 }
 
-.chain-dot {
-  width: 8px;
-  height: 8px;
-  background-color: #0052FF; /* Base Blue by default */
-  border-radius: 50%;
+.chain-selector-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chain-selector-icon .chain-logo {
+  width: 16px;
+  height: 16px;
 }
 
 .chain-chevron {
@@ -464,75 +497,53 @@ body {
   transform: scale(0.98);
 }
 
-/* Info Card (Get Tips) */
-.info-card {
+/* Step Cards (Get Tips) */
+.step-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+
+.step-card {
   background-color: var(--color-surface);
   border-radius: var(--radius-lg);
-  padding: 20px;
-  margin: 16px;
-}
-
-.info-card.compact {
   padding: 16px;
-}
-
-.info-card h3 {
-  font-size: 16px;
-  margin-bottom: 4px;
-}
-
-.info-subtitle {
-  color: var(--color-text-secondary);
-  font-size: 13px;
-  margin-bottom: 16px;
-}
-
-.step-list {
-  text-align: left;
-}
-
-.step-list.compact .step-item {
-  margin-bottom: 14px;
-}
-
-.step-item {
   display: flex;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 12px;
+  align-items: flex-start;
 }
 
 .step-number {
-  width: 20px;
-  height: 20px;
-  background-color: var(--color-primary-light);
-  color: var(--color-primary);
+  width: 24px;
+  height: 24px;
+  background-color: var(--color-primary);
+  color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 11px;
+  font-size: 12px;
   flex-shrink: 0;
 }
 
 .step-content {
-  font-size: 13px;
-  color: var(--color-text-primary);
-  line-height: 1.4;
   flex: 1;
 }
 
-.step-content strong {
-  display: block;
-  margin-bottom: 2px;
+.step-content h4 {
   font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: var(--color-text-primary);
 }
 
-.wallet-options,
-.step-detail {
+.step-content p {
+  font-size: 13px;
   color: var(--color-text-secondary);
-  font-size: 12px;
-  margin-top: 2px;
+  margin: 0;
+  line-height: 1.4;
 }
 
 .link-accent {

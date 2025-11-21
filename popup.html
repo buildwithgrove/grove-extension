@@ -16,12 +16,17 @@
       <div class="logo-container">
         <img src="icons/icon48.png" alt="Grove" class="logo-icon">
         <h1 class="logo-text">Grove</h1>
+        <span class="test-badge hidden" id="testModeBadge">TEST</span>
       </div>
     </div>
     
     <div class="chain-selector-container">
       <button class="chain-selector-button" id="chainSelectorBtn" aria-label="Select chain">
-        <span class="chain-dot"></span>
+        <div class="chain-selector-icon" id="chainSelectorIcon">
+          <svg class="chain-logo" width="16" height="16" viewBox="0 0 111 111" fill="none">
+            <path d="M54.921 110.034C85.359 110.034 110.034 85.402 110.034 55.017C110.034 24.6319 85.359 0 54.921 0C26.0432 0 2.35281 22.1714 0 50.3923H72.8467V59.6416H3.9565e-07C2.35281 87.8625 26.0432 110.034 54.921 110.034Z" fill="#0052FF"/>
+          </svg>
+        </div>
         <span class="chain-name" id="chainName">Base</span>
         <svg class="chain-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
@@ -40,7 +45,7 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
           </div>
         </div>
-        <div class="chain-option" data-chain="base-sepolia">
+        <div class="chain-option testnet-option" data-chain="base-sepolia">
           <div class="chain-icon-wrapper">
             <svg class="chain-logo" width="24" height="24" viewBox="0 0 111 111" fill="none">
               <path d="M54.921 110.034C85.359 110.034 110.034 85.402 110.034 55.017C110.034 24.6319 85.359 0 54.921 0C26.0432 0 2.35281 22.1714 0 50.3923H72.8467V59.6416H3.9565e-07C2.35281 87.8625 26.0432 110.034 54.921 110.034Z" fill="#0052FF" opacity="0.5"/>
@@ -78,7 +83,7 @@
             <div class="chain-option-type">Mainnet</div>
           </div>
         </div>
-        <div class="chain-option" data-chain="solana-devnet">
+        <div class="chain-option testnet-option" data-chain="solana-devnet">
           <div class="chain-icon-wrapper">
             <svg class="chain-logo" width="24" height="24" viewBox="0 0 397 311" fill="none" opacity="0.5">
               <path d="M64.6 237.9C67.1 235.4 70.6 234 74.2 234H389.5C395.7 234 398.9 241.1 394.9 245.1L333.1 306.9C330.6 309.4 327.1 310.8 323.5 310.8H8.19999C2.09999 310.8 -1.20001 303.7 2.79999 299.7L64.6 237.9Z" fill="url(#paint0_linear_dev)"/>
@@ -177,35 +182,28 @@
     <div class="page" id="tab-activity">
       <h2 class="page-title">Get Tips</h2>
 
-      <div class="info-card compact">
-        <h3>Start receiving tips</h3>
-        <p class="info-subtitle">Add your wallet address to your social profiles</p>
+      <div class="step-cards">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h4>Create a wallet</h4>
+            <p>Download <a href="https://phantom.app" target="_blank" class="link-accent">Phantom</a>, <a href="https://metamask.io" target="_blank" class="link-accent">MetaMask</a>, or <a href="https://www.coinbase.com/wallet" target="_blank" class="link-accent">Coinbase Wallet</a></p>
+          </div>
+        </div>
 
-        <div class="step-list compact">
-          <div class="step-item">
-            <div class="step-number">1</div>
-            <div class="step-content">
-              <strong>Get a wallet</strong>
-              <div class="wallet-options">
-                Popular options: <a href="https://phantom.app" target="_blank" class="link-accent">Phantom</a>,
-                <a href="https://metamask.io" target="_blank" class="link-accent">MetaMask</a>,
-                <a href="https://www.coinbase.com/wallet" target="_blank" class="link-accent">Coinbase Wallet</a>
-              </div>
-            </div>
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h4>Copy your address</h4>
+            <p>Get your wallet address for Base or Solana</p>
           </div>
-          <div class="step-item">
-            <div class="step-number">2</div>
-            <div class="step-content">
-              <strong>Copy your wallet address</strong>
-              <div class="step-detail">Works with Base & Solana</div>
-            </div>
-          </div>
-          <div class="step-item">
-            <div class="step-number">3</div>
-            <div class="step-content">
-              <strong>Add to your bio</strong>
-              <div class="step-detail">Paste your address(es) on your X, Reddit, and/or YouTube profiles</div>
-            </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h4>Add to your profile</h4>
+            <p>Paste the address in your X, Reddit, or YouTube bio</p>
           </div>
         </div>
       </div>

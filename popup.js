@@ -191,10 +191,19 @@ function updateAuthState(jwt) {
   }
 }
 
-function showJwtEdit() {
+async function showJwtEdit() {
   jwtEditContainer.classList.remove('hidden');
   jwtInput.focus();
   manageJwtBtn.textContent = 'Close';
+
+  // Check if JWT exists to show/hide remove button
+  const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
+  const jwt = result[STORAGE_KEYS.JWT];
+  if (jwt && jwt.length > 0) {
+    removeJwtBtn.classList.remove('hidden');
+  } else {
+    removeJwtBtn.classList.add('hidden');
+  }
 }
 
 function hideJwtEdit() {
@@ -302,30 +311,58 @@ async function fetchBalance() {
 async function loadEnvironment() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.ENVIRONMENT]);
   const env = result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV;
+  const testBadge = document.getElementById('testModeBadge');
 
   if (env === 'local') {
     devModeToggle.checked = true;
+    document.body.classList.add('developer-mode');
     envStatusRow.classList.remove('hidden');
-    envStatus.textContent = 'Localhost';
+    envStatus.textContent = 'Test Environment';
+    if (testBadge) testBadge.classList.remove('hidden');
   } else {
     devModeToggle.checked = false;
+    document.body.classList.remove('developer-mode');
     envStatusRow.classList.add('hidden');
+    if (testBadge) testBadge.classList.add('hidden');
   }
 }
 
 async function handleDevModeToggle(e) {
-  const isLocal = e.target.checked;
-  const newEnv = isLocal ? 'local' : 'prod';
+  const isDev = e.target.checked;
+  const newEnv = isDev ? 'local' : 'prod';
+  const testBadge = document.getElementById('testModeBadge');
 
-    await chrome.storage.local.set({ [STORAGE_KEYS.ENVIRONMENT]: newEnv });
-  
-  if (isLocal) {
+  await chrome.storage.local.set({ [STORAGE_KEYS.ENVIRONMENT]: newEnv });
+
+  if (isDev) {
+    // Enable developer mode
+    document.body.classList.add('developer-mode');
     envStatusRow.classList.remove('hidden');
-    envStatus.textContent = 'Localhost';
-    showToast('Switched to Localhost');
+    envStatus.textContent = 'Test Environment';
+    if (testBadge) testBadge.classList.remove('hidden');
+    showToast('Developer Mode Enabled');
+
+    // Check if current chain is a mainnet and switch to testnet
+    const currentChain = chainName.textContent;
+    if (currentChain === 'Base') {
+      await handleChainSelection({ currentTarget: { dataset: { chain: 'base-sepolia' } } });
+    } else if (currentChain === 'Solana') {
+      await handleChainSelection({ currentTarget: { dataset: { chain: 'solana-devnet' } } });
+    }
   } else {
+    // Disable developer mode
+    document.body.classList.remove('developer-mode');
     envStatusRow.classList.add('hidden');
-    showToast('Switched to Production');
+    if (testBadge) testBadge.classList.add('hidden');
+    showToast('Developer Mode Disabled');
+
+    // Check if current chain is a testnet and switch to mainnet
+    const currentChain = chainName.textContent;
+    if (currentChain === 'Base Sepolia') {
+      await handleChainSelection({ currentTarget: { dataset: { chain: 'base' } } });
+    } else if (currentChain === 'Solana Devnet') {
+      await handleChainSelection({ currentTarget: { dataset: { chain: 'solana' } } });
+    }
   }
 }
 
@@ -342,13 +379,17 @@ function updateChainUI(chain) {
   const config = CHAIN_CONFIG[chain] || CHAIN_CONFIG['base'];
   chainName.textContent = config.name;
 
-  // Update chain dot color based on selected chain
-  const chainDot = document.querySelector('.chain-dot');
-  if (chainDot) {
-    if (chain.includes('solana')) {
-      chainDot.style.backgroundColor = '#9945FF'; // Solana purple
-    } else {
-      chainDot.style.backgroundColor = '#0052FF'; // Base blue
+  // Update chain icon based on selected chain
+  const chainIcon = document.getElementById('chainSelectorIcon');
+  if (chainIcon) {
+    // Get the logo SVG from the dropdown option
+    const selectedOption = document.querySelector(`[data-chain="${chain}"]`);
+    if (selectedOption) {
+      const logo = selectedOption.querySelector('.chain-logo').cloneNode(true);
+      logo.setAttribute('width', '16');
+      logo.setAttribute('height', '16');
+      chainIcon.innerHTML = '';
+      chainIcon.appendChild(logo);
     }
   }
 }
