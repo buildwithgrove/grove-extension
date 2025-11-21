@@ -115,7 +115,7 @@
 
   <!-- Test Mode Banner -->
   <div class="test-mode-banner hidden" id="testModeBanner">
-    <span>🧪 Test Mode - Using test networks only</span>
+    <span>🧪 Testnet Mode Activated</span>
   </div>
 
   <!-- Main Content Area -->
@@ -188,29 +188,134 @@
               <p class="card-description">Look for this on X, Reddit, and YouTube</p>
             </div>
             <div class="demo-tip-button">
-              <span class="tip-emoji">🌿</span>
               <span>Tip</span>
+              <span class="tip-emoji">🌿</span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Activity / Get Tips Page -->
-    <div class="page" id="tab-activity">
-      <h2 class="page-title">Get Tips</h2>
+    <!-- History Page -->
+    <div class="page" id="tab-history">
+      <h2 class="page-title">History</h2>
+
+      <div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <h3>No transactions yet</h3>
+        <p>Your tip history will appear here</p>
+      </div>
+    </div>
+
+    <!-- Leaderboard Page -->
+    <div class="page" id="tab-leaderboard">
+      <h2 class="page-title">Leaderboard</h2>
+
+      <!-- Switcher -->
+      <div class="leaderboard-switcher">
+        <button class="switcher-btn active" data-view="tippers">Top Tippers</button>
+        <button class="switcher-btn" data-view="tippees">Top Tippees</button>
+      </div>
+
+      <!-- Top Tippers View -->
+      <div class="leaderboard-view active" id="tippers-view">
+        <div class="leaderboard-list">
+          <div class="leaderboard-item">
+            <div class="rank">1</div>
+            <div class="user-info">
+              <div class="wallet-address">0x742d...8c9d</div>
+              <div class="tip-count">2,453 tips sent</div>
+            </div>
+            <div class="amount">$12,265</div>
+          </div>
+          <div class="leaderboard-item">
+            <div class="rank">2</div>
+            <div class="user-info">
+              <div class="wallet-address">0x8f3a...2d1e</div>
+              <div class="tip-count">1,827 tips sent</div>
+            </div>
+            <div class="amount">$9,135</div>
+          </div>
+          <div class="leaderboard-item">
+            <div class="rank">3</div>
+            <div class="user-info">
+              <div class="wallet-address">0x3c9f...7a2b</div>
+              <div class="tip-count">1,203 tips sent</div>
+            </div>
+            <div class="amount">$6,015</div>
+          </div>
+          <div class="leaderboard-item">
+            <div class="rank">4</div>
+            <div class="user-info">
+              <div class="wallet-address">0x9e2d...4f8c</div>
+              <div class="tip-count">987 tips sent</div>
+            </div>
+            <div class="amount">$4,935</div>
+          </div>
+          <div class="leaderboard-item">
+            <div class="rank">5</div>
+            <div class="user-info">
+              <div class="wallet-address">0x5b7a...1c3d</div>
+              <div class="tip-count">654 tips sent</div>
+            </div>
+            <div class="amount">$3,270</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Tippees View -->
+      <div class="leaderboard-view" id="tippees-view">
+        <div class="leaderboard-list">
+          <div class="leaderboard-item">
+            <div class="rank">1</div>
+            <div class="user-info">
+              <div class="wallet-address">0xa4c2...9f3e</div>
+              <div class="tip-count">5,672 tips received</div>
+            </div>
+            <div class="amount">$28,360</div>
+          </div>
+          <div class="leaderboard-item">
+            <div class="rank">2</div>
+            <div class="user-info">
+              <div class="wallet-address">0x2d8f...6b1a</div>
+              <div class="tip-count">3,945 tips received</div>
+            </div>
+            <div class="amount">$19,725</div>
+          </div>
+          <div class="leaderboard-item">
+            <div class="rank">3</div>
+            <div class="user-info">
+              <div class="wallet-address">0x7e3c...4d2f</div>
+              <div class="tip-count">2,834 tips received</div>
+            </div>
+            <div class="amount">$14,170</div>
+          </div>
+          <div class="leaderboard-item">
+            <div class="rank">4</div>
+            <div class="user-info">
+              <div class="wallet-address">0x1f9a...8e7c</div>
+              <div class="tip-count">2,156 tips received</div>
+            </div>
+            <div class="amount">$10,780</div>
+          </div>
+          <div class="leaderboard-item">
+            <div class="rank">5</div>
+            <div class="user-info">
+              <div class="wallet-address">0x6c4d...3a9b</div>
+              <div class="tip-count">1,893 tips received</div>
+            </div>
+            <div class="amount">$9,465</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Earn Tips Page -->
+    <div class="page" id="tab-earn">
+      <h2 class="page-title">Earn Tips</h2>
 
       <div class="step-cards">
         <div class="step-card">
-          <div class="step-number">1</div>
-          <div class="step-content">
-            <h4>Get a crypto wallet</h4>
-            <p>Try <a href="https://phantom.app" target="_blank" class="link-accent">Phantom</a>, <a href="https://metamask.io" target="_blank" class="link-accent">MetaMask</a>, or <a href="https://www.coinbase.com/wallet" target="_blank" class="link-accent">Coinbase Wallet</a></p>
-          </div>
-        </div>
-
-        <div class="step-card">
-          <div class="step-number">2</div>
           <div class="step-content">
             <h4>Copy your wallet address</h4>
             <p>Works with Base and Solana</p>
@@ -218,7 +323,6 @@
         </div>
 
         <div class="step-card">
-          <div class="step-number">3</div>
           <div class="step-content">
             <h4>Add it to your bio</h4>
             <p>Paste your address in your <a href="https://x.com" target="_blank" class="link-accent">X</a>, <a href="https://reddit.com" target="_blank" class="link-accent">Reddit</a>, or <a href="https://youtube.com" target="_blank" class="link-accent">YouTube</a> profile</p>
@@ -226,14 +330,13 @@
         </div>
 
         <div class="step-card">
-          <div class="step-number">4</div>
           <div class="step-content">
-            <h4>Refresh profile</h4>
-            <p>You'll see this button on your profile</p>
+            <h4>Refresh your profile</h4>
+            <p>You'll see this button<br>on your profile</p>
           </div>
           <div class="demo-tip-button-small">
-            <span class="tip-emoji">🌿</span>
             <span>Tip</span>
+            <span class="tip-emoji">🌿</span>
           </div>
         </div>
       </div>
@@ -245,11 +348,10 @@
 
       <div class="settings-group">
         <div class="settings-label">Account</div>
-        
+
         <!-- JWT Management -->
         <div class="settings-item-column" id="jwtSettingsSection">
           <div class="settings-row">
-            <div class="settings-icon">🔑</div>
             <div class="settings-info">
               <div class="settings-name">Secret Key</div>
               <div class="settings-desc" id="jwtStatusDisplay">Not connected</div>
@@ -275,7 +377,6 @@
       <div class="settings-group">
         <div class="settings-label">Developer</div>
         <div class="settings-item">
-          <div class="settings-icon">🛠️</div>
           <div class="settings-info">
             <div class="settings-name">Developer Mode</div>
             <div class="settings-desc">Enable local testing</div>
@@ -289,16 +390,14 @@
 
       <div class="settings-group">
         <div class="settings-label">Resources</div>
-        <a href="https://grove.city/" target="_blank" class="settings-item">
-          <div class="settings-icon">🌐</div>
+        <a href="https://discord.gg/build-with-grove" target="_blank" class="settings-item">
           <div class="settings-info">
-            <div class="settings-name">Grove Website</div>
-            <div class="settings-desc">grove.city</div>
+            <div class="settings-name">Discord Support</div>
+            <div class="settings-desc">discord.gg/build-with-grove</div>
           </div>
           <div class="settings-arrow">›</div>
         </a>
         <a href="https://grove.city/docs" target="_blank" class="settings-item">
-          <div class="settings-icon">📚</div>
           <div class="settings-info">
             <div class="settings-name">Documentation</div>
             <div class="settings-desc">grove.city/docs</div>
@@ -313,15 +412,23 @@
   <!-- Bottom Navigation -->
   <nav class="bottom-nav">
     <button class="nav-item active" data-target="tab-home">
-      <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
       <span class="nav-label">Home</span>
     </button>
-    <button class="nav-item" data-target="tab-activity">
-      <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-      <span class="nav-label">Get Tips</span>
+    <button class="nav-item" data-target="tab-history">
+      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+      <span class="nav-label">History</span>
+    </button>
+    <button class="nav-item" data-target="tab-leaderboard">
+      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+      <span class="nav-label">Leaders</span>
+    </button>
+    <button class="nav-item" data-target="tab-earn">
+      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+      <span class="nav-label">Earn</span>
     </button>
     <button class="nav-item" data-target="tab-settings">
-      <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
       <span class="nav-label">Settings</span>
     </button>
   </nav>

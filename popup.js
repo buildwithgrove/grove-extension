@@ -7,6 +7,10 @@
 const navItems = document.querySelectorAll('.nav-item');
 const pages = document.querySelectorAll('.page');
 
+// Leaderboard switcher
+let leaderboardSwitcherBtns = null;
+let leaderboardViews = null;
+
 // Chain selector
 const chainSelectorBtn = document.getElementById('chainSelectorBtn');
 const chainDropdown = document.getElementById('chainDropdown');
@@ -39,7 +43,7 @@ const jwtEditContainer = document.getElementById('jwtEditContainer');
 const jwtInput = document.getElementById('jwtInput');
 const saveJwtBtn = document.getElementById('saveJwtBtn');
 const cancelJwtBtn = document.getElementById('cancelJwtBtn');
-const removeJwtBtn = document.getElementById('removeJwtBtn');
+let removeJwtBtn = null; // Will be set later since it might not exist initially
 
 // Storage Keys
 const STORAGE_KEYS = {
@@ -81,6 +85,9 @@ function setupEventListeners() {
     item.addEventListener('click', handleNavigation);
   });
 
+  // Leaderboard switcher
+  setupLeaderboardSwitcher();
+
   // Chain Selector
   chainSelectorBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -118,9 +125,14 @@ function setupEventListeners() {
     }
   });
 
-  saveJwtBtn.addEventListener('click', saveJwt);
-  cancelJwtBtn.addEventListener('click', hideJwtEdit);
-  removeJwtBtn.addEventListener('click', removeJwt);
+  if (saveJwtBtn) saveJwtBtn.addEventListener('click', saveJwt);
+  if (cancelJwtBtn) cancelJwtBtn.addEventListener('click', hideJwtEdit);
+
+  // Get remove button and add event listener
+  removeJwtBtn = document.getElementById('removeJwtBtn');
+  if (removeJwtBtn) {
+    removeJwtBtn.addEventListener('click', removeJwt);
+  }
 
   // Dev Mode
   if (devModeToggle) {
@@ -182,7 +194,13 @@ function updateAuthState(jwt) {
     jwtStatusDisplay.style.color = 'var(--color-primary)';
     jwtStatusDisplay.style.fontFamily = 'monospace';
 
-    removeJwtBtn.classList.remove('hidden');
+    // Get remove button if not already cached
+    if (!removeJwtBtn) {
+      removeJwtBtn = document.getElementById('removeJwtBtn');
+    }
+    if (removeJwtBtn) {
+      removeJwtBtn.classList.remove('hidden');
+    }
     } else {
     // Not Connected
     onboardingState.classList.remove('hidden');
@@ -192,7 +210,13 @@ function updateAuthState(jwt) {
     jwtStatusDisplay.style.color = 'var(--color-text-secondary)';
     jwtStatusDisplay.style.fontFamily = 'inherit';
 
-    removeJwtBtn.classList.add('hidden');
+    // Get remove button if not already cached
+    if (!removeJwtBtn) {
+      removeJwtBtn = document.getElementById('removeJwtBtn');
+    }
+    if (removeJwtBtn) {
+      removeJwtBtn.classList.add('hidden');
+    }
   }
 }
 
@@ -200,14 +224,23 @@ async function showJwtEdit() {
   jwtEditContainer.classList.remove('hidden');
   manageJwtBtn.textContent = 'Close';
 
+  // Get remove button if not already cached
+  if (!removeJwtBtn) {
+    removeJwtBtn = document.getElementById('removeJwtBtn');
+  }
+
   // Check if JWT exists to show/hide remove button and populate input
   const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
   const jwt = result[STORAGE_KEYS.JWT];
   if (jwt && jwt.length > 0) {
-    removeJwtBtn.classList.remove('hidden');
+    if (removeJwtBtn) {
+      removeJwtBtn.classList.remove('hidden');
+    }
     jwtInput.value = jwt; // Show existing key in input
   } else {
-    removeJwtBtn.classList.add('hidden');
+    if (removeJwtBtn) {
+      removeJwtBtn.classList.add('hidden');
+    }
     jwtInput.value = '';
   }
 
@@ -406,6 +439,34 @@ async function handleChainSelection(e) {
 
   // Reload balance
   fetchBalance();
+}
+
+/**
+ * Setup Leaderboard Switcher
+ */
+function setupLeaderboardSwitcher() {
+  leaderboardSwitcherBtns = document.querySelectorAll('.switcher-btn');
+  leaderboardViews = document.querySelectorAll('.leaderboard-view');
+
+  if (leaderboardSwitcherBtns) {
+    leaderboardSwitcherBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const view = e.target.dataset.view;
+
+        // Update active button
+        leaderboardSwitcherBtns.forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+
+        // Update active view
+        leaderboardViews.forEach(v => v.classList.remove('active'));
+        if (view === 'tippers') {
+          document.getElementById('tippers-view').classList.add('active');
+        } else {
+          document.getElementById('tippees-view').classList.add('active');
+        }
+      });
+    });
+  }
 }
 
 /**

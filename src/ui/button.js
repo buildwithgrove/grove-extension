@@ -48,11 +48,97 @@ class TipButton {
     this.button.className = 'grove-tip-button';
     this.button.id = 'grove-tip-button';
 
+    // Apply inline styles - black with green border, matching Twitter's button height
+    this.button.style.cssText = `
+      background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%) !important;
+      border: 2px solid #389f58 !important;
+      border-radius: 9999px !important;
+      padding: 0 16px !important;
+      height: 34px !important;
+      min-height: 34px !important;
+      min-width: 32px !important;
+      position: relative !important;
+      overflow: hidden !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 4px !important;
+      cursor: pointer !important;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      box-shadow: 0 2px 8px rgba(56, 159, 88, 0.3) !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+      vertical-align: middle !important;
+    `;
+
     // Create text span
     const textSpan = document.createElement('span');
     textSpan.textContent = 'Tip';
+    textSpan.style.cssText = `
+      color: #ffffff !important;
+      font-weight: 600 !important;
+      font-size: 14px !important;
+      position: relative !important;
+      z-index: 2 !important;
+      display: flex !important;
+      align-items: center !important;
+    `;
+
+    // Create emoji span
+    const emojiSpan = document.createElement('span');
+    emojiSpan.textContent = '🌿';
+    emojiSpan.style.cssText = `
+      font-size: 15px !important;
+      margin-left: 4px !important;
+      position: relative !important;
+      z-index: 2 !important;
+    `;
+
+    // Create animated sheen overlay
+    const sheenOverlay = document.createElement('div');
+    sheenOverlay.style.cssText = `
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      background: linear-gradient(90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent) !important;
+      pointer-events: none !important;
+      z-index: 1 !important;
+      animation: grove-sheen-slide 3s ease-in-out infinite !important;
+    `;
+
+    // Add keyframe animation to document if not already added
+    if (!document.querySelector('#grove-sheen-animation')) {
+      const style = document.createElement('style');
+      style.id = 'grove-sheen-animation';
+      style.textContent = `
+        @keyframes grove-sheen-slide {
+          0% { transform: translateX(-200%); }
+          100% { transform: translateX(200%); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Add hover effect
+    this.button.addEventListener('mouseenter', () => {
+      this.button.style.background = 'linear-gradient(135deg, #0a0a0a 0%, #2a2a2a 100%) !important';
+      this.button.style.transform = 'translateY(-1px)';
+      this.button.style.boxShadow = '0 4px 12px rgba(56, 159, 88, 0.5) !important';
+    });
+
+    this.button.addEventListener('mouseleave', () => {
+      this.button.style.background = 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%) !important';
+      this.button.style.transform = 'translateY(0)';
+      this.button.style.boxShadow = '0 2px 8px rgba(56, 159, 88, 0.3) !important';
+    });
 
     // Assemble the structure
+    textSpan.appendChild(emojiSpan);
+    this.button.appendChild(sheenOverlay);
     this.button.appendChild(textSpan);
 
     console.log('[TipButton] Twitter button created successfully', this.button);
@@ -105,7 +191,7 @@ class TipButton {
     const innerDiv = document.createElement('div');
     innerDiv.className = 'grove-tip-inner';
 
-    // Create value span (the "Tip 🌿" text)
+    // Create value span with emoji
     const valueSpan = document.createElement('span');
     valueSpan.className = 'grove-tip-value font-semibold text-14';
     valueSpan.textContent = 'Tip 🌿';
@@ -139,31 +225,86 @@ class TipButton {
   createRedditProfileButton() {
     console.log('[TipButton] Creating Reddit profile page button...');
 
-    // Create button element matching Reddit's Share button style
+    // Create button element with inline styles for consistency
     this.button = document.createElement('button');
     this.button.setAttribute('aria-label', 'Send a tip');
-    this.button.setAttribute('rpl', '');
-    this.button.className = 'button-small px-[var(--rem10)] button-secondary items-center justify-center button inline-flex grove-tip-button-reddit-profile';
     this.button.id = 'grove-tip-button';
 
-    // Create span wrapper
-    const spanWrapper = document.createElement('span');
-    spanWrapper.className = 'flex items-center justify-center';
-
-    // Create icon span (using leaf emoji as icon)
-    const iconSpan = document.createElement('span');
-    iconSpan.className = 'flex me-xs';
-    iconSpan.textContent = '🌿';
+    // Apply inline styles to match Reddit's native button style
+    this.button.style.cssText = `
+      background: #1a1a1b !important;
+      border: 1px solid #343536 !important;
+      border-radius: 999px !important;
+      padding: 8px 16px !important;
+      color: #D7DADC !important;
+      font-weight: 600 !important;
+      font-size: 14px !important;
+      cursor: pointer !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      height: 32px !important;
+      transition: all 0.1s ease !important;
+      position: relative !important;
+      overflow: hidden !important;
+      white-space: nowrap !important;
+      margin: 4px !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    `;
 
     // Create text span
     const textSpan = document.createElement('span');
-    textSpan.className = 'flex items-center gap-xs';
     textSpan.textContent = 'Tip';
+    textSpan.style.cssText = `
+      color: #D7DADC !important;
+      font-weight: 600 !important;
+      font-size: 14px !important;
+      position: relative !important;
+      z-index: 2 !important;
+    `;
+
+    // Create emoji span
+    const emojiSpan = document.createElement('span');
+    emojiSpan.textContent = '🌿';
+    emojiSpan.style.cssText = `
+      font-size: 16px !important;
+      position: relative !important;
+      z-index: 2 !important;
+      filter: none !important;
+    `;
+
+    // Create animated sheen overlay (subtle)
+    const sheenOverlay = document.createElement('div');
+    sheenOverlay.style.cssText = `
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      background: linear-gradient(90deg,
+        transparent,
+        rgba(56, 159, 88, 0.1),
+        transparent) !important;
+      pointer-events: none !important;
+      z-index: 1 !important;
+      animation: grove-sheen-slide 3s ease-in-out infinite !important;
+    `;
+
+    // Add hover effect to match Reddit's style
+    this.button.addEventListener('mouseenter', () => {
+      this.button.style.background = '#272729 !important';
+      this.button.style.borderColor = '#D7DADC !important';
+    });
+
+    this.button.addEventListener('mouseleave', () => {
+      this.button.style.background = '#1a1a1b !important';
+      this.button.style.borderColor = '#343536 !important';
+    });
 
     // Assemble the structure
-    spanWrapper.appendChild(iconSpan);
-    spanWrapper.appendChild(textSpan);
-    this.button.appendChild(spanWrapper);
+    this.button.appendChild(sheenOverlay);
+    this.button.appendChild(textSpan);
+    this.button.appendChild(emojiSpan);
 
     console.log('[TipButton] Reddit profile button created successfully', this.button);
 
@@ -224,11 +365,11 @@ class TipButton {
     const textDiv = document.createElement('div');
     textDiv.className = 'yt-spec-button-shape-next__button-text-content';
 
-    // Create text span
+    // Create text span with emoji
     const textSpan = document.createElement('span');
     textSpan.className = 'yt-core-attributed-string yt-core-attributed-string--white-space-no-wrap';
     textSpan.setAttribute('role', 'text');
-    textSpan.textContent = 'Tip';
+    textSpan.textContent = 'Tip 🌿';
 
     // Assemble text structure
     textDiv.appendChild(textSpan);
@@ -393,20 +534,51 @@ class TipButton {
     this.button.disabled = false;
     this.button.style.cursor = 'pointer';
 
-    // Restore original text
+    // Restore original text for all platforms to "Tip 🌿"
     let textElement;
     if (this.platform === 'youtube') {
       textElement = this.button.querySelector('.yt-core-attributed-string');
       if (textElement) {
+        textElement.textContent = 'Tip 🌿';
+      }
+    } else if (this.platform === 'twitter') {
+      // For Twitter, update the main text span
+      textElement = this.button.querySelector('span');
+      if (textElement) {
+        // Clear and reset with both text and emoji
         textElement.textContent = 'Tip';
+        // Find or create emoji span
+        let emojiSpan = textElement.querySelector('span');
+        if (!emojiSpan) {
+          emojiSpan = document.createElement('span');
+          emojiSpan.style.cssText = `
+            font-size: 16px !important;
+            margin-left: 4px !important;
+            filter: saturate(1.5) !important;
+            position: relative !important;
+            z-index: 2 !important;
+          `;
+        }
+        emojiSpan.textContent = '🌿';
+        textElement.appendChild(emojiSpan);
+      }
+    } else if (this.platform === 'reddit') {
+      // For Reddit, check which type of button
+      const valueSpan = this.button.querySelector('.grove-tip-value');
+      if (valueSpan) {
+        // Hover card style
+        valueSpan.textContent = 'Tip 🌿';
+      } else {
+        // Profile button style
+        textElement = this.button.querySelector('span');
+        if (textElement) {
+          textElement.textContent = 'Tip 🌿';
+        }
       }
     } else {
+      // Default case
       textElement = this.button.querySelector('span') || this.button;
-      if (this.originalText) {
-        textElement.textContent = this.originalText;
-      } else {
-        textElement.textContent = this.platform === 'reddit' ? 'Tip 🌿' : 'Tip 🌿';
-      }
+      textElement.textContent = 'Tip 🌿';
     }
   }
 
@@ -429,48 +601,64 @@ class TipButton {
       return false;
     }
 
+    // Style the button to match Twitter's spacing
+    this.button.style.marginLeft = '8px';
+    this.button.style.marginRight = '8px';
+
     // Get all children of the target container
     const children = Array.from(targetElement.children);
     console.log('[TipButton] Target container has', children.length, 'children');
 
-    // Look for a good insertion point
-    // On other people's profiles: insert before "More" button (data-testid="userActions")
-    // On own profile: insert before "Edit profile" button (data-testid="editProfileButton")
+    // Find the last visible action button (usually the "More" button)
     let insertBeforeElement = null;
 
-    // Try to find the "More" button or other action buttons
-    for (let i = 0; i < children.length; i++) {
+    // Look for the More button specifically
+    for (let i = children.length - 1; i >= 0; i--) {
       const child = children[i];
-
-      // Check if this child is a button or contains a button with specific attributes
       const childButton = child.tagName === 'BUTTON' ? child : child.querySelector('button');
 
       if (childButton) {
         const ariaLabel = childButton.getAttribute('aria-label');
         const testId = childButton.getAttribute('data-testid');
 
-        // Insert before "More" button, Edit profile, or Follow/Following buttons
+        // Find the More button (3 dots)
         if ((ariaLabel && ariaLabel.toLowerCase().includes('more')) ||
-            (testId && testId === 'userActions') ||
-            (ariaLabel && (ariaLabel.includes('Follow') || ariaLabel.includes('Message'))) ||
-            (testId && testId.includes('follow'))) {
+            (testId && testId === 'userActions')) {
           insertBeforeElement = child;
-          console.log('[TipButton] Found insertion point before:', ariaLabel || testId);
+          console.log('[TipButton] Found More button, will insert before it');
           break;
         }
       }
     }
 
-    // Insert button directly without wrapper to match Twitter's button structure
+    // If no More button found, look for other buttons to insert after
+    if (!insertBeforeElement) {
+      // Find Message or Follow button to insert after
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i];
+        const childButton = child.tagName === 'BUTTON' ? child : child.querySelector('button');
+
+        if (childButton) {
+          const ariaLabel = childButton.getAttribute('aria-label');
+
+          if (ariaLabel && (ariaLabel.includes('Message') || ariaLabel.includes('Follow'))) {
+            // Insert after this button
+            if (i < children.length - 1) {
+              insertBeforeElement = children[i + 1];
+            }
+            console.log('[TipButton] Found Message/Follow button, inserting after');
+            break;
+          }
+        }
+      }
+    }
+
+    // Insert the button
     if (insertBeforeElement) {
       targetElement.insertBefore(this.button, insertBeforeElement);
-      console.log('[TipButton] Inserted before target element');
-    } else if (children.length > 0) {
-      // Fallback: Insert at the beginning
-      targetElement.insertBefore(this.button, children[0]);
-      console.log('[TipButton] Inserted at beginning');
+      console.log('[TipButton] Inserted before element');
     } else {
-      // Fallback: just append
+      // Append at the end
       targetElement.appendChild(this.button);
       console.log('[TipButton] Appended to container');
     }

@@ -54,8 +54,7 @@
 }
 
 /* Text styling */
-.grove-tip-button span,
-.grove-tip-button div[dir="ltr"] {
+.grove-tip-button span {
   color: #ffffff !important;
   font-weight: 600 !important;
   font-size: 14px !important;
@@ -65,15 +64,6 @@
   gap: 4px !important;
   z-index: 1;
   position: relative;
-}
-
-/* Add herb emoji to text content */
-.grove-tip-button span::after,
-.grove-tip-button div[dir="ltr"] span::after {
-  content: ' 🌿';
-  font-size: 16px;
-  filter: saturate(1.5);
-  margin-left: 2px;
 }
 
 .grove-tip-button svg {
@@ -100,6 +90,16 @@
   outline-offset: 2px;
 }
 
+/* Animated sheen keyframe */
+@keyframes grove-sheen-slide {
+  0% {
+    transform: translateX(-200%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
 /* Reddit Button - Black with Green Border and Sheen */
 .grove-tip-button-reddit {
   margin-left: auto !important;
@@ -120,31 +120,23 @@
   overflow: hidden;
 }
 
-/* Sheen effect for Reddit */
-.grove-tip-button-reddit::after {
+/* Animated sheen for Reddit button */
+.grove-tip-button-reddit::before {
   content: '';
   position: absolute;
   top: 0;
-  left: -100%;
+  left: 0;
   width: 100%;
   height: 100%;
   background: linear-gradient(
     90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    transparent 100%
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
   );
-  transition: left 0.5s ease;
-}
-
-.grove-tip-button-reddit:hover::after {
-  left: 100%;
-}
-
-.grove-tip-button-reddit::before {
-  content: '🌿';
-  font-size: 16px;
-  filter: saturate(1.5);
+  transform: translateX(-200%);
+  animation: grove-sheen-slide 3s ease-in-out infinite;
+  pointer-events: none;
   z-index: 1;
 }
 
@@ -165,9 +157,10 @@
   background: linear-gradient(135deg, #000000 0%, #0a0a0a 100%) !important;
   border: 2px solid var(--grove-primary) !important;
   border-radius: 9999px !important;
-  padding: 8px 20px !important;
+  padding: 6px 16px !important;
   color: white !important;
   font-weight: 600 !important;
+  font-size: 14px !important;
   box-shadow: 0 2px 8px var(--grove-shadow) !important;
   transition: all 0.2s ease !important;
   display: inline-flex !important;
@@ -175,33 +168,27 @@
   gap: 6px !important;
   position: relative;
   overflow: hidden;
+  height: 32px !important;
+  margin-left: 12px !important;
 }
 
-/* Sheen effect */
-.grove-tip-button-reddit-profile::after {
+/* Animated sheen for Reddit profile button */
+.grove-tip-button-reddit-profile::before {
   content: '';
   position: absolute;
   top: 0;
-  left: -100%;
+  left: 0;
   width: 100%;
   height: 100%;
   background: linear-gradient(
     90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    transparent 100%
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
   );
-  transition: left 0.5s ease;
-}
-
-.grove-tip-button-reddit-profile:hover::after {
-  left: 100%;
-}
-
-.grove-tip-button-reddit-profile::before {
-  content: '🌿';
-  font-size: 16px;
-  filter: saturate(1.5);
+  transform: translateX(-200%);
+  animation: grove-sheen-slide 3s ease-in-out infinite;
+  pointer-events: none;
   z-index: 1;
 }
 
@@ -232,31 +219,23 @@
   overflow: hidden;
 }
 
-/* Sheen effect for YouTube */
-.grove-tip-button-youtube::after {
+/* Animated sheen for YouTube button */
+.grove-tip-button-youtube::before {
   content: '';
   position: absolute;
   top: 0;
-  left: -100%;
+  left: 0;
   width: 100%;
   height: 100%;
   background: linear-gradient(
     90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    transparent 100%
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
   );
-  transition: left 0.5s ease;
-}
-
-.grove-tip-button-youtube:hover::after {
-  left: 100%;
-}
-
-.grove-tip-button-youtube::before {
-  content: '🌿';
-  font-size: 16px;
-  filter: saturate(1.5);
+  transform: translateX(-200%);
+  animation: grove-sheen-slide 3s ease-in-out infinite;
+  pointer-events: none;
   z-index: 1;
 }
 
