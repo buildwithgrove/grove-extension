@@ -148,10 +148,6 @@ function setupEventListeners() {
   // Dev Mode
   devModeToggle.addEventListener('change', handleDevModeToggle);
 
-  // Quick Actions (Placeholders)
-  document.querySelectorAll('.action-btn').forEach(btn => {
-    btn.addEventListener('click', () => showToast('Coming Soon'));
-  });
 }
 
 /**
@@ -159,7 +155,7 @@ function setupEventListeners() {
  */
 function handleNavigation(e) {
   const targetId = e.currentTarget.dataset.target;
-  
+
   // Update Tabs
   navItems.forEach(item => item.classList.remove('active'));
   e.currentTarget.classList.add('active');
@@ -221,7 +217,7 @@ function showJwtEdit() {
 function hideJwtEdit() {
   jwtEditContainer.classList.add('hidden');
   manageJwtBtn.textContent = 'Manage';
-}
+  }
 
 async function saveJwt() {
   const token = jwtInput.value.trim();
@@ -234,7 +230,7 @@ async function saveJwt() {
     // Go back to home if we were onboarding
     if (!onboardingState.classList.contains('hidden')) {
       document.querySelector('[data-target="tab-home"]').click();
-    }
+  }
   } else {
     showToast('Please enter a token');
   }
@@ -263,7 +259,7 @@ function updateTipUI(amount) {
   const formatted = `$${parseFloat(amount).toFixed(2)}`;
   tipAmountDisplay.textContent = formatted;
   tipAmountInput.value = parseFloat(amount).toFixed(2);
-}
+  }
 
 function showTipEdit() {
   tipAmountDisplay.classList.add('hidden');
@@ -354,7 +350,7 @@ async function fetchBalance(address) {
 async function loadEnvironment() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.ENVIRONMENT]);
   const env = result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV;
-  
+
   if (env === 'local') {
     devModeToggle.checked = true;
     envStatusRow.classList.remove('hidden');
@@ -401,7 +397,7 @@ async function handleChainSelection(e) {
   updateChainUI(chain);
   chainDropdown.classList.add('hidden');
   showToast(`Switched to ${CHAIN_CONFIG[chain].name}`);
-  
+
   // Reload balance
   const addr = walletAddressInput.value.trim();
   if (addr && addr.startsWith('0x')) {

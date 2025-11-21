@@ -289,49 +289,6 @@ body {
   color: var(--color-primary);
 }
 
-/* Quick Actions */
-.quick-actions {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  margin-bottom: 32px;
-}
-
-.action-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--color-text-secondary);
-  font-size: 12px;
-  font-weight: 500;
-  transition: color 0.2s;
-}
-
-.action-btn:hover {
-  color: var(--color-text-primary);
-}
-
-.action-icon {
-  width: 48px;
-  height: 48px;
-  background-color: var(--color-surface);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-primary);
-  transition: all 0.2s ease;
-}
-
-.action-btn:hover .action-icon {
-  background-color: var(--color-primary);
-  color: white;
-  transform: translateY(-2px);
-}
 
 /* Section Card */
 .section-card {
