@@ -18,13 +18,11 @@
    * Initialize the extension
    */
   async function init() {
-    console.log("[Grove Extension] Initializing...");
 
     // Detect platform and create appropriate adapter
     currentAdapter = detectPlatform();
 
     if (!currentAdapter) {
-      console.log("[Grove Extension] No supported platform detected");
       return;
     }
 
@@ -34,12 +32,10 @@
 
     // For Reddit, handle both hover cards and profile pages
     if (currentAdapter.getPlatformName() === "reddit") {
-      console.log("[Grove Extension] Setting up Reddit hover card observer");
       setupRedditHoverCardObserver();
 
       // Also check if we're on a profile page and handle it
       if (currentAdapter.detectProfilePage()) {
-        console.log("[Grove Extension] Reddit profile page detected, initializing button");
         await initializeProfileButton();
       }
       return;
@@ -48,7 +44,6 @@
     // Check if we're on a profile page
     try {
       if (!currentAdapter.detectProfilePage()) {
-        console.log("[Grove Extension] Not a profile page");
         return;
       }
     } catch (error) {
@@ -56,7 +51,6 @@
       return;
     }
 
-    console.log("[Grove Extension] Profile page detected");
 
     // Initialize profile button
     await initializeProfileButton();
@@ -81,11 +75,6 @@
       return new YouTubeAdapter();
     }
 
-    // TODO: Add more platform adapters
-    // if (hostname.includes('github.com')) {
-    //   return new GitHubAdapter();
-    // }
-
     return null;
   }
 
@@ -94,19 +83,16 @@
    * Handles profile page logic for extracting bio, checking for addresses, and injecting button
    */
   async function initializeProfileButton() {
-    console.log("[Grove Extension] Initializing profile button...");
 
     try {
       // Wait for profile to load (if adapter supports it)
       if (typeof currentAdapter.waitForProfileLoad === "function") {
         const loaded = await currentAdapter.waitForProfileLoad();
         if (!loaded) {
-          console.log("[Grove Extension] Profile load timeout");
           return;
         }
       }
 
-      console.log("[Grove Extension] Profile loaded");
 
       // Extract bio to check for addresses
       const bio = currentAdapter.extractBio();
@@ -159,9 +145,7 @@
       const injected = currentButton.inject(placement);
 
       if (injected) {
-        console.log("[Grove Extension] Tip button injected successfully");
       } else {
-        console.log("[Grove Extension] Failed to inject tip button");
       }
     } catch (error) {
       console.error("[Grove Extension] Error initializing profile button:", error);
@@ -172,7 +156,6 @@
    * Handle tip button click
    */
   async function handleTipClick() {
-    console.log("[Grove Extension] Processing tip...");
 
     // Show loading animation
     if (currentButton) {
@@ -188,8 +171,6 @@
       jwt = result.GROVE_API_JWT || '';
       tipAmount = result.GROVE_TIP_AMOUNT || 0.05;
 
-      console.log("[Grove Extension] JWT loaded:", jwt ? 'Yes' : 'No');
-      console.log("[Grove Extension] Tip amount:", tipAmount);
 
       if (!jwt) {
         console.error("[Grove Extension] No JWT token found. Please configure in settings.");
@@ -208,14 +189,12 @@
 
     // Get current page URL
     const pageUrl = window.location.href;
-    console.log("[Grove Extension] Sending tip for URL:", pageUrl);
 
     // Send tip via API with JWT and amount
     const response = await GroveAPI.sendTip(pageUrl, tipAmount, jwt);
 
     // Handle response with animations
     if (response.success) {
-      console.log("[Grove Extension] Tip successful!", response.data);
       if (currentButton) {
         currentButton.setSuccess();
       }
@@ -247,7 +226,6 @@
               : null;
 
             if (hoverCard || (node.dataset && node.dataset.testid === "user-hover-card")) {
-              console.log("[Grove Extension] Reddit hover card detected!");
               injectButtonIntoHoverCard(hoverCard || node);
             }
           }
@@ -261,7 +239,6 @@
       subtree: true,
     });
 
-    console.log("[Grove Extension] Reddit hover card observer started");
   }
 
   /**
@@ -269,50 +246,41 @@
    * @param {Element} hoverCard - The hover card element
    */
   async function injectButtonIntoHoverCard(hoverCard) {
-    console.log("[Grove Extension] Processing hover card...");
 
     // Check if button already exists in this hover card
     if (hoverCard.querySelector("#grove-tip-button")) {
-      console.log("[Grove Extension] Button already exists in hover card");
       return;
     }
 
     // Extract bio from hover card
     const bioSpan = hoverCard.querySelector(".whitespace-normal");
     if (!bioSpan) {
-      console.log("[Grove Extension] No bio found in hover card");
       return;
     }
 
     const bio = bioSpan.textContent;
-    console.log("[Grove Extension] Bio extracted:", bio);
 
     // Check if bio contains tippable address
     const hasAddress = AddressParser.hasAddresses(bio);
     if (!hasAddress) {
-      console.log("[Grove Extension] No tippable address found in hover card bio");
       return;
     }
 
-    console.log("[Grove Extension] Tippable address detected in hover card!");
 
     // Find the main content div that contains everything
     const contentDiv = hoverCard.querySelector(".p-md.flex.flex-col");
     if (!contentDiv) {
-      console.log("[Grove Extension] Could not find content div in hover card");
       return;
     }
 
     // Find the top row with avatar and user info
     const topRow = contentDiv.querySelector(".flex.flex-row.justify-items-start.items-center");
     if (!topRow) {
-      console.log("[Grove Extension] Could not find top row in hover card");
       return;
     }
 
     // Create and inject tip button with click handler
     const tipButton = new TipButton(async () => {
-      console.log("[Grove Extension] Processing hover card tip...");
 
       // Show loading animation
       tipButton.setLoading();
@@ -326,8 +294,6 @@
         jwt = result.GROVE_API_JWT || '';
         tipAmount = result.GROVE_TIP_AMOUNT || 0.05;
 
-        console.log("[Grove Extension] JWT loaded:", jwt ? 'Yes' : 'No');
-        console.log("[Grove Extension] Tip amount:", tipAmount);
 
         if (!jwt) {
           console.error("[Grove Extension] No JWT token found. Please configure in settings.");
@@ -348,8 +314,7 @@
 
       // Handle response with animations
       if (response.success) {
-        console.log("[Grove Extension] Tip successful!", response.data);
-        tipButton.setSuccess();
+          tipButton.setSuccess();
       } else {
         console.error("[Grove Extension] Tip failed:", response.error);
         tipButton.setError();
@@ -365,7 +330,6 @@
 
     // Append button to the end of the top row (after user info)
     topRow.appendChild(button);
-    console.log("[Grove Extension] Tip button appended to top row");
   }
 
   /**
@@ -394,7 +358,6 @@
       const currentUrl = window.location.href;
       if (currentUrl !== lastUrl) {
         lastUrl = currentUrl;
-        console.log("[Grove Extension] Navigation detected, reinitializing...");
         cleanup();
         setTimeout(init, 1000); // Wait for page to settle
       }
@@ -416,5 +379,4 @@
   // Watch for navigation changes
   watchForNavigation();
 
-  console.log("[Grove Extension] Content script loaded");
 })();

@@ -71,7 +71,6 @@ class BaseAdapter {
   }
 }
 
-// Export for use in content scripts
 if (typeof window !== 'undefined') {
   window.BaseAdapter = BaseAdapter;
 }

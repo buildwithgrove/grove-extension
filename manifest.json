@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Grove Tip Extension",
+  "name": "Grove - Tip Anyone, Anywhere",
   "version": "1.0.0",
   "description": "Tip anyone, anywhere.",
   "description_extended": "An extension that lets you tip anyone online.",
@@ -51,16 +51,16 @@
     }
   ],
   "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "16": "icons/logomark.png",
+    "48": "icons/logomark.png",
+    "128": "icons/logomark.png"
   },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
+      "16": "icons/logomark.png",
+      "48": "icons/logomark.png",
+      "128": "icons/logomark.png"
     },
     "default_title": "Grove - Tip with Crypto"
   }

@@ -26,10 +26,6 @@ async function getNetworkConfig() {
 async function getEthBalance(address) {
   const network = await getNetworkConfig();
 
-  console.log('[Grove Extension] Fetching ETH balance...');
-  console.log('[Grove Extension] Network:', network.name);
-  console.log('[Grove Extension] RPC:', network.rpcUrl);
-  console.log('[Grove Extension] Address:', address);
 
   try {
     const response = await fetch(network.rpcUrl, {
@@ -55,7 +51,6 @@ async function getEthBalance(address) {
     const balanceWei = BigInt(data.result || '0x0');
     const balanceEth = Number(balanceWei) / 1e18;
 
-    console.log('[Grove Extension] ETH balance:', balanceEth);
 
     return {
       balance: balanceEth,
@@ -82,11 +77,6 @@ async function getUsdcBalance(address) {
   const network = await getNetworkConfig();
   const usdcAddress = network.contracts.usdc;
 
-  console.log('[Grove Extension] Fetching USDC balance...');
-  console.log('[Grove Extension] Network:', network.name);
-  console.log('[Grove Extension] RPC:', network.rpcUrl);
-  console.log('[Grove Extension] USDC Contract:', usdcAddress);
-  console.log('[Grove Extension] Address:', address);
 
   try {
     // Prepare calldata for balanceOf(address)
@@ -124,7 +114,6 @@ async function getUsdcBalance(address) {
     const balanceRaw = BigInt(data.result || '0x0');
     const balanceUsdc = Number(balanceRaw) / 1e6;
 
-    console.log('[Grove Extension] USDC balance:', balanceUsdc);
 
     return {
       balance: balanceUsdc,
@@ -150,8 +139,6 @@ async function getUsdcBalance(address) {
 async function getBalances(address) {
   const network = await getNetworkConfig();
 
-  console.log('[Grove Extension] Fetching all balances for:', address);
-  console.log('[Grove Extension] Network:', network.name);
 
   // Fetch both balances in parallel
   const [eth, usdc] = await Promise.all([
@@ -169,7 +156,6 @@ async function getBalances(address) {
   };
 }
 
-// Export for use in other scripts
 if (typeof window !== 'undefined') {
   window.getEthBalance = getEthBalance;
   window.getUsdcBalance = getUsdcBalance;

@@ -1,607 +1,506 @@
 /**
  * Grove Extension Popup
- * Handles navigation, JWT management, and tip amount settings
+ * Handles navigation, settings, and interactions
  */
 
 // DOM Elements
-const hamburgerBtn = document.getElementById('hamburgerBtn');
-const navMenu = document.getElementById('navMenu');
-const navCloseBtn = document.getElementById('navCloseBtn');
-const navLinks = document.querySelectorAll('.nav-link');
+const navItems = document.querySelectorAll('.nav-item');
 const pages = document.querySelectorAll('.page');
 
-// Tip amount elements
-const tipAmountDisplay = document.getElementById('tipAmountDisplay');
-const tipAmountEdit = document.getElementById('tipAmountEdit');
-const tipAmountInput = document.getElementById('tipAmountInput');
-const saveTipAmount = document.getElementById('saveTipAmount');
-const cancelTipAmount = document.getElementById('cancelTipAmount');
+// Leaderboard switcher
+let leaderboardSwitcherBtns = null;
+let leaderboardViews = null;
 
-// JWT status container
-const jwtStatus = document.getElementById('jwtStatus');
-
-// Chain selector elements
+// Chain selector
 const chainSelectorBtn = document.getElementById('chainSelectorBtn');
 const chainDropdown = document.getElementById('chainDropdown');
 const chainName = document.getElementById('chainName');
 const chainOptions = document.querySelectorAll('.chain-option');
 
-// Balance elements
-const walletAddressInput = document.getElementById('walletAddressInput');
-const checkBalanceBtn = document.getElementById('checkBalanceBtn');
-const balanceDisplay = document.getElementById('balanceDisplay');
+// Home States
+const onboardingState = document.getElementById('onboardingState');
+const connectedState = document.getElementById('connectedState');
+const setupTokenBtn = document.getElementById('setupTokenBtn');
 
-// Storage keys
+// Tip amount
+const tipAmountDisplay = document.getElementById('tipAmountDisplay');
+const tipAmountEdit = document.getElementById('tipAmountEdit');
+const tipAmountInput = document.getElementById('tipAmountInput');
+const saveTipAmount = document.getElementById('saveTipAmount');
+const cancelTipAmount = document.getElementById('cancelTipAmount');
+const editTipBtn = document.getElementById('editTipAmount');
+
+// Balance
+const balanceAmount = document.getElementById('balanceAmount');
+
+// Settings
+const devModeToggle = document.getElementById('devModeCheckbox');
+
+// JWT Management
+const jwtStatusDisplay = document.getElementById('jwtStatusDisplay');
+const manageJwtBtn = document.getElementById('manageJwtBtn');
+const jwtEditContainer = document.getElementById('jwtEditContainer');
+const jwtInput = document.getElementById('jwtInput');
+const saveJwtBtn = document.getElementById('saveJwtBtn');
+const cancelJwtBtn = document.getElementById('cancelJwtBtn');
+let removeJwtBtn = null; // Will be set later since it might not exist initially
+
+// Storage Keys
 const STORAGE_KEYS = {
   JWT: 'GROVE_API_JWT',
   TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
   ENVIRONMENT: 'groveEnvironment',
   CHAIN: 'groveChain',
-  WALLET_ADDRESS: 'groveWalletAddress'
 };
 
-// Default values
+// Defaults
 const DEFAULT_TIP_AMOUNT = 0.10;
-const DEFAULT_ENVIRONMENT = 'prod';
 const DEFAULT_CHAIN = 'base';
+const DEFAULT_ENV = 'prod';
 
-// Chain configuration
 const CHAIN_CONFIG = {
-  'base': {
-    name: 'Base',
-    icon: '🔵',
-    type: 'Mainnet'
-  },
-  'base-sepolia': {
-    name: 'Base Sepolia',
-    icon: '🔶',
-    type: 'Testnet'
-  }
+  'base': { name: 'Base', type: 'Mainnet' },
+  'base-sepolia': { name: 'Base Sepolia', type: 'Testnet' },
+  'solana': { name: 'Solana', type: 'Mainnet' },
+  'solana-devnet': { name: 'Solana Devnet', type: 'Testnet' }
 };
 
 /**
- * Initialize the popup
+ * Initialize Popup
  */
 async function init() {
-  await loadJWTStatus();
+  await loadJWT();
   await loadTipAmount();
-  await loadEnvironmentStatus();
-  await loadChainStatus();
-  await loadWalletAddress();
+  await loadEnvironment();
+  await loadChain();
   setupEventListeners();
 }
 
 /**
- * Setup all event listeners
+ * Setup Listeners
  */
 function setupEventListeners() {
-  // Hamburger menu
-  hamburgerBtn.addEventListener('click', openMenu);
-  navCloseBtn.addEventListener('click', closeMenu);
-
-  // Navigation links
-  navLinks.forEach(link => {
-    link.addEventListener('click', handleNavigation);
+  // Navigation
+  navItems.forEach(item => {
+    item.addEventListener('click', handleNavigation);
   });
 
-  // Tip amount controls
-  tipAmountDisplay.addEventListener('click', showTipAmountEdit);
-  saveTipAmount.addEventListener('click', handleSaveTipAmount);
-  cancelTipAmount.addEventListener('click', hideTipAmountEdit);
+  // Leaderboard switcher
+  setupLeaderboardSwitcher();
 
-  // Environment toggle
-  const toggleEnvBtn = document.getElementById('toggleEnvBtn');
-  if (toggleEnvBtn) {
-    toggleEnvBtn.addEventListener('click', handleToggleEnvironment);
-  }
+  // Chain Selector
+  chainSelectorBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    chainDropdown.classList.toggle('hidden');
+  });
 
-  // Chain selector
-  chainSelectorBtn.addEventListener('click', toggleChainDropdown);
   chainOptions.forEach(option => {
     option.addEventListener('click', handleChainSelection);
   });
 
-  // Balance checker
-  checkBalanceBtn.addEventListener('click', handleCheckBalance);
-  walletAddressInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      handleCheckBalance();
-    }
-  });
-
-  // Close menu when clicking outside
-  navMenu.addEventListener('click', (e) => {
-    if (e.target === navMenu) {
-      closeMenu();
-    }
-  });
-
-  // Close chain dropdown when clicking outside
   document.addEventListener('click', (e) => {
     if (!chainSelectorBtn.contains(e.target) && !chainDropdown.contains(e.target)) {
-      closeChainDropdown();
+      chainDropdown.classList.add('hidden');
+    }
+  });
+
+  // Tip Amount
+  editTipBtn.addEventListener('click', showTipEdit);
+  cancelTipAmount.addEventListener('click', hideTipEdit);
+  saveTipAmount.addEventListener('click', saveTip);
+
+
+  // JWT
+  setupTokenBtn.addEventListener('click', () => {
+    // Navigate to settings and open edit
+    document.querySelector('[data-target="tab-settings"]').click();
+    showJwtEdit();
+  });
+  
+  manageJwtBtn.addEventListener('click', () => {
+    if (jwtEditContainer.classList.contains('hidden')) {
+      showJwtEdit();
+    } else {
+      hideJwtEdit();
+    }
+  });
+
+  if (saveJwtBtn) saveJwtBtn.addEventListener('click', saveJwt);
+  if (cancelJwtBtn) cancelJwtBtn.addEventListener('click', hideJwtEdit);
+
+  // Get remove button and add event listener
+  removeJwtBtn = document.getElementById('removeJwtBtn');
+  if (removeJwtBtn) {
+    removeJwtBtn.addEventListener('click', removeJwt);
+  }
+
+  // Dev Mode
+  if (devModeToggle) {
+    devModeToggle.addEventListener('change', handleDevModeToggle);
+  } else {
+    console.error('Developer mode toggle not found');
+  }
+
+  // Quick Actions (Placeholders)
+  document.querySelectorAll('.action-btn').forEach(btn => {
+    btn.addEventListener('click', () => showToast('Coming Soon'));
+  });
+}
+
+/**
+ * Navigation Handler
+ */
+function handleNavigation(e) {
+  const targetId = e.currentTarget.dataset.target;
+
+  // Update Tabs
+  navItems.forEach(item => item.classList.remove('active'));
+  e.currentTarget.classList.add('active');
+
+  // Update Pages
+  pages.forEach(page => {
+    if (page.id === targetId) {
+      page.classList.add('active');
+    } else {
+      page.classList.remove('active');
     }
   });
 }
 
 /**
- * Open navigation menu
+ * JWT & Auth State
  */
-function openMenu() {
-  navMenu.classList.add('active');
-}
-
-/**
- * Close navigation menu
- */
-function closeMenu() {
-  navMenu.classList.remove('active');
-}
-
-/**
- * Handle navigation between pages
- */
-function handleNavigation(e) {
-  e.preventDefault();
-  const targetPage = e.target.dataset.page;
-
-  // Update active nav link
-  navLinks.forEach(link => link.classList.remove('active'));
-  e.target.classList.add('active');
-
-  // Show target page
-  pages.forEach(page => page.classList.remove('active'));
-  document.getElementById(targetPage).classList.add('active');
-
-  // Close menu
-  closeMenu();
-}
-
-/**
- * Load and display JWT status
- */
-async function loadJWTStatus() {
-  try {
+async function loadJWT() {
     const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
     const jwt = result[STORAGE_KEYS.JWT];
 
+  updateAuthState(jwt);
+}
+
+function updateAuthState(jwt) {
     if (jwt && jwt.length > 0) {
-      // JWT exists - show truncated version
-      const firstChars = jwt.substring(0, 5);
-      const lastChars = jwt.substring(jwt.length - 5);
+    // Connected
+    onboardingState.classList.add('hidden');
+    connectedState.classList.remove('hidden');
 
-      jwtStatus.innerHTML = `
-        <div class="jwt-display">
-          <div class="jwt-token">
-            <span class="token-preview">${firstChars}...${lastChars}</span>
-            <button class="btn-icon" id="editJwt" title="Edit token">✏️</button>
-          </div>
-          <div class="jwt-actions">
-            <button class="btn btn-small" id="copyJwt">Copy Token</button>
-            <button class="btn btn-small btn-danger" id="removeJwt">Remove Token</button>
-          </div>
-        </div>
-      `;
-
-      // Add event listeners for JWT actions
-      document.getElementById('editJwt').addEventListener('click', showJWTInput);
-      document.getElementById('copyJwt').addEventListener('click', () => copyJWT(jwt));
-      document.getElementById('removeJwt').addEventListener('click', removeJWT);
+    // Settings Display - show full key if short, truncate if long
+    if (jwt.length <= 20) {
+      jwtStatusDisplay.textContent = jwt;
     } else {
-      // No JWT - show setup instructions
-      showJWTInput(true);
+      const first = jwt.substring(0, 6);
+      const last = jwt.substring(jwt.length - 4);
+      jwtStatusDisplay.textContent = `${first}...${last}`;
     }
-  } catch (error) {
-    console.error('[Grove Extension] Error loading JWT:', error);
-    showJWTInput(true);
+    jwtStatusDisplay.style.color = 'var(--color-primary)';
+    jwtStatusDisplay.style.fontFamily = 'monospace';
+
+    // Get remove button if not already cached
+    if (!removeJwtBtn) {
+      removeJwtBtn = document.getElementById('removeJwtBtn');
+    }
+    if (removeJwtBtn) {
+      removeJwtBtn.classList.remove('hidden');
+    }
+    } else {
+    // Not Connected
+    onboardingState.classList.remove('hidden');
+    connectedState.classList.add('hidden');
+
+    jwtStatusDisplay.textContent = 'Not connected';
+    jwtStatusDisplay.style.color = 'var(--color-text-secondary)';
+    jwtStatusDisplay.style.fontFamily = 'inherit';
+
+    // Get remove button if not already cached
+    if (!removeJwtBtn) {
+      removeJwtBtn = document.getElementById('removeJwtBtn');
+    }
+    if (removeJwtBtn) {
+      removeJwtBtn.classList.add('hidden');
+    }
   }
 }
 
-/**
- * Show JWT input form
- */
-function showJWTInput(isFirstTime = false) {
-  const message = isFirstTime
-    ? 'Get your API token to start tipping!'
-    : 'Update your API token';
+async function showJwtEdit() {
+  jwtEditContainer.classList.remove('hidden');
+  manageJwtBtn.textContent = 'Close';
 
-  jwtStatus.innerHTML = `
-    <div class="jwt-input-container">
-      <p class="info-text">${message}</p>
-      <a href="https://www.x402scan.com/server/170d2ee7-73b4-457f-aa48-dbab753f6d5f"
-         target="_blank"
-         class="link">
-        Get your token here →
-      </a>
-      <input
-        type="password"
-        id="jwtInput"
-        class="input"
-        placeholder="Paste your JWT token here"
-      >
-      <div class="jwt-actions">
-        <button class="btn btn-small" id="saveJwt">Save Token</button>
-        ${!isFirstTime ? '<button class="btn btn-small btn-secondary" id="cancelJwt">Cancel</button>' : ''}
-      </div>
-    </div>
-  `;
+  // Get remove button if not already cached
+  if (!removeJwtBtn) {
+    removeJwtBtn = document.getElementById('removeJwtBtn');
+  }
 
-  // Add event listeners
-  document.getElementById('saveJwt').addEventListener('click', saveJWT);
-  const cancelBtn = document.getElementById('cancelJwt');
-  if (cancelBtn) {
-    cancelBtn.addEventListener('click', loadJWTStatus);
+  // Check if JWT exists to show/hide remove button and populate input
+  const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
+  const jwt = result[STORAGE_KEYS.JWT];
+  if (jwt && jwt.length > 0) {
+    if (removeJwtBtn) {
+      removeJwtBtn.classList.remove('hidden');
+    }
+    jwtInput.value = jwt; // Show existing key in input
+  } else {
+    if (removeJwtBtn) {
+      removeJwtBtn.classList.add('hidden');
+    }
+    jwtInput.value = '';
+  }
+
+  jwtInput.focus();
+}
+
+function hideJwtEdit() {
+  jwtEditContainer.classList.add('hidden');
+  manageJwtBtn.textContent = 'Manage';
+  jwtInput.value = ''; // Clear input for security
+}
+
+async function saveJwt() {
+  const token = jwtInput.value.trim();
+  if (token) {
+    await chrome.storage.local.set({ [STORAGE_KEYS.JWT]: token });
+    updateAuthState(token);
+    hideJwtEdit();
+    showToast('Account connected');
+    
+    // Go back to home if we were onboarding
+    if (!onboardingState.classList.contains('hidden')) {
+      document.querySelector('[data-target="tab-home"]').click();
+  }
+  } else {
+    showToast('Please enter a token');
   }
 }
 
-/**
- * Save JWT token
- */
-async function saveJWT() {
-  const jwtInput = document.getElementById('jwtInput');
-  const jwt = jwtInput.value.trim();
-
-  if (!jwt) {
-    alert('Please enter a valid token');
-    return;
-  }
-
-  try {
-    await chrome.storage.local.set({ [STORAGE_KEYS.JWT]: jwt });
-    await loadJWTStatus();
-    showToast('Token saved successfully!');
-  } catch (error) {
-    console.error('[Grove Extension] Error saving JWT:', error);
-    alert('Failed to save token. Please try again.');
-  }
-}
-
-/**
- * Remove JWT token
- */
-async function removeJWT() {
-  if (!confirm('Are you sure you want to remove your token?')) {
-    return;
-  }
-
-  try {
+async function removeJwt() {
+  if (confirm('Are you sure you want to disconnect?')) {
     await chrome.storage.local.remove(STORAGE_KEYS.JWT);
-    await loadJWTStatus();
-    showToast('Token removed');
-  } catch (error) {
-    console.error('[Grove Extension] Error removing JWT:', error);
-    alert('Failed to remove token. Please try again.');
+    updateAuthState(null);
+    hideJwtEdit();
+    showToast('Account disconnected');
+    document.querySelector('[data-target="tab-home"]').click();
   }
 }
 
 /**
- * Copy JWT token to clipboard
- */
-async function copyJWT(jwt) {
-  try {
-    await navigator.clipboard.writeText(jwt);
-    showToast('Token copied to clipboard!');
-  } catch (error) {
-    console.error('[Grove Extension] Error copying JWT:', error);
-    alert('Failed to copy token. Please try again.');
-  }
-}
-
-/**
- * Load tip amount from storage
+ * Tip Amount
  */
 async function loadTipAmount() {
-  try {
     const result = await chrome.storage.local.get([STORAGE_KEYS.TIP_AMOUNT]);
-    const tipAmount = result[STORAGE_KEYS.TIP_AMOUNT] || DEFAULT_TIP_AMOUNT;
+  const amount = result[STORAGE_KEYS.TIP_AMOUNT] || DEFAULT_TIP_AMOUNT;
+  updateTipUI(amount);
+}
 
-    tipAmountDisplay.textContent = `$${tipAmount.toFixed(2)}`;
-    tipAmountInput.value = tipAmount.toFixed(2);
-  } catch (error) {
-    console.error('[Grove Extension] Error loading tip amount:', error);
-    tipAmountDisplay.textContent = `$${DEFAULT_TIP_AMOUNT.toFixed(2)}`;
-    tipAmountInput.value = DEFAULT_TIP_AMOUNT.toFixed(2);
+function updateTipUI(amount) {
+  const formatted = parseFloat(amount).toFixed(2);
+  // Update the amount value span inside the display div
+  const amountSpan = tipAmountDisplay.querySelector('.amount-value');
+  if (amountSpan) {
+    amountSpan.textContent = formatted;
   }
+  tipAmountInput.value = formatted;
 }
 
-/**
- * Show tip amount edit mode
- */
-function showTipAmountEdit() {
-  tipAmountDisplay.parentElement.classList.add('hidden');
+function showTipEdit() {
+  // Hide the entire card row
+  const cardRow = document.querySelector('#tipAmountDisplay').closest('.card-row');
+  if (cardRow) {
+    cardRow.classList.add('hidden');
+  }
   tipAmountEdit.classList.remove('hidden');
-  tipAmountInput.focus();
-  tipAmountInput.select();
 }
 
-/**
- * Hide tip amount edit mode
- */
-function hideTipAmountEdit() {
-  tipAmountDisplay.parentElement.classList.remove('hidden');
+function hideTipEdit() {
+  // Show the entire card row
+  const cardRow = document.querySelector('#tipAmountDisplay').closest('.card-row');
+  if (cardRow) {
+    cardRow.classList.remove('hidden');
+  }
   tipAmountEdit.classList.add('hidden');
 }
 
-/**
- * Save tip amount
- */
-async function handleSaveTipAmount() {
-  const amount = parseFloat(tipAmountInput.value);
-
-  if (isNaN(amount) || amount <= 0) {
-    alert('Please enter a valid amount greater than $0');
-    return;
-  }
-
-  try {
-    await chrome.storage.local.set({ [STORAGE_KEYS.TIP_AMOUNT]: amount });
-    tipAmountDisplay.textContent = `$${amount.toFixed(2)}`;
-    hideTipAmountEdit();
-    showToast('Tip amount updated!');
-  } catch (error) {
-    console.error('[Grove Extension] Error saving tip amount:', error);
-    alert('Failed to save tip amount. Please try again.');
+async function saveTip() {
+  const val = parseFloat(tipAmountInput.value);
+  if (val > 0) {
+    await chrome.storage.local.set({ [STORAGE_KEYS.TIP_AMOUNT]: val });
+    updateTipUI(val);
+    hideTipEdit();
+    showToast('Default tip updated');
+  } else {
+    showToast('Invalid amount');
   }
 }
 
 /**
- * Show toast notification
+ * Balance
  */
-function showToast(message) {
-  // Create toast element
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.textContent = message;
-  document.body.appendChild(toast);
-
-  // Show toast
-  setTimeout(() => toast.classList.add('show'), 10);
-
-  // Hide and remove toast
-  setTimeout(() => {
-    toast.classList.remove('show');
-    setTimeout(() => toast.remove(), 300);
-  }, 2000);
-}
-
-/**
- * Load and display environment status
- */
-async function loadEnvironmentStatus() {
+async function fetchBalance() {
+  // Placeholder for balance fetching from grove.city API
+  // This would be fetched using the JWT token
+  balanceAmount.style.opacity = '0.5';
   try {
-    const result = await chrome.storage.local.get([STORAGE_KEYS.ENVIRONMENT]);
-    const environment = result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENVIRONMENT;
-
-    updateEnvironmentUI(environment);
-  } catch (error) {
-    console.error('[Grove Extension] Error loading environment:', error);
-    updateEnvironmentUI(DEFAULT_ENVIRONMENT);
+    // TODO: Fetch balance from grove.city API using JWT
+    balanceAmount.textContent = '0.00';
+  } catch (e) {
+    console.error('Balance fetch failed', e);
+    balanceAmount.textContent = '0.00';
+  } finally {
+    balanceAmount.style.opacity = '1';
   }
 }
 
 /**
- * Update environment UI elements
+ * Environment
  */
-function updateEnvironmentUI(environment) {
-  const envStatus = document.getElementById('envStatus');
-  const toggleEnvLabel = document.getElementById('toggleEnvLabel');
+async function loadEnvironment() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ENVIRONMENT]);
+  const env = result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV;
+  const testBanner = document.getElementById('testModeBanner');
 
-  if (!envStatus || !toggleEnvLabel) return;
-
-  const isProd = environment === 'prod';
-  const icon = isProd ? '🌍' : '🏠';
-  const label = isProd ? 'Production' : 'Localhost';
-  const url = isProd ? 'api.grove.city' : 'localhost:8000';
-  const toggleText = isProd ? 'Switch to Localhost' : 'Switch to Production';
-
-  envStatus.innerHTML = `
-    <div class="env-badge ${isProd ? 'env-prod' : 'env-local'}">
-      <span class="env-icon">${icon}</span>
-      <span class="env-label">${label}</span>
-    </div>
-    <p class="env-url">${url}</p>
-  `;
-
-  toggleEnvLabel.textContent = toggleText;
+  if (env === 'local') {
+    if (devModeToggle) devModeToggle.checked = true;
+    document.body.classList.add('developer-mode');
+    if (testBanner) testBanner.classList.remove('hidden');
+  } else {
+    if (devModeToggle) devModeToggle.checked = false;
+    document.body.classList.remove('developer-mode');
+    if (testBanner) testBanner.classList.add('hidden');
+  }
 }
 
-/**
- * Handle environment toggle
- */
-async function handleToggleEnvironment() {
-  try {
-    const result = await chrome.storage.local.get([STORAGE_KEYS.ENVIRONMENT]);
-    const currentEnv = result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENVIRONMENT;
-    const newEnv = currentEnv === 'prod' ? 'local' : 'prod';
+async function handleDevModeToggle(e) {
+  const isDev = e.target.checked;
+  const newEnv = isDev ? 'local' : 'prod';
+  const testBanner = document.getElementById('testModeBanner');
 
-    await chrome.storage.local.set({ [STORAGE_KEYS.ENVIRONMENT]: newEnv });
-    updateEnvironmentUI(newEnv);
+  await chrome.storage.local.set({ [STORAGE_KEYS.ENVIRONMENT]: newEnv });
 
-    const envName = newEnv === 'prod' ? 'Production' : 'Localhost';
-    showToast(`Switched to ${envName}`);
-  } catch (error) {
-    console.error('[Grove Extension] Error toggling environment:', error);
-    alert('Failed to switch environment. Please try again.');
+  if (isDev) {
+    // Enable developer mode
+    document.body.classList.add('developer-mode');
+    if (testBanner) testBanner.classList.remove('hidden');
+    showToast('Developer Mode Enabled');
+
+    // Check if current chain is a mainnet and switch to testnet
+    const currentChain = chainName.textContent;
+    if (currentChain === 'Base') {
+      await handleChainSelection({ currentTarget: { dataset: { chain: 'base-sepolia' } } });
+    } else if (currentChain === 'Solana') {
+      await handleChainSelection({ currentTarget: { dataset: { chain: 'solana-devnet' } } });
+    }
+  } else {
+    // Disable developer mode
+    document.body.classList.remove('developer-mode');
+    if (testBanner) testBanner.classList.add('hidden');
+    showToast('Developer Mode Disabled');
+
+    // Check if current chain is a testnet and switch to mainnet
+    const currentChain = chainName.textContent;
+    if (currentChain === 'Base Sepolia') {
+      await handleChainSelection({ currentTarget: { dataset: { chain: 'base' } } });
+    } else if (currentChain === 'Solana Devnet') {
+      await handleChainSelection({ currentTarget: { dataset: { chain: 'solana' } } });
+    }
   }
 }
 
 /**
- * Load and display chain status
+ * Chain Selection
  */
-async function loadChainStatus() {
-  try {
+async function loadChain() {
     const result = await chrome.storage.local.get([STORAGE_KEYS.CHAIN]);
     const chain = result[STORAGE_KEYS.CHAIN] || DEFAULT_CHAIN;
     updateChainUI(chain);
-  } catch (error) {
-    console.error('[Grove Extension] Error loading chain:', error);
-    updateChainUI(DEFAULT_CHAIN);
-  }
 }
 
-/**
- * Update chain UI elements
- */
 function updateChainUI(chain) {
-  const config = CHAIN_CONFIG[chain] || CHAIN_CONFIG[DEFAULT_CHAIN];
+  const config = CHAIN_CONFIG[chain] || CHAIN_CONFIG['base'];
   chainName.textContent = config.name;
 
-  // Update active state on chain options
-  chainOptions.forEach(option => {
-    const optionChain = option.dataset.chain;
-    if (optionChain === chain) {
-      option.classList.add('active');
-    } else {
-      option.classList.remove('active');
+  // Update chain icon based on selected chain
+  const chainIcon = document.getElementById('chainSelectorIcon');
+  if (chainIcon) {
+    // Get the logo SVG from the dropdown option
+    const selectedOption = document.querySelector(`[data-chain="${chain}"]`);
+    if (selectedOption) {
+      const logo = selectedOption.querySelector('.chain-logo').cloneNode(true);
+      logo.setAttribute('width', '16');
+      logo.setAttribute('height', '16');
+      chainIcon.innerHTML = '';
+      chainIcon.appendChild(logo);
     }
-  });
+  }
 }
 
-/**
- * Toggle chain dropdown
- */
-function toggleChainDropdown(e) {
-  e.stopPropagation();
-  chainDropdown.classList.toggle('hidden');
-  chainSelectorBtn.classList.toggle('active');
-}
-
-/**
- * Close chain dropdown
- */
-function closeChainDropdown() {
-  chainDropdown.classList.add('hidden');
-  chainSelectorBtn.classList.remove('active');
-}
-
-/**
- * Handle chain selection
- */
 async function handleChainSelection(e) {
-  const selectedChain = e.currentTarget.dataset.chain;
+  const chain = e.currentTarget.dataset.chain;
+  await chrome.storage.local.set({ [STORAGE_KEYS.CHAIN]: chain });
+  updateChainUI(chain);
+  chainDropdown.classList.add('hidden');
+  showToast(`Switched to ${CHAIN_CONFIG[chain].name}`);
 
-  if (!selectedChain || !CHAIN_CONFIG[selectedChain]) {
-    console.error('[Grove Extension] Invalid chain selected:', selectedChain);
-    return;
-  }
+  // Reload balance
+  fetchBalance();
+}
 
-  try {
-    await chrome.storage.local.set({ [STORAGE_KEYS.CHAIN]: selectedChain });
-    updateChainUI(selectedChain);
-    closeChainDropdown();
+/**
+ * Setup Leaderboard Switcher
+ */
+function setupLeaderboardSwitcher() {
+  leaderboardSwitcherBtns = document.querySelectorAll('.switcher-btn');
+  leaderboardViews = document.querySelectorAll('.leaderboard-view');
 
-    const config = CHAIN_CONFIG[selectedChain];
-    showToast(`Switched to ${config.name}`);
+  if (leaderboardSwitcherBtns) {
+    leaderboardSwitcherBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const view = e.target.dataset.view;
 
-    // Refresh balance if address is present
-    const address = walletAddressInput.value.trim();
-    if (address && address.startsWith('0x')) {
-      await displayBalance(address);
-    }
-  } catch (error) {
-    console.error('[Grove Extension] Error switching chain:', error);
-    alert('Failed to switch chain. Please try again.');
+        // Update active button
+        leaderboardSwitcherBtns.forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+
+        // Update active view
+        leaderboardViews.forEach(v => v.classList.remove('active'));
+        if (view === 'tippers') {
+          document.getElementById('tippers-view').classList.add('active');
+        } else {
+          document.getElementById('tippees-view').classList.add('active');
+        }
+      });
+    });
   }
 }
 
 /**
- * Load saved wallet address
+ * Toast Notification
  */
-async function loadWalletAddress() {
-  try {
-    const result = await chrome.storage.local.get([STORAGE_KEYS.WALLET_ADDRESS]);
-    const address = result[STORAGE_KEYS.WALLET_ADDRESS];
-
-    if (address) {
-      walletAddressInput.value = address;
-      // Auto-load balance if we have a saved address
-      await displayBalance(address);
-    }
-  } catch (error) {
-    console.error('[Grove Extension] Error loading wallet address:', error);
-  }
+function showToast(msg) {
+  const div = document.createElement('div');
+  div.style.position = 'fixed';
+  div.style.bottom = '80px';
+  div.style.left = '50%';
+  div.style.transform = 'translateX(-50%)';
+  div.style.background = '#333';
+  div.style.color = 'white';
+  div.style.padding = '8px 16px';
+  div.style.borderRadius = '20px';
+  div.style.fontSize = '12px';
+  div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+  div.style.zIndex = '2000';
+  div.style.opacity = '0';
+  div.style.transition = 'opacity 0.3s';
+  div.style.whiteSpace = 'nowrap';
+  div.textContent = msg;
+  
+  document.body.appendChild(div);
+  
+  requestAnimationFrame(() => {
+    div.style.opacity = '1';
+  });
+  
+  setTimeout(() => {
+    div.style.opacity = '0';
+    setTimeout(() => div.remove(), 300);
+  }, 2000);
 }
 
-/**
- * Handle check balance button click
- */
-async function handleCheckBalance() {
-  const address = walletAddressInput.value.trim();
-
-  if (!address) {
-    alert('Please enter a wallet address');
-    return;
-  }
-
-  if (!address.startsWith('0x') || address.length !== 42) {
-    alert('Please enter a valid Ethereum address (0x...)');
-    return;
-  }
-
-  try {
-    // Save address for future use
-    await chrome.storage.local.set({ [STORAGE_KEYS.WALLET_ADDRESS]: address });
-
-    // Display balance
-    await displayBalance(address);
-  } catch (error) {
-    console.error('[Grove Extension] Error checking balance:', error);
-    alert('Failed to check balance. Please try again.');
-  }
-}
-
-/**
- * Display balance for an address
- */
-async function displayBalance(address) {
-  // Show loading state
-  balanceDisplay.classList.remove('hidden');
-  balanceDisplay.innerHTML = '<div class="balance-loading">Loading balances...</div>';
-
-  try {
-    // Fetch balances using the helper function from balance.js
-    const result = await getBalances(address);
-
-    // Check for errors
-    if (result.eth.error && result.usdc.error) {
-      throw new Error('Failed to fetch balances');
-    }
-
-    // Display results
-    balanceDisplay.innerHTML = `
-      <div class="balance-network">
-        <span class="balance-network-name">${result.network.name}</span>
-        <span class="balance-network-chain">Chain ID: ${result.network.chainId}</span>
-      </div>
-      <div class="balance-items">
-        <div class="balance-item">
-          <span class="balance-label">
-            <span class="balance-currency">ETH</span>
-            Ethereum
-          </span>
-          <span class="balance-value">${result.eth.formatted}</span>
-        </div>
-        <div class="balance-item">
-          <span class="balance-label">
-            <span class="balance-currency">USDC</span>
-            USD Coin
-          </span>
-          <span class="balance-value">${result.usdc.formatted}</span>
-        </div>
-      </div>
-    `;
-
-    console.log('[Grove Extension] Balance display updated');
-
-  } catch (error) {
-    console.error('[Grove Extension] Error displaying balance:', error);
-    balanceDisplay.innerHTML = `
-      <div class="balance-error">
-        Failed to fetch balances. Please check the address and try again.
-      </div>
-    `;
-  }
-}
-
-// Initialize on load
+// Init
 document.addEventListener('DOMContentLoaded', init);

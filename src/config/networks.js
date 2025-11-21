@@ -34,12 +34,10 @@ const NETWORKS = {
   }
 };
 
-// ERC20 ABI method signatures
 const ERC20_METHODS = {
   balanceOf: '0x70a08231' // balanceOf(address)
 };
 
-// Export for use in other scripts
 if (typeof window !== 'undefined') {
   window.NETWORKS = NETWORKS;
   window.ERC20_METHODS = ERC20_METHODS;
