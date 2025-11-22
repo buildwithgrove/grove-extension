@@ -274,10 +274,10 @@ body.developer-mode .testnet-option {
 .card-label {
   text-transform: uppercase;
   font-size: 11px;
-  letter-spacing: 1px;
+  letter-spacing: 1.2px;
   color: var(--color-text-secondary);
-  margin-bottom: 8px;
-  font-weight: 500;
+  margin-bottom: 12px;
+  font-weight: 400;
 }
 
 .amount-display {
@@ -289,7 +289,8 @@ body.developer-mode .testnet-option {
 .currency-symbol {
   font-size: 20px;
   font-weight: 600;
-  color: var(--color-text-secondary);
+  color: var(--color-primary);
+  text-shadow: 0 0 8px rgba(56, 159, 88, 0.25);
 }
 
 .amount-value {
@@ -297,7 +298,8 @@ body.developer-mode .testnet-option {
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.5px;
-  color: var(--color-text-primary);
+  color: var(--color-primary);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 12px rgba(56, 159, 88, 0.2);
 }
 
 /* Card Action Buttons */
@@ -342,8 +344,8 @@ body.developer-mode .testnet-option {
 .section-card {
   background-color: var(--color-surface);
   border-radius: var(--radius-lg);
-  padding: 20px;
-  margin: 24px 16px 16px;
+  padding: 24px;
+  margin: 20px 16px;
 }
 
 .card-header {
@@ -503,6 +505,7 @@ body.developer-mode .testnet-option {
   color: var(--color-text-secondary);
   margin: 4px 0 0 0;
   line-height: 1.4;
+  font-weight: 400;
 }
 
 /* Demo Tip Button */
@@ -511,7 +514,7 @@ body.developer-mode .testnet-option {
   align-items: center;
   gap: 6px;
   padding: 8px 16px;  /* Reduced padding to match other buttons */
-  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+  background: var(--grove-bg-gradient);
   border: 2px solid var(--color-primary);
   border-radius: 9999px;
   font-weight: 600;
