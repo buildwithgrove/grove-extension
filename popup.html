@@ -53,6 +53,9 @@
             <div class="chain-option-name">Base Sepolia</div>
             <div class="chain-option-type">Testnet</div>
           </div>
+          <div class="chain-selected-check">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
         </div>
         <div class="chain-option mainnet-option" data-chain="solana">
           <div class="chain-icon-wrapper">
@@ -80,6 +83,9 @@
             <div class="chain-option-name">Solana</div>
             <div class="chain-option-type">Mainnet</div>
           </div>
+          <div class="chain-selected-check">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
         </div>
         <div class="chain-option testnet-option" data-chain="solana-devnet">
           <div class="chain-icon-wrapper">
@@ -106,6 +112,9 @@
           <div class="chain-option-info">
             <div class="chain-option-name">Solana Devnet</div>
             <div class="chain-option-type">Testnet</div>
+          </div>
+          <div class="chain-selected-check">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
           </div>
         </div>
       </div>
@@ -199,9 +208,9 @@
     <div class="page" id="tab-history">
       <h2 class="page-title">History</h2>
 
-      <div class="empty-state">
+      <div class="empty-state coming-soon-state">
         <div class="empty-icon">📊</div>
-        <h3>No transactions yet</h3>
+        <h3>Coming Soon</h3>
         <p>Your tip history will appear here</p>
       </div>
     </div>
@@ -218,7 +227,7 @@
 
       <!-- Top Tippers View -->
       <div class="leaderboard-view active" id="tippers-view">
-        <div class="empty-state">
+        <div class="empty-state coming-soon-state">
           <div class="empty-icon">🏆</div>
           <h3>Coming Soon</h3>
           <p>Top tippers leaderboard will be available soon</p>
@@ -227,7 +236,7 @@
 
       <!-- Top Tippees View -->
       <div class="leaderboard-view" id="tippees-view">
-        <div class="empty-state">
+        <div class="empty-state coming-soon-state">
           <div class="empty-icon">🌟</div>
           <h3>Coming Soon</h3>
           <p>Top recipients leaderboard will be available soon</p>
@@ -332,10 +341,17 @@
       <h2 class="page-title">Earn Tips</h2>
 
       <div class="step-cards">
+        <div class="step-card coming-soon-card">
+          <div class="step-content">
+            <h4>Create a new address</h4>
+            <p>Coming Soon</p>
+          </div>
+        </div>
+
         <div class="step-card">
           <div class="step-content">
             <h4>Copy your wallet address</h4>
-            <p>Works with Base and Solana</p>
+            <p>Works with Base, Base Sepolia, Solana, and Solana Devnet</p>
           </div>
         </div>
 
@@ -381,11 +397,40 @@
             <p class="info-text-sm">Get your key from <a href="https://grove.city" target="_blank" class="link-accent">grove.city</a></p>
             <div class="input-group">
               <input type="password" id="jwtInput" class="code-input" placeholder="Paste Secret Key">
+              <button type="button" class="input-toggle-btn" id="toggleJwtVisibility" aria-label="Toggle password visibility">
+                <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle class="eye-open" cx="12" cy="12" r="3"></circle>
+                  <path class="eye-closed hidden" d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line class="eye-closed hidden" x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              </button>
             </div>
             <div class="form-actions">
               <button class="btn-danger btn-sm hidden" id="removeJwtBtn">Remove</button>
               <button class="btn-secondary btn-sm" id="cancelJwtBtn">Cancel</button>
               <button class="btn-primary btn-sm" id="saveJwtBtn">Save</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Previous Secret Keys -->
+        <div class="settings-item-column" id="prevKeysSection">
+          <div class="settings-row">
+            <div class="settings-info">
+              <div class="settings-name">Previous Secret Keys</div>
+              <div class="settings-desc" id="prevKeysCount">No previous keys</div>
+            </div>
+            <button class="btn-text" id="viewPrevKeysBtn">View</button>
+          </div>
+
+          <!-- Previous Keys List (Hidden by default) -->
+          <div class="prev-keys-container hidden" id="prevKeysContainer">
+            <div class="prev-keys-list" id="prevKeysList">
+              <!-- Keys will be populated by JavaScript -->
+            </div>
+            <div class="form-actions">
+              <button class="btn-secondary btn-sm" id="closePrevKeysBtn">Close</button>
             </div>
           </div>
         </div>

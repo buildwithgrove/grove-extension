@@ -43,7 +43,15 @@ const jwtEditContainer = document.getElementById('jwtEditContainer');
 const jwtInput = document.getElementById('jwtInput');
 const saveJwtBtn = document.getElementById('saveJwtBtn');
 const cancelJwtBtn = document.getElementById('cancelJwtBtn');
+const toggleJwtVisibility = document.getElementById('toggleJwtVisibility');
 let removeJwtBtn = null; // Will be set later since it might not exist initially
+
+// Previous Keys Management
+const prevKeysCount = document.getElementById('prevKeysCount');
+const viewPrevKeysBtn = document.getElementById('viewPrevKeysBtn');
+const prevKeysContainer = document.getElementById('prevKeysContainer');
+const prevKeysList = document.getElementById('prevKeysList');
+const closePrevKeysBtn = document.getElementById('closePrevKeysBtn');
 
 // Storage Keys
 const STORAGE_KEYS = {
@@ -51,6 +59,7 @@ const STORAGE_KEYS = {
   TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
   ENVIRONMENT: 'groveEnvironment',
   CHAIN: 'groveChain',
+  PREV_JWTS: 'GROVE_PREV_JWTS',
 };
 
 // Defaults
@@ -73,6 +82,7 @@ async function init() {
   await loadTipAmount();
   await loadEnvironment();
   await loadChain();
+  await loadPreviousKeys();
   setupEventListeners();
 }
 
@@ -132,6 +142,23 @@ function setupEventListeners() {
   removeJwtBtn = document.getElementById('removeJwtBtn');
   if (removeJwtBtn) {
     removeJwtBtn.addEventListener('click', removeJwt);
+  }
+
+  // Previous Keys
+  if (viewPrevKeysBtn) {
+    viewPrevKeysBtn.addEventListener('click', () => {
+      if (prevKeysContainer.classList.contains('hidden')) {
+        showPrevKeys();
+      } else {
+        hidePrevKeys();
+      }
+    });
+  }
+  if (closePrevKeysBtn) closePrevKeysBtn.addEventListener('click', hidePrevKeys);
+
+  // JWT Visibility Toggle
+  if (toggleJwtVisibility) {
+    toggleJwtVisibility.addEventListener('click', togglePasswordVisibility);
   }
 
   // Dev Mode
@@ -256,11 +283,35 @@ function hideJwtEdit() {
 async function saveJwt() {
   const token = jwtInput.value.trim();
   if (token) {
+    // Get current JWT before saving new one
+    const result = await chrome.storage.local.get([STORAGE_KEYS.JWT, STORAGE_KEYS.PREV_JWTS]);
+    const currentJwt = result[STORAGE_KEYS.JWT];
+
+    // If there's a current JWT and it's different from the new one, save it to previous keys
+    if (currentJwt && currentJwt !== token) {
+      let prevJwts = result[STORAGE_KEYS.PREV_JWTS] || [];
+
+      // Add current JWT to previous keys with timestamp
+      prevJwts.unshift({
+        key: currentJwt,
+        timestamp: new Date().toISOString()
+      });
+
+      // Keep only last 10 keys
+      if (prevJwts.length > 10) {
+        prevJwts = prevJwts.slice(0, 10);
+      }
+
+      await chrome.storage.local.set({ [STORAGE_KEYS.PREV_JWTS]: prevJwts });
+    }
+
+    // Save new JWT
     await chrome.storage.local.set({ [STORAGE_KEYS.JWT]: token });
     updateAuthState(token);
     hideJwtEdit();
     showToast('Account connected');
-    
+    await loadPreviousKeys(); // Update the previous keys display
+
     // Go back to home if we were onboarding
     if (!onboardingState.classList.contains('hidden')) {
       document.querySelector('[data-target="tab-home"]').click();
@@ -272,10 +323,33 @@ async function saveJwt() {
 
 async function removeJwt() {
   if (confirm('Are you sure you want to disconnect?')) {
+    // Get current JWT before removing it
+    const result = await chrome.storage.local.get([STORAGE_KEYS.JWT, STORAGE_KEYS.PREV_JWTS]);
+    const currentJwt = result[STORAGE_KEYS.JWT];
+
+    // Add current JWT to previous keys with timestamp before removing
+    if (currentJwt) {
+      let prevJwts = result[STORAGE_KEYS.PREV_JWTS] || [];
+
+      prevJwts.unshift({
+        key: currentJwt,
+        timestamp: new Date().toISOString()
+      });
+
+      // Keep only last 10 keys
+      if (prevJwts.length > 10) {
+        prevJwts = prevJwts.slice(0, 10);
+      }
+
+      await chrome.storage.local.set({ [STORAGE_KEYS.PREV_JWTS]: prevJwts });
+    }
+
+    // Remove current JWT
     await chrome.storage.local.remove(STORAGE_KEYS.JWT);
     updateAuthState(null);
     hideJwtEdit();
     showToast('Account disconnected');
+    await loadPreviousKeys(); // Update the previous keys display
     document.querySelector('[data-target="tab-home"]').click();
   }
 }
@@ -500,6 +574,82 @@ function showToast(msg) {
     div.style.opacity = '0';
     setTimeout(() => div.remove(), 300);
   }, 2000);
+}
+
+/**
+ * Previous Keys Management
+ */
+async function loadPreviousKeys() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.PREV_JWTS]);
+  const prevJwts = result[STORAGE_KEYS.PREV_JWTS] || [];
+
+  if (prevJwts.length === 0) {
+    prevKeysCount.textContent = 'No previous keys';
+  } else {
+    prevKeysCount.textContent = `${prevJwts.length} previous key${prevJwts.length === 1 ? '' : 's'}`;
+  }
+}
+
+function showPrevKeys() {
+  prevKeysContainer.classList.remove('hidden');
+  viewPrevKeysBtn.textContent = 'Hide';
+  renderPreviousKeys();
+}
+
+function hidePrevKeys() {
+  prevKeysContainer.classList.add('hidden');
+  viewPrevKeysBtn.textContent = 'View';
+}
+
+async function renderPreviousKeys() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.PREV_JWTS]);
+  const prevJwts = result[STORAGE_KEYS.PREV_JWTS] || [];
+
+  if (prevJwts.length === 0) {
+    prevKeysList.innerHTML = '<p style="color: var(--color-text-secondary); font-size: 12px; text-align: center; padding: 20px;">No previous keys stored</p>';
+    return;
+  }
+
+  prevKeysList.innerHTML = prevJwts.map((item, index) => {
+    const date = new Date(item.timestamp);
+    const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    const maskedKey = item.key.substring(0, 10) + '...' + item.key.substring(item.key.length - 10);
+
+    return `
+      <div class="prev-key-item">
+        <span style="flex: 1;">${maskedKey}</span>
+        <span class="prev-key-date">${formattedDate}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * Toggle Password Visibility
+ */
+function togglePasswordVisibility() {
+  const isPassword = jwtInput.type === 'password';
+  jwtInput.type = isPassword ? 'text' : 'password';
+
+  // Toggle eye icon
+  const eyeOpenPaths = toggleJwtVisibility.querySelectorAll('.eye-open');
+  const eyeClosedPaths = toggleJwtVisibility.querySelectorAll('.eye-closed');
+
+  eyeOpenPaths.forEach(path => {
+    if (isPassword) {
+      path.classList.add('hidden');
+    } else {
+      path.classList.remove('hidden');
+    }
+  });
+
+  eyeClosedPaths.forEach(path => {
+    if (isPassword) {
+      path.classList.remove('hidden');
+    } else {
+      path.classList.add('hidden');
+    }
+  });
 }
 
 // Init

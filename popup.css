@@ -114,9 +114,9 @@ body {
   display: none !important;
 }
 
-/* Chain filtering for developer mode - hide mainnets, show testnets */
+/* Chain filtering for developer mode - show all networks (mainnet and testnet) */
 body.developer-mode .mainnet-option {
-  display: none !important;
+  display: flex !important;
 }
 
 body.developer-mode .testnet-option {
@@ -387,10 +387,33 @@ body.developer-mode .testnet-option {
   border-radius: var(--radius-md);
   padding: 0 12px;
   margin-bottom: 12px;
+  position: relative;
 }
 
 .input-group:focus-within {
   border-color: var(--color-primary);
+}
+
+.input-toggle-btn {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.input-toggle-btn:hover {
+  color: var(--color-text-primary);
+}
+
+.input-toggle-btn .eye-icon {
+  width: 20px;
+  height: 20px;
 }
 
 .input-prefix {
@@ -647,6 +670,20 @@ body.developer-mode .testnet-option {
   align-items: flex-start;
 }
 
+.coming-soon-card {
+  background: rgba(255, 215, 0, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.coming-soon-card h4 {
+  color: #FFD700;
+}
+
+.coming-soon-card .step-content p {
+  color: #FFD700 !important;
+  font-weight: 500;
+}
+
 .step-number {
   width: 24px;
   height: 24px;
@@ -704,23 +741,49 @@ body.developer-mode .testnet-option {
 
 /* Settings Items */
 .settings-group {
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
 .settings-label {
-  font-size: 12px;
-  color: var(--color-text-tertiary);
+  font-size: 13px;
+  color: var(--color-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
-  margin-bottom: 8px;
-  padding-left: 8px;
+  letter-spacing: 1px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  padding-left: 16px;
 }
 
 .settings-item, .settings-item-column {
   background-color: var(--color-surface);
-  margin-bottom: 1px;
   transition: background-color 0.2s;
+  border-radius: 0;
+}
+
+/* First item in a group */
+.settings-group .settings-item:first-child,
+.settings-group .settings-item-column:first-child {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+/* Last item in a group */
+.settings-group .settings-item:last-child,
+.settings-group .settings-item-column:last-child {
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+/* Only item in a group (both first and last) */
+.settings-group .settings-item:only-child,
+.settings-group .settings-item-column:only-child {
+  border-radius: var(--radius-lg);
+}
+
+/* Add small gap between items in same group */
+.settings-item + .settings-item,
+.settings-item-column + .settings-item,
+.settings-item + .settings-item-column,
+.settings-item-column + .settings-item-column {
+  margin-top: 2px;
 }
 
 .settings-item {
@@ -803,6 +866,44 @@ body.developer-mode .testnet-option {
   border-radius: var(--radius-md);
   padding: 12px;
   margin-top: 8px;
+}
+
+.prev-keys-container {
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.prev-keys-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.prev-key-item {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  word-break: break-all;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.prev-key-date {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
 }
 
 .info-text-sm {
@@ -953,6 +1054,24 @@ body.developer-mode .testnet-option {
 .empty-state p {
   color: var(--color-text-secondary);
   font-size: 13px;
+}
+
+/* Coming Soon State - styled version with border and background */
+.coming-soon-state {
+  background: rgba(255, 215, 0, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-lg);
+  margin: 20px 16px;
+  padding: 40px 20px;
+}
+
+.coming-soon-state .empty-icon {
+  opacity: 0.8;
+}
+
+.coming-soon-state h3 {
+  color: #FFD700;
+  font-weight: 600;
 }
 
 /* Leaderboard */
