@@ -13,6 +13,6 @@ var GROVE_COLORS = {
 };
 
 var GROVE_GRADIENTS = {
-  background: 'linear-gradient(135deg, rgba(56, 159, 88, 0.15) 0%, rgba(56, 159, 88, 0.08) 100%)',
-  backgroundHover: 'linear-gradient(135deg, rgba(56, 159, 88, 0.25) 0%, rgba(56, 159, 88, 0.15) 100%)',
+  background: 'linear-gradient(135deg, rgba(56, 159, 88, 0.25) 0%, rgba(56, 159, 88, 0.18) 100%)',
+  backgroundHover: 'linear-gradient(135deg, rgba(56, 159, 88, 0.35) 0%, rgba(56, 159, 88, 0.25) 100%)',
 };

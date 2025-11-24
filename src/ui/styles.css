@@ -10,8 +10,8 @@
   --grove-primary-light: #4fb76d;
   --grove-shadow: rgba(56, 159, 88, 0.3);
   --grove-shadow-hover: rgba(56, 159, 88, 0.5);
-  --grove-bg-gradient: linear-gradient(135deg, rgba(56, 159, 88, 0.15) 0%, rgba(56, 159, 88, 0.08) 100%);
-  --grove-bg-gradient-hover: linear-gradient(135deg, rgba(56, 159, 88, 0.25) 0%, rgba(56, 159, 88, 0.15) 100%);
+  --grove-bg-gradient: linear-gradient(135deg, rgba(56, 159, 88, 0.25) 0%, rgba(56, 159, 88, 0.18) 100%);
+  --grove-bg-gradient-hover: linear-gradient(135deg, rgba(56, 159, 88, 0.35) 0%, rgba(56, 159, 88, 0.25) 100%);
 }
 
 /* Base Button Style - Black with Green Border and Sheen */

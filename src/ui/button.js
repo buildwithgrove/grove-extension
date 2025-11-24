@@ -3,6 +3,24 @@
  * Creates and manages the tip button element
  */
 
+// Grove UI Constants - defined here as fallback if constants.js doesn't load
+if (typeof GROVE_COLORS === 'undefined') {
+  var GROVE_COLORS = {
+    primary: '#389f58',
+    primaryHover: '#2f8549',
+    primaryLight: '#4fb76d',
+    shadow: 'rgba(56, 159, 88, 0.3)',
+    shadowHover: 'rgba(56, 159, 88, 0.5)',
+  };
+}
+
+if (typeof GROVE_GRADIENTS === 'undefined') {
+  var GROVE_GRADIENTS = {
+    background: 'linear-gradient(135deg, rgba(56, 159, 88, 0.25) 0%, rgba(56, 159, 88, 0.18) 100%)',
+    backgroundHover: 'linear-gradient(135deg, rgba(56, 159, 88, 0.35) 0%, rgba(56, 159, 88, 0.25) 100%)',
+  };
+}
+
 class TipButton {
   /**
    * Create a new tip button
