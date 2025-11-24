@@ -617,11 +617,34 @@ async function renderPreviousKeys() {
 
     return `
       <div class="prev-key-item">
-        <span style="flex: 1;">${maskedKey}</span>
-        <span class="prev-key-date">${formattedDate}</span>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0;">
+          <span style="font-family: monospace; font-size: 11px; word-break: break-all;">${maskedKey}</span>
+          <span class="prev-key-date">${formattedDate}</span>
+        </div>
+        <button class="copy-key-btn" data-key="${item.key}" data-index="${index}" title="Copy key">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </button>
       </div>
     `;
   }).join('');
+
+  // Add event listeners to copy buttons
+  const copyButtons = prevKeysList.querySelectorAll('.copy-key-btn');
+  copyButtons.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const key = btn.dataset.key;
+      try {
+        await navigator.clipboard.writeText(key);
+        showToast('Key copied to clipboard');
+      } catch (err) {
+        console.error('Failed to copy key:', err);
+        showToast('Failed to copy key');
+      }
+    });
+  });
 }
 
 /**
