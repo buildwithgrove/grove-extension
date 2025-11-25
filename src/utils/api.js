@@ -4,8 +4,14 @@
  */
 
 class GroveAPI {
-  static PROD_URL = 'https://api.grove.city';
-  static LOCAL_URL = 'http://localhost:8000';
+  static ENDPOINTS = {
+    'production': 'https://api.grove.city',
+    'testnet': 'https://testnet.api.grove.city',
+    'localhost': 'http://localhost:8000',
+    'localhost:8000': 'http://localhost:8000',
+    'localhost:3000': 'http://localhost:3000',
+  };
+
   static DEFAULT_TIP_AMOUNT = 0.05; // $0.05 default
 
   static CHAIN_RPC_ENDPOINTS = {
@@ -26,17 +32,17 @@ class GroveAPI {
   static GROVE_API_JWT = ''; // Placeholder for now
 
   /**
-   * Get the base URL based on environment setting
+   * Get the base URL based on endpoint setting
    * @returns {Promise<string>} - Base URL
    */
   static async getBaseURL() {
     try {
-      const result = await chrome.storage.local.get(['groveEnvironment']);
-      const env = result.groveEnvironment || 'prod';
-      return env === 'local' ? this.LOCAL_URL : this.PROD_URL;
+      const result = await chrome.storage.local.get(['groveEndpoint']);
+      const endpoint = result.groveEndpoint || 'production';
+      return this.ENDPOINTS[endpoint] || this.ENDPOINTS['production'];
     } catch (error) {
-      console.log('[Grove Extension] Could not get environment, using prod');
-      return this.PROD_URL;
+      console.log('[Grove Extension] Could not get endpoint, using production');
+      return this.ENDPOINTS['production'];
     }
   }
 

@@ -1,6 +1,7 @@
 /**
  * Tip Button UI
  * Creates and manages the tip button element
+ * Requires: src/ui/constants.js
  */
 
 class TipButton {
@@ -48,8 +49,8 @@ class TipButton {
 
     // Apply inline styles - black with green border, matching Twitter's button positioning exactly
     this.button.style.cssText = `
-      background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%) !important;
-      border: 2px solid #389f58 !important;
+      background: ${GROVE_GRADIENTS.background} !important;
+      border: 2px solid ${GROVE_COLORS.primary} !important;
       border-radius: 9999px !important;
       padding: 0 16px !important;
       height: 36px !important;
@@ -64,7 +65,7 @@ class TipButton {
       gap: 4px !important;
       cursor: pointer !important;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-      box-shadow: 0 2px 8px rgba(56, 159, 88, 0.3) !important;
+      box-shadow: 0 2px 8px ${GROVE_COLORS.shadow} !important;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
       vertical-align: top !important;
       align-self: flex-start !important;
@@ -129,15 +130,15 @@ class TipButton {
 
     // Add hover effect
     this.button.addEventListener('mouseenter', () => {
-      this.button.style.background = 'linear-gradient(135deg, #0a0a0a 0%, #2a2a2a 100%) !important';
+      this.button.style.background = `${GROVE_GRADIENTS.backgroundHover} !important`;
       this.button.style.transform = 'translateY(-1px)';
-      this.button.style.boxShadow = '0 4px 12px rgba(56, 159, 88, 0.5) !important';
+      this.button.style.boxShadow = `0 4px 12px ${GROVE_COLORS.shadowHover} !important`;
     });
 
     this.button.addEventListener('mouseleave', () => {
-      this.button.style.background = 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%) !important';
+      this.button.style.background = `${GROVE_GRADIENTS.background} !important`;
       this.button.style.transform = 'translateY(0)';
-      this.button.style.boxShadow = '0 2px 8px rgba(56, 159, 88, 0.3) !important';
+      this.button.style.boxShadow = `0 2px 8px ${GROVE_COLORS.shadow} !important`;
     });
 
     // Assemble the structure
@@ -231,8 +232,8 @@ class TipButton {
 
     // Apply inline styles to match Reddit's native button style
     this.button.style.cssText = `
-      background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%) !important;
-      border: 2px solid #389f58 !important;
+      background: ${GROVE_GRADIENTS.background} !important;
+      border: 2px solid ${GROVE_COLORS.primary} !important;
       border-radius: 999px !important;
       padding: 8px 16px !important;
       color: #D7DADC !important;
@@ -249,7 +250,7 @@ class TipButton {
       white-space: nowrap !important;
       margin-left: 8px !important;
       margin-right: 4px !important;
-      box-shadow: 0 2px 8px rgba(56, 159, 88, 0.3) !important;
+      box-shadow: 0 2px 8px ${GROVE_COLORS.shadow} !important;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     `;
 
@@ -293,15 +294,15 @@ class TipButton {
 
     // Add hover effect to match the enhanced button style
     this.button.addEventListener('mouseenter', () => {
-      this.button.style.background = 'linear-gradient(135deg, #0a0a0a 0%, #2a2a2a 100%) !important';
+      this.button.style.background = `${GROVE_GRADIENTS.backgroundHover} !important`;
       this.button.style.transform = 'translateY(-1px)';
-      this.button.style.boxShadow = '0 4px 12px rgba(56, 159, 88, 0.5) !important';
+      this.button.style.boxShadow = `0 4px 12px ${GROVE_COLORS.shadowHover} !important`;
     });
 
     this.button.addEventListener('mouseleave', () => {
-      this.button.style.background = 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%) !important';
+      this.button.style.background = `${GROVE_GRADIENTS.background} !important`;
       this.button.style.transform = 'translateY(0)';
-      this.button.style.boxShadow = '0 2px 8px rgba(56, 159, 88, 0.3) !important';
+      this.button.style.boxShadow = `0 2px 8px ${GROVE_COLORS.shadow} !important`;
     });
 
     // Assemble the structure

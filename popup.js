@@ -35,6 +35,9 @@ const balanceAmount = document.getElementById('balanceAmount');
 
 // Settings
 const devModeToggle = document.getElementById('devModeCheckbox');
+const endpointSelector = document.getElementById('endpointSelector');
+const endpointDisplay = document.getElementById('endpointDisplay');
+const endpointOptions = document.querySelectorAll('input[name="endpoint"]');
 
 // JWT Management
 const jwtStatusDisplay = document.getElementById('jwtStatusDisplay');
@@ -43,7 +46,18 @@ const jwtEditContainer = document.getElementById('jwtEditContainer');
 const jwtInput = document.getElementById('jwtInput');
 const saveJwtBtn = document.getElementById('saveJwtBtn');
 const cancelJwtBtn = document.getElementById('cancelJwtBtn');
-let removeJwtBtn = null; // Will be set later since it might not exist initially
+const toggleJwtVisibility = document.getElementById('toggleJwtVisibility');
+let removeJwtBtn = null; // Will be set later since it might not exist initially.
+
+// Previous Keys Management
+const prevKeysCount = document.getElementById('prevKeysCount');
+const viewPrevKeysBtn = document.getElementById('viewPrevKeysBtn');
+const prevKeysContainer = document.getElementById('prevKeysContainer');
+const prevKeysList = document.getElementById('prevKeysList');
+const closePrevKeysBtn = document.getElementById('closePrevKeysBtn');
+
+// Initialize Previous Keys UI
+let prevKeysUI = null;
 
 // Storage Keys
 const STORAGE_KEYS = {
@@ -51,28 +65,28 @@ const STORAGE_KEYS = {
   TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
   ENVIRONMENT: 'groveEnvironment',
   CHAIN: 'groveChain',
+  ENDPOINT: 'groveEndpoint',
 };
 
 // Defaults
 const DEFAULT_TIP_AMOUNT = 0.10;
 const DEFAULT_CHAIN = 'base';
 const DEFAULT_ENV = 'prod';
-
-const CHAIN_CONFIG = {
-  'base': { name: 'Base', type: 'Mainnet' },
-  'base-sepolia': { name: 'Base Sepolia', type: 'Testnet' },
-  'solana': { name: 'Solana', type: 'Mainnet' },
-  'solana-devnet': { name: 'Solana Devnet', type: 'Testnet' }
-};
+const DEFAULT_ENDPOINT = 'production';
 
 /**
  * Initialize Popup
  */
 async function init() {
+  // Initialize Previous Keys UI
+  prevKeysUI = new PreviousKeysUI(prevKeysCount, prevKeysList, prevKeysContainer);
+
   await loadJWT();
   await loadTipAmount();
   await loadEnvironment();
   await loadChain();
+  await loadEndpoint();
+  await prevKeysUI.updateCount();
   setupEventListeners();
 }
 
@@ -134,12 +148,41 @@ function setupEventListeners() {
     removeJwtBtn.addEventListener('click', removeJwt);
   }
 
+  // Previous Keys
+  if (viewPrevKeysBtn) {
+    viewPrevKeysBtn.addEventListener('click', () => {
+      if (prevKeysContainer.classList.contains('hidden')) {
+        prevKeysUI.show();
+        viewPrevKeysBtn.textContent = 'Hide';
+      } else {
+        prevKeysUI.hide();
+        viewPrevKeysBtn.textContent = 'View';
+      }
+    });
+  }
+  if (closePrevKeysBtn) {
+    closePrevKeysBtn.addEventListener('click', () => {
+      prevKeysUI.hide();
+      viewPrevKeysBtn.textContent = 'View';
+    });
+  }
+
+  // JWT Visibility Toggle
+  if (toggleJwtVisibility) {
+    toggleJwtVisibility.addEventListener('click', togglePasswordVisibility);
+  }
+
   // Dev Mode
   if (devModeToggle) {
     devModeToggle.addEventListener('change', handleDevModeToggle);
   } else {
     console.error('Developer mode toggle not found');
   }
+
+  // Endpoint Selection
+  endpointOptions.forEach(option => {
+    option.addEventListener('change', handleEndpointChange);
+  });
 
   // Quick Actions (Placeholders)
   document.querySelectorAll('.action-btn').forEach(btn => {
@@ -256,11 +299,22 @@ function hideJwtEdit() {
 async function saveJwt() {
   const token = jwtInput.value.trim();
   if (token) {
+    // Get current JWT before saving new one
+    const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
+    const currentJwt = result[STORAGE_KEYS.JWT];
+
+    // If there's a current JWT and it's different from the new one, archive it
+    if (currentJwt && currentJwt !== token) {
+      await KeyManager.archiveCurrentKey(currentJwt);
+    }
+
+    // Save new JWT
     await chrome.storage.local.set({ [STORAGE_KEYS.JWT]: token });
     updateAuthState(token);
     hideJwtEdit();
     showToast('Account connected');
-    
+    await prevKeysUI.updateCount();
+
     // Go back to home if we were onboarding
     if (!onboardingState.classList.contains('hidden')) {
       document.querySelector('[data-target="tab-home"]').click();
@@ -272,10 +326,21 @@ async function saveJwt() {
 
 async function removeJwt() {
   if (confirm('Are you sure you want to disconnect?')) {
+    // Get current JWT before removing it
+    const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
+    const currentJwt = result[STORAGE_KEYS.JWT];
+
+    // Archive current JWT before removing
+    if (currentJwt) {
+      await KeyManager.archiveCurrentKey(currentJwt);
+    }
+
+    // Remove current JWT
     await chrome.storage.local.remove(STORAGE_KEYS.JWT);
     updateAuthState(null);
     hideJwtEdit();
     showToast('Account disconnected');
+    await prevKeysUI.updateCount();
     document.querySelector('[data-target="tab-home"]').click();
   }
 }
@@ -359,10 +424,12 @@ async function loadEnvironment() {
     if (devModeToggle) devModeToggle.checked = true;
     document.body.classList.add('developer-mode');
     if (testBanner) testBanner.classList.remove('hidden');
+    if (endpointSelector) endpointSelector.classList.remove('hidden');
   } else {
     if (devModeToggle) devModeToggle.checked = false;
     document.body.classList.remove('developer-mode');
     if (testBanner) testBanner.classList.add('hidden');
+    if (endpointSelector) endpointSelector.classList.add('hidden');
   }
 }
 
@@ -377,6 +444,7 @@ async function handleDevModeToggle(e) {
     // Enable developer mode
     document.body.classList.add('developer-mode');
     if (testBanner) testBanner.classList.remove('hidden');
+    if (endpointSelector) endpointSelector.classList.remove('hidden');
     showToast('Developer Mode Enabled');
 
     // Check if current chain is a mainnet and switch to testnet
@@ -390,7 +458,12 @@ async function handleDevModeToggle(e) {
     // Disable developer mode
     document.body.classList.remove('developer-mode');
     if (testBanner) testBanner.classList.add('hidden');
+    if (endpointSelector) endpointSelector.classList.add('hidden');
     showToast('Developer Mode Disabled');
+
+    // Reset to production endpoint
+    await chrome.storage.local.set({ [STORAGE_KEYS.ENDPOINT]: 'production' });
+    await loadEndpoint();
 
     // Check if current chain is a testnet and switch to mainnet
     const currentChain = chainName.textContent;
@@ -403,6 +476,44 @@ async function handleDevModeToggle(e) {
 }
 
 /**
+ * API Endpoint Selection
+ */
+async function loadEndpoint() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
+  const endpoint = result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
+
+  // Update UI
+  if (endpointDisplay) {
+    endpointDisplay.textContent = endpoint;
+  }
+
+  // Check the correct radio button
+  endpointOptions.forEach(option => {
+    option.checked = option.value === endpoint;
+  });
+}
+
+async function handleEndpointChange(e) {
+  const endpoint = e.target.value;
+  await chrome.storage.local.set({ [STORAGE_KEYS.ENDPOINT]: endpoint });
+
+  // Update display
+  if (endpointDisplay) {
+    endpointDisplay.textContent = endpoint;
+  }
+
+  // Show friendly endpoint name in toast
+  const endpointNames = {
+    'production': 'Production (api.grove.city)',
+    'testnet': 'Testnet (testnet.api.grove.city)',
+    'localhost': 'Localhost:8000',
+    'localhost:3000': 'Localhost:3000',
+  };
+
+  showToast(`Switched to ${endpointNames[endpoint] || endpoint}`);
+}
+
+/**
  * Chain Selection
  */
 async function loadChain() {
@@ -412,7 +523,7 @@ async function loadChain() {
 }
 
 function updateChainUI(chain) {
-  const config = CHAIN_CONFIG[chain] || CHAIN_CONFIG['base'];
+  const config = NETWORKS[chain] || NETWORKS['base'];
   chainName.textContent = config.name;
 
   // Update chain icon based on selected chain
@@ -435,7 +546,7 @@ async function handleChainSelection(e) {
   await chrome.storage.local.set({ [STORAGE_KEYS.CHAIN]: chain });
   updateChainUI(chain);
   chainDropdown.classList.add('hidden');
-  showToast(`Switched to ${CHAIN_CONFIG[chain].name}`);
+  showToast(`Switched to ${NETWORKS[chain].name}`);
 
   // Reload balance
   fetchBalance();
@@ -500,6 +611,34 @@ function showToast(msg) {
     div.style.opacity = '0';
     setTimeout(() => div.remove(), 300);
   }, 2000);
+}
+
+/**
+ * Toggle Password Visibility
+ */
+function togglePasswordVisibility() {
+  const isPassword = jwtInput.type === 'password';
+  jwtInput.type = isPassword ? 'text' : 'password';
+
+  // Toggle eye icon
+  const eyeOpenPaths = toggleJwtVisibility.querySelectorAll('.eye-open');
+  const eyeClosedPaths = toggleJwtVisibility.querySelectorAll('.eye-closed');
+
+  eyeOpenPaths.forEach(path => {
+    if (isPassword) {
+      path.classList.add('hidden');
+    } else {
+      path.classList.remove('hidden');
+    }
+  });
+
+  eyeClosedPaths.forEach(path => {
+    if (isPassword) {
+      path.classList.remove('hidden');
+    } else {
+      path.classList.add('hidden');
+    }
+  });
 }
 
 // Init
