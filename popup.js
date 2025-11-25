@@ -44,7 +44,7 @@ const jwtInput = document.getElementById('jwtInput');
 const saveJwtBtn = document.getElementById('saveJwtBtn');
 const cancelJwtBtn = document.getElementById('cancelJwtBtn');
 const toggleJwtVisibility = document.getElementById('toggleJwtVisibility');
-let removeJwtBtn = null; // Will be set later since it might not exist initially
+let removeJwtBtn = null; // Will be set later since it might not exist initially.
 
 // Previous Keys Management
 const prevKeysCount = document.getElementById('prevKeysCount');
@@ -53,13 +53,15 @@ const prevKeysContainer = document.getElementById('prevKeysContainer');
 const prevKeysList = document.getElementById('prevKeysList');
 const closePrevKeysBtn = document.getElementById('closePrevKeysBtn');
 
+// Initialize Previous Keys UI
+let prevKeysUI = null;
+
 // Storage Keys
 const STORAGE_KEYS = {
   JWT: 'GROVE_API_JWT',
   TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
   ENVIRONMENT: 'groveEnvironment',
   CHAIN: 'groveChain',
-  PREV_JWTS: 'GROVE_PREV_JWTS',
 };
 
 // Defaults
@@ -67,22 +69,18 @@ const DEFAULT_TIP_AMOUNT = 0.10;
 const DEFAULT_CHAIN = 'base';
 const DEFAULT_ENV = 'prod';
 
-const CHAIN_CONFIG = {
-  'base': { name: 'Base', type: 'Mainnet' },
-  'base-sepolia': { name: 'Base Sepolia', type: 'Testnet' },
-  'solana': { name: 'Solana', type: 'Mainnet' },
-  'solana-devnet': { name: 'Solana Devnet', type: 'Testnet' }
-};
-
 /**
  * Initialize Popup
  */
 async function init() {
+  // Initialize Previous Keys UI
+  prevKeysUI = new PreviousKeysUI(prevKeysCount, prevKeysList, prevKeysContainer);
+
   await loadJWT();
   await loadTipAmount();
   await loadEnvironment();
   await loadChain();
-  await loadPreviousKeys();
+  await prevKeysUI.updateCount();
   setupEventListeners();
 }
 
@@ -148,13 +146,20 @@ function setupEventListeners() {
   if (viewPrevKeysBtn) {
     viewPrevKeysBtn.addEventListener('click', () => {
       if (prevKeysContainer.classList.contains('hidden')) {
-        showPrevKeys();
+        prevKeysUI.show();
+        viewPrevKeysBtn.textContent = 'Hide';
       } else {
-        hidePrevKeys();
+        prevKeysUI.hide();
+        viewPrevKeysBtn.textContent = 'View';
       }
     });
   }
-  if (closePrevKeysBtn) closePrevKeysBtn.addEventListener('click', hidePrevKeys);
+  if (closePrevKeysBtn) {
+    closePrevKeysBtn.addEventListener('click', () => {
+      prevKeysUI.hide();
+      viewPrevKeysBtn.textContent = 'View';
+    });
+  }
 
   // JWT Visibility Toggle
   if (toggleJwtVisibility) {
@@ -284,25 +289,12 @@ async function saveJwt() {
   const token = jwtInput.value.trim();
   if (token) {
     // Get current JWT before saving new one
-    const result = await chrome.storage.local.get([STORAGE_KEYS.JWT, STORAGE_KEYS.PREV_JWTS]);
+    const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
     const currentJwt = result[STORAGE_KEYS.JWT];
 
-    // If there's a current JWT and it's different from the new one, save it to previous keys
+    // If there's a current JWT and it's different from the new one, archive it
     if (currentJwt && currentJwt !== token) {
-      let prevJwts = result[STORAGE_KEYS.PREV_JWTS] || [];
-
-      // Add current JWT to previous keys with timestamp
-      prevJwts.unshift({
-        key: currentJwt,
-        timestamp: new Date().toISOString()
-      });
-
-      // Keep only last 10 keys
-      if (prevJwts.length > 10) {
-        prevJwts = prevJwts.slice(0, 10);
-      }
-
-      await chrome.storage.local.set({ [STORAGE_KEYS.PREV_JWTS]: prevJwts });
+      await KeyManager.archiveCurrentKey(currentJwt);
     }
 
     // Save new JWT
@@ -310,7 +302,7 @@ async function saveJwt() {
     updateAuthState(token);
     hideJwtEdit();
     showToast('Account connected');
-    await loadPreviousKeys(); // Update the previous keys display
+    await prevKeysUI.updateCount();
 
     // Go back to home if we were onboarding
     if (!onboardingState.classList.contains('hidden')) {
@@ -324,24 +316,12 @@ async function saveJwt() {
 async function removeJwt() {
   if (confirm('Are you sure you want to disconnect?')) {
     // Get current JWT before removing it
-    const result = await chrome.storage.local.get([STORAGE_KEYS.JWT, STORAGE_KEYS.PREV_JWTS]);
+    const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
     const currentJwt = result[STORAGE_KEYS.JWT];
 
-    // Add current JWT to previous keys with timestamp before removing
+    // Archive current JWT before removing
     if (currentJwt) {
-      let prevJwts = result[STORAGE_KEYS.PREV_JWTS] || [];
-
-      prevJwts.unshift({
-        key: currentJwt,
-        timestamp: new Date().toISOString()
-      });
-
-      // Keep only last 10 keys
-      if (prevJwts.length > 10) {
-        prevJwts = prevJwts.slice(0, 10);
-      }
-
-      await chrome.storage.local.set({ [STORAGE_KEYS.PREV_JWTS]: prevJwts });
+      await KeyManager.archiveCurrentKey(currentJwt);
     }
 
     // Remove current JWT
@@ -349,7 +329,7 @@ async function removeJwt() {
     updateAuthState(null);
     hideJwtEdit();
     showToast('Account disconnected');
-    await loadPreviousKeys(); // Update the previous keys display
+    await prevKeysUI.updateCount();
     document.querySelector('[data-target="tab-home"]').click();
   }
 }
@@ -486,7 +466,7 @@ async function loadChain() {
 }
 
 function updateChainUI(chain) {
-  const config = CHAIN_CONFIG[chain] || CHAIN_CONFIG['base'];
+  const config = NETWORKS[chain] || NETWORKS['base'];
   chainName.textContent = config.name;
 
   // Update chain icon based on selected chain
@@ -509,7 +489,7 @@ async function handleChainSelection(e) {
   await chrome.storage.local.set({ [STORAGE_KEYS.CHAIN]: chain });
   updateChainUI(chain);
   chainDropdown.classList.add('hidden');
-  showToast(`Switched to ${CHAIN_CONFIG[chain].name}`);
+  showToast(`Switched to ${NETWORKS[chain].name}`);
 
   // Reload balance
   fetchBalance();
@@ -574,77 +554,6 @@ function showToast(msg) {
     div.style.opacity = '0';
     setTimeout(() => div.remove(), 300);
   }, 2000);
-}
-
-/**
- * Previous Keys Management
- */
-async function loadPreviousKeys() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.PREV_JWTS]);
-  const prevJwts = result[STORAGE_KEYS.PREV_JWTS] || [];
-
-  if (prevJwts.length === 0) {
-    prevKeysCount.textContent = 'No previous keys';
-  } else {
-    prevKeysCount.textContent = `${prevJwts.length} previous key${prevJwts.length === 1 ? '' : 's'}`;
-  }
-}
-
-function showPrevKeys() {
-  prevKeysContainer.classList.remove('hidden');
-  viewPrevKeysBtn.textContent = 'Hide';
-  renderPreviousKeys();
-}
-
-function hidePrevKeys() {
-  prevKeysContainer.classList.add('hidden');
-  viewPrevKeysBtn.textContent = 'View';
-}
-
-async function renderPreviousKeys() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.PREV_JWTS]);
-  const prevJwts = result[STORAGE_KEYS.PREV_JWTS] || [];
-
-  if (prevJwts.length === 0) {
-    prevKeysList.innerHTML = '<p style="color: var(--color-text-secondary); font-size: 12px; text-align: center; padding: 20px;">No previous keys stored</p>';
-    return;
-  }
-
-  prevKeysList.innerHTML = prevJwts.map((item, index) => {
-    const date = new Date(item.timestamp);
-    const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-    const maskedKey = item.key.substring(0, 10) + '...' + item.key.substring(item.key.length - 10);
-
-    return `
-      <div class="prev-key-item">
-        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0;">
-          <span style="font-family: monospace; font-size: 11px; word-break: break-all;">${maskedKey}</span>
-          <span class="prev-key-date">${formattedDate}</span>
-        </div>
-        <button class="copy-key-btn" data-key="${item.key}" data-index="${index}" title="Copy key">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-          </svg>
-        </button>
-      </div>
-    `;
-  }).join('');
-
-  // Add event listeners to copy buttons
-  const copyButtons = prevKeysList.querySelectorAll('.copy-key-btn');
-  copyButtons.forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const key = btn.dataset.key;
-      try {
-        await navigator.clipboard.writeText(key);
-        showToast('Key copied to clipboard');
-      } catch (err) {
-        console.error('Failed to copy key:', err);
-        showToast('Failed to copy key');
-      }
-    });
-  });
 }
 
 /**

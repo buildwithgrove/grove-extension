@@ -114,7 +114,7 @@ body {
   display: none !important;
 }
 
-/* Chain filtering for developer mode - show all networks (mainnet and testnet) */
+/* Chain filtering for developer mode - show both mainnet and testnet networks */
 body.developer-mode .mainnet-option {
   display: flex !important;
 }
@@ -670,18 +670,35 @@ body.developer-mode .testnet-option {
   align-items: flex-start;
 }
 
-.coming-soon-card {
+/* Coming Soon Shared Styles */
+.coming-soon-card,
+.coming-soon-state {
   background: rgba(255, 215, 0, 0.08);
   border: 2px solid rgba(255, 255, 255, 0.15);
 }
 
-.coming-soon-card h4 {
+.coming-soon-card h4,
+.coming-soon-state h3 {
   color: #FFD700;
 }
 
 .coming-soon-card .step-content p {
   color: #FFD700 !important;
   font-weight: 500;
+}
+
+.coming-soon-state {
+  border-radius: var(--radius-lg);
+  margin: 20px 16px;
+  padding: 40px 20px;
+}
+
+.coming-soon-state .empty-icon {
+  opacity: 0.8;
+}
+
+.coming-soon-state h3 {
+  font-weight: 600;
 }
 
 .step-number {
@@ -1075,24 +1092,6 @@ body.developer-mode .testnet-option {
 .empty-state p {
   color: var(--color-text-secondary);
   font-size: 13px;
-}
-
-/* Coming Soon State - styled version with border and background */
-.coming-soon-state {
-  background: rgba(255, 215, 0, 0.08);
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  border-radius: var(--radius-lg);
-  margin: 20px 16px;
-  padding: 40px 20px;
-}
-
-.coming-soon-state .empty-icon {
-  opacity: 0.8;
-}
-
-.coming-soon-state h3 {
-  color: #FFD700;
-  font-weight: 600;
 }
 
 /* Leaderboard */
