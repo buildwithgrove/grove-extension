@@ -422,6 +422,47 @@
             <span class="slider"></span>
           </div>
         </div>
+
+        <!-- API Endpoint Selector (shown only in dev mode) -->
+        <div class="settings-item-column hidden" id="endpointSelector">
+          <div class="settings-row">
+            <div class="settings-info">
+              <div class="settings-name">API Endpoint</div>
+              <div class="settings-desc" id="endpointDisplay">production</div>
+            </div>
+          </div>
+
+          <div class="endpoint-options" style="padding: 12px 16px;">
+            <div class="endpoint-option" data-endpoint="production">
+              <input type="radio" name="endpoint" id="endpoint-production" value="production">
+              <label for="endpoint-production">
+                <div class="endpoint-name">Production</div>
+                <div class="endpoint-url">api.grove.city</div>
+              </label>
+            </div>
+            <div class="endpoint-option" data-endpoint="testnet">
+              <input type="radio" name="endpoint" id="endpoint-testnet" value="testnet">
+              <label for="endpoint-testnet">
+                <div class="endpoint-name">Testnet</div>
+                <div class="endpoint-url">testnet.api.grove.city</div>
+              </label>
+            </div>
+            <div class="endpoint-option" data-endpoint="localhost">
+              <input type="radio" name="endpoint" id="endpoint-localhost" value="localhost">
+              <label for="endpoint-localhost">
+                <div class="endpoint-name">Localhost</div>
+                <div class="endpoint-url">localhost:8000</div>
+              </label>
+            </div>
+            <div class="endpoint-option" data-endpoint="localhost:3000">
+              <input type="radio" name="endpoint" id="endpoint-localhost-3000" value="localhost:3000">
+              <label for="endpoint-localhost-3000">
+                <div class="endpoint-name">Localhost</div>
+                <div class="endpoint-url">localhost:3000</div>
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="settings-group">

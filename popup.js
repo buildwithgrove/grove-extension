@@ -35,6 +35,9 @@ const balanceAmount = document.getElementById('balanceAmount');
 
 // Settings
 const devModeToggle = document.getElementById('devModeCheckbox');
+const endpointSelector = document.getElementById('endpointSelector');
+const endpointDisplay = document.getElementById('endpointDisplay');
+const endpointOptions = document.querySelectorAll('input[name="endpoint"]');
 
 // JWT Management
 const jwtStatusDisplay = document.getElementById('jwtStatusDisplay');
@@ -62,12 +65,14 @@ const STORAGE_KEYS = {
   TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
   ENVIRONMENT: 'groveEnvironment',
   CHAIN: 'groveChain',
+  ENDPOINT: 'groveEndpoint',
 };
 
 // Defaults
 const DEFAULT_TIP_AMOUNT = 0.10;
 const DEFAULT_CHAIN = 'base';
 const DEFAULT_ENV = 'prod';
+const DEFAULT_ENDPOINT = 'production';
 
 /**
  * Initialize Popup
@@ -80,6 +85,7 @@ async function init() {
   await loadTipAmount();
   await loadEnvironment();
   await loadChain();
+  await loadEndpoint();
   await prevKeysUI.updateCount();
   setupEventListeners();
 }
@@ -172,6 +178,11 @@ function setupEventListeners() {
   } else {
     console.error('Developer mode toggle not found');
   }
+
+  // Endpoint Selection
+  endpointOptions.forEach(option => {
+    option.addEventListener('change', handleEndpointChange);
+  });
 
   // Quick Actions (Placeholders)
   document.querySelectorAll('.action-btn').forEach(btn => {
@@ -413,10 +424,12 @@ async function loadEnvironment() {
     if (devModeToggle) devModeToggle.checked = true;
     document.body.classList.add('developer-mode');
     if (testBanner) testBanner.classList.remove('hidden');
+    if (endpointSelector) endpointSelector.classList.remove('hidden');
   } else {
     if (devModeToggle) devModeToggle.checked = false;
     document.body.classList.remove('developer-mode');
     if (testBanner) testBanner.classList.add('hidden');
+    if (endpointSelector) endpointSelector.classList.add('hidden');
   }
 }
 
@@ -431,6 +444,7 @@ async function handleDevModeToggle(e) {
     // Enable developer mode
     document.body.classList.add('developer-mode');
     if (testBanner) testBanner.classList.remove('hidden');
+    if (endpointSelector) endpointSelector.classList.remove('hidden');
     showToast('Developer Mode Enabled');
 
     // Check if current chain is a mainnet and switch to testnet
@@ -444,7 +458,12 @@ async function handleDevModeToggle(e) {
     // Disable developer mode
     document.body.classList.remove('developer-mode');
     if (testBanner) testBanner.classList.add('hidden');
+    if (endpointSelector) endpointSelector.classList.add('hidden');
     showToast('Developer Mode Disabled');
+
+    // Reset to production endpoint
+    await chrome.storage.local.set({ [STORAGE_KEYS.ENDPOINT]: 'production' });
+    await loadEndpoint();
 
     // Check if current chain is a testnet and switch to mainnet
     const currentChain = chainName.textContent;
@@ -454,6 +473,44 @@ async function handleDevModeToggle(e) {
       await handleChainSelection({ currentTarget: { dataset: { chain: 'solana' } } });
     }
   }
+}
+
+/**
+ * API Endpoint Selection
+ */
+async function loadEndpoint() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
+  const endpoint = result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
+
+  // Update UI
+  if (endpointDisplay) {
+    endpointDisplay.textContent = endpoint;
+  }
+
+  // Check the correct radio button
+  endpointOptions.forEach(option => {
+    option.checked = option.value === endpoint;
+  });
+}
+
+async function handleEndpointChange(e) {
+  const endpoint = e.target.value;
+  await chrome.storage.local.set({ [STORAGE_KEYS.ENDPOINT]: endpoint });
+
+  // Update display
+  if (endpointDisplay) {
+    endpointDisplay.textContent = endpoint;
+  }
+
+  // Show friendly endpoint name in toast
+  const endpointNames = {
+    'production': 'Production (api.grove.city)',
+    'testnet': 'Testnet (testnet.api.grove.city)',
+    'localhost': 'Localhost:8000',
+    'localhost:3000': 'Localhost:3000',
+  };
+
+  showToast(`Switched to ${endpointNames[endpoint] || endpoint}`);
 }
 
 /**
