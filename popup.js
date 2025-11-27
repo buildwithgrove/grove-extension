@@ -88,6 +88,9 @@ async function init() {
   await loadEndpoint();
   await prevKeysUI.updateCount();
   setupEventListeners();
+
+  // Fetch balance after everything is loaded
+  await fetchBalance();
 }
 
 /**
@@ -193,7 +196,7 @@ function setupEventListeners() {
 /**
  * Navigation Handler
  */
-function handleNavigation(e) {
+async function handleNavigation(e) {
   const targetId = e.currentTarget.dataset.target;
 
   // Update Tabs
@@ -208,6 +211,11 @@ function handleNavigation(e) {
       page.classList.remove('active');
     }
   });
+
+  // Refresh balance when navigating to home
+  if (targetId === 'tab-home') {
+    await fetchBalance();
+  }
 }
 
 /**
@@ -315,6 +323,9 @@ async function saveJwt() {
     showToast('Account connected');
     await prevKeysUI.updateCount();
 
+    // Fetch balance with new token
+    await fetchBalance();
+
     // Go back to home if we were onboarding
     if (!onboardingState.classList.contains('hidden')) {
       document.querySelector('[data-target="tab-home"]').click();
@@ -398,12 +409,39 @@ async function saveTip() {
  * Balance
  */
 async function fetchBalance() {
-  // Placeholder for balance fetching from grove.city API
-  // This would be fetched using the JWT token
   balanceAmount.style.opacity = '0.5';
   try {
-    // TODO: Fetch balance from grove.city API using JWT
-    balanceAmount.textContent = '0.00';
+    // Get JWT and current chain
+    const result = await chrome.storage.local.get([STORAGE_KEYS.JWT, STORAGE_KEYS.CHAIN]);
+    const jwt = result[STORAGE_KEYS.JWT];
+    const chain = result[STORAGE_KEYS.CHAIN] || DEFAULT_CHAIN;
+
+    if (!jwt) {
+      balanceAmount.textContent = '0.00';
+      return;
+    }
+
+    // Fetch account data from API
+    const response = await GroveAPI.getAccount(jwt);
+
+    if (!response.success || !response.data.balances) {
+      console.error('Balance fetch failed:', response.error);
+      balanceAmount.textContent = '0.00';
+      return;
+    }
+
+    // Find balance for current chain (USDC)
+    const chainBalance = response.data.balances.find(
+      b => b.network === chain && b.token_symbol === 'USDC'
+    );
+
+    if (chainBalance) {
+      // Format balance (remove trailing zeros, max 2 decimal places for display)
+      const balance = parseFloat(chainBalance.balance);
+      balanceAmount.textContent = balance.toFixed(2);
+    } else {
+      balanceAmount.textContent = '0.00';
+    }
   } catch (e) {
     console.error('Balance fetch failed', e);
     balanceAmount.textContent = '0.00';

@@ -130,6 +130,44 @@ class GroveAPI {
   }
 
   /**
+   * Get account snapshot including balances
+   * @param {string} groveApiJwt - JWT token for authentication
+   * @returns {Promise<Object>} - Account data with balances
+   */
+  static async getAccount(groveApiJwt) {
+    const baseURL = await this.getBaseURL();
+    const apiUrl = `${baseURL}/v1/account`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${groveApiJwt}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `API request failed with status ${response.status}`);
+      }
+
+      return {
+        success: true,
+        data: data
+      };
+
+    } catch (error) {
+      console.error('[Grove Extension] Account fetch failed:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
    * Send a tip to the current page URL
    * @param {string} pageUrl - Full page URL (e.g., "https://twitter.com/olshansky")
    * @param {number} tipAmount - Tip amount in dollars (default: 0.05)
