@@ -32,6 +32,7 @@ const editTipBtn = document.getElementById('editTipAmount');
 
 // Balance
 const balanceAmount = document.getElementById('balanceAmount');
+const topUpBtn = document.getElementById('topUpBtn');
 
 // Settings
 const devModeToggle = document.getElementById('devModeCheckbox');
@@ -75,6 +76,10 @@ const DEFAULT_CHAIN = 'base';
 const DEFAULT_ENV = 'prod';
 const DEFAULT_ENDPOINT = 'production';
 const DEFAULT_BALANCE_DISPLAY = '0.00';
+const TOP_UP_URLS = {
+  mainnet: 'https://app.grove.city/profile',
+  testnet: 'https://app.testnet.grove.city/profile'
+};
 
 /**
  * Initialize Popup
@@ -583,6 +588,7 @@ async function loadChain() {
     const result = await chrome.storage.local.get([STORAGE_KEYS.CHAIN]);
     const chain = result[STORAGE_KEYS.CHAIN] || DEFAULT_CHAIN;
     updateChainUI(chain);
+    updateTopUpLink(chain);
 }
 
 function updateChainUI(chain) {
@@ -608,11 +614,19 @@ async function handleChainSelection(e) {
   const chain = e.currentTarget.dataset.chain;
   await chrome.storage.local.set({ [STORAGE_KEYS.CHAIN]: chain });
   updateChainUI(chain);
+  updateTopUpLink(chain);
   chainDropdown.classList.add('hidden');
   showToast(`Switched to ${NETWORKS[chain].name}`);
 
   // Reload balance
   fetchBalance();
+}
+
+function updateTopUpLink(chain) {
+  if (!topUpBtn) return;
+  const config = NETWORKS[chain] || NETWORKS[DEFAULT_CHAIN];
+  const isTestnet = (config.type || '').toLowerCase() === 'testnet';
+  topUpBtn.href = isTestnet ? TOP_UP_URLS.testnet : TOP_UP_URLS.mainnet;
 }
 
 /**
