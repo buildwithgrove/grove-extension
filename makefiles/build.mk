@@ -6,6 +6,9 @@
 EXTENSION_NAME := grove-extension
 VERSION := 1.0.1
 
+# Chrome Web Store URLs
+CHROME_STORE_CONSOLE := https://chrome.google.com/webstore/devconsole/21d27706-ef22-4f83-8ddc-9f6109acef7d/jheejecmpfgifgdodgipilpgfaiecndm/edit/package
+
 # Build artifacts
 ZIP_FILE := $(BUILD_DIR)/$(EXTENSION_NAME)-v$(VERSION).zip
 
@@ -41,7 +44,7 @@ build_zip_extension: clean_build $(BUILD_DIR) ## Create extension zip for Chrome
 	@printf "$(CYAN)$(BOLD)📦 Output:$(RESET) $(ZIP_FILE)\n"
 	@printf "\n"
 	@printf "$(YELLOW)$(BOLD)Next steps:$(RESET)\n"
-	@printf "  1. Go to $(CYAN)https://chrome.google.com/webstore/devconsole$(RESET)\n"
+	@printf "  1. Go to $(CYAN)$(CHROME_STORE_CONSOLE)$(RESET)\n"
 	@printf "  2. Ensure you are logged in with the group publisher.\n"
 	@printf "  3. Upload $(CYAN)$(ZIP_FILE)$(RESET)\n"
 	@printf "\n"
@@ -55,9 +58,6 @@ clean_build: ## Clean build artifacts
 ##########################
 ### Release Workflow   ###
 ##########################
-
-# Chrome Web Store URLs
-CHROME_STORE_CONSOLE := https://chrome.google.com/webstore/devconsole/21d27706-ef22-4f83-8ddc-9f6109acef7d/jheejecmpfgifgdodgipilpgfaiecndm/edit/package
 
 .PHONY: build_release
 build_release: ## Bump version, prompt to commit/push, and prepare for Chrome Web Store upload
