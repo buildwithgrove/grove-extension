@@ -66,6 +66,7 @@ const STORAGE_KEYS = {
   ENVIRONMENT: 'groveEnvironment',
   CHAIN: 'groveChain',
   ENDPOINT: 'groveEndpoint',
+  LAST_BALANCES: 'GROVE_LAST_BALANCES',
 };
 
 // Defaults
@@ -73,6 +74,7 @@ const DEFAULT_TIP_AMOUNT = 0.10;
 const DEFAULT_CHAIN = 'base';
 const DEFAULT_ENV = 'prod';
 const DEFAULT_ENDPOINT = 'production';
+const DEFAULT_BALANCE_DISPLAY = '0.00';
 
 /**
  * Initialize Popup
@@ -408,16 +410,37 @@ async function saveTip() {
 /**
  * Balance
  */
+function formatBalance(balance) {
+  const parsed = parseFloat(balance);
+  if (Number.isNaN(parsed)) {
+    return DEFAULT_BALANCE_DISPLAY;
+  }
+  return parsed.toFixed(2);
+}
+
 async function fetchBalance() {
   balanceAmount.style.opacity = '0.5';
-  try {
-    // Get JWT and current chain
-    const result = await chrome.storage.local.get([STORAGE_KEYS.JWT, STORAGE_KEYS.CHAIN]);
-    const jwt = result[STORAGE_KEYS.JWT];
-    const chain = result[STORAGE_KEYS.CHAIN] || DEFAULT_CHAIN;
 
+  // Get JWT, chain, and any cached balances first so we can render immediately
+  const storageResult = await chrome.storage.local.get([
+    STORAGE_KEYS.JWT,
+    STORAGE_KEYS.CHAIN,
+    STORAGE_KEYS.LAST_BALANCES
+  ]);
+  const jwt = storageResult[STORAGE_KEYS.JWT];
+  const chain = storageResult[STORAGE_KEYS.CHAIN] || DEFAULT_CHAIN;
+  const cachedBalances = storageResult[STORAGE_KEYS.LAST_BALANCES] || {};
+  const cachedBalance = cachedBalances[chain];
+
+  // Show cached balance if available to avoid flashing $0.00
+  if (cachedBalance !== undefined) {
+    balanceAmount.textContent = cachedBalance;
+  } else {
+    balanceAmount.textContent = DEFAULT_BALANCE_DISPLAY;
+  }
+
+  try {
     if (!jwt) {
-      balanceAmount.textContent = '0.00';
       return;
     }
 
@@ -426,7 +449,6 @@ async function fetchBalance() {
 
     if (!response.success || !response.data.balances) {
       console.error('Balance fetch failed:', response.error);
-      balanceAmount.textContent = '0.00';
       return;
     }
 
@@ -437,14 +459,17 @@ async function fetchBalance() {
 
     if (chainBalance) {
       // Format balance (remove trailing zeros, max 2 decimal places for display)
-      const balance = parseFloat(chainBalance.balance);
-      balanceAmount.textContent = balance.toFixed(2);
+      const formattedBalance = formatBalance(chainBalance.balance);
+      balanceAmount.textContent = formattedBalance;
+      cachedBalances[chain] = formattedBalance;
+      await chrome.storage.local.set({ [STORAGE_KEYS.LAST_BALANCES]: cachedBalances });
     } else {
-      balanceAmount.textContent = '0.00';
+      balanceAmount.textContent = DEFAULT_BALANCE_DISPLAY;
+      cachedBalances[chain] = DEFAULT_BALANCE_DISPLAY;
+      await chrome.storage.local.set({ [STORAGE_KEYS.LAST_BALANCES]: cachedBalances });
     }
   } catch (e) {
     console.error('Balance fetch failed', e);
-    balanceAmount.textContent = '0.00';
   } finally {
     balanceAmount.style.opacity = '1';
   }
