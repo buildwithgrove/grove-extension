@@ -14,6 +14,71 @@ class TipButton {
     this.onClickCallback = onClickCallback;
     this.button = null;
     this.platform = platform;
+    this.isDarkMode = this.detectDarkMode();
+  }
+
+  /**
+   * Detect if the page is in dark mode
+   * @returns {boolean}
+   */
+  detectDarkMode() {
+    // Platform-specific detection
+    if (this.platform === 'twitter') {
+      // Twitter uses backgroundColor on body or color-scheme
+      const bg = document.body.style.backgroundColor ||
+                 window.getComputedStyle(document.body).backgroundColor;
+      if (bg) {
+        return this.isColorDark(bg);
+      }
+    }
+
+    if (this.platform === 'reddit') {
+      // Reddit uses a class or data attribute
+      const html = document.documentElement;
+      if (html.classList.contains('theme-dark') ||
+          html.getAttribute('data-theme') === 'dark') {
+        return true;
+      }
+      if (html.classList.contains('theme-light') ||
+          html.getAttribute('data-theme') === 'light') {
+        return false;
+      }
+    }
+
+    if (this.platform === 'youtube') {
+      // YouTube uses dark attribute on html
+      if (document.documentElement.hasAttribute('dark')) {
+        return true;
+      }
+    }
+
+    // Fallback: check system preference
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return true;
+    }
+
+    // Fallback: check body background luminosity
+    const bg = window.getComputedStyle(document.body).backgroundColor;
+    return this.isColorDark(bg);
+  }
+
+  /**
+   * Check if a color is dark based on luminosity
+   * @param {string} color - CSS color string (rgb/rgba)
+   * @returns {boolean}
+   */
+  isColorDark(color) {
+    // Parse rgb/rgba color
+    const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (!match) return true; // Default to dark if can't parse
+
+    const r = parseInt(match[1]);
+    const g = parseInt(match[2]);
+    const b = parseInt(match[3]);
+
+    // Calculate relative luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance < 0.5;
   }
 
   /**
@@ -47,9 +112,16 @@ class TipButton {
     this.button.className = 'grove-tip-button';
     this.button.id = 'grove-tip-button';
 
-    // Apply inline styles - solid dark background with green border for light/dark mode compatibility
+    // Colors based on detected mode
+    const bgColor = this.isDarkMode ? '#1a1a1a' : '#ffffff';
+    const bgHoverColor = this.isDarkMode ? '#252525' : '#f0f0f0';
+    const textColor = this.isDarkMode ? '#ffffff' : '#1a1a1a';
+    this.bgColor = bgColor;
+    this.bgHoverColor = bgHoverColor;
+
+    // Apply inline styles
     this.button.style.cssText = `
-      background: #1a1a1a !important;
+      background: ${bgColor} !important;
       border: 2px solid ${GROVE_COLORS.primary} !important;
       border-radius: 9999px !important;
       padding: 0 16px !important;
@@ -79,7 +151,7 @@ class TipButton {
     const textSpan = document.createElement('span');
     textSpan.textContent = 'Tip';
     textSpan.style.cssText = `
-      color: #ffffff !important;
+      color: ${textColor} !important;
       font-weight: 600 !important;
       font-size: 14px !important;
       position: relative !important;
@@ -130,13 +202,13 @@ class TipButton {
 
     // Add hover effect
     this.button.addEventListener('mouseenter', () => {
-      this.button.style.background = '#252525 !important';
+      this.button.style.background = `${bgHoverColor} !important`;
       this.button.style.transform = 'translateY(-1px)';
       this.button.style.boxShadow = `0 4px 12px ${GROVE_COLORS.shadowHover} !important`;
     });
 
     this.button.addEventListener('mouseleave', () => {
-      this.button.style.background = '#1a1a1a !important';
+      this.button.style.background = `${bgColor} !important`;
       this.button.style.transform = 'translateY(0)';
       this.button.style.boxShadow = `0 2px 8px ${GROVE_COLORS.shadow} !important`;
     });
@@ -230,13 +302,20 @@ class TipButton {
     this.button.setAttribute('aria-label', 'Send a tip');
     this.button.id = 'grove-tip-button';
 
-    // Apply inline styles - solid dark background for light/dark mode compatibility
+    // Colors based on detected mode
+    const bgColor = this.isDarkMode ? '#1a1a1a' : '#ffffff';
+    const bgHoverColor = this.isDarkMode ? '#252525' : '#f0f0f0';
+    const textColor = this.isDarkMode ? '#D7DADC' : '#1a1a1a';
+    this.bgColor = bgColor;
+    this.bgHoverColor = bgHoverColor;
+
+    // Apply inline styles
     this.button.style.cssText = `
-      background: #1a1a1a !important;
+      background: ${bgColor} !important;
       border: 2px solid ${GROVE_COLORS.primary} !important;
       border-radius: 999px !important;
       padding: 8px 16px !important;
-      color: #D7DADC !important;
+      color: ${textColor} !important;
       font-weight: 600 !important;
       font-size: 14px !important;
       cursor: pointer !important;
@@ -258,7 +337,7 @@ class TipButton {
     const textSpan = document.createElement('span');
     textSpan.textContent = 'Tip';
     textSpan.style.cssText = `
-      color: #D7DADC !important;
+      color: ${textColor} !important;
       font-weight: 600 !important;
       font-size: 14px !important;
       position: relative !important;
@@ -294,13 +373,13 @@ class TipButton {
 
     // Add hover effect
     this.button.addEventListener('mouseenter', () => {
-      this.button.style.background = '#252525 !important';
+      this.button.style.background = `${bgHoverColor} !important`;
       this.button.style.transform = 'translateY(-1px)';
       this.button.style.boxShadow = `0 4px 12px ${GROVE_COLORS.shadowHover} !important`;
     });
 
     this.button.addEventListener('mouseleave', () => {
-      this.button.style.background = '#1a1a1a !important';
+      this.button.style.background = `${bgColor} !important`;
       this.button.style.transform = 'translateY(0)';
       this.button.style.boxShadow = `0 2px 8px ${GROVE_COLORS.shadow} !important`;
     });
