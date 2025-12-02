@@ -11,7 +11,7 @@
   --color-primary-rgb: 56, 159, 88;
   --color-primary-light: rgba(56, 159, 88, 0.15);
   --color-accent: #ff6b35;
-  --color-danger: #ef4444;
+  --color-danger: #e07a5f;
 
   /* Dark Theme Colors (Phantom-like) */
   --color-bg: #1a1a1a;
@@ -734,17 +734,17 @@ body.developer-mode .testnet-option {
 /* Coming Soon Shared Styles */
 .coming-soon-card,
 .coming-soon-state {
-  background: rgba(255, 215, 0, 0.08);
+  background: rgba(255, 140, 0, 0.08);
   border: 2px solid rgba(255, 255, 255, 0.15);
 }
 
 .coming-soon-card h4,
 .coming-soon-state h3 {
-  color: #FFD700;
+  color: #FF8C00;
 }
 
 .coming-soon-card .step-content p {
-  color: #FFD700 !important;
+  color: #FF8C00 !important;
   font-weight: 500;
 }
 
