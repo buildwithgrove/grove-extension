@@ -29,6 +29,7 @@ const tipAmountInput = document.getElementById('tipAmountInput');
 const saveTipAmount = document.getElementById('saveTipAmount');
 const cancelTipAmount = document.getElementById('cancelTipAmount');
 const editTipBtn = document.getElementById('editTipAmount');
+const confirmTipToggle = document.getElementById('confirmTipToggle');
 
 // Balance
 const balanceAmount = document.getElementById('balanceAmount');
@@ -65,6 +66,7 @@ let prevKeysUI = null;
 const STORAGE_KEYS = {
   JWT: 'GROVE_API_JWT',
   TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
+  CONFIRM_TIP: 'GROVE_CONFIRM_TIP',
   ENVIRONMENT: 'groveEnvironment',
   CHAIN: 'groveChain',
   ENDPOINT: 'groveEndpoint',
@@ -120,6 +122,7 @@ async function init() {
 
   await loadJWT();
   await loadTipAmount();
+  await loadConfirmTip();
   await loadEnvironment();
   await loadChain();
   await loadEndpoint();
@@ -162,7 +165,7 @@ function setupEventListeners() {
   editTipBtn.addEventListener('click', showTipEdit);
   cancelTipAmount.addEventListener('click', hideTipEdit);
   saveTipAmount.addEventListener('click', saveTip);
-
+  confirmTipToggle.addEventListener('change', handleConfirmTipToggle);
 
   // JWT
   setupTokenBtn.addEventListener('click', () => {
@@ -466,6 +469,20 @@ async function saveTip() {
   } else {
     showToast('Invalid amount');
   }
+}
+
+/**
+ * Confirm tip toggle
+ */
+async function loadConfirmTip() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.CONFIRM_TIP]);
+  const enabled = result[STORAGE_KEYS.CONFIRM_TIP] || false;
+  confirmTipToggle.checked = enabled;
+}
+
+async function handleConfirmTipToggle() {
+  const enabled = confirmTipToggle.checked;
+  await chrome.storage.local.set({ [STORAGE_KEYS.CONFIRM_TIP]: enabled });
 }
 
 /**

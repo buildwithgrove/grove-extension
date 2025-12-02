@@ -143,23 +143,31 @@
   }
 
   /**
-   * Handle tip button click - shows popover for amount confirmation
+   * Handle tip button click - shows popover for amount confirmation (if enabled)
    * @param {TipButton} buttonInstance - The button instance (for hover cards)
    */
   async function handleTipClick(buttonInstance) {
     // Use passed button instance or fall back to currentButton
     const button = buttonInstance || currentButton;
 
-    // Get default tip amount from storage
+    // Get settings from storage
     let tipAmount = 0.10; // default
+    let confirmBeforeTipping = false; // default off
 
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        const result = await chrome.storage.local.get(['GROVE_TIP_AMOUNT']);
+        const result = await chrome.storage.local.get(['GROVE_TIP_AMOUNT', 'GROVE_CONFIRM_TIP']);
         tipAmount = result.GROVE_TIP_AMOUNT || 0.10;
+        confirmBeforeTipping = result.GROVE_CONFIRM_TIP || false;
       }
     } catch (error) {
       console.error("[Grove Extension] Settings load failed:", error);
+    }
+
+    // If confirmation disabled, send tip directly
+    if (!confirmBeforeTipping) {
+      sendTip(tipAmount, button);
+      return;
     }
 
     // Get the button element for positioning
