@@ -412,7 +412,11 @@ async function removeJwt() {
   hideJwtEdit();
   showToast('Key saved to history');
   await prevKeysUI.updateCount();
-  document.querySelector('[data-target="tab-home"]').click();
+
+  // Refresh previous keys list if visible
+  if (!prevKeysContainer.classList.contains('hidden')) {
+    await prevKeysUI.render();
+  }
 }
 
 /**
