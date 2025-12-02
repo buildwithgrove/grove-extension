@@ -216,7 +216,7 @@ function setupEventListeners() {
   if (devModeToggle) {
     devModeToggle.addEventListener('change', handleDevModeToggle);
   } else {
-    console.error('Developer mode toggle not found');
+    console.error('[Grove Extension] Developer mode toggle element not found');
   }
 
   // Endpoint Selection
@@ -509,7 +509,7 @@ async function fetchBalance() {
     const response = await GroveAPI.getAccount(jwt);
 
     if (!response.success || !response.data.balances) {
-      console.error('Balance fetch failed:', response.error);
+      console.error('[Grove Extension] Balance fetch failed:', response.error);
       return;
     }
 
@@ -530,7 +530,7 @@ async function fetchBalance() {
       await chrome.storage.local.set({ [STORAGE_KEYS.LAST_BALANCES]: cachedBalances });
     }
   } catch (e) {
-    console.error('Balance fetch failed', e);
+    console.error('[Grove Extension] Balance fetch failed:', e);
   } finally {
     balanceDisplay.classList.remove('loading');
   }

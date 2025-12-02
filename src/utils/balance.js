@@ -13,7 +13,7 @@ async function getNetworkConfig() {
     const chain = result.groveChain || 'base';
     return NETWORKS[chain] || NETWORKS['base'];
   } catch (error) {
-    console.error('[Grove Extension] Error getting network config:', error);
+    console.error('[Grove Extension] Network config load failed:', error);
     return NETWORKS['base'];
   }
 }

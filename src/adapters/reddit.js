@@ -97,7 +97,6 @@ class RedditAdapter extends BaseAdapter {
         }
       }
 
-    } else {
     }
 
     // Fallback: look for profile actions area (legacy selector)

@@ -41,7 +41,7 @@ class GroveAPI {
       const endpoint = result.groveEndpoint || 'production';
       return this.ENDPOINTS[endpoint] || this.ENDPOINTS['production'];
     } catch (error) {
-      console.log('[Grove Extension] Could not get endpoint, using production');
+      console.log("[Grove Extension] Endpoint load failed, using production");
       return this.ENDPOINTS['production'];
     }
   }
@@ -56,7 +56,7 @@ class GroveAPI {
       const chain = result.groveChain || 'base';
       return this.CHAIN_RPC_ENDPOINTS[chain] || this.CHAIN_RPC_ENDPOINTS['base'];
     } catch (error) {
-      console.log('[Grove Extension] Could not get chain, using base');
+      console.log("[Grove Extension] Chain config load failed, using Base");
       return this.CHAIN_RPC_ENDPOINTS['base'];
     }
   }
