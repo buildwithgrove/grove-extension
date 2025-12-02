@@ -10,11 +10,11 @@
   --color-primary-dark: #2f8549;
   --color-primary-rgb: 56, 159, 88;
   --color-primary-light: rgba(56, 159, 88, 0.15);
-  --color-accent: #ff6b35;
-  --color-danger: #e07a5f;
+  --color-accent: #f0ad4e;
+  --color-danger: #ff6b35;
 
   /* Dark Theme Colors (Phantom-like) */
-  --color-bg: #111827;
+  --color-bg: #1a1a1a;
   --color-surface: #2d2d2d;
   --color-surface-hover: #363636;
   --color-border: #404040;
