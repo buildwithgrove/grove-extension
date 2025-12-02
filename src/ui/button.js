@@ -47,9 +47,9 @@ class TipButton {
     this.button.className = 'grove-tip-button';
     this.button.id = 'grove-tip-button';
 
-    // Apply inline styles - black with green border, matching Twitter's button positioning exactly
+    // Apply inline styles - solid dark background with green border for light/dark mode compatibility
     this.button.style.cssText = `
-      background: ${GROVE_GRADIENTS.background} !important;
+      background: #1a1a1a !important;
       border: 2px solid ${GROVE_COLORS.primary} !important;
       border-radius: 9999px !important;
       padding: 0 16px !important;
@@ -130,13 +130,13 @@ class TipButton {
 
     // Add hover effect
     this.button.addEventListener('mouseenter', () => {
-      this.button.style.background = `${GROVE_GRADIENTS.backgroundHover} !important`;
+      this.button.style.background = '#252525 !important';
       this.button.style.transform = 'translateY(-1px)';
       this.button.style.boxShadow = `0 4px 12px ${GROVE_COLORS.shadowHover} !important`;
     });
 
     this.button.addEventListener('mouseleave', () => {
-      this.button.style.background = `${GROVE_GRADIENTS.background} !important`;
+      this.button.style.background = '#1a1a1a !important';
       this.button.style.transform = 'translateY(0)';
       this.button.style.boxShadow = `0 2px 8px ${GROVE_COLORS.shadow} !important`;
     });
@@ -230,9 +230,9 @@ class TipButton {
     this.button.setAttribute('aria-label', 'Send a tip');
     this.button.id = 'grove-tip-button';
 
-    // Apply inline styles to match Reddit's native button style
+    // Apply inline styles - solid dark background for light/dark mode compatibility
     this.button.style.cssText = `
-      background: ${GROVE_GRADIENTS.background} !important;
+      background: #1a1a1a !important;
       border: 2px solid ${GROVE_COLORS.primary} !important;
       border-radius: 999px !important;
       padding: 8px 16px !important;
@@ -292,15 +292,15 @@ class TipButton {
       animation: grove-sheen-slide 3s ease-in-out infinite !important;
     `;
 
-    // Add hover effect to match the enhanced button style
+    // Add hover effect
     this.button.addEventListener('mouseenter', () => {
-      this.button.style.background = `${GROVE_GRADIENTS.backgroundHover} !important`;
+      this.button.style.background = '#252525 !important';
       this.button.style.transform = 'translateY(-1px)';
       this.button.style.boxShadow = `0 4px 12px ${GROVE_COLORS.shadowHover} !important`;
     });
 
     this.button.addEventListener('mouseleave', () => {
-      this.button.style.background = `${GROVE_GRADIENTS.background} !important`;
+      this.button.style.background = '#1a1a1a !important';
       this.button.style.transform = 'translateY(0)';
       this.button.style.boxShadow = `0 2px 8px ${GROVE_COLORS.shadow} !important`;
     });
