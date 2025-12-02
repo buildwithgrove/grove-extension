@@ -12,6 +12,8 @@
         "src/adapters/base.js",
         "src/adapters/twitter.js",
         "src/ui/constants.js",
+        "src/ui/spinner.js",
+        "src/ui/popover.js",
         "src/ui/button.js",
         "src/utils/api.js",
         "src/content/content.js"
@@ -26,6 +28,8 @@
         "src/adapters/base.js",
         "src/adapters/reddit.js",
         "src/ui/constants.js",
+        "src/ui/spinner.js",
+        "src/ui/popover.js",
         "src/ui/button.js",
         "src/utils/api.js",
         "src/content/content.js"
@@ -44,6 +48,8 @@
         "src/adapters/base.js",
         "src/adapters/youtube.js",
         "src/ui/constants.js",
+        "src/ui/spinner.js",
+        "src/ui/popover.js",
         "src/ui/button.js",
         "src/utils/api.js",
         "src/content/content.js"

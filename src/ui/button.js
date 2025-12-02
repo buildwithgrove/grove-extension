@@ -426,28 +426,39 @@ class TipButton {
   setLoading() {
     if (!this.button) return;
 
-    // Store original state
-    this.originalText = this.button.textContent || this.button.innerText;
+    // Clear any pending reset timeout
+    if (this.resetTimeout) {
+      clearTimeout(this.resetTimeout);
+      this.resetTimeout = null;
+    }
+
+    // Store original border/shadow styles
+    this.originalBorder = this.button.style.border;
+    this.originalBoxShadow = this.button.style.boxShadow;
+
     this.button.disabled = true;
-    this.button.style.cursor = 'wait';
 
-    // Remove any existing state classes
-    this.button.classList.remove('animate__bounceIn', 'animate__shakeX', 'grove-tip-success', 'grove-tip-error');
+    // Use JS interval to cycle border colors with !important to override inline styles
+    const colors = [
+      { border: '#389f58', shadow: '0 0 12px #389f58' },
+      { border: '#4fb76d', shadow: '0 0 12px #4fb76d' },
+      { border: '#f0ad4e', shadow: '0 0 12px #f0ad4e' },
+      { border: '#4fb76d', shadow: '0 0 12px #4fb76d' },
+    ];
+    let colorIndex = 0;
 
-    // Add pulsing animation
-    this.button.classList.add('animate__animated', 'animate__pulse', 'animate__infinite');
+    // Set initial color
+    this.button.style.setProperty('border-color', colors[0].border, 'important');
+    this.button.style.setProperty('box-shadow', colors[0].shadow, 'important');
 
-    // Update button text based on platform
-    let textElement;
-    if (this.platform === 'youtube') {
-      textElement = this.button.querySelector('.yt-core-attributed-string');
-    } else {
-      textElement = this.button.querySelector('span') || this.button;
-    }
+    this.loadingInterval = setInterval(() => {
+      colorIndex++;
+      const color = colors[colorIndex % colors.length];
+      this.button.style.setProperty('border-color', color.border, 'important');
+      this.button.style.setProperty('box-shadow', color.shadow, 'important');
+    }, 150);
 
-    if (textElement) {
-      textElement.textContent = 'Sending...';
-    }
+    this.button.style.pointerEvents = 'none';
   }
 
   /**
@@ -456,20 +467,29 @@ class TipButton {
   setSuccess() {
     if (!this.button) return;
 
+    // Stop loading animation
+    if (this.loadingInterval) {
+      clearInterval(this.loadingInterval);
+      this.loadingInterval = null;
+    }
+
     // Remove loading state
     this.button.disabled = false;
-    this.button.style.cursor = 'pointer';
-    this.button.classList.remove('animate__pulse', 'animate__infinite', 'grove-tip-error');
+    this.button.style.pointerEvents = '';
 
-    // Add success animation and styling
-    this.button.classList.add('animate__bounceIn', 'grove-tip-success');
+    // Restore original border/shadow
+    this.button.style.setProperty('border', this.originalBorder || `2px solid ${GROVE_COLORS.primary}`, 'important');
+    this.button.style.setProperty('box-shadow', this.originalBoxShadow || `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
 
-    // Update button text
+    // Add success styling
+    this.button.classList.add('animate__animated', 'animate__bounceIn', 'grove-tip-success');
+
+    // Update button text to show success
     let textElement;
     if (this.platform === 'youtube') {
       textElement = this.button.querySelector('.yt-core-attributed-string');
     } else {
-      textElement = this.button.querySelector('span') || this.button;
+      textElement = this.button.querySelector('span');
     }
 
     if (textElement) {
@@ -477,7 +497,7 @@ class TipButton {
     }
 
     // Reset after 2 seconds
-    setTimeout(() => {
+    this.resetTimeout = setTimeout(() => {
       this.resetState();
     }, 2000);
   }
@@ -488,20 +508,29 @@ class TipButton {
   setError() {
     if (!this.button) return;
 
+    // Stop loading animation
+    if (this.loadingInterval) {
+      clearInterval(this.loadingInterval);
+      this.loadingInterval = null;
+    }
+
     // Remove loading state
     this.button.disabled = false;
-    this.button.style.cursor = 'pointer';
-    this.button.classList.remove('animate__pulse', 'animate__infinite', 'grove-tip-success');
+    this.button.style.pointerEvents = '';
 
-    // Add error animation and styling
-    this.button.classList.add('animate__shakeX', 'grove-tip-error');
+    // Restore original border/shadow
+    this.button.style.setProperty('border', this.originalBorder || `2px solid ${GROVE_COLORS.primary}`, 'important');
+    this.button.style.setProperty('box-shadow', this.originalBoxShadow || `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
+
+    // Add error styling
+    this.button.classList.add('animate__animated', 'animate__shakeX', 'grove-tip-error');
 
     // Update button text
     let textElement;
     if (this.platform === 'youtube') {
       textElement = this.button.querySelector('.yt-core-attributed-string');
     } else {
-      textElement = this.button.querySelector('span') || this.button;
+      textElement = this.button.querySelector('span');
     }
 
     if (textElement) {
@@ -509,7 +538,7 @@ class TipButton {
     }
 
     // Reset after 2 seconds
-    setTimeout(() => {
+    this.resetTimeout = setTimeout(() => {
       this.resetState();
     }, 2000);
   }
@@ -519,6 +548,21 @@ class TipButton {
    */
   resetState() {
     if (!this.button) return;
+
+    this.resetTimeout = null;
+
+    // Stop loading animation
+    if (this.loadingInterval) {
+      clearInterval(this.loadingInterval);
+      this.loadingInterval = null;
+    }
+
+    // Remove loading styles
+    this.button.style.pointerEvents = '';
+
+    // Restore original border/shadow
+    this.button.style.setProperty('border', this.originalBorder || `2px solid ${GROVE_COLORS.primary}`, 'important');
+    this.button.style.setProperty('box-shadow', this.originalBoxShadow || `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
 
     // Remove all state classes
     this.button.classList.remove(
@@ -534,6 +578,7 @@ class TipButton {
     // Reset button properties
     this.button.disabled = false;
     this.button.style.cursor = 'pointer';
+
 
     // Restore original text for all platforms to "Tip 🌿"
     let textElement;

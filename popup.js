@@ -79,7 +79,7 @@ const DEFAULT_ENDPOINT = 'production';
 const DEFAULT_BALANCE_DISPLAY = '0.00';
 const TOP_UP_URLS = {
   mainnet: 'https://app.grove.city/profile',
-  testnet: 'https://app.testnet.grove.city/profile'
+  testnet: 'https://testnet.grove.city/profile'
 };
 
 /**
@@ -629,7 +629,7 @@ async function handleEndpointChange(e) {
   // Show friendly endpoint name in toast
   const endpointNames = {
     'production': 'Production (api.grove.city)',
-    'testnet': 'Testnet (testnet.api.grove.city)',
+    'testnet': 'Testnet (api.testnet.grove.city)',
     'localhost': 'Localhost:8000',
     'localhost:3000': 'Localhost:3000',
   };
