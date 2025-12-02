@@ -426,26 +426,39 @@ class TipButton {
   setLoading() {
     if (!this.button) return;
 
-    // Store original content
-    this.button.disabled = true;
-    this.button.style.cursor = 'wait';
-
-    // Remove any existing state classes
-    this.button.classList.remove('animate__bounceIn', 'animate__shakeX', 'grove-tip-success', 'grove-tip-error', 'animate__pulse', 'animate__infinite');
-
-    // Hide ALL children (text, emoji, sheen, etc.)
-    Array.from(this.button.children).forEach(child => {
-      if (!child.classList.contains('grove-spinner')) {
-        child.dataset.groveHidden = 'true';
-        child.style.display = 'none';
-      }
-    });
-
-    // Add spinner if not already present
-    if (!this.button.querySelector('.grove-spinner')) {
-      const spinner = GroveSpinner.create({ size: '18px' });
-      this.button.appendChild(spinner);
+    // Clear any pending reset timeout
+    if (this.resetTimeout) {
+      clearTimeout(this.resetTimeout);
+      this.resetTimeout = null;
     }
+
+    // Store original border/shadow styles
+    this.originalBorder = this.button.style.border;
+    this.originalBoxShadow = this.button.style.boxShadow;
+
+    this.button.disabled = true;
+
+    // Use JS interval to cycle border colors with !important to override inline styles
+    const colors = [
+      { border: '#389f58', shadow: '0 0 12px #389f58' },
+      { border: '#4fb76d', shadow: '0 0 12px #4fb76d' },
+      { border: '#f0ad4e', shadow: '0 0 12px #f0ad4e' },
+      { border: '#4fb76d', shadow: '0 0 12px #4fb76d' },
+    ];
+    let colorIndex = 0;
+
+    // Set initial color
+    this.button.style.setProperty('border-color', colors[0].border, 'important');
+    this.button.style.setProperty('box-shadow', colors[0].shadow, 'important');
+
+    this.loadingInterval = setInterval(() => {
+      colorIndex++;
+      const color = colors[colorIndex % colors.length];
+      this.button.style.setProperty('border-color', color.border, 'important');
+      this.button.style.setProperty('box-shadow', color.shadow, 'important');
+    }, 150);
+
+    this.button.style.pointerEvents = 'none';
   }
 
   /**
@@ -454,20 +467,22 @@ class TipButton {
   setSuccess() {
     if (!this.button) return;
 
-    // Remove spinner
-    const spinner = this.button.querySelector('.grove-spinner');
-    if (spinner) spinner.remove();
+    // Stop loading animation
+    if (this.loadingInterval) {
+      clearInterval(this.loadingInterval);
+      this.loadingInterval = null;
+    }
 
     // Remove loading state
     this.button.disabled = false;
-    this.button.style.cursor = 'pointer';
-    this.button.classList.remove('animate__pulse', 'animate__infinite', 'grove-tip-error');
+    this.button.style.pointerEvents = '';
 
-    // Add success animation and styling
+    // Restore original border/shadow
+    this.button.style.setProperty('border', this.originalBorder || `2px solid ${GROVE_COLORS.primary}`, 'important');
+    this.button.style.setProperty('box-shadow', this.originalBoxShadow || `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
+
+    // Add success styling
     this.button.classList.add('animate__animated', 'animate__bounceIn', 'grove-tip-success');
-
-    // Restore and update text
-    this.restoreContent();
 
     // Update button text to show success
     let textElement;
@@ -482,7 +497,7 @@ class TipButton {
     }
 
     // Reset after 2 seconds
-    setTimeout(() => {
+    this.resetTimeout = setTimeout(() => {
       this.resetState();
     }, 2000);
   }
@@ -493,20 +508,22 @@ class TipButton {
   setError() {
     if (!this.button) return;
 
-    // Remove spinner
-    const spinner = this.button.querySelector('.grove-spinner');
-    if (spinner) spinner.remove();
+    // Stop loading animation
+    if (this.loadingInterval) {
+      clearInterval(this.loadingInterval);
+      this.loadingInterval = null;
+    }
 
     // Remove loading state
     this.button.disabled = false;
-    this.button.style.cursor = 'pointer';
-    this.button.classList.remove('animate__pulse', 'animate__infinite', 'grove-tip-success');
+    this.button.style.pointerEvents = '';
 
-    // Add error animation and styling
+    // Restore original border/shadow
+    this.button.style.setProperty('border', this.originalBorder || `2px solid ${GROVE_COLORS.primary}`, 'important');
+    this.button.style.setProperty('box-shadow', this.originalBoxShadow || `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
+
+    // Add error styling
     this.button.classList.add('animate__animated', 'animate__shakeX', 'grove-tip-error');
-
-    // Restore and update text
-    this.restoreContent();
 
     // Update button text
     let textElement;
@@ -521,24 +538,9 @@ class TipButton {
     }
 
     // Reset after 2 seconds
-    setTimeout(() => {
+    this.resetTimeout = setTimeout(() => {
       this.resetState();
     }, 2000);
-  }
-
-  /**
-   * Restore hidden content (used when transitioning from loading state)
-   */
-  restoreContent() {
-    if (!this.button) return;
-
-    // Restore all hidden children
-    Array.from(this.button.children).forEach(child => {
-      if (child.dataset.groveHidden === 'true') {
-        child.style.display = '';
-        delete child.dataset.groveHidden;
-      }
-    });
   }
 
   /**
@@ -547,9 +549,20 @@ class TipButton {
   resetState() {
     if (!this.button) return;
 
-    // Remove spinner if present
-    const spinner = this.button.querySelector('.grove-spinner');
-    if (spinner) spinner.remove();
+    this.resetTimeout = null;
+
+    // Stop loading animation
+    if (this.loadingInterval) {
+      clearInterval(this.loadingInterval);
+      this.loadingInterval = null;
+    }
+
+    // Remove loading styles
+    this.button.style.pointerEvents = '';
+
+    // Restore original border/shadow
+    this.button.style.setProperty('border', this.originalBorder || `2px solid ${GROVE_COLORS.primary}`, 'important');
+    this.button.style.setProperty('box-shadow', this.originalBoxShadow || `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
 
     // Remove all state classes
     this.button.classList.remove(
@@ -566,8 +579,6 @@ class TipButton {
     this.button.disabled = false;
     this.button.style.cursor = 'pointer';
 
-    // Restore hidden content
-    this.restoreContent();
 
     // Restore original text for all platforms to "Tip 🌿"
     let textElement;
