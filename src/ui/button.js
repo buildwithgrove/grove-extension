@@ -426,27 +426,25 @@ class TipButton {
   setLoading() {
     if (!this.button) return;
 
-    // Store original state
-    this.originalText = this.button.textContent || this.button.innerText;
+    // Store original content
     this.button.disabled = true;
     this.button.style.cursor = 'wait';
 
     // Remove any existing state classes
-    this.button.classList.remove('animate__bounceIn', 'animate__shakeX', 'grove-tip-success', 'grove-tip-error');
+    this.button.classList.remove('animate__bounceIn', 'animate__shakeX', 'grove-tip-success', 'grove-tip-error', 'animate__pulse', 'animate__infinite');
 
-    // Add pulsing animation
-    this.button.classList.add('animate__animated', 'animate__pulse', 'animate__infinite');
+    // Hide ALL children (text, emoji, sheen, etc.)
+    Array.from(this.button.children).forEach(child => {
+      if (!child.classList.contains('grove-spinner')) {
+        child.dataset.groveHidden = 'true';
+        child.style.display = 'none';
+      }
+    });
 
-    // Update button text based on platform
-    let textElement;
-    if (this.platform === 'youtube') {
-      textElement = this.button.querySelector('.yt-core-attributed-string');
-    } else {
-      textElement = this.button.querySelector('span') || this.button;
-    }
-
-    if (textElement) {
-      textElement.textContent = 'Sending...';
+    // Add spinner if not already present
+    if (!this.button.querySelector('.grove-spinner')) {
+      const spinner = GroveSpinner.create({ size: '18px' });
+      this.button.appendChild(spinner);
     }
   }
 
@@ -456,20 +454,27 @@ class TipButton {
   setSuccess() {
     if (!this.button) return;
 
+    // Remove spinner
+    const spinner = this.button.querySelector('.grove-spinner');
+    if (spinner) spinner.remove();
+
     // Remove loading state
     this.button.disabled = false;
     this.button.style.cursor = 'pointer';
     this.button.classList.remove('animate__pulse', 'animate__infinite', 'grove-tip-error');
 
     // Add success animation and styling
-    this.button.classList.add('animate__bounceIn', 'grove-tip-success');
+    this.button.classList.add('animate__animated', 'animate__bounceIn', 'grove-tip-success');
 
-    // Update button text
+    // Restore and update text
+    this.restoreContent();
+
+    // Update button text to show success
     let textElement;
     if (this.platform === 'youtube') {
       textElement = this.button.querySelector('.yt-core-attributed-string');
     } else {
-      textElement = this.button.querySelector('span') || this.button;
+      textElement = this.button.querySelector('span');
     }
 
     if (textElement) {
@@ -488,20 +493,27 @@ class TipButton {
   setError() {
     if (!this.button) return;
 
+    // Remove spinner
+    const spinner = this.button.querySelector('.grove-spinner');
+    if (spinner) spinner.remove();
+
     // Remove loading state
     this.button.disabled = false;
     this.button.style.cursor = 'pointer';
     this.button.classList.remove('animate__pulse', 'animate__infinite', 'grove-tip-success');
 
     // Add error animation and styling
-    this.button.classList.add('animate__shakeX', 'grove-tip-error');
+    this.button.classList.add('animate__animated', 'animate__shakeX', 'grove-tip-error');
+
+    // Restore and update text
+    this.restoreContent();
 
     // Update button text
     let textElement;
     if (this.platform === 'youtube') {
       textElement = this.button.querySelector('.yt-core-attributed-string');
     } else {
-      textElement = this.button.querySelector('span') || this.button;
+      textElement = this.button.querySelector('span');
     }
 
     if (textElement) {
@@ -515,10 +527,29 @@ class TipButton {
   }
 
   /**
+   * Restore hidden content (used when transitioning from loading state)
+   */
+  restoreContent() {
+    if (!this.button) return;
+
+    // Restore all hidden children
+    Array.from(this.button.children).forEach(child => {
+      if (child.dataset.groveHidden === 'true') {
+        child.style.display = '';
+        delete child.dataset.groveHidden;
+      }
+    });
+  }
+
+  /**
    * Reset button to original state
    */
   resetState() {
     if (!this.button) return;
+
+    // Remove spinner if present
+    const spinner = this.button.querySelector('.grove-spinner');
+    if (spinner) spinner.remove();
 
     // Remove all state classes
     this.button.classList.remove(
@@ -534,6 +565,9 @@ class TipButton {
     // Reset button properties
     this.button.disabled = false;
     this.button.style.cursor = 'pointer';
+
+    // Restore hidden content
+    this.restoreContent();
 
     // Restore original text for all platforms to "Tip 🌿"
     let textElement;

@@ -14,6 +14,7 @@
   let currentAdapter = null;
   let hoverCardObserver = null;
   let navigationObserver = null;
+  let tipPopover = null;
 
   /**
    * Initialize the extension
@@ -142,36 +143,81 @@
   }
 
   /**
-   * Handle tip button click
+   * Handle tip button click - shows popover for amount confirmation
+   * @param {TipButton} buttonInstance - The button instance (for hover cards)
    */
-  async function handleTipClick() {
+  async function handleTipClick(buttonInstance) {
+    // Use passed button instance or fall back to currentButton
+    const button = buttonInstance || currentButton;
 
-    // Show loading animation
-    if (currentButton) {
-      currentButton.setLoading();
-    }
-
-    // Get JWT and tip amount from storage
-    let jwt = '';
-    let tipAmount = 0.05; // default
+    // Get default tip amount from storage
+    let tipAmount = 0.10; // default
 
     try {
-      const result = await chrome.storage.local.get(['GROVE_API_JWT', 'GROVE_TIP_AMOUNT']);
-      jwt = result.GROVE_API_JWT || '';
-      tipAmount = result.GROVE_TIP_AMOUNT || 0.05;
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        const result = await chrome.storage.local.get(['GROVE_TIP_AMOUNT']);
+        tipAmount = result.GROVE_TIP_AMOUNT || 0.10;
+      }
+    } catch (error) {
+      console.error("[Grove Extension] Settings load failed:", error);
+    }
 
+    // Get the button element for positioning
+    const buttonElement = button?.button;
+    if (!buttonElement) {
+      console.error("[Grove Extension] No button element found");
+      return;
+    }
+
+    // Create popover if needed
+    if (!tipPopover) {
+      tipPopover = new TipPopover();
+    }
+
+    // Show popover with amount confirmation
+    tipPopover.show(
+      buttonElement,
+      tipAmount,
+      (confirmedAmount) => {
+        // User confirmed - send the tip
+        sendTip(confirmedAmount, button);
+      },
+      () => {
+        // User cancelled - do nothing
+        console.log("[Grove Extension] Tip cancelled");
+      }
+    );
+  }
+
+  /**
+   * Send tip with the given amount
+   * @param {number} tipAmount - The amount to tip
+   * @param {TipButton} button - The button instance for state updates
+   */
+  async function sendTip(tipAmount, button) {
+    // Show loading animation
+    if (button) {
+      button.setLoading();
+    }
+
+    // Get JWT from storage
+    let jwt = '';
+
+    try {
+      const result = await chrome.storage.local.get(['GROVE_API_JWT']);
+      jwt = result.GROVE_API_JWT || '';
 
       if (!jwt) {
         console.error("[Grove Extension] No API key configured");
-        if (currentButton) {
-          currentButton.setError();
+        if (button) {
+          button.setError();
         }
         return;
       }
     } catch (error) {
       console.error("[Grove Extension] Settings load failed:", error);
-      if (currentButton) {
-        currentButton.setError();
+      if (button) {
+        button.setError();
       }
       return;
     }
@@ -184,13 +230,13 @@
 
     // Handle response with animations
     if (response.success) {
-      if (currentButton) {
-        currentButton.setSuccess();
+      if (button) {
+        button.setSuccess();
       }
     } else {
       console.error("[Grove Extension] Tip failed:", response.error);
-      if (currentButton) {
-        currentButton.setError();
+      if (button) {
+        button.setError();
       }
     }
   }
@@ -269,45 +315,8 @@
     }
 
     // Create and inject tip button with click handler
-    const tipButton = new TipButton(async () => {
-
-      // Show loading animation
-      tipButton.setLoading();
-
-      // Get JWT and tip amount from storage
-      let jwt = '';
-      let tipAmount = 0.05; // default
-
-      try {
-        const result = await chrome.storage.local.get(['GROVE_API_JWT', 'GROVE_TIP_AMOUNT']);
-        jwt = result.GROVE_API_JWT || '';
-        tipAmount = result.GROVE_TIP_AMOUNT || 0.05;
-
-
-        if (!jwt) {
-          console.error("[Grove Extension] No API key configured");
-          tipButton.setError();
-          return;
-        }
-      } catch (error) {
-        console.error("[Grove Extension] Settings load failed:", error);
-        tipButton.setError();
-        return;
-      }
-
-      // Get current page URL
-      const pageUrl = window.location.href;
-
-      // Send tip via API with JWT and amount
-      const response = await GroveAPI.sendTip(pageUrl, tipAmount, jwt);
-
-      // Handle response with animations
-      if (response.success) {
-          tipButton.setSuccess();
-      } else {
-        console.error("[Grove Extension] Tip failed:", response.error);
-        tipButton.setError();
-      }
+    const tipButton = new TipButton(() => {
+      handleTipClick(tipButton);
     }, "reddit");
 
     const button = tipButton.create();
@@ -332,6 +341,10 @@
     if (hoverCardObserver) {
       hoverCardObserver.disconnect();
       hoverCardObserver = null;
+    }
+    if (tipPopover) {
+      tipPopover.hide();
+      tipPopover = null;
     }
     currentAdapter = null;
   }
