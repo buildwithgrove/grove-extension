@@ -278,28 +278,77 @@ body.developer-mode .testnet-option {
   color: var(--color-text-secondary);
   margin-bottom: 12px;
   font-weight: 400;
+  white-space: nowrap;
 }
 
 .amount-display {
   display: flex;
   align-items: baseline;
   gap: 2px;
+  position: relative;
+}
+
+.currency-symbol,
+.amount-value {
+  font-size: clamp(20px, 8vw, 32px);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-primary);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 12px rgba(56, 159, 88, 0.2);
 }
 
 .currency-symbol {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--color-primary);
-  text-shadow: 0 0 8px rgba(56, 159, 88, 0.25);
+  letter-spacing: 0;
 }
 
 .amount-value {
-  font-size: 32px;
-  font-weight: 700;
-  line-height: 1;
   letter-spacing: -0.5px;
-  color: var(--color-primary);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 12px rgba(56, 159, 88, 0.2);
+}
+
+/* Balance spinner */
+.balance-spinner {
+  width: 1.1em;
+  height: 1.1em;
+  border-radius: 50%;
+  border: 2px solid #444;
+  box-shadow:
+    -7px -7px 7px var(--color-primary),
+    0px -7px 7px 0px #2ecc71,
+    7px -7px 7px #f59e0b,
+    7px 0 7px #ff8c00,
+    7px 7px 7px 0px #f59e0b,
+    0 7px 7px 0px #2ecc71,
+    -7px 7px 7px 0px var(--color-primary);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  opacity: 0;
+  scale: 0;
+  transition: opacity 0.3s ease, scale 0.3s ease;
+}
+
+.amount-display .currency-symbol,
+.amount-display .amount-value {
+  transition: opacity 0.3s ease, scale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.amount-display.loading .currency-symbol,
+.amount-display.loading .amount-value {
+  opacity: 0;
+  scale: 0.5;
+}
+
+.amount-display.loading .balance-spinner {
+  opacity: 1;
+  scale: 1;
+  animation: balance-spin 0.7s linear infinite;
+}
+
+@keyframes balance-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Card Action Buttons */
@@ -317,6 +366,7 @@ body.developer-mode .testnet-option {
   text-decoration: none;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .card-action-btn:hover {

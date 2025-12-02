@@ -32,6 +32,7 @@ const editTipBtn = document.getElementById('editTipAmount');
 
 // Balance
 const balanceAmount = document.getElementById('balanceAmount');
+const balanceDisplay = document.getElementById('balanceDisplay');
 const topUpBtn = document.getElementById('topUpBtn');
 
 // Settings
@@ -424,7 +425,7 @@ function formatBalance(balance) {
 }
 
 async function fetchBalance() {
-  balanceAmount.style.opacity = '0.5';
+  balanceDisplay.classList.add('loading');
 
   // Get JWT, chain, and any cached balances first so we can render immediately
   const storageResult = await chrome.storage.local.get([
@@ -476,7 +477,7 @@ async function fetchBalance() {
   } catch (e) {
     console.error('Balance fetch failed', e);
   } finally {
-    balanceAmount.style.opacity = '1';
+    balanceDisplay.classList.remove('loading');
   }
 }
 
