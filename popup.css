@@ -313,11 +313,11 @@ body.developer-mode .testnet-option {
   border: 2px solid #444;
   box-shadow:
     -7px -7px 7px var(--color-primary),
-    0px -7px 7px 0px #2ecc71,
+    0px -7px 7px 0px #389f58,
     7px -7px 7px #f59e0b,
     7px 0 7px #ff8c00,
     7px 7px 7px 0px #f59e0b,
-    0 7px 7px 0px #2ecc71,
+    0 7px 7px 0px #389f58,
     -7px 7px 7px 0px var(--color-primary);
   position: absolute;
   left: 50%;
