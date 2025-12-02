@@ -56,6 +56,31 @@ class KeyManager {
   static async clearAll() {
     await chrome.storage.local.remove(STORAGE_KEY);
   }
+
+  /**
+   * Delete a specific key by index
+   * @param {number} index - The index of the key to delete
+   * @returns {Promise<void>}
+   */
+  static async deleteKey(index) {
+    const result = await chrome.storage.local.get([STORAGE_KEY]);
+    let prevJwts = result[STORAGE_KEY] || [];
+
+    if (index >= 0 && index < prevJwts.length) {
+      prevJwts.splice(index, 1);
+      await chrome.storage.local.set({ [STORAGE_KEY]: prevJwts });
+    }
+  }
+
+  /**
+   * Get a specific key by index
+   * @param {number} index - The index of the key to retrieve
+   * @returns {Promise<Object|null>} The key object or null
+   */
+  static async getKey(index) {
+    const keys = await this.getPreviousKeys();
+    return keys[index] || null;
+  }
 }
 
 // Export for use in other modules

@@ -8,6 +8,16 @@ class PreviousKeysUI {
     this.countElement = countElement;
     this.listElement = listElement;
     this.containerElement = containerElement;
+    this.onUseKey = null; // Callback when a key is used
+    this.deleteConfirmIndex = null; // Track which key is pending delete confirmation
+  }
+
+  /**
+   * Set callback for when a key is used/restored
+   * @param {Function} callback - Function to call with the key
+   */
+  setOnUseKey(callback) {
+    this.onUseKey = callback;
   }
 
   /**
@@ -56,22 +66,24 @@ class PreviousKeysUI {
 
       return `
         <div class="prev-key-item">
-          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0;">
-            <span style="font-family: monospace; font-size: 11px; word-break: break-all;">${maskedKey}</span>
+          <div class="prev-key-info">
+            <span class="prev-key-value">${maskedKey}</span>
             <span class="prev-key-date">${formattedDate}</span>
           </div>
-          <button class="copy-key-btn" data-key="${item.key}" data-index="${index}" title="Copy key">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-          </button>
+          <div class="prev-key-actions">
+            <button class="prev-key-btn use-key-btn" data-index="${index}" title="Use this key">
+              Use
+            </button>
+            <button class="prev-key-btn delete-key-btn" data-index="${index}" title="Delete this key">
+              Delete
+            </button>
+          </div>
         </div>
       `;
     }).join('');
 
-    // Add event listeners to copy buttons
-    this._attachCopyHandlers();
+    // Add event listeners
+    this._attachHandlers();
   }
 
   /**
@@ -86,23 +98,73 @@ class PreviousKeysUI {
   }
 
   /**
-   * Attach copy handlers to copy buttons
+   * Attach event handlers to buttons
    * @private
    */
-  _attachCopyHandlers() {
-    const copyButtons = this.listElement.querySelectorAll('.copy-key-btn');
-    copyButtons.forEach(btn => {
+  _attachHandlers() {
+    // Use buttons
+    const useButtons = this.listElement.querySelectorAll('.use-key-btn');
+    useButtons.forEach(btn => {
       btn.addEventListener('click', async () => {
-        const key = btn.dataset.key;
-        try {
-          await navigator.clipboard.writeText(key);
-          this._showToast('Key copied to clipboard');
-        } catch (err) {
-          console.error('Failed to copy key:', err);
-          this._showToast('Failed to copy key');
+        const index = parseInt(btn.dataset.index);
+        const keyData = await KeyManager.getKey(index);
+        if (keyData && this.onUseKey) {
+          await this.onUseKey(keyData.key);
+          this._showToast('Key restored');
         }
       });
     });
+
+    // Delete buttons
+    const deleteButtons = this.listElement.querySelectorAll('.delete-key-btn');
+    deleteButtons.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const index = parseInt(btn.dataset.index);
+
+        // First click: show confirmation
+        if (this.deleteConfirmIndex !== index) {
+          // Reset any other pending confirmation
+          this._resetDeleteConfirmation();
+
+          this.deleteConfirmIndex = index;
+          btn.textContent = 'Confirm?';
+          btn.classList.add('confirming');
+
+          // Reset after 3 seconds
+          this._deleteTimeout = setTimeout(() => {
+            this._resetDeleteConfirmation();
+          }, 3000);
+          return;
+        }
+
+        // Second click: delete
+        this._resetDeleteConfirmation();
+        await KeyManager.deleteKey(index);
+        await this.updateCount();
+        await this.render();
+        this._showToast('Key deleted');
+      });
+    });
+  }
+
+  /**
+   * Reset delete confirmation state
+   * @private
+   */
+  _resetDeleteConfirmation() {
+    if (this._deleteTimeout) {
+      clearTimeout(this._deleteTimeout);
+      this._deleteTimeout = null;
+    }
+
+    if (this.deleteConfirmIndex !== null) {
+      const btn = this.listElement.querySelector(`.delete-key-btn[data-index="${this.deleteConfirmIndex}"]`);
+      if (btn) {
+        btn.textContent = 'Delete';
+        btn.classList.remove('confirming');
+      }
+      this.deleteConfirmIndex = null;
+    }
   }
 
   /**

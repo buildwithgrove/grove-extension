@@ -32,6 +32,7 @@ const editTipBtn = document.getElementById('editTipAmount');
 
 // Balance
 const balanceAmount = document.getElementById('balanceAmount');
+const balanceDisplay = document.getElementById('balanceDisplay');
 const topUpBtn = document.getElementById('topUpBtn');
 
 // Settings
@@ -87,6 +88,35 @@ const TOP_UP_URLS = {
 async function init() {
   // Initialize Previous Keys UI
   prevKeysUI = new PreviousKeysUI(prevKeysCount, prevKeysList, prevKeysContainer);
+
+  // Set up callback for when a previous key is used
+  prevKeysUI.setOnUseKey(async (key) => {
+    // Archive current key first (if any)
+    const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
+    const currentJwt = result[STORAGE_KEYS.JWT];
+    if (currentJwt) {
+      await KeyManager.archiveCurrentKey(currentJwt);
+    }
+
+    // Set the selected key as current
+    await chrome.storage.local.set({ [STORAGE_KEYS.JWT]: key });
+
+    // Delete the key from previous keys (since it's now current)
+    const keys = await KeyManager.getPreviousKeys();
+    const keyIndex = keys.findIndex(k => k.key === key);
+    if (keyIndex !== -1) {
+      await KeyManager.deleteKey(keyIndex);
+    }
+
+    // Update UI
+    updateAuthState(key);
+    await prevKeysUI.updateCount();
+    await prevKeysUI.render();
+    await fetchBalance();
+
+    // Navigate to home
+    document.querySelector('[data-target="tab-home"]').click();
+  });
 
   await loadJWT();
   await loadTipAmount();
@@ -342,24 +372,50 @@ async function saveJwt() {
   }
 }
 
+let removeJwtPending = false;
+
 async function removeJwt() {
-  if (confirm('Are you sure you want to disconnect?')) {
-    // Get current JWT before removing it
-    const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
-    const currentJwt = result[STORAGE_KEYS.JWT];
+  // First click: show confirmation state
+  if (!removeJwtPending) {
+    removeJwtPending = true;
+    removeJwtBtn.textContent = 'Confirm?';
+    removeJwtBtn.classList.add('confirming');
 
-    // Archive current JWT before removing
-    if (currentJwt) {
-      await KeyManager.archiveCurrentKey(currentJwt);
-    }
+    // Reset after 3 seconds if not confirmed
+    setTimeout(() => {
+      if (removeJwtPending) {
+        removeJwtPending = false;
+        removeJwtBtn.textContent = 'Disconnect';
+        removeJwtBtn.classList.remove('confirming');
+      }
+    }, 3000);
+    return;
+  }
 
-    // Remove current JWT
-    await chrome.storage.local.remove(STORAGE_KEYS.JWT);
-    updateAuthState(null);
-    hideJwtEdit();
-    showToast('Account disconnected');
-    await prevKeysUI.updateCount();
-    document.querySelector('[data-target="tab-home"]').click();
+  // Second click: actually disconnect
+  removeJwtPending = false;
+  removeJwtBtn.textContent = 'Disconnect';
+  removeJwtBtn.classList.remove('confirming');
+
+  // Get current JWT before removing it
+  const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
+  const currentJwt = result[STORAGE_KEYS.JWT];
+
+  // Archive current JWT before removing
+  if (currentJwt) {
+    await KeyManager.archiveCurrentKey(currentJwt);
+  }
+
+  // Remove current JWT
+  await chrome.storage.local.remove(STORAGE_KEYS.JWT);
+  updateAuthState(null);
+  hideJwtEdit();
+  showToast('Key saved to history');
+  await prevKeysUI.updateCount();
+
+  // Refresh previous keys list if visible
+  if (!prevKeysContainer.classList.contains('hidden')) {
+    await prevKeysUI.render();
   }
 }
 
@@ -424,7 +480,7 @@ function formatBalance(balance) {
 }
 
 async function fetchBalance() {
-  balanceAmount.style.opacity = '0.5';
+  balanceDisplay.classList.add('loading');
 
   // Get JWT, chain, and any cached balances first so we can render immediately
   const storageResult = await chrome.storage.local.get([
@@ -476,7 +532,7 @@ async function fetchBalance() {
   } catch (e) {
     console.error('Balance fetch failed', e);
   } finally {
-    balanceAmount.style.opacity = '1';
+    balanceDisplay.classList.remove('loading');
   }
 }
 
