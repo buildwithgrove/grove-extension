@@ -18,7 +18,7 @@ class EnvironmentToggle {
       const result = await chrome.storage.local.get(['groveEnvironment']);
       this.currentEnv = result.groveEnvironment || 'prod';
     } catch (error) {
-      console.log('[Grove Extension] Could not load environment, defaulting to prod');
+      console.log("[Grove Extension] Environment load failed, using production");
       this.currentEnv = 'prod';
     }
   }
@@ -31,7 +31,7 @@ class EnvironmentToggle {
       await chrome.storage.local.set({ groveEnvironment: env });
       this.currentEnv = env;
     } catch (error) {
-      console.error('[Grove Extension] Could not save environment:', error);
+      console.error('[Grove Extension] Environment save failed:', error);
     }
   }
 
@@ -92,7 +92,7 @@ class EnvironmentToggle {
       const result = await chrome.storage.local.get(['groveEnvironment']);
       return result.groveEnvironment || 'prod';
     } catch (error) {
-      console.log('[Grove Extension] Could not load environment, defaulting to prod');
+      console.log("[Grove Extension] Environment load failed, using production");
       return 'prod';
     }
   }

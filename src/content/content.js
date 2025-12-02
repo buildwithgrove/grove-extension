@@ -13,6 +13,7 @@
   let currentButton = null;
   let currentAdapter = null;
   let hoverCardObserver = null;
+  let navigationObserver = null;
 
   /**
    * Initialize the extension
@@ -26,9 +27,7 @@
       return;
     }
 
-    console.log(
-      `[Grove Extension] Platform detected: ${currentAdapter.getPlatformName()}`
-    );
+    console.log(`[Grove Extension] Platform detected: ${currentAdapter.getPlatformName()}`);
 
     // For Reddit, handle both hover cards and profile pages
     if (currentAdapter.getPlatformName() === "reddit") {
@@ -47,7 +46,7 @@
         return;
       }
     } catch (error) {
-      console.error("[Grove Extension] Error detecting profile page:", error);
+      console.error("[Grove Extension] Profile detection failed:", error);
       return;
     }
 
@@ -97,10 +96,8 @@
       // Extract bio to check for addresses
       const bio = currentAdapter.extractBio();
 
-      // TEMPORARY: Skip address validation for YouTube to test button placement
-      if (currentAdapter.getPlatformName() === 'youtube') {
-        console.log("[Grove Extension] YouTube detected - showing button for testing (no address check)");
-      } else {
+      // Skip address validation for YouTube
+      if (currentAdapter.getPlatformName() !== 'youtube') {
         if (!bio) {
           console.log("[Grove Extension] No bio found - not showing button");
           return;
@@ -111,23 +108,19 @@
         // Check if bio contains tippable address
         const hasAddress = AddressParser.hasAddresses(bio);
         if (!hasAddress) {
-          console.log(
-            "[Grove Extension] No tippable address found in bio - not showing button"
-          );
+          console.log("[Grove Extension] No tippable address found in bio - not showing button");
           return;
         }
 
-        console.log(
-          "[Grove Extension] Tippable address detected - showing button"
-        );
+        console.log("[Grove Extension] Tippable address detected - showing button");
+      } else {
+        console.log("[Grove Extension] YouTube detected - skipping address validation");
       }
 
       // Get button placement location
       const placement = currentAdapter.getButtonPlacement();
       if (!placement) {
-        console.log(
-          "[Grove Extension] Could not find button placement location"
-        );
+        console.log("[Grove Extension] Could not find button placement location");
         return;
       }
 
@@ -142,13 +135,9 @@
         button.classList.add("grove-ad-mode");
       }
 
-      const injected = currentButton.inject(placement);
-
-      if (injected) {
-      } else {
-      }
+      currentButton.inject(placement);
     } catch (error) {
-      console.error("[Grove Extension] Error initializing profile button:", error);
+      console.error("[Grove Extension] Button initialization failed:", error);
     }
   }
 
@@ -173,14 +162,14 @@
 
 
       if (!jwt) {
-        console.error("[Grove Extension] No JWT token found. Please configure in settings.");
+        console.error("[Grove Extension] No API key configured");
         if (currentButton) {
           currentButton.setError();
         }
         return;
       }
     } catch (error) {
-      console.error("[Grove Extension] Error loading settings:", error);
+      console.error("[Grove Extension] Settings load failed:", error);
       if (currentButton) {
         currentButton.setError();
       }
@@ -296,12 +285,12 @@
 
 
         if (!jwt) {
-          console.error("[Grove Extension] No JWT token found. Please configure in settings.");
+          console.error("[Grove Extension] No API key configured");
           tipButton.setError();
           return;
         }
       } catch (error) {
-        console.error("[Grove Extension] Error loading settings:", error);
+        console.error("[Grove Extension] Settings load failed:", error);
         tipButton.setError();
         return;
       }
@@ -351,10 +340,15 @@
    * Watch for navigation changes (SPAs like Twitter)
    */
   function watchForNavigation() {
+    // Clean up existing observer if any
+    if (navigationObserver) {
+      navigationObserver.disconnect();
+    }
+
     let lastUrl = window.location.href;
 
     // Use MutationObserver to detect URL changes in SPAs
-    const observer = new MutationObserver(() => {
+    navigationObserver = new MutationObserver(() => {
       const currentUrl = window.location.href;
       if (currentUrl !== lastUrl) {
         lastUrl = currentUrl;
@@ -363,7 +357,7 @@
       }
     });
 
-    observer.observe(document.body, {
+    navigationObserver.observe(document.body, {
       childList: true,
       subtree: true,
     });
