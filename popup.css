@@ -89,13 +89,22 @@ body {
 
 /* Test Mode Banner */
 .test-mode-banner {
-  background-color: var(--color-accent);
-  color: white;
+  background-color: #f59e0b;
+  color: #000;
   padding: 8px 16px;
   text-align: center;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.3px;
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 16px;
+  transition: max-height 0.2s ease-out, padding 0.2s ease-out;
+}
+
+.test-mode-banner.visible {
+  max-height: 40px;
+  padding: 8px 16px;
 }
 
 .test-mode-banner span {

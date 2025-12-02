@@ -564,12 +564,17 @@ async function loadEnvironment() {
   if (env === 'local') {
     if (devModeToggle) devModeToggle.checked = true;
     document.body.classList.add('developer-mode');
-    if (testBanner) testBanner.classList.remove('hidden');
+    if (testBanner) {
+      testBanner.classList.remove('hidden');
+      testBanner.classList.add('visible');
+    }
     if (endpointSelector) endpointSelector.classList.remove('hidden');
   } else {
     if (devModeToggle) devModeToggle.checked = false;
     document.body.classList.remove('developer-mode');
-    if (testBanner) testBanner.classList.add('hidden');
+    if (testBanner) {
+      testBanner.classList.remove('visible');
+    }
     if (endpointSelector) endpointSelector.classList.add('hidden');
   }
 }
@@ -584,21 +589,26 @@ async function handleDevModeToggle(e) {
   if (isDev) {
     // Enable developer mode
     document.body.classList.add('developer-mode');
-    if (testBanner) testBanner.classList.remove('hidden');
+    if (testBanner) {
+      testBanner.classList.remove('hidden');
+      testBanner.classList.add('visible');
+    }
     if (endpointSelector) endpointSelector.classList.remove('hidden');
-    showToast('Developer Mode Enabled');
+    setTimeout(() => showToast('Developer Mode Enabled'), 350);
 
     // Check if current chain is a mainnet and switch to testnet
     const currentChain = chainName.textContent;
     if (currentChain === 'Base') {
-      await handleChainSelection({ currentTarget: { dataset: { chain: 'base-sepolia' } } });
+      await handleChainSelection({ currentTarget: { dataset: { chain: 'base-sepolia' } } }, true);
     } else if (currentChain === 'Solana') {
-      await handleChainSelection({ currentTarget: { dataset: { chain: 'solana-devnet' } } });
+      await handleChainSelection({ currentTarget: { dataset: { chain: 'solana-devnet' } } }, true);
     }
   } else {
     // Disable developer mode
     document.body.classList.remove('developer-mode');
-    if (testBanner) testBanner.classList.add('hidden');
+    if (testBanner) {
+      testBanner.classList.remove('visible');
+    }
     if (endpointSelector) endpointSelector.classList.add('hidden');
     showToast('Developer Mode Disabled');
 
@@ -609,9 +619,9 @@ async function handleDevModeToggle(e) {
     // Check if current chain is a testnet and switch to mainnet
     const currentChain = chainName.textContent;
     if (currentChain === 'Base Sepolia') {
-      await handleChainSelection({ currentTarget: { dataset: { chain: 'base' } } });
+      await handleChainSelection({ currentTarget: { dataset: { chain: 'base' } } }, true);
     } else if (currentChain === 'Solana Devnet') {
-      await handleChainSelection({ currentTarget: { dataset: { chain: 'solana' } } });
+      await handleChainSelection({ currentTarget: { dataset: { chain: 'solana' } } }, true);
     }
   }
 }
@@ -683,13 +693,13 @@ function updateChainUI(chain) {
   }
 }
 
-async function handleChainSelection(e) {
+async function handleChainSelection(e, silent = false) {
   const chain = e.currentTarget.dataset.chain;
   await chrome.storage.local.set({ [STORAGE_KEYS.CHAIN]: chain });
   updateChainUI(chain);
   updateTopUpLink(chain);
   chainDropdown.classList.add('hidden');
-  showToast(`Switched to ${NETWORKS[chain].name}`);
+  if (!silent) showToast(`Switched to ${NETWORKS[chain].name}`);
 
   // Reload balance
   fetchBalance();
@@ -734,31 +744,49 @@ function setupLeaderboardSwitcher() {
  * Toast Notification
  */
 function showToast(msg) {
+  // Remove any existing toast
+  const existing = document.querySelector('.grove-toast');
+  if (existing) {
+    existing.remove();
+  }
+
+  const testBanner = document.getElementById('testModeBanner');
+  const bannerVisible = testBanner && testBanner.classList.contains('visible');
+  let topPos;
+  if (bannerVisible) {
+    const bannerRect = testBanner.getBoundingClientRect();
+    topPos = (bannerRect.bottom + 8) + 'px';
+  } else {
+    const header = document.querySelector('.header');
+    const headerRect = header.getBoundingClientRect();
+    topPos = (headerRect.bottom + 8) + 'px';
+  }
+
   const div = document.createElement('div');
+  div.className = 'grove-toast';
   div.style.position = 'fixed';
-  div.style.bottom = '80px';
-  div.style.left = '50%';
-  div.style.transform = 'translateX(-50%)';
-  div.style.background = '#333';
-  div.style.color = 'white';
+  div.style.top = topPos;
+  div.style.right = '8px';
+  div.style.transform = 'translateX(120%)';
+  div.style.background = '#22c55e';
+  div.style.color = '#000';
   div.style.padding = '8px 16px';
   div.style.borderRadius = '20px';
   div.style.fontSize = '12px';
   div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
   div.style.zIndex = '2000';
-  div.style.opacity = '0';
-  div.style.transition = 'opacity 0.3s';
+  div.style.transition = 'transform 0.3s ease-out';
   div.style.whiteSpace = 'nowrap';
   div.textContent = msg;
-  
+
   document.body.appendChild(div);
-  
+
   requestAnimationFrame(() => {
-    div.style.opacity = '1';
+    div.style.transform = 'translateX(0)';
   });
-  
+
   setTimeout(() => {
-    div.style.opacity = '0';
+    div.style.transform = 'translateX(120%)';
     setTimeout(() => div.remove(), 300);
   }, 2000);
 }
