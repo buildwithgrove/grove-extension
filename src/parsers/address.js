@@ -45,6 +45,51 @@ class AddressParser {
     const match = text.match(this.ENS_PATTERN);
     return match ? match[1].toLowerCase() : null;
   }
+
+  /**
+   * Extract raw 0x address from text
+   * @param {string} text - Text to search
+   * @returns {string|null} - 0x address or null
+   */
+  static extractRawAddress(text) {
+    if (!text) return null;
+
+    // Try full pattern first: TOKEN(network): 0xADDRESS
+    const fullPattern = /\w+\(\w+\):\s*(0x[a-fA-F0-9]{40})/;
+    let match = text.match(fullPattern);
+    if (match) return match[1];
+
+    // Try tip pattern: Tip: 0xADDRESS
+    const tipPattern = /Tip:\s*(0x[a-fA-F0-9]{40})/i;
+    match = text.match(tipPattern);
+    if (match) return match[1];
+
+    return null;
+  }
+
+  /**
+   * Resolve address from text - handles both 0x addresses and ENS names
+   * @param {string} text - Text containing address or ENS
+   * @returns {Promise<{address: string|null, type: 'raw'|'ens', original: string|null}>}
+   */
+  static async resolveAddress(text) {
+    if (!text) return { address: null, type: null, original: null };
+
+    // First try to extract a raw 0x address
+    const rawAddress = this.extractRawAddress(text);
+    if (rawAddress) {
+      return { address: rawAddress, type: 'raw', original: rawAddress };
+    }
+
+    // Try to extract and resolve ENS
+    const ensName = this.extractENS(text);
+    if (ensName) {
+      const resolved = await GroveAPI.resolveENS(ensName);
+      return { address: resolved, type: 'ens', original: ensName };
+    }
+
+    return { address: null, type: null, original: null };
+  }
 }
 
 if (typeof window !== 'undefined') {

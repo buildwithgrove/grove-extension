@@ -15,6 +15,7 @@
   let hoverCardObserver = null;
   let navigationObserver = null;
   let tipPopover = null;
+  let resolvedAddress = null; // Stores resolved EVM address (from 0x or ENS)
 
   /**
    * Initialize the extension
@@ -113,7 +114,19 @@
           return;
         }
 
-        console.log("[Grove Extension] Tippable address detected - showing button");
+        // Resolve address (handles both 0x and ENS)
+        const result = await AddressParser.resolveAddress(bio);
+        if (!result.address) {
+          console.log("[Grove Extension] Could not resolve address - not showing button");
+          return;
+        }
+
+        resolvedAddress = result;
+        if (result.type === 'ens') {
+          console.log(`[Grove Extension] ENS resolved: ${result.original} -> ${result.address}`);
+        } else {
+          console.log(`[Grove Extension] Address detected: ${result.address}`);
+        }
       } else {
         console.log("[Grove Extension] YouTube detected - skipping address validation");
       }
@@ -309,6 +322,19 @@
       return;
     }
 
+    // Resolve address (handles both 0x and ENS)
+    const result = await AddressParser.resolveAddress(bio);
+    if (!result.address) {
+      console.log("[Grove Extension] Could not resolve address in hover card");
+      return;
+    }
+
+    if (result.type === 'ens') {
+      console.log(`[Grove Extension] ENS resolved in hover card: ${result.original} -> ${result.address}`);
+    }
+
+    // Store for this hover card's tip button
+    const hoverCardResolvedAddress = result;
 
     // Find the main content div that contains everything
     const contentDiv = hoverCard.querySelector(".p-md.flex.flex-col");
@@ -355,6 +381,7 @@
       tipPopover = null;
     }
     currentAdapter = null;
+    resolvedAddress = null;
   }
 
   /**
