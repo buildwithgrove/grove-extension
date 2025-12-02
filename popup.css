@@ -314,9 +314,9 @@ body.developer-mode .testnet-option {
   box-shadow:
     -7px -7px 7px var(--color-primary),
     0px -7px 7px 0px #389f58,
-    7px -7px 7px #f59e0b,
-    7px 0 7px #ff8c00,
-    7px 7px 7px 0px #f59e0b,
+    7px -7px 7px #f0ad4e,
+    7px 0 7px #f0ad4e,
+    7px 7px 7px 0px #f0ad4e,
     0 7px 7px 0px #389f58,
     -7px 7px 7px 0px var(--color-primary);
   position: absolute;
@@ -734,17 +734,17 @@ body.developer-mode .testnet-option {
 /* Coming Soon Shared Styles */
 .coming-soon-card,
 .coming-soon-state {
-  background: rgba(255, 140, 0, 0.08);
+  background: rgba(240, 173, 78, 0.08);
   border: 2px solid rgba(255, 255, 255, 0.15);
 }
 
 .coming-soon-card h4,
 .coming-soon-state h3 {
-  color: #FF8C00;
+  color: #f0ad4e;
 }
 
 .coming-soon-card .step-content p {
-  color: #FF8C00 !important;
+  color: #f0ad4e !important;
   font-weight: 500;
 }
 
@@ -1299,7 +1299,7 @@ body.developer-mode .testnet-option {
 }
 
 .leaderboard-item:nth-child(1) .rank {
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  background: linear-gradient(135deg, #FFD700 0%, #f0ad4e 100%);
 }
 
 .leaderboard-item:nth-child(2) .rank {
