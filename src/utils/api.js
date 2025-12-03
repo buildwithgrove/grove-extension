@@ -144,6 +144,23 @@ class GroveAPI {
     try {
       const urlObj = new URL(url);
       const domain = urlObj.hostname.replace(/^www\./, '');
+
+      // Handle YouTube URLs specially - extract video ID from query param
+      if (domain === 'youtube.com' && urlObj.pathname === '/watch') {
+        const videoId = urlObj.searchParams.get('v');
+        if (videoId) {
+          return `youtube.com/${videoId}`;
+        }
+      }
+
+      // Handle youtu.be short URLs
+      if (domain === 'youtu.be') {
+        const videoId = urlObj.pathname.slice(1); // Remove leading slash
+        if (videoId) {
+          return `youtube.com/${videoId}`;
+        }
+      }
+
       const path = urlObj.pathname.replace(/\/$/, ''); // Remove trailing slash
       return `${domain}${path}`;
     } catch (error) {
