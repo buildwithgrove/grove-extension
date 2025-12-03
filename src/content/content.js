@@ -66,6 +66,12 @@
       return;
     }
 
+    // For generic websites, check for metadata files
+    if (currentAdapter.getPlatformName() === "generic") {
+      await initializeGenericWebsite();
+      return;
+    }
+
     // Check if we're on a profile page (for other platforms)
     try {
       if (!currentAdapter.detectProfilePage()) {
@@ -79,6 +85,36 @@
 
     // Initialize profile button
     await initializeProfileButton();
+  }
+
+  /**
+   * Initialize tip button for generic websites
+   * Fetches llms.txt/ai.txt and shows floating button if address found
+   */
+  async function initializeGenericWebsite() {
+    try {
+      // Fetch metadata files
+      const metadata = await currentAdapter.fetchMetadata();
+
+      if (!metadata.found) {
+        console.log("[Grove Extension] No metadata files with addresses found");
+        return;
+      }
+
+      console.log(`[Grove Extension] Found address in ${metadata.source}: ${metadata.address.original || metadata.address.address}`);
+
+      // Store resolved address
+      resolvedAddress = metadata.address;
+
+      // Create and inject floating tip button
+      currentButton = new TipButton(handleTipClick, 'generic');
+      currentButton.create();
+      currentButton.injectFloating();
+
+      console.log("[Grove Extension] Floating tip button injected");
+    } catch (error) {
+      console.error("[Grove Extension] Generic website initialization failed:", error);
+    }
   }
 
   /**
@@ -98,6 +134,12 @@
 
     if (hostname.includes("youtube.com") || hostname.includes("youtu.be")) {
       return new YouTubeAdapter();
+    }
+
+    // Return GenericAdapter for all other websites
+    // Only if GenericAdapter is available (loaded via manifest)
+    if (typeof GenericAdapter !== 'undefined') {
+      return new GenericAdapter();
     }
 
     return null;
@@ -1057,6 +1099,11 @@
     if (currentButton) {
       currentButton.remove();
       currentButton = null;
+    }
+    // Also remove floating container if it exists
+    const floatingContainer = document.getElementById('grove-floating-container');
+    if (floatingContainer) {
+      floatingContainer.remove();
     }
     if (hoverCardObserver) {
       hoverCardObserver.disconnect();

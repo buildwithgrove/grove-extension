@@ -95,6 +95,10 @@ class TipButton {
       return this.createYouTubeButton();
     }
 
+    if (this.platform === 'generic') {
+      return this.createFloatingButton();
+    }
+
     return this.createTwitterButton();
   }
 
@@ -491,6 +495,162 @@ class TipButton {
   }
 
   /**
+   * Create floating button for generic websites
+   * Fixed position in bottom-right corner
+   * @returns {HTMLElement}
+   */
+  createFloatingButton() {
+    // Create container for floating button
+    const container = document.createElement('div');
+    container.id = 'grove-floating-container';
+    container.style.cssText = `
+      position: fixed !important;
+      bottom: 24px !important;
+      right: 24px !important;
+      z-index: 2147483647 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: flex-end !important;
+      gap: 8px !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    `;
+
+    // Create the main button
+    this.button = document.createElement('button');
+    this.button.setAttribute('aria-label', 'Send a tip');
+    this.button.setAttribute('role', 'button');
+    this.button.setAttribute('type', 'button');
+    this.button.className = 'grove-floating-button';
+    this.button.id = 'grove-tip-button';
+
+    // Colors - always use dark theme for floating button for visibility
+    const bgColor = '#1a1a1a';
+    const bgHoverColor = '#252525';
+    const textColor = '#ffffff';
+    this.bgColor = bgColor;
+    this.bgHoverColor = bgHoverColor;
+
+    this.button.style.cssText = `
+      background: ${bgColor} !important;
+      border: 2px solid ${GROVE_COLORS.primary} !important;
+      border-radius: 28px !important;
+      padding: 12px 20px !important;
+      height: 56px !important;
+      min-width: 56px !important;
+      position: relative !important;
+      overflow: hidden !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 8px !important;
+      cursor: pointer !important;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 2px 8px ${GROVE_COLORS.shadow} !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    `;
+
+    // Create text span
+    const textSpan = document.createElement('span');
+    textSpan.textContent = 'Tip';
+    textSpan.style.cssText = `
+      color: ${textColor} !important;
+      font-weight: 600 !important;
+      font-size: 15px !important;
+      position: relative !important;
+      z-index: 2 !important;
+      white-space: nowrap !important;
+    `;
+
+    // Create emoji span
+    const emojiSpan = document.createElement('span');
+    emojiSpan.textContent = '🌿';
+    emojiSpan.style.cssText = `
+      font-size: 20px !important;
+      position: relative !important;
+      z-index: 2 !important;
+    `;
+
+    // Create animated sheen overlay
+    const sheenOverlay = document.createElement('div');
+    sheenOverlay.style.cssText = `
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      background: linear-gradient(90deg,
+        transparent,
+        rgba(255, 255, 255, 0.15),
+        transparent) !important;
+      pointer-events: none !important;
+      z-index: 1 !important;
+      animation: grove-sheen-slide 3s ease-in-out infinite !important;
+    `;
+
+    // Add keyframe animation to document if not already added
+    if (!document.querySelector('#grove-sheen-animation')) {
+      const style = document.createElement('style');
+      style.id = 'grove-sheen-animation';
+      style.textContent = `
+        @keyframes grove-sheen-slide {
+          0% { transform: translateX(-200%); }
+          100% { transform: translateX(200%); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Hover effects
+    this.button.addEventListener('mouseenter', () => {
+      this.button.style.background = `${bgHoverColor} !important`;
+      this.button.style.transform = 'translateY(-2px) scale(1.02)';
+      this.button.style.boxShadow = `0 6px 20px rgba(0, 0, 0, 0.4), 0 4px 12px ${GROVE_COLORS.shadowHover} !important`;
+    });
+
+    this.button.addEventListener('mouseleave', () => {
+      this.button.style.background = `${bgColor} !important`;
+      this.button.style.transform = 'translateY(0) scale(1)';
+      this.button.style.boxShadow = `0 4px 16px rgba(0, 0, 0, 0.3), 0 2px 8px ${GROVE_COLORS.shadow} !important`;
+    });
+
+    // Assemble structure
+    this.button.appendChild(sheenOverlay);
+    this.button.appendChild(textSpan);
+    this.button.appendChild(emojiSpan);
+    container.appendChild(this.button);
+
+    // Store container reference for removal
+    this.container = container;
+
+    // Add click handler
+    this.button.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.handleClick();
+    });
+
+    return container;
+  }
+
+  /**
+   * Inject floating button into the document body
+   * @returns {boolean}
+   */
+  injectFloating() {
+    if (!this.container) {
+      return false;
+    }
+
+    // Check if already exists
+    if (document.getElementById('grove-floating-container')) {
+      return false;
+    }
+
+    document.body.appendChild(this.container);
+    return true;
+  }
+
+  /**
    * Handle button click
    */
   handleClick() {
@@ -705,6 +865,13 @@ class TipButton {
           spans[0].textContent = 'Tip 🌿';
         }
       }
+    } else if (this.platform === 'generic') {
+      // For generic floating button
+      const spans = this.button.querySelectorAll('span');
+      if (spans.length >= 2) {
+        spans[0].textContent = 'Tip';
+        spans[1].textContent = '🌿';
+      }
     } else {
       // Default case
       textElement = this.button.querySelector('span') || this.button;
@@ -796,6 +963,11 @@ class TipButton {
    * Remove button from DOM
    */
   remove() {
+    // Remove floating container if it exists
+    if (this.container && this.container.parentElement) {
+      this.container.remove();
+    }
+    // Remove button directly if not in container
     if (this.button && this.button.parentElement) {
       this.button.remove();
     }
