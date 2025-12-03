@@ -14,6 +14,29 @@ class GroveAPI {
 
   static DEFAULT_TIP_AMOUNT = 0.05; // $0.05 default
 
+  // TODO: Move ENS resolution to backend - this is a temporary frontend implementation
+  // See GitHub issue for details. These public APIs have no SLA and may rate-limit.
+  // ENS resolution APIs (round-robin with fallback)
+  static ENS_APIS = [
+    {
+      name: 'ensdata',
+      url: (name) => `https://api.ensdata.net/${name}`,
+      parse: (data) => data?.address || null
+    },
+    {
+      name: 'ensideas',
+      url: (name) => `https://api.ensideas.com/ens/resolve/${name}`,
+      parse: (data) => data?.address || null
+    },
+    {
+      name: 'enstate',
+      url: (name) => `https://enstate.rs/n/${name}`,
+      parse: (data) => data?.address || null
+    }
+  ];
+
+  static _ensApiIndex = 0; // Track current API for round-robin
+
   static CHAIN_RPC_ENDPOINTS = {
     'base': {
       name: 'Base',
@@ -211,6 +234,62 @@ class GroveAPI {
         error: error.message
       };
     }
+  }
+
+  /**
+   * Resolve ENS name to EVM address
+   * Uses round-robin across multiple APIs with fallback on failure
+   *
+   * TODO: Move to backend - frontend resolution is temporary. Backend should:
+   * - Use ethers.js/viem with Alchemy/Infura for reliable resolution
+   * - Cache results to reduce API calls
+   * - Handle resolution in /v1/tip endpoint or add /v1/ens/resolve endpoint
+   *
+   * @param {string} ensName - ENS name (e.g., "vitalik.eth")
+   * @returns {Promise<string|null>} - EVM address or null if not found
+   */
+  static async resolveENS(ensName) {
+    if (!ensName || !ensName.endsWith('.eth')) {
+      return null;
+    }
+
+    const normalizedName = ensName.toLowerCase().trim();
+    const apis = this.ENS_APIS;
+    const startIndex = this._ensApiIndex;
+
+    // Try each API starting from current index (round-robin)
+    for (let i = 0; i < apis.length; i++) {
+      const apiIndex = (startIndex + i) % apis.length;
+      const api = apis[apiIndex];
+
+      try {
+        const response = await fetch(api.url(normalizedName), {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (!response.ok) {
+          console.log(`[Grove Extension] ENS API ${api.name} returned ${response.status}`);
+          continue;
+        }
+
+        const data = await response.json();
+        const address = api.parse(data);
+
+        if (address && /^0x[a-fA-F0-9]{40}$/.test(address)) {
+          // Update round-robin index for next call
+          this._ensApiIndex = (apiIndex + 1) % apis.length;
+          console.log(`[Grove Extension] 🔍 ENS lookup: ${normalizedName} -> ${address} (via ${api.name})`);
+          return address;
+        }
+      } catch (error) {
+        console.log(`[Grove Extension] ENS API ${api.name} failed:`, error.message);
+        continue;
+      }
+    }
+
+    console.error(`[Grove Extension] All ENS APIs failed for ${normalizedName}`);
+    return null;
   }
 }
 
