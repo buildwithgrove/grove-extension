@@ -498,7 +498,6 @@
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
       box-shadow: 0 2px 8px ${GROVE_COLORS.shadow} !important;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-      margin-right: 8px !important;
       line-height: 1 !important;
     `;
 
@@ -615,8 +614,20 @@
       await handleTweetTipClick(buttonWrapper, profileUrl);
     });
 
-    // Insert before the follow button
-    buttonContainer.insertBefore(button, followButton);
+    // Create a wrapper to hold both buttons in a row
+    const wrapper = document.createElement('div');
+    wrapper.className = 'grove-hovercard-buttons';
+    wrapper.style.cssText = `
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      gap: 8px !important;
+    `;
+
+    // Insert wrapper where follow button is, then move follow button into wrapper
+    followButton.parentElement.insertBefore(wrapper, followButton);
+    wrapper.appendChild(button);
+    wrapper.appendChild(followButton);
   }
 
   /**
