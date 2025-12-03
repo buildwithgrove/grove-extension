@@ -203,7 +203,7 @@ class GroveAPI {
 
     const tipDomain = this.buildTipDomainFromURL(pageUrl);
 
-    const apiUrl = `${baseURL}/v1/tip/${encodeURIComponent(tipDomain)}/${tipAmount}`;
+    const apiUrl = `${baseURL}/v1/tip/${tipDomain}/${tipAmount}`;
 
 
     try {
