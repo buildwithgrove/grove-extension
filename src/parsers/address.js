@@ -9,12 +9,17 @@ class AddressParser {
   // Matches: vitalik.eth, foo-bar.eth, 123abc.eth
   static ENS_PATTERN = /(?:^|\s|Tip:\s*)([a-zA-Z0-9][-a-zA-Z0-9]*\.eth)(?:\s|$|[,.\-])/i;
 
+  // Solana address pattern: base58 encoded, 32-44 chars
+  // Base58 excludes: 0, O, I, l
+  static SOL_PATTERN = /(?:^|\s|Tip:\s*)([1-9A-HJ-NP-Za-km-z]{32,44})(?:\s|$|[,.\-])/;
+
   /**
    * Check if text contains any parseable addresses
    * Supported patterns:
    * 1. TOKEN(network): 0xADDRESS (e.g., USDC(base): 0x9ab39B84aC4DE6D705C5f051c07db8fE72890953)
    * 2. Tip: 0xADDRESS (defaults to BASE and USDC)
    * 3. ENS names (e.g., vitalik.eth)
+   * 4. Solana addresses (base58, 32-44 chars)
    * @param {string} text - Text to check
    * @returns {boolean} - True if addresses found
    */
@@ -32,7 +37,10 @@ class AddressParser {
     // Pattern 3: ENS names (e.g., vitalik.eth)
     const ensPattern = this.ENS_PATTERN;
 
-    return fullPattern.test(text) || tipPattern.test(text) || ensPattern.test(text);
+    // Pattern 4: Solana addresses
+    const solPattern = this.SOL_PATTERN;
+
+    return fullPattern.test(text) || tipPattern.test(text) || ensPattern.test(text) || solPattern.test(text);
   }
 
   /**
@@ -44,6 +52,17 @@ class AddressParser {
     if (!text) return null;
     const match = text.match(this.ENS_PATTERN);
     return match ? match[1].toLowerCase() : null;
+  }
+
+  /**
+   * Extract Solana address from text
+   * @param {string} text - Text to search
+   * @returns {string|null} - Solana address or null
+   */
+  static extractSolanaAddress(text) {
+    if (!text) return null;
+    const match = text.match(this.SOL_PATTERN);
+    return match ? match[1] : null;
   }
 
   /**
@@ -68,9 +87,9 @@ class AddressParser {
   }
 
   /**
-   * Resolve address from text - handles both 0x addresses and ENS names
+   * Resolve address from text - handles 0x addresses, ENS names, and Solana addresses
    * @param {string} text - Text containing address or ENS
-   * @returns {Promise<{address: string|null, type: 'raw'|'ens', original: string|null}>}
+   * @returns {Promise<{address: string|null, type: 'raw'|'ens'|'sol', original: string|null}>}
    */
   static async resolveAddress(text) {
     if (!text) return { address: null, type: null, original: null };
@@ -86,6 +105,12 @@ class AddressParser {
     if (ensName) {
       const resolved = await GroveAPI.resolveENS(ensName);
       return { address: resolved, type: 'ens', original: ensName };
+    }
+
+    // Try to extract Solana address
+    const solAddress = this.extractSolanaAddress(text);
+    if (solAddress) {
+      return { address: solAddress, type: 'sol', original: solAddress };
     }
 
     return { address: null, type: null, original: null };
