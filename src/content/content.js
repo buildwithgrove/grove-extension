@@ -123,9 +123,9 @@
 
         resolvedAddress = result;
         if (result.type === 'ens') {
-          console.log(`[Grove Extension] ENS resolved: ${result.original} -> ${result.address}`);
+          console.log(`[Grove Extension] ✅ ENS RESOLVED: ${result.original} -> ${result.address}`);
         } else {
-          console.log(`[Grove Extension] Address detected: ${result.address}`);
+          console.log(`[Grove Extension] ✅ Address detected: ${result.address}`);
         }
       } else {
         console.log("[Grove Extension] YouTube detected - skipping address validation");

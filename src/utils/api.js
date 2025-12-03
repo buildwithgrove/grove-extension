@@ -271,7 +271,7 @@ class GroveAPI {
         if (address && /^0x[a-fA-F0-9]{40}$/.test(address)) {
           // Update round-robin index for next call
           this._ensApiIndex = (apiIndex + 1) % apis.length;
-          console.log(`[Grove Extension] ENS resolved ${normalizedName} -> ${address} via ${api.name}`);
+          console.log(`[Grove Extension] 🔍 ENS lookup: ${normalizedName} -> ${address} (via ${api.name})`);
           return address;
         }
       } catch (error) {
