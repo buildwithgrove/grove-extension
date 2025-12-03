@@ -14,6 +14,8 @@ class GroveAPI {
 
   static DEFAULT_TIP_AMOUNT = 0.05; // $0.05 default
 
+  // TODO: Move ENS resolution to backend - this is a temporary frontend implementation
+  // See GitHub issue for details. These public APIs have no SLA and may rate-limit.
   // ENS resolution APIs (round-robin with fallback)
   static ENS_APIS = [
     {
@@ -237,6 +239,12 @@ class GroveAPI {
   /**
    * Resolve ENS name to EVM address
    * Uses round-robin across multiple APIs with fallback on failure
+   *
+   * TODO: Move to backend - frontend resolution is temporary. Backend should:
+   * - Use ethers.js/viem with Alchemy/Infura for reliable resolution
+   * - Cache results to reduce API calls
+   * - Handle resolution in /v1/tip endpoint or add /v1/ens/resolve endpoint
+   *
    * @param {string} ensName - ENS name (e.g., "vitalik.eth")
    * @returns {Promise<string|null>} - EVM address or null if not found
    */
