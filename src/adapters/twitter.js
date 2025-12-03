@@ -15,13 +15,35 @@ class TwitterAdapter extends BaseAdapter {
   }
 
   /**
+   * Extract display name from Twitter profile
+   * @returns {string|null}
+   */
+  extractDisplayName() {
+    // Twitter display name is in a span with data-testid="UserName"
+    // The actual name is in the first nested span
+    const userNameContainer = document.querySelector('[data-testid="UserName"]');
+    if (userNameContainer) {
+      // Get the first span which contains the display name
+      const nameSpan = userNameContainer.querySelector('span span');
+      return nameSpan ? nameSpan.textContent : null;
+    }
+    return null;
+  }
+
+  /**
    * Extract bio from Twitter profile
    * @returns {string|null}
    */
   extractBio() {
     // Twitter profile bio is in a div with data-testid="UserDescription"
     const bioElement = document.querySelector('[data-testid="UserDescription"]');
-    return bioElement ? bioElement.textContent : null;
+    const bio = bioElement ? bioElement.textContent : '';
+
+    // Also include display name (users often put .eth there)
+    const displayName = this.extractDisplayName() || '';
+
+    // Combine display name and bio for address detection
+    return [displayName, bio].filter(Boolean).join(' ') || null;
   }
 
   /**
@@ -64,9 +86,10 @@ class TwitterAdapter extends BaseAdapter {
    * @returns {Promise<boolean>}
    */
   async waitForProfileLoad() {
-    // Wait for bio to appear (indicates profile is loaded)
-    const bioElement = await this.waitForElement('[data-testid="UserDescription"]', 8000);
-    return bioElement !== null;
+    // Wait for username to appear (indicates profile is loaded)
+    // Use UserName instead of UserDescription since not all profiles have bios
+    const userNameElement = await this.waitForElement('[data-testid="UserName"]', 8000);
+    return userNameElement !== null;
   }
 }
 
