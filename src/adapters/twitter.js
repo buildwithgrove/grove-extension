@@ -1,6 +1,6 @@
 /**
  * Twitter Adapter
- * Handles Twitter/X profile pages
+ * Handles Twitter/X profile pages and tweets
  */
 
 class TwitterAdapter extends BaseAdapter {
@@ -12,6 +12,100 @@ class TwitterAdapter extends BaseAdapter {
     const url = window.location.href;
     // Match twitter.com/username or x.com/username (not /status, /search, etc.)
     return /^https:\/\/(twitter|x)\.com\/[^\/]+\/?$/.test(url);
+  }
+
+  /**
+   * Check if we're on a page that could show tweets (timeline, profile, search, etc.)
+   * @returns {boolean}
+   */
+  detectTweetPage() {
+    const hostname = window.location.hostname;
+    return hostname.includes('twitter.com') || hostname.includes('x.com');
+  }
+
+  /**
+   * Find all tweet articles on the page
+   * @returns {NodeList}
+   */
+  findTweets() {
+    return document.querySelectorAll('article[data-testid="tweet"]');
+  }
+
+  /**
+   * Extract author info from a tweet element
+   * @param {Element} tweetElement - The tweet article element
+   * @returns {{username: string|null, displayName: string|null, profileUrl: string|null}}
+   */
+  extractTweetAuthor(tweetElement) {
+    // Find the user name link in the tweet
+    const userNameLink = tweetElement.querySelector('a[href^="/"][role="link"] div[dir="ltr"] > span');
+    const displayName = userNameLink ? userNameLink.textContent : null;
+
+    // Find the @username link
+    const usernameLinks = tweetElement.querySelectorAll('a[href^="/"][role="link"]');
+    let username = null;
+    let profileUrl = null;
+
+    for (const link of usernameLinks) {
+      const href = link.getAttribute('href');
+      // Match /@username or /username pattern (not /status, /hashtag, etc.)
+      if (href && /^\/[a-zA-Z0-9_]+$/.test(href)) {
+        username = href.slice(1); // Remove leading /
+        profileUrl = `https://x.com${href}`;
+        break;
+      }
+    }
+
+    return { username, displayName, profileUrl };
+  }
+
+  /**
+   * Get the action bar element from a tweet (where like, retweet, reply buttons are)
+   * @param {Element} tweetElement - The tweet article element
+   * @returns {Element|null}
+   */
+  getTweetActionBar(tweetElement) {
+    // The action bar has role="group" and contains the interaction buttons
+    return tweetElement.querySelector('[role="group"]');
+  }
+
+  /**
+   * Get the tweet URL from a tweet element
+   * @param {Element} tweetElement - The tweet article element
+   * @returns {string|null}
+   */
+  getTweetUrl(tweetElement) {
+    // Find the timestamp link which contains the tweet URL
+    const timeLink = tweetElement.querySelector('a[href*="/status/"] time');
+    if (timeLink && timeLink.parentElement) {
+      const href = timeLink.parentElement.getAttribute('href');
+      if (href) {
+        return href.startsWith('/') ? `https://x.com${href}` : href;
+      }
+    }
+    // Fallback: look for any link with /status/
+    const statusLink = tweetElement.querySelector('a[href*="/status/"]');
+    if (statusLink) {
+      const href = statusLink.getAttribute('href');
+      if (href) {
+        return href.startsWith('/') ? `https://x.com${href}` : href;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Get the timestamp/date element from a tweet
+   * @param {Element} tweetElement - The tweet article element
+   * @returns {Element|null}
+   */
+  getTweetDateElement(tweetElement) {
+    // The date is inside a time element within a link
+    const timeElement = tweetElement.querySelector('a[href*="/status/"] time');
+    if (timeElement && timeElement.parentElement) {
+      return timeElement.parentElement;
+    }
+    return null;
   }
 
   /**
