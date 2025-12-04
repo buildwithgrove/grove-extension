@@ -32,13 +32,14 @@
   const processedTweets = new WeakSet();
 
   /**
-   * Show a small inline error/warning anchored to the tip button
+   * Show a small inline error/warning anchored to the tip button.
+   * Delegates to TipErrorHandler.showInlineMessage() which handles positioning,
+   * deduplication, and cleanup.
+   *
    * @param {HTMLElement} buttonEl - The rendered button element
    * @param {Object|string} parsedErrorOrMessage - Parsed error object or plain message
    */
   function showInlineTipError(buttonEl, parsedErrorOrMessage) {
-    if (!buttonEl || typeof TipErrorHandler === 'undefined') return;
-
     let message = '';
     let variant = 'error';
 
@@ -51,7 +52,13 @@
 
     if (!message) return;
 
-    TipErrorHandler.showInlineMessage(buttonEl, message, variant);
+    if (typeof TipErrorHandler !== 'undefined') {
+      TipErrorHandler.showInlineMessage(buttonEl, message, variant);
+    } else {
+      // TipErrorHandler should always be available via manifest.json,
+      // but log if it's missing for debugging
+      console.warn('[Grove Extension] TipErrorHandler not available, error bubble skipped');
+    }
   }
 
   /**

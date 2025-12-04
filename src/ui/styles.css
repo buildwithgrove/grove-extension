@@ -271,19 +271,20 @@
 
 .grove-tip-inline-message {
   position: fixed;
-  padding: 10px 12px;
-  background: rgba(12, 12, 12, 0.95);
-  color: white;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+  color: #ffffff;
   border: 1px solid #ef4444;
   border-radius: 12px;
-  font-size: 13px;
-  line-height: 1.35;
-  max-width: 280px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 12px rgba(239, 68, 68, 0.35);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  max-width: 260px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
   z-index: 2147483647;
   opacity: 0;
-  transform: translateY(-4px);
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transform: translateY(-8px);
+  transition: opacity 0.2s ease-out, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .grove-tip-inline-message--visible {
@@ -292,8 +293,8 @@
 }
 
 .grove-tip-inline-message[data-variant="warning"] {
-  border-color: #f59e0b;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 12px rgba(245, 158, 11, 0.35);
+  border-color: #fbbf24;
+  color: #fffbeb;
 }
 
 .grove-tip-button:disabled {
