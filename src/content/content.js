@@ -325,12 +325,8 @@
       return;
     }
 
-    // Determine tip destination: use ENS name directly if available, otherwise page URL
-    let tipDestination = window.location.href;
-    if (resolvedAddress && resolvedAddress.type === 'ens') {
-      tipDestination = resolvedAddress.address; // e.g., "vitalik.eth"
-      console.log(`[Grove Extension] Tipping to ENS name: ${tipDestination}`);
-    }
+    // Always send page URL - let backend handle resolution
+    const tipDestination = window.location.href;
 
     // Send tip via API with JWT and amount
     const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt);
@@ -1182,16 +1178,8 @@ Find out more → {grove_link}`;
       return;
     }
 
-    // Determine tip destination: check if user has cached ENS address
-    let tipDestination = tweetUrl;
-    const username = extractUsernameFromUrl(tweetUrl);
-    if (username) {
-      const cached = getCachedAddress(username);
-      if (cached && cached.type === 'ens' && cached.address) {
-        tipDestination = cached.address; // e.g., "vitalik.eth"
-        console.log(`[Grove Extension] Tipping to ENS name: ${tipDestination} (from @${username})`);
-      }
-    }
+    // Always send tweet URL - let backend handle resolution
+    const tipDestination = tweetUrl;
 
     // Send tip via API
     const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt);
