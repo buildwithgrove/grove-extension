@@ -345,7 +345,7 @@
         if (button) {
           button.setError();
           showInlineTipError(button.button, {
-            message: 'Connect Grove to send tips. Add your API key in the extension settings.',
+            message: 'Missing secret key in the extension settings.',
             variant: 'error'
           });
         }
@@ -1230,7 +1230,7 @@ Find out more → {grove_link}`;
         console.error("[Grove Extension] No API key configured. Try refreshing the page if you just reloaded the extension.");
         buttonWrapper.setError();
         showInlineTipError(buttonWrapper.button, {
-          message: 'Connect Grove to keep tipping. Add your API key in the extension settings.',
+          message: 'Missing secret key in the extension settings.',
           variant: 'error'
         });
         return;
