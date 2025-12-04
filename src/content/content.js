@@ -32,6 +32,29 @@
   const processedTweets = new WeakSet();
 
   /**
+   * Show a small inline error/warning anchored to the tip button
+   * @param {HTMLElement} buttonEl - The rendered button element
+   * @param {Object|string} parsedErrorOrMessage - Parsed error object or plain message
+   */
+  function showInlineTipError(buttonEl, parsedErrorOrMessage) {
+    if (!buttonEl || typeof TipErrorHandler === 'undefined') return;
+
+    let message = '';
+    let variant = 'error';
+
+    if (typeof parsedErrorOrMessage === 'string') {
+      message = parsedErrorOrMessage;
+    } else if (parsedErrorOrMessage) {
+      message = parsedErrorOrMessage.userMessage || parsedErrorOrMessage.message || '';
+      variant = parsedErrorOrMessage.variant || 'error';
+    }
+
+    if (!message) return;
+
+    TipErrorHandler.showInlineMessage(buttonEl, message, variant);
+  }
+
+  /**
    * Initialize the extension
    */
   async function init() {
@@ -314,6 +337,10 @@
         console.error("[Grove Extension] No API key configured");
         if (button) {
           button.setError();
+          showInlineTipError(button.button, {
+            message: 'Connect Grove to send tips. Add your API key in the extension settings.',
+            variant: 'error'
+          });
         }
         return;
       }
@@ -321,6 +348,10 @@
       console.error("[Grove Extension] Settings load failed:", error);
       if (button) {
         button.setError();
+        showInlineTipError(button.button, {
+          message: 'Could not read settings. Refresh and try again.',
+          variant: 'error'
+        });
       }
       return;
     }
@@ -335,6 +366,10 @@
     // Send tip via API with JWT and amount
     const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt);
 
+    const parsedError = (!response.success && typeof TipErrorHandler !== 'undefined')
+      ? TipErrorHandler.parse(response)
+      : null;
+
     // Handle response with animations
     if (response.success) {
       if (button) {
@@ -344,6 +379,7 @@
       console.error("[Grove Extension] Tip failed:", response.error);
       if (button) {
         button.setError();
+        showInlineTipError(button.button, parsedError || response.error || 'Tip failed. Please try again.');
       }
     }
   }
@@ -641,6 +677,7 @@
       z-index: 1 !important;
       animation: grove-sheen-slide 3s ease-in-out infinite !important;
     `;
+    const defaultSheenBackground = sheenOverlay.style.background;
 
     textSpan.appendChild(emojiSpan);
     button.appendChild(sheenOverlay);
@@ -691,6 +728,7 @@
           button.style.pointerEvents = '';
           button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
           button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
+          sheenOverlay.style.background = defaultSheenBackground;
           textSpan.textContent = 'Sent! ✓';
           button.classList.add('animate__animated', 'animate__bounceIn');
           setTimeout(() => {
@@ -703,14 +741,18 @@
           if (button._loadingInterval) clearInterval(button._loadingInterval);
           button.disabled = false;
           button.style.pointerEvents = '';
-          button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
-          button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
+          button.style.setProperty('border', `2px solid ${GROVE_COLORS.error || '#ef4444'}`, 'important');
+          button.style.setProperty('box-shadow', `0 0 12px ${GROVE_COLORS.errorShadow || 'rgba(239, 68, 68, 0.55)'}`, 'important');
+          sheenOverlay.style.background = 'linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.35), transparent)';
           textSpan.textContent = 'Failed ✗';
           button.classList.add('animate__animated', 'animate__shakeX');
           setTimeout(() => {
             textSpan.textContent = 'Tip';
             textSpan.appendChild(emojiSpan);
             button.classList.remove('animate__animated', 'animate__shakeX');
+            button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
+            button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
+            sheenOverlay.style.background = defaultSheenBackground;
           }, 2000);
         }
       };
@@ -965,6 +1007,7 @@
       z-index: 1 !important;
       animation: grove-sheen-slide 3s ease-in-out infinite !important;
     `;
+    const defaultSheenBackground = sheenOverlay.style.background;
 
     // Assemble the structure
     textSpan.appendChild(emojiSpan);
@@ -1019,6 +1062,7 @@
           button.style.pointerEvents = '';
           button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
           button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
+          sheenOverlay.style.background = defaultSheenBackground;
           textSpan.textContent = 'Sent! ✓';
           button.classList.add('animate__animated', 'animate__bounceIn');
           setTimeout(() => {
@@ -1033,14 +1077,18 @@
           }
           button.disabled = false;
           button.style.pointerEvents = '';
-          button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
-          button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
+          button.style.setProperty('border', `2px solid ${GROVE_COLORS.error || '#ef4444'}`, 'important');
+          button.style.setProperty('box-shadow', `0 0 12px ${GROVE_COLORS.errorShadow || 'rgba(239, 68, 68, 0.55)'}`, 'important');
+          sheenOverlay.style.background = 'linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.35), transparent)';
           textSpan.textContent = 'Failed ✗';
           button.classList.add('animate__animated', 'animate__shakeX');
           setTimeout(() => {
             textSpan.textContent = 'Tip';
             textSpan.appendChild(emojiSpan);
             button.classList.remove('animate__animated', 'animate__shakeX');
+            button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
+            button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
+            sheenOverlay.style.background = defaultSheenBackground;
           }, 2000);
         }
       };
@@ -1174,11 +1222,19 @@ Find out more → {grove_link}`;
       if (!jwt) {
         console.error("[Grove Extension] No API key configured. Try refreshing the page if you just reloaded the extension.");
         buttonWrapper.setError();
+        showInlineTipError(buttonWrapper.button, {
+          message: 'Connect Grove to keep tipping. Add your API key in the extension settings.',
+          variant: 'error'
+        });
         return;
       }
     } catch (error) {
       console.error("[Grove Extension] Settings load failed:", error);
       buttonWrapper.setError();
+      showInlineTipError(buttonWrapper.button, {
+        message: 'Could not read settings. Refresh and try again.',
+        variant: 'error'
+      });
       return;
     }
 
@@ -1195,6 +1251,9 @@ Find out more → {grove_link}`;
 
     // Send tip via API
     const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt);
+    const parsedError = (!response.success && typeof TipErrorHandler !== 'undefined')
+      ? TipErrorHandler.parse(response)
+      : null;
 
     if (response.success) {
       buttonWrapper.setSuccess();
@@ -1246,6 +1305,7 @@ Find out more → {grove_link}`;
     } else {
       console.error("[Grove Extension] Tweet tip failed:", response.error);
       buttonWrapper.setError();
+      showInlineTipError(buttonWrapper.button, parsedError || response.error || 'Tip failed. Please try again.');
     }
   }
 

@@ -26,6 +26,7 @@
         "src/ui/popover.js",
         "src/ui/button.js",
         "src/utils/api.js",
+        "src/utils/tipErrors.js",
         "src/auth/xAuth.js",
         "src/content/content.js"
       ],
@@ -50,6 +51,7 @@
         "src/ui/popover.js",
         "src/ui/button.js",
         "src/utils/api.js",
+        "src/utils/tipErrors.js",
         "src/content/content.js"
       ],
       "css": ["src/ui/animate.min.css", "src/ui/styles.css"],

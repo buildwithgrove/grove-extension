@@ -10,6 +10,10 @@ var GROVE_COLORS = {
   primaryLight: '#4fb76d',
   shadow: 'rgba(56, 159, 88, 0.3)',
   shadowHover: 'rgba(56, 159, 88, 0.5)',
+  error: '#ef4444',
+  errorShadow: 'rgba(239, 68, 68, 0.55)',
+  warning: '#f59e0b',
+  warningShadow: 'rgba(245, 158, 11, 0.45)',
 };
 
 var GROVE_GRADIENTS = {
