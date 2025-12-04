@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +14,7 @@
   <script src="src/ui/prevKeysUI.js"></script>
   <script src="src/auth/xAuth.js"></script>
 </head>
+
 <body class="theme-dark">
   <!-- Header -->
   <header class="header">
@@ -21,22 +23,25 @@
         <img src="icons/logo.png" alt="Grove" class="logo-full">
       </div>
     </div>
-    
+
     <div class="chain-selector-container">
       <button class="chain-selector-button" id="chainSelectorBtn" aria-label="Select chain">
         <div class="chain-selector-icon" id="chainSelectorIcon">
           <svg class="chain-logo" width="16" height="16" viewBox="0 0 249 249" fill="none">
-            <rect width="249" height="249" rx="50" fill="#0052FF"/>
+            <rect width="249" height="249" rx="50" fill="#0052FF" />
           </svg>
         </div>
         <span class="chain-name" id="chainName">Base</span>
-        <svg class="chain-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        <svg class="chain-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
       </button>
       <div class="chain-dropdown hidden" id="chainDropdown">
         <div class="chain-option mainnet-option" data-chain="base">
           <div class="chain-icon-wrapper">
             <svg class="chain-logo" width="24" height="24" viewBox="0 0 249 249" fill="none">
-              <rect width="249" height="249" rx="50" fill="#0052FF"/>
+              <rect width="249" height="249" rx="50" fill="#0052FF" />
             </svg>
           </div>
           <div class="chain-option-info">
@@ -44,13 +49,16 @@
             <div class="chain-option-type">Mainnet</div>
           </div>
           <div class="chain-selected-check">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
           </div>
         </div>
         <div class="chain-option testnet-option" data-chain="base-sepolia">
           <div class="chain-icon-wrapper">
             <svg class="chain-logo" width="24" height="24" viewBox="0 0 249 249" fill="none">
-              <rect width="249" height="249" rx="50" fill="#0052FF"/>
+              <rect width="249" height="249" rx="50" fill="#0052FF" />
             </svg>
           </div>
           <div class="chain-option-info">
@@ -58,26 +66,41 @@
             <div class="chain-option-type">Testnet</div>
           </div>
           <div class="chain-selected-check">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
           </div>
         </div>
         <div class="chain-option mainnet-option" data-chain="solana">
           <div class="chain-icon-wrapper">
             <svg class="chain-logo" width="24" height="24" viewBox="0 0 398 312" fill="none">
               <defs>
-                <linearGradient id="solGrad1a" x1="360.879" y1="-37.455" x2="141.213" y2="383.294" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#00FFA3"/><stop offset="1" stop-color="#DC1FFF"/>
+                <linearGradient id="solGrad1a" x1="360.879" y1="-37.455" x2="141.213" y2="383.294"
+                  gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#00FFA3" />
+                  <stop offset="1" stop-color="#DC1FFF" />
                 </linearGradient>
-                <linearGradient id="solGrad1b" x1="264.829" y1="-87.601" x2="45.163" y2="333.148" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#00FFA3"/><stop offset="1" stop-color="#DC1FFF"/>
+                <linearGradient id="solGrad1b" x1="264.829" y1="-87.601" x2="45.163" y2="333.148"
+                  gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#00FFA3" />
+                  <stop offset="1" stop-color="#DC1FFF" />
                 </linearGradient>
-                <linearGradient id="solGrad1c" x1="312.548" y1="-62.688" x2="92.882" y2="358.061" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#00FFA3"/><stop offset="1" stop-color="#DC1FFF"/>
+                <linearGradient id="solGrad1c" x1="312.548" y1="-62.688" x2="92.882" y2="358.061"
+                  gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#00FFA3" />
+                  <stop offset="1" stop-color="#DC1FFF" />
                 </linearGradient>
               </defs>
-              <path d="M64.6 237.9c2.4-2.4 5.7-3.8 9.2-3.8h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1l62.7-62.7z" fill="url(#solGrad1a)"/>
-              <path d="M64.6 3.8C67.1 1.4 70.4 0 73.8 0h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1L64.6 3.8z" fill="url(#solGrad1b)"/>
-              <path d="M333.1 120.1c-2.4-2.4-5.7-3.8-9.2-3.8H6.5c-5.8 0-8.7 7-4.6 11.1l62.7 62.7c2.4 2.4 5.7 3.8 9.2 3.8h317.4c5.8 0 8.7-7 4.6-11.1l-62.7-62.7z" fill="url(#solGrad1c)"/>
+              <path
+                d="M64.6 237.9c2.4-2.4 5.7-3.8 9.2-3.8h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1l62.7-62.7z"
+                fill="url(#solGrad1a)" />
+              <path
+                d="M64.6 3.8C67.1 1.4 70.4 0 73.8 0h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1L64.6 3.8z"
+                fill="url(#solGrad1b)" />
+              <path
+                d="M333.1 120.1c-2.4-2.4-5.7-3.8-9.2-3.8H6.5c-5.8 0-8.7 7-4.6 11.1l62.7 62.7c2.4 2.4 5.7 3.8 9.2 3.8h317.4c5.8 0 8.7-7 4.6-11.1l-62.7-62.7z"
+                fill="url(#solGrad1c)" />
             </svg>
           </div>
           <div class="chain-option-info">
@@ -85,26 +108,41 @@
             <div class="chain-option-type">Mainnet</div>
           </div>
           <div class="chain-selected-check">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
           </div>
         </div>
         <div class="chain-option testnet-option" data-chain="solana-devnet">
           <div class="chain-icon-wrapper">
             <svg class="chain-logo" width="24" height="24" viewBox="0 0 398 312" fill="none">
               <defs>
-                <linearGradient id="solGrad2a" x1="360.879" y1="-37.455" x2="141.213" y2="383.294" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#00FFA3"/><stop offset="1" stop-color="#DC1FFF"/>
+                <linearGradient id="solGrad2a" x1="360.879" y1="-37.455" x2="141.213" y2="383.294"
+                  gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#00FFA3" />
+                  <stop offset="1" stop-color="#DC1FFF" />
                 </linearGradient>
-                <linearGradient id="solGrad2b" x1="264.829" y1="-87.601" x2="45.163" y2="333.148" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#00FFA3"/><stop offset="1" stop-color="#DC1FFF"/>
+                <linearGradient id="solGrad2b" x1="264.829" y1="-87.601" x2="45.163" y2="333.148"
+                  gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#00FFA3" />
+                  <stop offset="1" stop-color="#DC1FFF" />
                 </linearGradient>
-                <linearGradient id="solGrad2c" x1="312.548" y1="-62.688" x2="92.882" y2="358.061" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#00FFA3"/><stop offset="1" stop-color="#DC1FFF"/>
+                <linearGradient id="solGrad2c" x1="312.548" y1="-62.688" x2="92.882" y2="358.061"
+                  gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#00FFA3" />
+                  <stop offset="1" stop-color="#DC1FFF" />
                 </linearGradient>
               </defs>
-              <path d="M64.6 237.9c2.4-2.4 5.7-3.8 9.2-3.8h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1l62.7-62.7z" fill="url(#solGrad2a)"/>
-              <path d="M64.6 3.8C67.1 1.4 70.4 0 73.8 0h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1L64.6 3.8z" fill="url(#solGrad2b)"/>
-              <path d="M333.1 120.1c-2.4-2.4-5.7-3.8-9.2-3.8H6.5c-5.8 0-8.7 7-4.6 11.1l62.7 62.7c2.4 2.4 5.7 3.8 9.2 3.8h317.4c5.8 0 8.7-7 4.6-11.1l-62.7-62.7z" fill="url(#solGrad2c)"/>
+              <path
+                d="M64.6 237.9c2.4-2.4 5.7-3.8 9.2-3.8h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1l62.7-62.7z"
+                fill="url(#solGrad2a)" />
+              <path
+                d="M64.6 3.8C67.1 1.4 70.4 0 73.8 0h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1L64.6 3.8z"
+                fill="url(#solGrad2b)" />
+              <path
+                d="M333.1 120.1c-2.4-2.4-5.7-3.8-9.2-3.8H6.5c-5.8 0-8.7 7-4.6 11.1l62.7 62.7c2.4 2.4 5.7 3.8 9.2 3.8h317.4c5.8 0 8.7-7 4.6-11.1l-62.7-62.7z"
+                fill="url(#solGrad2c)" />
             </svg>
           </div>
           <div class="chain-option-info">
@@ -112,7 +150,10 @@
             <div class="chain-option-type">Testnet</div>
           </div>
           <div class="chain-selected-check">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
           </div>
         </div>
       </div>
@@ -129,7 +170,7 @@
 
     <!-- Tip Page (Home) -->
     <div class="page active" id="tab-home">
-      
+
       <!-- Onboarding / No Token State -->
       <div id="onboardingState" class="hidden">
         <div class="onboarding-card">
@@ -154,7 +195,10 @@
               </div>
             </div>
             <a href="https://app.grove.city/profile" target="_blank" class="card-action-btn primary" id="topUpBtn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20m0-20L5 9m7-7l7 7"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v20m0-20L5 9m7-7l7 7" />
+              </svg>
               <span>Top Up</span>
             </a>
           </div>
@@ -357,7 +401,9 @@
         <div class="step-card">
           <div class="step-content">
             <h4>Add it to your bio</h4>
-            <p>Paste your address in your <a href="https://x.com" target="_blank" class="link-accent">X</a>, <a href="https://reddit.com" target="_blank" class="link-accent">Reddit</a>, or <a href="https://youtube.com" target="_blank" class="link-accent">YouTube</a> profile</p>
+            <p>Paste your address in your <a href="https://x.com" target="_blank" class="link-accent">X</a>, <a
+                href="https://reddit.com" target="_blank" class="link-accent">Reddit</a>, or <a
+                href="https://youtube.com" target="_blank" class="link-accent">YouTube</a> profile</p>
           </div>
         </div>
 
@@ -384,66 +430,101 @@
         <div class="settings-menu">
           <button class="settings-menu-item" data-drill="account">
             <div class="settings-menu-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
             </div>
             <div class="settings-menu-content">
               <div class="settings-menu-name">Account</div>
               <div class="settings-menu-desc">Secret keys & connection</div>
             </div>
             <div class="settings-menu-arrow">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
             </div>
           </button>
 
           <button class="settings-menu-item" data-drill="tipping">
             <div class="settings-menu-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
             </div>
             <div class="settings-menu-content">
               <div class="settings-menu-name">Tipping</div>
-              <div class="settings-menu-desc">Default amount & confirmation</div>
+              <div class="settings-menu-desc">Default tip & confirmation</div>
             </div>
             <div class="settings-menu-arrow">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
             </div>
           </button>
 
           <button class="settings-menu-item" data-drill="twitter">
             <div class="settings-menu-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
             </div>
             <div class="settings-menu-content">
               <div class="settings-menu-name">X (Twitter)</div>
               <div class="settings-menu-desc">Auto-reply & integration</div>
             </div>
             <div class="settings-menu-arrow">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
             </div>
           </button>
 
           <button class="settings-menu-item" data-drill="developer">
             <div class="settings-menu-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6"></polyline>
+                <polyline points="8 6 2 12 8 18"></polyline>
+              </svg>
             </div>
             <div class="settings-menu-content">
               <div class="settings-menu-name">Developer</div>
               <div class="settings-menu-desc">API endpoints & testing</div>
             </div>
             <div class="settings-menu-arrow">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
             </div>
           </button>
 
           <button class="settings-menu-item" data-drill="about">
             <div class="settings-menu-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
             </div>
             <div class="settings-menu-content">
               <div class="settings-menu-name">About</div>
-              <div class="settings-menu-desc">Links, FAQ & legal</div>
+              <div class="settings-menu-desc">Support, FAQ & Legal</div>
             </div>
             <div class="settings-menu-arrow">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
             </div>
           </button>
         </div>
@@ -453,7 +534,10 @@
       <div class="settings-view" id="settings-account">
         <div class="settings-header">
           <button class="settings-back" data-back="main">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
           </button>
           <h2 class="page-title">Account</h2>
         </div>
@@ -471,14 +555,19 @@
 
             <!-- JWT Edit Form (Hidden by default) -->
             <div class="jwt-edit-container hidden" id="jwtEditContainer">
-              <p class="info-text-sm">Get your key from <a href="https://app.grove.city" target="_blank" class="link-accent">app.grove.city</a></p>
+              <p class="info-text-sm">Get your key from <a href="https://app.grove.city" target="_blank"
+                  class="link-accent">app.grove.city</a></p>
               <div class="input-group">
                 <input type="password" id="jwtInput" class="code-input" placeholder="Paste Secret Key">
-                <button type="button" class="input-toggle-btn" id="toggleJwtVisibility" aria-label="Toggle password visibility">
-                  <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <button type="button" class="input-toggle-btn" id="toggleJwtVisibility"
+                  aria-label="Toggle password visibility">
+                  <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle class="eye-open" cx="12" cy="12" r="3"></circle>
-                    <path class="eye-closed hidden" d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <path class="eye-closed hidden"
+                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+                    </path>
                     <line class="eye-closed hidden" x1="1" y1="1" x2="23" y2="23"></line>
                   </svg>
                 </button>
@@ -518,12 +607,45 @@
       <div class="settings-view" id="settings-tipping">
         <div class="settings-header">
           <button class="settings-back" data-back="main">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
           </button>
           <h2 class="page-title">Tipping</h2>
         </div>
 
         <div class="settings-group">
+          <!-- Default Tip Amount -->
+          <div class="settings-item" id="settingsTipRow">
+            <div class="settings-info">
+              <div class="settings-name">Default Tip</div>
+              <div class="settings-desc">Amount to tip by default</div>
+            </div>
+            <div class="settings-tip-value" id="settingsTipAmountDisplay">
+              <span class="currency-symbol">$</span><span class="amount-value">0.10</span>
+            </div>
+            <button class="btn-text" id="settingsEditTipBtn">Edit</button>
+          </div>
+
+          <!-- Edit form (hidden by default) -->
+          <div class="settings-item-column hidden" id="settingsTipEditRow">
+            <div class="settings-row">
+              <div class="settings-info">
+                <div class="settings-name">Default Tip</div>
+                <div class="settings-desc">Amount to tip by default</div>
+              </div>
+            </div>
+            <div class="input-group">
+              <span class="input-prefix">$</span>
+              <input type="number" id="settingsTipAmountInput" step="0.01" min="0.01" value="0.10" placeholder="0.00">
+            </div>
+            <div class="form-actions">
+              <button class="btn-secondary btn-sm" id="settingsCancelTipAmount">Cancel</button>
+              <button class="btn-primary btn-sm" id="settingsSaveTipAmount">Save</button>
+            </div>
+          </div>
+
           <div class="settings-item">
             <div class="settings-info">
               <div class="settings-name">Confirm before tipping</div>
@@ -541,7 +663,10 @@
       <div class="settings-view" id="settings-twitter">
         <div class="settings-header">
           <button class="settings-back" data-back="main">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
           </button>
           <h2 class="page-title">X (Twitter)</h2>
         </div>
@@ -573,7 +698,10 @@
       <div class="settings-view" id="settings-developer">
         <div class="settings-header">
           <button class="settings-back" data-back="main">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
           </button>
           <h2 class="page-title">Developer</h2>
         </div>
@@ -637,7 +765,10 @@
       <div class="settings-view" id="settings-about">
         <div class="settings-header">
           <button class="settings-back" data-back="main">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
           </button>
           <h2 class="page-title">About</h2>
         </div>
@@ -707,27 +838,50 @@
   <!-- Bottom Navigation -->
   <nav class="bottom-nav">
     <button class="nav-item active" data-target="tab-home">
-      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
       <span class="nav-label">Home</span>
     </button>
     <button class="nav-item" data-target="tab-history">
-      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+      </svg>
       <span class="nav-label">History</span>
     </button>
     <button class="nav-item" data-target="tab-leaderboard">
-      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="20" x2="12" y2="10"></line>
+        <line x1="18" y1="20" x2="18" y2="4"></line>
+        <line x1="6" y1="20" x2="6" y2="16"></line>
+      </svg>
       <span class="nav-label">Leaders</span>
     </button>
     <button class="nav-item" data-target="tab-earn">
-      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="2" x2="12" y2="22"></line>
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+      </svg>
       <span class="nav-label">Earn</span>
     </button>
     <button class="nav-item" data-target="tab-settings">
-      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path
+          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+        </path>
+      </svg>
       <span class="nav-label">Settings</span>
     </button>
   </nav>
 
   <script src="popup.js"></script>
 </body>
+
 </html>

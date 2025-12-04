@@ -108,9 +108,20 @@ class XAuth {
 
             // Exchange code for tokens
             const tokens = await this.exchangeCodeForTokens(code, codeVerifier);
+            console.log('[Grove X Auth] Token response:', {
+              hasAccessToken: !!tokens.access_token,
+              tokenType: tokens.token_type,
+              scope: tokens.scope,
+              expiresIn: tokens.expires_in
+            });
 
-            // Get user info
-            const userInfo = await this.getUserInfo(tokens.access_token);
+            // Try to get user info (optional - might fail on free tier)
+            let userInfo = { id: 'unknown', username: 'Connected' };
+            try {
+              userInfo = await this.getUserInfo(tokens.access_token);
+            } catch (userInfoError) {
+              console.warn('[Grove X Auth] Could not fetch user info (this is OK for free tier):', userInfoError.message);
+            }
 
             // Store tokens and user info
             await this.storeTokens(tokens, userInfo);
@@ -128,6 +139,7 @@ class XAuth {
    * Exchange authorization code for tokens
    */
   static async exchangeCodeForTokens(code, codeVerifier) {
+    console.log('[Grove X Auth] Exchanging code for tokens...');
     const tokenUrl = 'https://api.twitter.com/2/oauth2/token';
 
     const params = new URLSearchParams();
@@ -146,11 +158,14 @@ class XAuth {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error_description || 'Token exchange failed');
+      const errorText = await response.text();
+      console.error('[Grove X Auth] Token exchange failed:', response.status, errorText);
+      throw new Error(`Token exchange failed: ${errorText}`);
     }
 
-    return response.json();
+    const tokens = await response.json();
+    console.log('[Grove X Auth] Token exchange successful, scopes:', tokens.scope);
+    return tokens;
   }
 
   /**
@@ -227,6 +242,8 @@ class XAuth {
    * Get user info from Twitter API
    */
   static async getUserInfo(accessToken) {
+    console.log('[Grove X Auth] Fetching user info...');
+
     const response = await fetch('https://api.twitter.com/2/users/me', {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -234,10 +251,13 @@ class XAuth {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to get user info');
+      const errorText = await response.text();
+      console.error('[Grove X Auth] User info failed:', response.status, errorText);
+      throw new Error(`Failed to get user info: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('[Grove X Auth] User info received:', data.data?.username);
     return data.data;
   }
 

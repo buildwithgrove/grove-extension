@@ -1048,12 +1048,22 @@
     // Get JWT and settings from storage
     let jwt = '';
     let autoReplyEnabled = false;
+    let chainName = 'Base';
 
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        const result = await chrome.storage.local.get(['GROVE_API_JWT', 'GROVE_AUTO_REPLY']);
+        const result = await chrome.storage.local.get(['GROVE_API_JWT', 'GROVE_AUTO_REPLY', 'groveChain']);
         jwt = result.GROVE_API_JWT || '';
         autoReplyEnabled = result.GROVE_AUTO_REPLY || false;
+        // Get friendly chain name
+        const chain = result.groveChain || 'base';
+        const chainNames = {
+          'base': 'Base',
+          'base-sepolia': 'Base Sepolia',
+          'solana': 'Solana',
+          'solana-devnet': 'Solana Devnet'
+        };
+        chainName = chainNames[chain] || 'Base';
       }
 
       if (!jwt) {
@@ -1091,7 +1101,12 @@
           if (tweetId) {
             const isLoggedIn = await XAuth.isLoggedIn();
             if (isLoggedIn) {
-              const replyText = `Just sent you a $${tipAmount.toFixed(2)} tip via @GroveCity!`;
+              const txHash = response.data?.tx_hash || '';
+              const replyText = `Hey @${username}, I just sent you a $${tipAmount.toFixed(2)} tip over ${chainName} via @BuildWithGrove's tipping app.
+
+Tx: ${txHash}
+
+Find out more at grove.city`;
               await XAuth.postReply(tweetId, replyText);
               console.log("[Grove Extension] Auto-reply posted successfully");
             } else {

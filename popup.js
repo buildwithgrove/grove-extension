@@ -22,7 +22,7 @@ const onboardingState = document.getElementById('onboardingState');
 const connectedState = document.getElementById('connectedState');
 const setupTokenBtn = document.getElementById('setupTokenBtn');
 
-// Tip amount
+// Tip amount (Home)
 const tipAmountDisplay = document.getElementById('tipAmountDisplay');
 const tipAmountEdit = document.getElementById('tipAmountEdit');
 const tipAmountInput = document.getElementById('tipAmountInput');
@@ -30,6 +30,15 @@ const saveTipAmount = document.getElementById('saveTipAmount');
 const cancelTipAmount = document.getElementById('cancelTipAmount');
 const editTipBtn = document.getElementById('editTipAmount');
 const confirmTipToggle = document.getElementById('confirmTipToggle');
+
+// Tip amount (Settings)
+const settingsTipAmountDisplay = document.getElementById('settingsTipAmountDisplay');
+const settingsTipAmountInput = document.getElementById('settingsTipAmountInput');
+const settingsSaveTipAmount = document.getElementById('settingsSaveTipAmount');
+const settingsEditTipBtn = document.getElementById('settingsEditTipBtn');
+const settingsCancelTipAmount = document.getElementById('settingsCancelTipAmount');
+const settingsTipRow = document.getElementById('settingsTipRow');
+const settingsTipEditRow = document.getElementById('settingsTipEditRow');
 
 // Balance
 const balanceAmount = document.getElementById('balanceAmount');
@@ -184,11 +193,27 @@ function setupEventListeners() {
     }
   });
 
-  // Tip Amount
+  // Tip Amount (Home)
   editTipBtn.addEventListener('click', showTipEdit);
   cancelTipAmount.addEventListener('click', hideTipEdit);
   saveTipAmount.addEventListener('click', saveTip);
   confirmTipToggle.addEventListener('change', handleConfirmTipToggle);
+
+  // Tip Amount (Settings) - synced with Home
+  if (settingsEditTipBtn) {
+    settingsEditTipBtn.addEventListener('click', showSettingsTipEdit);
+  }
+  if (settingsCancelTipAmount) {
+    settingsCancelTipAmount.addEventListener('click', hideSettingsTipEdit);
+  }
+  if (settingsSaveTipAmount) {
+    settingsSaveTipAmount.addEventListener('click', saveTipFromSettings);
+  }
+  if (settingsTipAmountInput) {
+    settingsTipAmountInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') saveTipFromSettings();
+    });
+  }
 
   // JWT
   setupTokenBtn.addEventListener('click', () => {
@@ -466,12 +491,24 @@ async function loadTipAmount() {
 
 function updateTipUI(amount) {
   const formatted = parseFloat(amount).toFixed(2);
-  // Update the amount value span inside the display div
+
+  // Update Home display
   const amountSpan = tipAmountDisplay.querySelector('.amount-value');
   if (amountSpan) {
     amountSpan.textContent = formatted;
   }
   tipAmountInput.value = formatted;
+
+  // Update Settings display (sync)
+  if (settingsTipAmountDisplay) {
+    const settingsAmountSpan = settingsTipAmountDisplay.querySelector('.amount-value');
+    if (settingsAmountSpan) {
+      settingsAmountSpan.textContent = formatted;
+    }
+  }
+  if (settingsTipAmountInput) {
+    settingsTipAmountInput.value = formatted;
+  }
 }
 
 function showTipEdit() {
@@ -498,6 +535,29 @@ async function saveTip() {
     await chrome.storage.local.set({ [STORAGE_KEYS.TIP_AMOUNT]: val });
     updateTipUI(val);
     hideTipEdit();
+    showToast('Default tip updated');
+  } else {
+    showToast('Invalid amount');
+  }
+}
+
+function showSettingsTipEdit() {
+  if (settingsTipRow) settingsTipRow.classList.add('hidden');
+  if (settingsTipEditRow) settingsTipEditRow.classList.remove('hidden');
+  if (settingsTipAmountInput) settingsTipAmountInput.focus();
+}
+
+function hideSettingsTipEdit() {
+  if (settingsTipRow) settingsTipRow.classList.remove('hidden');
+  if (settingsTipEditRow) settingsTipEditRow.classList.add('hidden');
+}
+
+async function saveTipFromSettings() {
+  const val = parseFloat(settingsTipAmountInput.value);
+  if (val > 0) {
+    await chrome.storage.local.set({ [STORAGE_KEYS.TIP_AMOUNT]: val });
+    updateTipUI(val);
+    hideSettingsTipEdit();
     showToast('Default tip updated');
   } else {
     showToast('Invalid amount');
@@ -556,7 +616,8 @@ async function loadXLoginStatus() {
     if (isLoggedIn) {
       const userInfo = await XAuth.getStoredUserInfo();
       if (userInfo && xLoginStatus) {
-        xLoginStatus.textContent = `@${userInfo.username}`;
+        const isRealUsername = userInfo.username && userInfo.username !== 'Connected';
+        xLoginStatus.textContent = isRealUsername ? `@${userInfo.username}` : 'Connected';
         xLoginStatus.style.color = 'var(--color-primary)';
       }
       if (xLoginBtn) {
@@ -602,8 +663,11 @@ async function handleXLogin() {
 
       const userInfo = await XAuth.login();
 
+      const isRealUsername = userInfo.username && userInfo.username !== 'Connected';
+      const displayName = isRealUsername ? `@${userInfo.username}` : 'Connected';
+
       if (xLoginStatus) {
-        xLoginStatus.textContent = `@${userInfo.username}`;
+        xLoginStatus.textContent = displayName;
         xLoginStatus.style.color = 'var(--color-primary)';
       }
       if (xLoginBtn) {
@@ -611,7 +675,7 @@ async function handleXLogin() {
         xLoginBtn.disabled = false;
       }
 
-      showToast(`Connected as @${userInfo.username}`);
+      showToast(isRealUsername ? `Connected as @${userInfo.username}` : 'Connected to X');
     } catch (error) {
       console.error('[Grove Extension] X login failed:', error);
       if (xLoginBtn) {
