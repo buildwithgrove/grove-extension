@@ -6,6 +6,11 @@
 (function () {
   "use strict";
 
+  // Signal to web pages that the extension is installed
+  window.dispatchEvent(new CustomEvent('grove-extension-ready', {
+    detail: { version: '1.0.2' }
+  }));
+
   // Configuration
   const ADVERTISING_MODE = true; // Set to true for more prominent button animation
 

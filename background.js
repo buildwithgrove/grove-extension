@@ -1,0 +1,34 @@
+// Listen for messages from external web pages (e.g., localhost:3000)
+chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
+  console.log('Received external message from:', sender.origin);
+
+  if (message.type === 'SET_JWT') {
+    chrome.storage.local.set({ GROVE_API_JWT: message.jwt }, () => {
+      console.log('JWT stored successfully');
+      sendResponse({ success: true });
+    });
+    return true; // Keep channel open for async response
+  }
+
+  if (message.type === 'GET_JWT') {
+    chrome.storage.local.get(['GROVE_API_JWT'], (result) => {
+      sendResponse({ jwt: result.GROVE_API_JWT || null });
+    });
+    return true;
+  }
+
+  if (message.type === 'OPEN_POPUP') {
+    const chromeVersion = parseInt(navigator.userAgent.match(/Chrome\/(\d+)/)?.[1] || '0');
+
+    if (chromeVersion >= 127 && chrome.action.openPopup) {
+      chrome.action.openPopup()
+        .then(() => sendResponse({ success: true, opened: true }))
+        .catch(() => sendResponse({ success: true, opened: false, reason: 'popup_blocked' }));
+    } else {
+      sendResponse({ success: true, opened: false, reason: 'unsupported_version', chromeVersion });
+    }
+    return true;
+  }
+
+  sendResponse({ error: 'Unknown message type' });
+});
