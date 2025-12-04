@@ -1,38 +1,109 @@
 # Grove Tip Extension <!-- omit in toc -->
 
-Chrome extension that enables cryptocurrency tipping on social platforms.
+Chrome extension that enables cryptocurrency tipping on social platforms and any website.
 
+- [Features](#features)
+- [Installation](#installation)
 - [Development](#development)
 - [Production](#production)
+- [Architecture](#architecture)
 - [Adding Support for New Platforms](#adding-support-for-new-platforms)
-  - [Step 1: Capture Platform Structure](#step-1-capture-platform-structure)
-  - [Step 2: Use AI to Generate the Adapter](#step-2-use-ai-to-generate-the-adapter)
-  - [Step 3: Integration Checklist](#step-3-integration-checklist)
-  - [Example Reference: YouTube Implementation](#example-reference-youtube-implementation)
-- [TODOs](#todos)
+
+## Features
+
+### Tipping
+- **Tip on X (Twitter)** - Tip buttons on tweets, profiles, and hover cards
+- **Tip on any website** - Floating tip button for sites with `llms.txt` or `ai.txt` containing a crypto address
+- **ENS support** - Resolves `.eth` and `.base.eth` names to addresses
+- **Tip confirmation** - Optional popover to edit tip amount before sending
+- **Like on tip** - Automatically like tweets when you tip them (requires X connection)
+- **Auto-reply** - Post a customizable reply when you tip a tweet
+
+### Extension Popup
+- **Balance display** - View your USDC tipping balance
+- **Chain selector** - Switch between Base (mainnet) and Base Sepolia (testnet)
+- **Earn tab** - View your tipping address and ENS name
+- **Settings** - Configure default tip amount, X integration, and developer options
+- **Secret key management** - Store and switch between multiple accounts
+
+### X (Twitter) Integration
+- **OAuth login** - Connect your X account for enhanced features
+- **Auto-like** - Automatically like tweets you tip
+- **Auto-reply** - Post a reply with tip details and transaction link
+- **Custom message** - Customize the auto-reply with placeholders: `{username}`, `{amount}`, `{chain}`, `{tx_link}`, `{grove_link}`
+
+### Developer Features
+- **Developer mode** - Toggle between production, testnet, and localhost APIs
+- **Web app sync** - The Grove web app can sync your JWT via external messaging
+
+## Installation
+
+1. Install from the [Chrome Web Store](https://chrome.google.com/webstore/detail/grove-tip-extension/cailijeophmjabfnilbhajbegndlhelf)
+2. Click the extension icon and connect your account at [app.grove.city](https://app.grove.city)
 
 ## Development
 
-1. Go to [chrome://extensions/](chrome://extensions/)
-2. Enable `Developer mode`
-3. Click `Load unpacked`
-4. Select the `grove_extension` directory
-5. Install [Extensions Reloader](https://chrome.google.com/webstore/devconsole/dae6b43a-3491-4dd0-8565-a29acfbd30f3/dlebkjfkgbobnfhdjkkmfllelijafkpn/edit) to quickly reload extension after code changes (click `Reload` button)
+1. Clone this repository
+2. Go to [chrome://extensions/](chrome://extensions/)
+3. Enable `Developer mode`
+4. Click `Load unpacked`
+5. Select this directory
+
+To reload after changes: click the refresh icon on the extension card or use [Extensions Reloader](https://chromewebstore.google.com/detail/extensions-reloader/fimgfedafeadlieiabdeeaodndnlbhid).
 
 ## Production
 
 1. `make build_zip_extension`
 2. Go to [the Grove package upload](https://chrome.google.com/webstore/devconsole/dae6b43a-3491-4dd0-8565-a29acfbd30f3/dlebkjfkgbobnfhdjkkmfllelijafkpn/edit/package)
-3. Upload `./grove_extension/build/grove-extension-v1.0.0.zip`
+3. Upload the generated zip file
+
+## Architecture
+
+```
+├── manifest.json          # Extension manifest (v3)
+├── background.js          # Service worker for external messaging
+├── popup.html/js/css      # Extension popup UI
+└── src/
+    ├── adapters/          # Platform-specific adapters
+    │   ├── base.js        # Base adapter class
+    │   ├── twitter.js     # X/Twitter adapter
+    │   ├── youtube.js     # YouTube adapter
+    │   ├── reddit.js      # Reddit adapter
+    │   └── generic.js     # Generic website adapter
+    ├── auth/
+    │   └── xAuth.js       # X OAuth 2.0 with PKCE
+    ├── config/
+    │   └── networks.js    # Chain configurations
+    ├── content/
+    │   └── content.js     # Main content script
+    ├── parsers/
+    │   └── address.js     # Address detection & ENS resolution
+    ├── storage/
+    │   └── keyManager.js  # Secret key management
+    ├── ui/
+    │   ├── button.js      # Tip button component
+    │   ├── popover.js     # Tip confirmation popover
+    │   ├── spinner.js     # Loading spinner
+    │   └── styles.css     # Global styles
+    └── utils/
+        ├── api.js         # Grove API client
+        ├── balance.js     # Balance utilities
+        └── metadata.js    # llms.txt/ai.txt fetcher
+```
 
 ## Adding Support for New Platforms
 
-To add the Tip button to a new social platform, follow this workflow:
+Adapters extend `BaseAdapter` and implement these methods:
+- `detectProfilePage()` - Returns true if on a tippable page
+- `extractBio()` - Extract text that may contain crypto addresses
+- `getButtonPlacement()` - Return the element to insert the tip button near
+- `getPlatformName()` - Return the platform identifier
+
+To add a new platform, follow this workflow:
 
 ### Step 1: Capture Platform Structure
 
 1. **Take a screenshot** of where you want the button to appear
-
    - Navigate to a profile/video/post page on the target platform
    - Take a screenshot showing the action buttons area (Share, Like, etc.)
    - This helps visualize the desired button placement
@@ -83,68 +154,8 @@ The adapter should:
 After generating the adapter code:
 
 - [ ] Create `src/adapters/[platform].js` with the adapter class
-- [ ] Add platform detection in `src/content/content.js` (`detectPlatform()` function)
-- [ ] Add button creation method in `src/ui/button.js` (`create[Platform]Button()`)
+- [ ] Add platform detection in `src/content/content.js`
+- [ ] Add button creation method in `src/ui/button.js`
 - [ ] Add platform-specific styles in `src/ui/styles.css`
-- [ ] Update `manifest.json` with:
-  - URL patterns in `content_scripts.matches`
-  - Required script files in `content_scripts.js`
-  - CSS files in `content_scripts.css`
+- [ ] Update `manifest.json` with URL patterns and content scripts
 - [ ] Test on multiple pages/profiles on the platform
-- [ ] Update README platform checklist
-
-### Example Reference: YouTube Implementation
-
-Our YouTube conversation demonstrates this workflow:
-
-1. Screenshot provided showing Like/Dislike/Share buttons
-2. HTML structure shared from the `#top-level-buttons-computed` container
-3. AI generated:
-   - `src/adapters/youtube.js` - detects video pages, extracts descriptions, finds button placement
-   - YouTube button creation in `src/ui/button.js` - matches YouTube's `yt-button-shape` structure
-   - CSS styles matching YouTube's tonal button design
-   - Manifest updates for youtube.com URLs
-
-The complete implementation took ~10 minutes with AI assistance.
-
-## TODOs
-
-### Extension Popup <!-- omit in toc -->
-
-- [ ] Create popup UI when clicking chrome extension icon
-  - [ ] Check if `GROVE_API_JWT` is loaded
-  - [ ] If JWT exists: Display current balance
-  - [ ] If no JWT: Link to [grove.city/api](https://grove.city/api) to create one
-  - [ ] Add button to create EVM wallet in app OR link to external wallet creation
-
-### Tip Button Enhancement <!-- omit in toc -->
-
-- [ ] Extract and refine the Tip button component
-- [ ] Enhance styling to make it an "internet standard" quality button
-- [ ] Ensure reusability across platforms
-
-### Platform Adapters <!-- omit in toc -->
-
-Build adapters for the following platforms:
-
-- [x] Twitter/X
-- [x] YouTube
-- [x] Reddit
-- [ ] Instagram
-- [ ] TikTok
-- [ ] PornHub
-- [ ] OnlyFans
-- [ ] GitHub (placeholder exists, needs implementation)
-
-### User Experience <!-- omit in toc -->
-
-- [ ] Move PROD/localhost toggle to a better location
-- [ ] Link users to explorer: [x402scan.com/server/170d2ee7-73b4-457f-aa48-dbab753f6d5f](https://www.x402scan.com/server/170d2ee7-73b4-457f-aa48-dbab753f6d5f)
-- [ ] Link users to ecosystem: [x402.org/ecosystem](https://www.x402.org/ecosystem?category=services-endpoints)
-
-### Future Considerations <!-- omit in toc -->
-
-- Wallet management integration
-- Balance display and refresh mechanism
-- Multi-wallet support
-- Tip history tracking
