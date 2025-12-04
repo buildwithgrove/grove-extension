@@ -68,6 +68,13 @@ const prevKeysContainer = document.getElementById('prevKeysContainer');
 const prevKeysList = document.getElementById('prevKeysList');
 const closePrevKeysBtn = document.getElementById('closePrevKeysBtn');
 
+// Earn Tab - Address Display
+const earnAddressText = document.getElementById('earnAddressText');
+const copyEarnAddressBtn = document.getElementById('copyEarnAddressBtn');
+const ensNameDisplay = document.getElementById('ensNameDisplay');
+const ensNameValue = document.getElementById('ensNameValue');
+const copyEnsNameBtn = document.getElementById('copyEnsNameBtn');
+
 // Initialize Previous Keys UI
 let prevKeysUI = null;
 
@@ -83,6 +90,8 @@ const STORAGE_KEYS = {
   CHAIN: 'groveChain',
   ENDPOINT: 'groveEndpoint',
   LAST_BALANCES: 'GROVE_LAST_BALANCES',
+  CLIENT_ADDRESS: 'GROVE_CLIENT_ADDRESS',
+  ENS_NAME: 'GROVE_ENS_NAME',
 };
 
 // Default auto-reply message template
@@ -162,11 +171,15 @@ async function init() {
   await loadChain();
   await loadEndpoint();
   await prevKeysUI.updateCount();
+  await loadClientAddress();
   loadExtensionVersion();
   setupEventListeners();
 
-  // Fetch balance after everything is loaded
+  // Fetch balance after everything is loaded (also updates client address)
   await fetchBalance();
+
+  // Resolve ENS name in the background (don't await to avoid blocking UI)
+  loadAndResolveEnsName();
 }
 
 /**
@@ -319,6 +332,26 @@ function setupEventListeners() {
   // Quick Actions (Placeholders)
   document.querySelectorAll('.action-btn').forEach(btn => {
     btn.addEventListener('click', () => showToast('Coming Soon'));
+  });
+
+  // Earn Tab - Copy Address Button
+  if (copyEarnAddressBtn) {
+    copyEarnAddressBtn.addEventListener('click', copyEarnAddress);
+  }
+
+  // Earn Tab - Copy ENS Name Button
+  if (copyEnsNameBtn) {
+    copyEnsNameBtn.addEventListener('click', copyEnsName);
+  }
+
+  // Listen for storage changes (e.g., when webapp injects JWT via external messaging)
+  chrome.storage.onChanged.addListener(async (changes, areaName) => {
+    if (areaName === 'local' && changes[STORAGE_KEYS.JWT]) {
+      console.log('[Grove Extension] JWT changed in storage, refreshing...');
+      const newJwt = changes[STORAGE_KEYS.JWT].newValue;
+      updateAuthState(newJwt);
+      await fetchBalance();
+    }
   });
 }
 
@@ -498,9 +531,11 @@ async function removeJwt() {
     await KeyManager.archiveCurrentKey(currentJwt);
   }
 
-  // Remove current JWT
-  await chrome.storage.local.remove(STORAGE_KEYS.JWT);
+  // Remove current JWT, client address, and ENS name
+  await chrome.storage.local.remove([STORAGE_KEYS.JWT, STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
   updateAuthState(null);
+  updateEarnAddressDisplay(null);
+  updateEnsNameDisplay(null);
   hideJwtEdit();
   showToast('Key saved to history');
   await prevKeysUI.updateCount();
@@ -861,6 +896,23 @@ async function fetchBalance() {
       return;
     }
 
+    // Store client_address for Earn tab display
+    if (response.data.client_address) {
+      const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
+      const previousAddress = result[STORAGE_KEYS.CLIENT_ADDRESS];
+
+      await chrome.storage.local.set({ [STORAGE_KEYS.CLIENT_ADDRESS]: response.data.client_address });
+      updateEarnAddressDisplay(response.data.client_address);
+
+      // If address changed, clear cached ENS name and re-resolve
+      if (previousAddress !== response.data.client_address) {
+        await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
+        updateEnsNameDisplay(null);
+        // Resolve in background
+        loadAndResolveEnsName();
+      }
+    }
+
     // Find balance for current chain (USDC)
     const chainBalance = response.data.balances.find(
       b => b.network === chain && b.token_symbol === 'USDC'
@@ -881,6 +933,193 @@ async function fetchBalance() {
     console.error('[Grove Extension] Balance fetch failed:', e);
   } finally {
     balanceDisplay.classList.remove('loading');
+  }
+}
+
+/**
+ * Earn Tab - Address Display
+ */
+function updateEarnAddressDisplay(address) {
+  if (earnAddressText && address) {
+    earnAddressText.textContent = address;
+    earnAddressText.classList.remove('placeholder');
+    if (copyEarnAddressBtn) {
+      copyEarnAddressBtn.disabled = false;
+    }
+  } else if (earnAddressText) {
+    earnAddressText.textContent = 'Connect to see address';
+    earnAddressText.classList.add('placeholder');
+    if (copyEarnAddressBtn) {
+      copyEarnAddressBtn.disabled = true;
+    }
+  }
+}
+
+async function loadClientAddress() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
+  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
+  const ensName = result[STORAGE_KEYS.ENS_NAME];
+  updateEarnAddressDisplay(address);
+  updateEnsNameDisplay(ensName);
+}
+
+async function copyEarnAddress() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
+  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
+
+  if (address) {
+    try {
+      await navigator.clipboard.writeText(address);
+      showToast('Address copied!');
+
+      // Visual feedback
+      if (copyEarnAddressBtn) {
+        copyEarnAddressBtn.classList.add('copied');
+        setTimeout(() => {
+          copyEarnAddressBtn.classList.remove('copied');
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('[Grove Extension] Copy failed:', err);
+      showToast('Failed to copy');
+    }
+  }
+}
+
+async function copyEnsName() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ENS_NAME]);
+  const ensName = result[STORAGE_KEYS.ENS_NAME];
+
+  if (ensName) {
+    try {
+      await navigator.clipboard.writeText(ensName);
+      showToast('ENS name copied!');
+
+      // Visual feedback
+      if (copyEnsNameBtn) {
+        copyEnsNameBtn.classList.add('copied');
+        setTimeout(() => {
+          copyEnsNameBtn.classList.remove('copied');
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('[Grove Extension] Copy ENS name failed:', err);
+      showToast('Failed to copy');
+    }
+  }
+}
+
+/**
+ * ENS Reverse Resolution
+ * Resolves an Ethereum address to its ENS name (.eth or .base.eth)
+ */
+
+
+/**
+ * Resolve ENS name for an address using reverse resolution
+ * Checks both Ethereum ENS (.eth) and Base ENS (.base.eth)
+ */
+async function resolveEnsName(address) {
+  if (!address || !address.startsWith('0x')) {
+    return null;
+  }
+
+  const addr = address.toLowerCase();
+
+  // Try web3.bio API (handles both ENS and Basenames)
+  try {
+    const response = await fetch(`https://api.web3.bio/profile/${addr}`);
+    const data = await response.json();
+
+    if (Array.isArray(data) && data.length > 0) {
+      // Prefer ENS (.eth) over Basenames (.base.eth)
+      const ensProfile = data.find(p => p.platform === 'ens' || (p.identity && p.identity.endsWith('.eth') && !p.identity.endsWith('.base.eth')));
+      if (ensProfile?.identity) {
+        console.log('[Grove Extension] Resolved ENS:', ensProfile.identity);
+        return ensProfile.identity;
+      }
+
+      // Check for Basenames
+      const baseProfile = data.find(p => p.platform === 'basenames' || (p.identity && p.identity.endsWith('.base.eth')));
+      if (baseProfile?.identity) {
+        console.log('[Grove Extension] Resolved Basename:', baseProfile.identity);
+        return baseProfile.identity;
+      }
+    }
+  } catch (e) {
+    console.log('[Grove Extension] web3.bio lookup failed:', e.message);
+  }
+
+  // Fallback: Try Ensideas API for ENS only
+  try {
+    const response = await fetch(`https://ensideas.com/ens/resolve/${addr}`);
+    const data = await response.json();
+    if (data.name && data.name.endsWith('.eth')) {
+      console.log('[Grove Extension] Resolved ENS via Ensideas:', data.name);
+      return data.name;
+    }
+  } catch (e) {
+    console.log('[Grove Extension] Ensideas lookup failed:', e.message);
+  }
+
+  return null;
+}
+
+
+/**
+ * Update ENS name display in the UI
+ */
+function updateEnsNameDisplay(ensName) {
+  const ensLinksSection = document.getElementById('ensLinksSection');
+
+  if (ensNameDisplay && ensNameValue) {
+    if (ensName) {
+      ensNameValue.textContent = ensName;
+      ensNameDisplay.classList.remove('hidden');
+      // Hide "Get an ENS name" links when user has one
+      if (ensLinksSection) {
+        ensLinksSection.classList.add('hidden');
+      }
+    } else {
+      ensNameDisplay.classList.add('hidden');
+      ensNameValue.textContent = '';
+      // Show "Get an ENS name" links when user doesn't have one
+      if (ensLinksSection) {
+        ensLinksSection.classList.remove('hidden');
+      }
+    }
+  }
+}
+
+/**
+ * Load and resolve ENS name for stored address
+ */
+async function loadAndResolveEnsName() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
+  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
+  const cachedEnsName = result[STORAGE_KEYS.ENS_NAME];
+
+  // Show cached name immediately if available
+  if (cachedEnsName) {
+    updateEnsNameDisplay(cachedEnsName);
+  }
+
+  // If we have an address, try to resolve it
+  if (address) {
+    try {
+      const ensName = await resolveEnsName(address);
+      if (ensName) {
+        await chrome.storage.local.set({ [STORAGE_KEYS.ENS_NAME]: ensName });
+        updateEnsNameDisplay(ensName);
+      } else if (cachedEnsName) {
+        // Clear cached name if resolution returns nothing
+        await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
+        updateEnsNameDisplay(null);
+      }
+    } catch (e) {
+      console.error('[Grove Extension] ENS resolution failed:', e);
+      // Keep showing cached name on error
+    }
   }
 }
 
@@ -935,9 +1174,11 @@ async function handleDevModeToggle(e) {
     const currentChain = chainName.textContent;
     if (currentChain === 'Base') {
       await handleChainSelection({ currentTarget: { dataset: { chain: 'base-sepolia' } } }, true);
-    } else if (currentChain === 'Solana') {
-      await handleChainSelection({ currentTarget: { dataset: { chain: 'solana-devnet' } } }, true);
     }
+    // Solana chain selection commented out - Base/Base Sepolia only for now
+    // else if (currentChain === 'Solana') {
+    //   await handleChainSelection({ currentTarget: { dataset: { chain: 'solana-devnet' } } }, true);
+    // }
   } else {
     // Disable developer mode
     document.body.classList.remove('developer-mode');
@@ -955,9 +1196,11 @@ async function handleDevModeToggle(e) {
     const currentChain = chainName.textContent;
     if (currentChain === 'Base Sepolia') {
       await handleChainSelection({ currentTarget: { dataset: { chain: 'base' } } }, true);
-    } else if (currentChain === 'Solana Devnet') {
-      await handleChainSelection({ currentTarget: { dataset: { chain: 'solana' } } }, true);
     }
+    // Solana chain selection commented out - Base/Base Sepolia only for now
+    // else if (currentChain === 'Solana Devnet') {
+    //   await handleChainSelection({ currentTarget: { dataset: { chain: 'solana' } } }, true);
+    // }
   }
 }
 

@@ -72,6 +72,8 @@
             </svg>
           </div>
         </div>
+        <!-- Solana chain options commented out - Base/Base Sepolia only for now -->
+        <!--
         <div class="chain-option mainnet-option" data-chain="solana">
           <div class="chain-icon-wrapper">
             <svg class="chain-logo" width="24" height="24" viewBox="0 0 398 312" fill="none">
@@ -156,6 +158,7 @@
             </svg>
           </div>
         </div>
+        -->
       </div>
     </div>
   </header>
@@ -236,7 +239,7 @@
           <div class="card-row">
             <div class="card-content">
               <div class="card-label">Tip Button</div>
-              <p class="card-description">Look for this on X, Reddit, and YouTube</p>
+              <p class="card-description">Look for this on X</p>
             </div>
             <div class="demo-tip-button">
               <span>Tip</span>
@@ -383,40 +386,56 @@
     <div class="page" id="tab-earn">
       <h2 class="page-title">Earn Tips</h2>
 
-      <div class="step-cards">
-        <div class="step-card coming-soon-card">
-          <div class="step-content">
-            <h4>Create a new address</h4>
-            <p>Coming Soon</p>
+      <!-- Your Address Section -->
+      <div class="section-card your-address-section">
+        <div class="section-header">
+          <h3>Your Tipping Address</h3>
+        </div>
+
+        <!-- ENS Name Display (if available) -->
+        <div class="ens-name-display hidden" id="ensNameDisplay">
+          <span class="ens-name-value" id="ensNameValue"></span>
+          <button class="copy-address-btn" id="copyEnsNameBtn" title="Copy ENS name">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="address-display-container">
+          <div class="address-display" id="earnAddressDisplay">
+            <span class="address-text" id="earnAddressText">Connect to see address</span>
+            <button class="copy-address-btn" id="copyEarnAddressBtn" title="Copy address" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
           </div>
         </div>
 
-        <div class="step-card">
-          <div class="step-content">
-            <h4>Copy your wallet address</h4>
-            <p>Works with Base, Base Sepolia, Solana, and Solana Devnet</p>
-          </div>
+        <!-- Get ENS links (hidden when ENS name exists) -->
+        <div class="ens-links" id="ensLinksSection">
+          <span class="ens-label">Get an ENS name:</span>
+          <a href="https://app.ens.domains" target="_blank" class="ens-link">.eth</a>
+          <span class="ens-separator">or</span>
+          <a href="https://www.base.org/names" target="_blank" class="ens-link">.base.eth</a>
         </div>
+      </div>
 
-        <div class="step-card">
-          <div class="step-content">
-            <h4>Add it to your bio</h4>
-            <p>Paste your address in your <a href="https://x.com" target="_blank" class="link-accent">X</a>, <a
-                href="https://reddit.com" target="_blank" class="link-accent">Reddit</a>, or <a
-                href="https://youtube.com" target="_blank" class="link-accent">YouTube</a> profile</p>
-          </div>
-        </div>
-
-        <div class="step-card">
-          <div class="step-content">
-            <h4>Refresh your profile</h4>
-            <p>You'll see this button<br>on your profile</p>
-          </div>
-          <div class="demo-tip-button-small">
-            <span>Tip</span>
-            <span class="tip-emoji">🌿</span>
-          </div>
-        </div>
+      <!-- How to Earn Section -->
+      <div class="section-card how-to-earn-section">
+        <h3 class="how-to-earn-title">How to Earn</h3>
+        <p class="how-to-earn-text">
+          Add your address to your X profile. Others can then tip your posts.
+        </p>
+        <a href="https://x.com/settings/profile" target="_blank" class="how-to-earn-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+          Edit Profile
+        </a>
       </div>
     </div>
 
