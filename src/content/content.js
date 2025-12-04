@@ -1036,6 +1036,28 @@
     );
   }
 
+  // Default auto-reply message template (must match popup.js)
+  const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, loved this post! Just sent you a {amount} tip on {chain} via @BuildWithGrove.
+
+Tx: {tx_link}
+
+Find out more → {grove_link}`;
+
+  /**
+   * Build auto-reply message from template
+   * @param {string} template - Message template with placeholders
+   * @param {Object} values - Object containing placeholder values
+   * @returns {string} - Formatted message
+   */
+  function buildAutoReplyMessage(template, values) {
+    return template
+      .replace(/\{username\}/g, values.username || '')
+      .replace(/\{amount\}/g, values.amount || '')
+      .replace(/\{chain\}/g, values.chain || '')
+      .replace(/\{tx_link\}/g, values.tx_link || '')
+      .replace(/\{grove_link\}/g, values.grove_link || 'grove.city');
+  }
+
   /**
    * Send tip for a tweet
    * @param {number} tipAmount - The amount to tip
@@ -1048,6 +1070,7 @@
     // Get JWT and settings from storage
     let jwt = '';
     let autoReplyEnabled = false;
+    let autoReplyMessage = DEFAULT_AUTO_REPLY_MESSAGE;
     let chainName = 'Base';
     let explorerBaseUrl = 'https://basescan.org/tx/';
     let explorerSuffix = '';
@@ -1059,9 +1082,10 @@
         return;
       }
 
-      const result = await chrome.storage.local.get(['GROVE_API_JWT', 'GROVE_AUTO_REPLY', 'groveChain']);
+      const result = await chrome.storage.local.get(['GROVE_API_JWT', 'GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'groveChain']);
       jwt = result.GROVE_API_JWT || '';
       autoReplyEnabled = result.GROVE_AUTO_REPLY || false;
+      autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
       console.log('[Grove Extension] Storage loaded:', { hasJwt: !!jwt, autoReply: autoReplyEnabled, chain: result.groveChain });
 
       // Get friendly chain name and explorer URL
@@ -1118,11 +1142,16 @@
             if (isLoggedIn) {
               const txHash = response.data?.tx_hash || '';
               const txLink = `${explorerBaseUrl}${txHash}${explorerSuffix}`;
-              const replyText = `Hey @${username}, loved this post! Just sent you a $${tipAmount.toFixed(2)} tip on ${chainName} via @BuildWithGrove.
 
-Tx: ${txLink}
+              // Build reply text from template
+              const replyText = buildAutoReplyMessage(autoReplyMessage, {
+                username: username,
+                amount: `$${tipAmount.toFixed(2)}`,
+                chain: chainName,
+                tx_link: txLink,
+                grove_link: 'grove.city'
+              });
 
-Find out more → grove.city`;
               await XAuth.postReply(tweetId, replyText);
               console.log("[Grove Extension] Auto-reply posted successfully");
             } else {

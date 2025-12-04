@@ -77,16 +77,28 @@ const STORAGE_KEYS = {
   TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
   CONFIRM_TIP: 'GROVE_CONFIRM_TIP',
   AUTO_REPLY: 'GROVE_AUTO_REPLY',
+  AUTO_REPLY_MESSAGE: 'GROVE_AUTO_REPLY_MESSAGE',
   ENVIRONMENT: 'groveEnvironment',
   CHAIN: 'groveChain',
   ENDPOINT: 'groveEndpoint',
   LAST_BALANCES: 'GROVE_LAST_BALANCES',
 };
 
+// Default auto-reply message template
+const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, loved this post! Just sent you a {amount} tip on {chain} via @BuildWithGrove.
+
+Tx: {tx_link}
+
+Find out more → {grove_link}`;
+
 // X Login Elements
 const xLoginStatus = document.getElementById('xLoginStatus');
 const xLoginBtn = document.getElementById('xLoginBtn');
 const autoReplyToggle = document.getElementById('autoReplyToggle');
+const autoReplyMessageContainer = document.getElementById('autoReplyMessageContainer');
+const autoReplyMessageInput = document.getElementById('autoReplyMessageInput');
+const saveAutoReplyMessageBtn = document.getElementById('saveAutoReplyMessageBtn');
+const resetAutoReplyMessageBtn = document.getElementById('resetAutoReplyMessageBtn');
 
 // Defaults
 const DEFAULT_TIP_AMOUNT = 0.10;
@@ -139,6 +151,7 @@ async function init() {
   await loadTipAmount();
   await loadConfirmTip();
   await loadAutoReply();
+  await loadAutoReplyMessage();
   await loadXLoginStatus();
   await loadEnvironment();
   await loadChain();
@@ -283,6 +296,14 @@ function setupEventListeners() {
   // Auto Reply Toggle
   if (autoReplyToggle) {
     autoReplyToggle.addEventListener('change', handleAutoReplyToggle);
+  }
+
+  // Auto Reply Message
+  if (saveAutoReplyMessageBtn) {
+    saveAutoReplyMessageBtn.addEventListener('click', saveAutoReplyMessage);
+  }
+  if (resetAutoReplyMessageBtn) {
+    resetAutoReplyMessageBtn.addEventListener('click', resetAutoReplyMessage);
   }
 
   // Quick Actions (Placeholders)
@@ -603,7 +624,66 @@ async function handleAutoReplyToggle() {
   }
 
   await chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY]: enabled });
+
+  // Show/hide custom message container
+  updateAutoReplyMessageVisibility(enabled);
+
   showToast(enabled ? 'Auto-reply enabled' : 'Auto-reply disabled');
+}
+
+/**
+ * Update visibility of auto-reply message container
+ */
+function updateAutoReplyMessageVisibility(enabled) {
+  if (autoReplyMessageContainer) {
+    if (enabled) {
+      autoReplyMessageContainer.classList.remove('hidden');
+    } else {
+      autoReplyMessageContainer.classList.add('hidden');
+    }
+  }
+}
+
+/**
+ * Load Auto Reply Message
+ */
+async function loadAutoReplyMessage() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.AUTO_REPLY_MESSAGE, STORAGE_KEYS.AUTO_REPLY]);
+  const message = result[STORAGE_KEYS.AUTO_REPLY_MESSAGE] || DEFAULT_AUTO_REPLY_MESSAGE;
+  const autoReplyEnabled = result[STORAGE_KEYS.AUTO_REPLY] || false;
+
+  if (autoReplyMessageInput) {
+    autoReplyMessageInput.value = message;
+  }
+
+  // Show/hide based on auto-reply toggle state
+  updateAutoReplyMessageVisibility(autoReplyEnabled);
+}
+
+/**
+ * Save Auto Reply Message
+ */
+async function saveAutoReplyMessage() {
+  const message = autoReplyMessageInput?.value?.trim();
+
+  if (!message) {
+    showToast('Message cannot be empty');
+    return;
+  }
+
+  await chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY_MESSAGE]: message });
+  showToast('Auto-reply message saved');
+}
+
+/**
+ * Reset Auto Reply Message to Default
+ */
+async function resetAutoReplyMessage() {
+  if (autoReplyMessageInput) {
+    autoReplyMessageInput.value = DEFAULT_AUTO_REPLY_MESSAGE;
+  }
+  await chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY_MESSAGE]: DEFAULT_AUTO_REPLY_MESSAGE });
+  showToast('Message reset to default');
 }
 
 /**

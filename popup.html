@@ -691,6 +691,23 @@
               <span class="slider"></span>
             </label>
           </div>
+
+          <!-- Custom Auto-Reply Message (Hidden by default, shown when auto-reply is enabled) -->
+          <div class="settings-item-column hidden" id="autoReplyMessageContainer">
+            <div class="settings-row">
+              <div class="settings-info">
+                <div class="settings-name">Custom Message</div>
+                <div class="settings-desc">Use placeholders: {username}, {amount}, {chain}, {tx_link}, {grove_link}</div>
+              </div>
+            </div>
+            <div class="textarea-group">
+              <textarea id="autoReplyMessageInput" class="message-textarea" rows="5" placeholder="Enter your custom auto-reply message..."></textarea>
+            </div>
+            <div class="form-actions">
+              <button class="btn-secondary btn-sm" id="resetAutoReplyMessageBtn">Reset</button>
+              <button class="btn-primary btn-sm" id="saveAutoReplyMessageBtn">Save</button>
+            </div>
+          </div>
         </div>
       </div>
 
