@@ -1292,12 +1292,19 @@ async function handleChainSelection(e, silent = false) {
   updateChainUI(chain);
   updateTopUpLink(chain);
   chainDropdown.classList.add('hidden');
+
+  // Switch API endpoint based on chain (testnet vs mainnet)
+  const config = NETWORKS[chain] || NETWORKS[DEFAULT_CHAIN];
+  const isTestnet = (config.type || '').toLowerCase() === 'testnet';
+  const newEndpoint = isTestnet ? 'testnet' : 'production';
+  await chrome.storage.local.set({ [STORAGE_KEYS.ENDPOINT]: newEndpoint });
+
   if (!silent) showToast(`Switched to ${NETWORKS[chain].name}`);
 
   // Reload balance
   fetchBalance();
 
-  // Reload leaderboard data if on leaderboard tab
+  // Reload leaderboard data
   seenTxHashes.clear(); // Reset seen tips for new chain
   refreshLeaderboard();
 }
