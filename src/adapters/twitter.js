@@ -1,6 +1,8 @@
 /**
  * Twitter Adapter
  * Handles Twitter/X profile pages and tweets
+ *
+ * Requires: src/adapters/base.js (BaseAdapter)
  */
 
 class TwitterAdapter extends BaseAdapter {

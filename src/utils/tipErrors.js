@@ -5,6 +5,8 @@
  * - Error type classification (auth, balance, rate limit, network)
  * - Visual variant (error vs warning) for UI styling
  * - Inline bubble display anchored to tip buttons
+ *
+ * Requires: src/ui/styles.css (for .grove-tip-inline-message styles)
  */
 (function() {
   const TIP_ERROR_TYPES = {
@@ -231,6 +233,13 @@
       return str.includes(search);
     }
 
+    /**
+     * Format insufficient balance error into a human-readable message.
+     * Extracts token, network, required and current amounts from the API response detail.
+     *
+     * @param {Object} detail - Error detail object from API response
+     * @returns {string} - Formatted error message
+     */
     static _formatInsufficient(detail = {}) {
       const token = detail.requested_token || detail.token || 'USDC';
       const network = detail.requested_network || detail.network || 'Base';
