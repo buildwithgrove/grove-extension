@@ -1626,12 +1626,22 @@ body.developer-mode .testnet-option {
   display: block;
 }
 
+/* Leaderboard Header */
+.leaderboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.leaderboard-header .page-title {
+  margin: 0;
+}
+
 /* Period Selector */
 .period-selector {
   display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-  justify-content: center;
+  gap: 6px;
 }
 
 .period-btn {
