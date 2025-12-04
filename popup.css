@@ -787,19 +787,20 @@ body.developer-mode .testnet-option {
 
 /* Your Address Section (Earn Tab) */
 .your-address-section {
-  margin: 0 16px 16px;
-  padding: 16px;
+  margin: 0 16px 12px;
+  padding: 14px;
 }
 
 .your-address-section .section-header h3 {
   font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  text-align: center;
 }
 
 .address-display-container {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .address-display {
@@ -809,7 +810,7 @@ body.developer-mode .testnet-option {
   background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: 12px;
+  padding: 10px 12px;
 }
 
 .address-text {
@@ -866,6 +867,7 @@ body.developer-mode .testnet-option {
   gap: 8px;
   padding-top: 12px;
   border-top: 1px solid var(--color-border);
+  white-space: nowrap;
 }
 
 .ens-label {
@@ -892,6 +894,68 @@ body.developer-mode .testnet-option {
 .ens-separator {
   font-size: 12px;
   color: var(--color-text-tertiary);
+}
+
+/* ENS Name Display */
+.ens-name-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(56, 159, 88, 0.15) 0%, rgba(56, 159, 88, 0.05) 100%);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.ens-name-value {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-primary);
+  word-break: break-all;
+}
+
+/* How to Earn Section */
+.how-to-earn-section {
+  margin: 0 16px 16px;
+  padding: 14px;
+  text-align: center;
+}
+
+.how-to-earn-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 8px 0;
+}
+
+.how-to-earn-text {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  margin: 0 0 12px 0;
+}
+
+.how-to-earn-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.how-to-earn-btn:hover {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
 }
 
 /* Step Cards (Get Tips) */
