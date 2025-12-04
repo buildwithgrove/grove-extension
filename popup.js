@@ -106,9 +106,9 @@ const resetAutoReplyMessageBtn = document.getElementById('resetAutoReplyMessageB
 
 // Defaults
 const DEFAULT_TIP_AMOUNT = 0.10;
-const DEFAULT_CHAIN = 'base';
-const DEFAULT_ENV = 'prod';
-const DEFAULT_ENDPOINT = 'production';
+const DEFAULT_CHAIN = 'base-sepolia';
+const DEFAULT_ENV = 'local';
+const DEFAULT_ENDPOINT = 'testnet';
 const DEFAULT_BALANCE_DISPLAY = '0.00';
 const TOP_UP_URLS = {
   mainnet: 'https://app.grove.city/profile',
@@ -926,6 +926,10 @@ async function handleDevModeToggle(e) {
     }
     if (endpointSelector) endpointSelector.classList.remove('hidden');
     setTimeout(() => showToast('Developer Mode Enabled'), 350);
+
+    // Switch to testnet endpoint
+    await chrome.storage.local.set({ [STORAGE_KEYS.ENDPOINT]: 'testnet' });
+    await loadEndpoint();
 
     // Check if current chain is a mainnet and switch to testnet
     const currentChain = chainName.textContent;
