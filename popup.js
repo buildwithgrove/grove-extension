@@ -1573,13 +1573,18 @@ function formatAddress(address) {
 }
 
 /**
- * Format USD Amount
+ * Format USD Amount (up to 6 decimals when needed)
  */
 function formatUSD(amount) {
   if (amount >= 1000) {
     return '$' + amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   }
-  return '$' + amount.toFixed(2);
+  if (amount >= 1) {
+    return '$' + amount.toFixed(2);
+  }
+  // For small amounts, show up to 6 decimals but trim trailing zeros
+  const formatted = amount.toFixed(6).replace(/\.?0+$/, '');
+  return '$' + (formatted === '' ? '0' : formatted);
 }
 
 /**
