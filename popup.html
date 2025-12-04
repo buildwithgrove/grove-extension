@@ -386,32 +386,53 @@
     <div class="page" id="tab-earn">
       <h2 class="page-title">Earn Tips</h2>
 
+      <!-- Your Address Section -->
+      <div class="section-card your-address-section">
+        <div class="section-header">
+          <h3>Your Wallet Address</h3>
+        </div>
+        <div class="address-display-container">
+          <div class="address-display" id="earnAddressDisplay">
+            <span class="address-text" id="earnAddressText">Connect to see address</span>
+            <button class="copy-address-btn" id="copyEarnAddressBtn" title="Copy address" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+          </div>
+          <p class="address-hint">Share this address (or your ENS name) on your social profiles to receive tips</p>
+        </div>
+        <div class="ens-links">
+          <span class="ens-label">Get an ENS name:</span>
+          <a href="https://app.ens.domains" target="_blank" class="ens-link">.eth</a>
+          <span class="ens-separator">or</span>
+          <a href="https://www.base.org/names" target="_blank" class="ens-link">.base.eth</a>
+        </div>
+      </div>
+
       <div class="step-cards">
-        <div class="step-card coming-soon-card">
+        <div class="step-card">
+          <div class="step-number">1</div>
           <div class="step-content">
-            <h4>Create a new address</h4>
-            <p>Coming Soon</p>
+            <h4>Copy your address above</h4>
+            <p>Or use your .eth or .base.eth name</p>
           </div>
         </div>
 
         <div class="step-card">
-          <div class="step-content">
-            <h4>Copy your wallet address</h4>
-            <p>Works with Base and Base Sepolia</p>
-          </div>
-        </div>
-
-        <div class="step-card">
+          <div class="step-number">2</div>
           <div class="step-content">
             <h4>Add it to your bio</h4>
-            <p>Paste your address in your <a href="https://x.com" target="_blank" class="link-accent">X</a> profile</p>
+            <p>Paste in your <a href="https://x.com" target="_blank" class="link-accent">X</a> profile bio</p>
           </div>
         </div>
 
         <div class="step-card">
+          <div class="step-number">3</div>
           <div class="step-content">
-            <h4>Refresh your profile</h4>
-            <p>You'll see this button<br>on your profile</p>
+            <h4>Start earning</h4>
+            <p>Others will see this button on your profile</p>
           </div>
           <div class="demo-tip-button-small">
             <span>Tip</span>

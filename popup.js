@@ -68,6 +68,10 @@ const prevKeysContainer = document.getElementById('prevKeysContainer');
 const prevKeysList = document.getElementById('prevKeysList');
 const closePrevKeysBtn = document.getElementById('closePrevKeysBtn');
 
+// Earn Tab - Address Display
+const earnAddressText = document.getElementById('earnAddressText');
+const copyEarnAddressBtn = document.getElementById('copyEarnAddressBtn');
+
 // Initialize Previous Keys UI
 let prevKeysUI = null;
 
@@ -83,6 +87,7 @@ const STORAGE_KEYS = {
   CHAIN: 'groveChain',
   ENDPOINT: 'groveEndpoint',
   LAST_BALANCES: 'GROVE_LAST_BALANCES',
+  CLIENT_ADDRESS: 'GROVE_CLIENT_ADDRESS',
 };
 
 // Default auto-reply message template
@@ -162,10 +167,11 @@ async function init() {
   await loadChain();
   await loadEndpoint();
   await prevKeysUI.updateCount();
+  await loadClientAddress();
   loadExtensionVersion();
   setupEventListeners();
 
-  // Fetch balance after everything is loaded
+  // Fetch balance after everything is loaded (also updates client address)
   await fetchBalance();
 }
 
@@ -320,6 +326,11 @@ function setupEventListeners() {
   document.querySelectorAll('.action-btn').forEach(btn => {
     btn.addEventListener('click', () => showToast('Coming Soon'));
   });
+
+  // Earn Tab - Copy Address Button
+  if (copyEarnAddressBtn) {
+    copyEarnAddressBtn.addEventListener('click', copyEarnAddress);
+  }
 
   // Listen for storage changes (e.g., when webapp injects JWT via external messaging)
   chrome.storage.onChanged.addListener(async (changes, areaName) => {
@@ -508,9 +519,10 @@ async function removeJwt() {
     await KeyManager.archiveCurrentKey(currentJwt);
   }
 
-  // Remove current JWT
-  await chrome.storage.local.remove(STORAGE_KEYS.JWT);
+  // Remove current JWT and client address
+  await chrome.storage.local.remove([STORAGE_KEYS.JWT, STORAGE_KEYS.CLIENT_ADDRESS]);
   updateAuthState(null);
+  updateEarnAddressDisplay(null);
   hideJwtEdit();
   showToast('Key saved to history');
   await prevKeysUI.updateCount();
@@ -871,6 +883,12 @@ async function fetchBalance() {
       return;
     }
 
+    // Store client_address for Earn tab display
+    if (response.data.client_address) {
+      await chrome.storage.local.set({ [STORAGE_KEYS.CLIENT_ADDRESS]: response.data.client_address });
+      updateEarnAddressDisplay(response.data.client_address);
+    }
+
     // Find balance for current chain (USDC)
     const chainBalance = response.data.balances.find(
       b => b.network === chain && b.token_symbol === 'USDC'
@@ -891,6 +909,54 @@ async function fetchBalance() {
     console.error('[Grove Extension] Balance fetch failed:', e);
   } finally {
     balanceDisplay.classList.remove('loading');
+  }
+}
+
+/**
+ * Earn Tab - Address Display
+ */
+function updateEarnAddressDisplay(address) {
+  if (earnAddressText && address) {
+    earnAddressText.textContent = address;
+    earnAddressText.classList.remove('placeholder');
+    if (copyEarnAddressBtn) {
+      copyEarnAddressBtn.disabled = false;
+    }
+  } else if (earnAddressText) {
+    earnAddressText.textContent = 'Connect to see address';
+    earnAddressText.classList.add('placeholder');
+    if (copyEarnAddressBtn) {
+      copyEarnAddressBtn.disabled = true;
+    }
+  }
+}
+
+async function loadClientAddress() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
+  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
+  updateEarnAddressDisplay(address);
+}
+
+async function copyEarnAddress() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
+  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
+
+  if (address) {
+    try {
+      await navigator.clipboard.writeText(address);
+      showToast('Address copied!');
+
+      // Visual feedback
+      if (copyEarnAddressBtn) {
+        copyEarnAddressBtn.classList.add('copied');
+        setTimeout(() => {
+          copyEarnAddressBtn.classList.remove('copied');
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('[Grove Extension] Copy failed:', err);
+      showToast('Failed to copy');
+    }
   }
 }
 
