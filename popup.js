@@ -1353,7 +1353,7 @@ function setupSettingsDrillDown() {
 /**
  * Leaderboard State
  */
-let currentPeriod = 'week';
+let currentPeriod = 'day';
 let currentLeaderboardView = 'live';
 let livePollingInterval = null;
 let seenTxHashes = new Set();
