@@ -502,14 +502,66 @@
     // Get the username from the hover card to build the profile URL
     const usernameLink = hoverCard.querySelector('a[href^="/"][role="link"]');
     let profileUrl = null;
+    let username = null;
     if (usernameLink) {
       const href = usernameLink.getAttribute('href');
       if (href && /^\/[a-zA-Z0-9_]+$/.test(href)) {
         profileUrl = `https://x.com${href}`;
+        username = href.substring(1); // Remove leading slash
       }
     }
 
     if (!profileUrl) return;
+
+    // Check if user has a tippable address in display name or bio
+    // First check the cache
+    if (username) {
+      const cached = getCachedAddress(username);
+      if (cached === 'no-address') {
+        return; // Already checked, no address found
+      }
+      if (cached && cached.address) {
+        // Has cached address, proceed to show button
+      } else {
+        // Not cached, need to check display name and bio
+        let hasTippableAddress = false;
+
+        // Check display name (the bold name shown in hover card)
+        const displayNameElement = hoverCard.querySelector('[data-testid="UserName"]') ||
+                                   hoverCard.querySelector('a[href^="/"][role="link"] span');
+        const displayName = displayNameElement?.textContent || '';
+
+        if (displayName && AddressParser.hasAddresses(displayName)) {
+          const addressResult = AddressParser.resolveAddress(displayName);
+          if (addressResult.address) {
+            hasTippableAddress = true;
+            setCachedAddress(username, addressResult);
+            console.log(`[Grove Extension] Hover card: Found address in display name for @${username}: ${addressResult.address}`);
+          }
+        }
+
+        // If not in display name, check bio/description
+        if (!hasTippableAddress) {
+          const bioElement = hoverCard.querySelector('[data-testid="UserDescription"]');
+          const bio = bioElement?.textContent || '';
+
+          if (bio && AddressParser.hasAddresses(bio)) {
+            const addressResult = AddressParser.resolveAddress(bio);
+            if (addressResult.address) {
+              hasTippableAddress = true;
+              setCachedAddress(username, addressResult);
+              console.log(`[Grove Extension] Hover card: Found address in bio for @${username}: ${addressResult.address}`);
+            }
+          }
+        }
+
+        // If no tippable address found, cache negative result and return
+        if (!hasTippableAddress) {
+          setCachedAddress(username, 'no-address');
+          return;
+        }
+      }
+    }
 
     // Create the tip button
     const isDarkMode = detectDarkMode();
