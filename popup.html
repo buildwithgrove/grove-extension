@@ -263,123 +263,55 @@
 
     <!-- Leaderboard Page -->
     <div class="page" id="tab-leaderboard">
-      <h2 class="page-title">Leaderboard</h2>
+      <!-- Period Selector -->
+      <div class="period-selector">
+        <button class="period-btn" data-period="day">24h</button>
+        <button class="period-btn active" data-period="week">7d</button>
+        <button class="period-btn" data-period="month">30d</button>
+      </div>
 
       <!-- Switcher -->
       <div class="leaderboard-switcher">
         <button class="switcher-btn active" data-view="tippers">Top Tippers</button>
-        <button class="switcher-btn" data-view="tippees">Top Tippees</button>
+        <button class="switcher-btn" data-view="tippees">Top Earners</button>
+        <button class="switcher-btn" data-view="live">Live</button>
       </div>
 
       <!-- Top Tippers View -->
       <div class="leaderboard-view active" id="tippers-view">
-        <div class="empty-state coming-soon-state">
-          <div class="empty-icon">🏆</div>
-          <h3>Coming Soon</h3>
-          <p>Top tippers leaderboard will be available soon</p>
+        <div class="leaderboard-loading" id="tippers-loading">
+          <div class="leaderboard-spinner"></div>
         </div>
+        <div class="leaderboard-empty hidden" id="tippers-empty">
+          <div class="empty-icon">🏆</div>
+          <p>No tippers yet this period</p>
+        </div>
+        <div class="leaderboard-list" id="tippers-list"></div>
       </div>
 
       <!-- Top Tippees View -->
       <div class="leaderboard-view" id="tippees-view">
-        <div class="empty-state coming-soon-state">
-          <div class="empty-icon">🌟</div>
-          <h3>Coming Soon</h3>
-          <p>Top recipients leaderboard will be available soon</p>
+        <div class="leaderboard-loading" id="tippees-loading">
+          <div class="leaderboard-spinner"></div>
         </div>
+        <div class="leaderboard-empty hidden" id="tippees-empty">
+          <div class="empty-icon">🌟</div>
+          <p>No earners yet this period</p>
+        </div>
+        <div class="leaderboard-list" id="tippees-list"></div>
       </div>
 
-      <!-- Old content commented out -->
-      <!-- <div class="leaderboard-view active" id="tippers-view">
-        <div class="leaderboard-list">
-          <div class="leaderboard-item">
-            <div class="rank">1</div>
-            <div class="user-info">
-              <div class="wallet-address">0x742d...8c9d</div>
-              <div class="tip-count">2,453 tips sent</div>
-            </div>
-            <div class="amount">$12,265</div>
-          </div>
-          <div class="leaderboard-item">
-            <div class="rank">2</div>
-            <div class="user-info">
-              <div class="wallet-address">0x8f3a...2d1e</div>
-              <div class="tip-count">1,827 tips sent</div>
-            </div>
-            <div class="amount">$9,135</div>
-          </div>
-          <div class="leaderboard-item">
-            <div class="rank">3</div>
-            <div class="user-info">
-              <div class="wallet-address">0x3c9f...7a2b</div>
-              <div class="tip-count">1,203 tips sent</div>
-            </div>
-            <div class="amount">$6,015</div>
-          </div>
-          <div class="leaderboard-item">
-            <div class="rank">4</div>
-            <div class="user-info">
-              <div class="wallet-address">0x9e2d...4f8c</div>
-              <div class="tip-count">987 tips sent</div>
-            </div>
-            <div class="amount">$4,935</div>
-          </div>
-          <div class="leaderboard-item">
-            <div class="rank">5</div>
-            <div class="user-info">
-              <div class="wallet-address">0x5b7a...1c3d</div>
-              <div class="tip-count">654 tips sent</div>
-            </div>
-            <div class="amount">$3,270</div>
-          </div>
+      <!-- Live Tips View -->
+      <div class="leaderboard-view" id="live-view">
+        <div class="leaderboard-loading" id="live-loading">
+          <div class="leaderboard-spinner"></div>
         </div>
-      </div> -->
-
-      <!-- Old tippees content commented out -->
-      <!-- <div class="leaderboard-view" id="tippees-view">
-        <div class="leaderboard-list">
-          <div class="leaderboard-item">
-            <div class="rank">1</div>
-            <div class="user-info">
-              <div class="wallet-address">0xa4c2...9f3e</div>
-              <div class="tip-count">5,672 tips received</div>
-            </div>
-            <div class="amount">$28,360</div>
-          </div>
-          <div class="leaderboard-item">
-            <div class="rank">2</div>
-            <div class="user-info">
-              <div class="wallet-address">0x2d8f...6b1a</div>
-              <div class="tip-count">3,945 tips received</div>
-            </div>
-            <div class="amount">$19,725</div>
-          </div>
-          <div class="leaderboard-item">
-            <div class="rank">3</div>
-            <div class="user-info">
-              <div class="wallet-address">0x7e3c...4d2f</div>
-              <div class="tip-count">2,834 tips received</div>
-            </div>
-            <div class="amount">$14,170</div>
-          </div>
-          <div class="leaderboard-item">
-            <div class="rank">4</div>
-            <div class="user-info">
-              <div class="wallet-address">0x1f9a...8e7c</div>
-              <div class="tip-count">2,156 tips received</div>
-            </div>
-            <div class="amount">$10,780</div>
-          </div>
-          <div class="leaderboard-item">
-            <div class="rank">5</div>
-            <div class="user-info">
-              <div class="wallet-address">0x6c4d...3a9b</div>
-              <div class="tip-count">1,893 tips received</div>
-            </div>
-            <div class="amount">$9,465</div>
-          </div>
+        <div class="leaderboard-empty hidden" id="live-empty">
+          <div class="empty-icon">⚡</div>
+          <p>No recent tips</p>
         </div>
-      </div> -->
+        <div class="live-tips-list" id="live-list"></div>
+      </div>
     </div>
 
     <!-- Earn Tips Page -->

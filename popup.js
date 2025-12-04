@@ -378,6 +378,21 @@ async function handleNavigation(e) {
   if (targetId === 'tab-home') {
     await fetchBalance();
   }
+
+  // Load leaderboard data when navigating to leaderboard
+  if (targetId === 'tab-leaderboard') {
+    if (currentLeaderboardView === 'tippers') {
+      loadTopTippers();
+    } else if (currentLeaderboardView === 'tippees') {
+      loadTopTippees();
+    } else if (currentLeaderboardView === 'live') {
+      loadLiveTips();
+      startLivePolling();
+    }
+  } else {
+    // Stop live polling when leaving leaderboard tab
+    stopLivePolling();
+  }
 }
 
 /**
@@ -1332,31 +1347,230 @@ function setupSettingsDrillDown() {
 }
 
 /**
- * Setup Leaderboard Switcher
+ * Leaderboard State
+ */
+let currentPeriod = 'week';
+let currentLeaderboardView = 'tippers';
+let livePollingInterval = null;
+let seenTxHashes = new Set();
+
+/**
+ * Setup Leaderboard
  */
 function setupLeaderboardSwitcher() {
+  const periodBtns = document.querySelectorAll('.period-btn');
   leaderboardSwitcherBtns = document.querySelectorAll('.switcher-btn');
   leaderboardViews = document.querySelectorAll('.leaderboard-view');
 
+  // Period selector
+  periodBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const period = e.target.dataset.period;
+      currentPeriod = period;
+
+      periodBtns.forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+
+      // Reload current leaderboard view
+      if (currentLeaderboardView === 'tippers') {
+        loadTopTippers();
+      } else if (currentLeaderboardView === 'tippees') {
+        loadTopTippees();
+      }
+    });
+  });
+
+  // View switcher
   if (leaderboardSwitcherBtns) {
     leaderboardSwitcherBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
         const view = e.target.dataset.view;
+        currentLeaderboardView = view;
 
-        // Update active button
         leaderboardSwitcherBtns.forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
 
-        // Update active view
         leaderboardViews.forEach(v => v.classList.remove('active'));
+        document.getElementById(`${view}-view`).classList.add('active');
+
+        // Load data for the selected view
         if (view === 'tippers') {
-          document.getElementById('tippers-view').classList.add('active');
-        } else {
-          document.getElementById('tippees-view').classList.add('active');
+          loadTopTippers();
+          stopLivePolling();
+        } else if (view === 'tippees') {
+          loadTopTippees();
+          stopLivePolling();
+        } else if (view === 'live') {
+          loadLiveTips();
+          startLivePolling();
         }
       });
     });
   }
+}
+
+/**
+ * Load Top Tippers
+ */
+async function loadTopTippers() {
+  const loading = document.getElementById('tippers-loading');
+  const empty = document.getElementById('tippers-empty');
+  const list = document.getElementById('tippers-list');
+
+  loading.classList.remove('hidden');
+  empty.classList.add('hidden');
+  list.innerHTML = '';
+
+  const result = await GroveAPI.getTopTippers(currentPeriod, 10);
+
+  loading.classList.add('hidden');
+
+  if (!result.success || result.data.entries.length === 0) {
+    empty.classList.remove('hidden');
+    return;
+  }
+
+  list.innerHTML = result.data.entries.map((entry, i) => `
+    <div class="leaderboard-item">
+      <div class="rank">${i + 1}</div>
+      <div class="user-info">
+        <div class="wallet-address">${formatAddress(entry.address)}</div>
+        <div class="tip-count">${entry.tipCount.toLocaleString()} tips sent</div>
+      </div>
+      <div class="amount">${formatUSD(entry.totalUSD)}</div>
+    </div>
+  `).join('');
+}
+
+/**
+ * Load Top Tippees
+ */
+async function loadTopTippees() {
+  const loading = document.getElementById('tippees-loading');
+  const empty = document.getElementById('tippees-empty');
+  const list = document.getElementById('tippees-list');
+
+  loading.classList.remove('hidden');
+  empty.classList.add('hidden');
+  list.innerHTML = '';
+
+  const result = await GroveAPI.getTopTippees(currentPeriod, 10);
+
+  loading.classList.add('hidden');
+
+  if (!result.success || result.data.entries.length === 0) {
+    empty.classList.remove('hidden');
+    return;
+  }
+
+  list.innerHTML = result.data.entries.map((entry, i) => `
+    <div class="leaderboard-item">
+      <div class="rank">${i + 1}</div>
+      <div class="user-info">
+        <div class="wallet-address">${formatAddress(entry.address)}</div>
+        <div class="tip-count">${entry.tipCount.toLocaleString()} tips received</div>
+      </div>
+      <div class="amount">${formatUSD(entry.totalUSD)}</div>
+    </div>
+  `).join('');
+}
+
+/**
+ * Load Live Tips
+ */
+async function loadLiveTips(isRefresh = false) {
+  const loading = document.getElementById('live-loading');
+  const empty = document.getElementById('live-empty');
+  const list = document.getElementById('live-list');
+
+  if (!isRefresh) {
+    loading.classList.remove('hidden');
+    empty.classList.add('hidden');
+    list.innerHTML = '';
+  }
+
+  const result = await GroveAPI.getRecentTips(10);
+
+  loading.classList.add('hidden');
+
+  if (!result.success || result.data.entries.length === 0) {
+    if (!isRefresh) {
+      empty.classList.remove('hidden');
+    }
+    return;
+  }
+
+  const newEntries = result.data.entries.filter(e => !seenTxHashes.has(e.txHash));
+
+  // Update seen hashes
+  result.data.entries.forEach(e => seenTxHashes.add(e.txHash));
+
+  list.innerHTML = result.data.entries.map((entry) => {
+    const isNew = newEntries.some(n => n.txHash === entry.txHash) && isRefresh;
+    return `
+      <div class="live-tip-item${isNew ? ' new' : ''}">
+        <div class="tip-time">${formatTimeAgo(entry.confirmedAt)}</div>
+        <div class="tip-recipient">${formatAddress(entry.address)}</div>
+        <div class="tip-amount">${formatUSD(entry.amountUSD)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * Start Live Polling
+ */
+function startLivePolling() {
+  stopLivePolling();
+  livePollingInterval = setInterval(() => {
+    if (currentLeaderboardView === 'live') {
+      loadLiveTips(true);
+    }
+  }, 10000); // Poll every 10 seconds
+}
+
+/**
+ * Stop Live Polling
+ */
+function stopLivePolling() {
+  if (livePollingInterval) {
+    clearInterval(livePollingInterval);
+    livePollingInterval = null;
+  }
+}
+
+/**
+ * Format Address (shorten)
+ */
+function formatAddress(address) {
+  if (!address) return 'Unknown';
+  if (address.length <= 12) return address;
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+/**
+ * Format USD Amount
+ */
+function formatUSD(amount) {
+  if (amount >= 1000) {
+    return '$' + amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+  return '$' + amount.toFixed(2);
+}
+
+/**
+ * Format Time Ago
+ */
+function formatTimeAgo(timestamp) {
+  if (!timestamp) return '';
+  const now = new Date();
+  const then = new Date(timestamp);
+  const seconds = Math.floor((now - then) / 1000);
+
+  if (seconds < 60) return 'just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return `${Math.floor(seconds / 86400)}d ago`;
 }
 
 /**
