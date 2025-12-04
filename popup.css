@@ -447,6 +447,7 @@ body.developer-mode .testnet-option {
   padding: 0 12px;
   margin-bottom: 12px;
   position: relative;
+  overflow: hidden;
 }
 
 .input-group:focus-within {
@@ -480,20 +481,37 @@ body.developer-mode .testnet-option {
   font-weight: 600;
 }
 
-.tip-edit-form input, .code-input {
+.tip-edit-form input,
+.input-group input[type="number"] {
   width: 100%;
   background: none;
   border: none;
   padding: 12px;
   color: var(--color-text-primary);
+  font-family: var(--font-sans);
   font-size: 16px;
   font-weight: 600;
   outline: none;
+  -moz-appearance: textfield;
+}
+
+/* Hide number input spinners */
+.input-group input[type="number"]::-webkit-outer-spin-button,
+.input-group input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .code-input {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 12px;
+  color: var(--color-text-primary);
   font-family: 'Monaco', monospace;
   font-size: 13px;
+  font-weight: 600;
+  outline: none;
 }
 
 .form-actions {
@@ -503,40 +521,54 @@ body.developer-mode .testnet-option {
 
 .btn-sm {
   flex: 1;
-  padding: 8px;
-  border-radius: var(--radius-md);
-  border: none;
+  padding: 10px 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
 }
 
 .btn-primary {
   background-color: var(--color-primary);
+  border-color: var(--color-primary);
   color: white;
 }
 
 .btn-primary:hover {
   background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(56, 159, 88, 0.3);
 }
 
 .btn-secondary {
   background-color: var(--color-surface-hover);
+  border-color: var(--color-border);
   color: var(--color-text-primary);
 }
 
 .btn-secondary:hover {
-  opacity: 0.9;
+  background-color: var(--color-surface);
+  border-color: var(--color-text-tertiary);
+  transform: translateY(-1px);
 }
 
 .btn-danger {
   background-color: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
   color: var(--color-danger);
 }
 
 .btn-danger:hover {
   background-color: rgba(239, 68, 68, 0.2);
+  border-color: var(--color-danger);
+  transform: translateY(-1px);
+}
+
+.btn-sm:active {
+  transform: translateY(0);
 }
 
 .btn-danger.confirming {
@@ -937,14 +969,15 @@ body.developer-mode .testnet-option {
 .btn-text {
   background: none;
   border: none;
-  color: var(--color-primary);
+  color: var(--color-text-secondary);
   font-weight: 600;
   cursor: pointer;
   font-size: 13px;
+  transition: color 0.2s;
 }
 
 .btn-text:hover {
-  text-decoration: underline;
+  color: var(--color-primary);
 }
 
 .jwt-edit-container {
@@ -1382,4 +1415,152 @@ body.developer-mode .testnet-option {
 
 .leaderboard-view.active {
   display: block;
+}
+
+/* ================================
+   Settings Drill-Down Navigation
+   ================================ */
+.settings-view {
+  display: none;
+}
+
+.settings-view.active {
+  display: block;
+  animation: settings-slide-in 0.2s ease-out;
+}
+
+@keyframes settings-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.settings-header .page-title {
+  margin: 0;
+}
+
+.settings-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--color-surface);
+  border: none;
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.settings-back:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+/* Settings Menu Items */
+.settings-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.settings-menu-item:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.settings-menu-item:active {
+  transform: translateY(0);
+}
+
+.settings-menu-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(56, 159, 88, 0.1);
+  border-radius: 10px;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.settings-menu-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-menu-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.settings-menu-desc {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.settings-menu-arrow {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.settings-menu-item:hover .settings-menu-arrow {
+  color: var(--color-primary);
+  transform: translateX(2px);
+}
+
+/* Version Info */
+.version-info {
+  text-align: center;
+  padding: 16px;
+  margin-top: 8px;
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+}
+
+/* Settings Tip Value Display */
+.settings-tip-value {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  margin-right: 8px;
+}
+
+.settings-tip-value .currency-symbol,
+.settings-tip-value .amount-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-primary);
 }

@@ -22,7 +22,7 @@ const onboardingState = document.getElementById('onboardingState');
 const connectedState = document.getElementById('connectedState');
 const setupTokenBtn = document.getElementById('setupTokenBtn');
 
-// Tip amount
+// Tip amount (Home)
 const tipAmountDisplay = document.getElementById('tipAmountDisplay');
 const tipAmountEdit = document.getElementById('tipAmountEdit');
 const tipAmountInput = document.getElementById('tipAmountInput');
@@ -30,6 +30,15 @@ const saveTipAmount = document.getElementById('saveTipAmount');
 const cancelTipAmount = document.getElementById('cancelTipAmount');
 const editTipBtn = document.getElementById('editTipAmount');
 const confirmTipToggle = document.getElementById('confirmTipToggle');
+
+// Tip amount (Settings)
+const settingsTipAmountDisplay = document.getElementById('settingsTipAmountDisplay');
+const settingsTipAmountInput = document.getElementById('settingsTipAmountInput');
+const settingsSaveTipAmount = document.getElementById('settingsSaveTipAmount');
+const settingsEditTipBtn = document.getElementById('settingsEditTipBtn');
+const settingsCancelTipAmount = document.getElementById('settingsCancelTipAmount');
+const settingsTipRow = document.getElementById('settingsTipRow');
+const settingsTipEditRow = document.getElementById('settingsTipEditRow');
 
 // Balance
 const balanceAmount = document.getElementById('balanceAmount');
@@ -67,11 +76,17 @@ const STORAGE_KEYS = {
   JWT: 'GROVE_API_JWT',
   TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
   CONFIRM_TIP: 'GROVE_CONFIRM_TIP',
+  AUTO_REPLY: 'GROVE_AUTO_REPLY',
   ENVIRONMENT: 'groveEnvironment',
   CHAIN: 'groveChain',
   ENDPOINT: 'groveEndpoint',
   LAST_BALANCES: 'GROVE_LAST_BALANCES',
 };
+
+// X Login Elements
+const xLoginStatus = document.getElementById('xLoginStatus');
+const xLoginBtn = document.getElementById('xLoginBtn');
+const autoReplyToggle = document.getElementById('autoReplyToggle');
 
 // Defaults
 const DEFAULT_TIP_AMOUNT = 0.10;
@@ -123,14 +138,28 @@ async function init() {
   await loadJWT();
   await loadTipAmount();
   await loadConfirmTip();
+  await loadAutoReply();
+  await loadXLoginStatus();
   await loadEnvironment();
   await loadChain();
   await loadEndpoint();
   await prevKeysUI.updateCount();
+  loadExtensionVersion();
   setupEventListeners();
 
   // Fetch balance after everything is loaded
   await fetchBalance();
+}
+
+/**
+ * Load extension version from manifest
+ */
+function loadExtensionVersion() {
+  const versionElement = document.getElementById('extensionVersion');
+  if (versionElement && chrome.runtime.getManifest) {
+    const manifest = chrome.runtime.getManifest();
+    versionElement.textContent = manifest.version;
+  }
 }
 
 /**
@@ -144,6 +173,9 @@ function setupEventListeners() {
 
   // Leaderboard switcher
   setupLeaderboardSwitcher();
+
+  // Settings drill-down navigation
+  setupSettingsDrillDown();
 
   // Chain Selector
   chainSelectorBtn.addEventListener('click', (e) => {
@@ -161,11 +193,27 @@ function setupEventListeners() {
     }
   });
 
-  // Tip Amount
+  // Tip Amount (Home)
   editTipBtn.addEventListener('click', showTipEdit);
   cancelTipAmount.addEventListener('click', hideTipEdit);
   saveTipAmount.addEventListener('click', saveTip);
   confirmTipToggle.addEventListener('change', handleConfirmTipToggle);
+
+  // Tip Amount (Settings) - synced with Home
+  if (settingsEditTipBtn) {
+    settingsEditTipBtn.addEventListener('click', showSettingsTipEdit);
+  }
+  if (settingsCancelTipAmount) {
+    settingsCancelTipAmount.addEventListener('click', hideSettingsTipEdit);
+  }
+  if (settingsSaveTipAmount) {
+    settingsSaveTipAmount.addEventListener('click', saveTipFromSettings);
+  }
+  if (settingsTipAmountInput) {
+    settingsTipAmountInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') saveTipFromSettings();
+    });
+  }
 
   // JWT
   setupTokenBtn.addEventListener('click', () => {
@@ -226,6 +274,16 @@ function setupEventListeners() {
   endpointOptions.forEach(option => {
     option.addEventListener('change', handleEndpointChange);
   });
+
+  // X Login
+  if (xLoginBtn) {
+    xLoginBtn.addEventListener('click', handleXLogin);
+  }
+
+  // Auto Reply Toggle
+  if (autoReplyToggle) {
+    autoReplyToggle.addEventListener('change', handleAutoReplyToggle);
+  }
 
   // Quick Actions (Placeholders)
   document.querySelectorAll('.action-btn').forEach(btn => {
@@ -433,12 +491,24 @@ async function loadTipAmount() {
 
 function updateTipUI(amount) {
   const formatted = parseFloat(amount).toFixed(2);
-  // Update the amount value span inside the display div
+
+  // Update Home display
   const amountSpan = tipAmountDisplay.querySelector('.amount-value');
   if (amountSpan) {
     amountSpan.textContent = formatted;
   }
   tipAmountInput.value = formatted;
+
+  // Update Settings display (sync)
+  if (settingsTipAmountDisplay) {
+    const settingsAmountSpan = settingsTipAmountDisplay.querySelector('.amount-value');
+    if (settingsAmountSpan) {
+      settingsAmountSpan.textContent = formatted;
+    }
+  }
+  if (settingsTipAmountInput) {
+    settingsTipAmountInput.value = formatted;
+  }
 }
 
 function showTipEdit() {
@@ -471,6 +541,29 @@ async function saveTip() {
   }
 }
 
+function showSettingsTipEdit() {
+  if (settingsTipRow) settingsTipRow.classList.add('hidden');
+  if (settingsTipEditRow) settingsTipEditRow.classList.remove('hidden');
+  if (settingsTipAmountInput) settingsTipAmountInput.focus();
+}
+
+function hideSettingsTipEdit() {
+  if (settingsTipRow) settingsTipRow.classList.remove('hidden');
+  if (settingsTipEditRow) settingsTipEditRow.classList.add('hidden');
+}
+
+async function saveTipFromSettings() {
+  const val = parseFloat(settingsTipAmountInput.value);
+  if (val > 0) {
+    await chrome.storage.local.set({ [STORAGE_KEYS.TIP_AMOUNT]: val });
+    updateTipUI(val);
+    hideSettingsTipEdit();
+    showToast('Default tip updated');
+  } else {
+    showToast('Invalid amount');
+  }
+}
+
 /**
  * Confirm tip toggle
  */
@@ -483,6 +576,115 @@ async function loadConfirmTip() {
 async function handleConfirmTipToggle() {
   const enabled = confirmTipToggle.checked;
   await chrome.storage.local.set({ [STORAGE_KEYS.CONFIRM_TIP]: enabled });
+}
+
+/**
+ * Auto Reply Toggle
+ */
+async function loadAutoReply() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.AUTO_REPLY]);
+  const enabled = result[STORAGE_KEYS.AUTO_REPLY] || false;
+  if (autoReplyToggle) {
+    autoReplyToggle.checked = enabled;
+  }
+}
+
+async function handleAutoReplyToggle() {
+  const enabled = autoReplyToggle.checked;
+
+  // Check if user is logged in to X when enabling
+  if (enabled) {
+    const isLoggedIn = await XAuth.isLoggedIn();
+    if (!isLoggedIn) {
+      autoReplyToggle.checked = false;
+      showToast('Connect X account first');
+      return;
+    }
+  }
+
+  await chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY]: enabled });
+  showToast(enabled ? 'Auto-reply enabled' : 'Auto-reply disabled');
+}
+
+/**
+ * X (Twitter) Login
+ */
+async function loadXLoginStatus() {
+  try {
+    const isLoggedIn = await XAuth.isLoggedIn();
+
+    if (isLoggedIn) {
+      const userInfo = await XAuth.getStoredUserInfo();
+      if (userInfo && xLoginStatus) {
+        const isRealUsername = userInfo.username && userInfo.username !== 'Connected';
+        xLoginStatus.textContent = isRealUsername ? `@${userInfo.username}` : 'Connected';
+        xLoginStatus.style.color = 'var(--color-primary)';
+      }
+      if (xLoginBtn) {
+        xLoginBtn.textContent = 'Disconnect';
+      }
+    } else {
+      if (xLoginStatus) {
+        xLoginStatus.textContent = 'Not connected';
+        xLoginStatus.style.color = 'var(--color-text-secondary)';
+      }
+      if (xLoginBtn) {
+        xLoginBtn.textContent = 'Connect';
+      }
+      // Disable auto-reply if not logged in
+      if (autoReplyToggle && autoReplyToggle.checked) {
+        autoReplyToggle.checked = false;
+        await chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY]: false });
+      }
+    }
+  } catch (error) {
+    console.error('[Grove Extension] X login status check failed:', error);
+  }
+}
+
+async function handleXLogin() {
+  const isLoggedIn = await XAuth.isLoggedIn();
+
+  if (isLoggedIn) {
+    // Logout
+    await XAuth.logout();
+    await loadXLoginStatus();
+    // Disable auto-reply when disconnecting
+    if (autoReplyToggle) {
+      autoReplyToggle.checked = false;
+      await chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY]: false });
+    }
+    showToast('Disconnected from X');
+  } else {
+    // Login
+    try {
+      xLoginBtn.textContent = 'Connecting...';
+      xLoginBtn.disabled = true;
+
+      const userInfo = await XAuth.login();
+
+      const isRealUsername = userInfo.username && userInfo.username !== 'Connected';
+      const displayName = isRealUsername ? `@${userInfo.username}` : 'Connected';
+
+      if (xLoginStatus) {
+        xLoginStatus.textContent = displayName;
+        xLoginStatus.style.color = 'var(--color-primary)';
+      }
+      if (xLoginBtn) {
+        xLoginBtn.textContent = 'Disconnect';
+        xLoginBtn.disabled = false;
+      }
+
+      showToast(isRealUsername ? `Connected as @${userInfo.username}` : 'Connected to X');
+    } catch (error) {
+      console.error('[Grove Extension] X login failed:', error);
+      if (xLoginBtn) {
+        xLoginBtn.textContent = 'Connect';
+        xLoginBtn.disabled = false;
+      }
+      showToast('Login failed: ' + error.message);
+    }
+  }
 }
 
 /**
@@ -710,6 +912,47 @@ function updateTopUpLink(chain) {
   const config = NETWORKS[chain] || NETWORKS[DEFAULT_CHAIN];
   const isTestnet = (config.type || '').toLowerCase() === 'testnet';
   topUpBtn.href = isTestnet ? TOP_UP_URLS.testnet : TOP_UP_URLS.mainnet;
+}
+
+/**
+ * Setup Settings Drill-Down Navigation
+ */
+function setupSettingsDrillDown() {
+  const menuItems = document.querySelectorAll('.settings-menu-item');
+  const backBtns = document.querySelectorAll('.settings-back');
+  const settingsViews = document.querySelectorAll('.settings-view');
+
+  // Handle menu item clicks
+  menuItems.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetView = btn.dataset.drill;
+
+      // Hide all views
+      settingsViews.forEach(view => view.classList.remove('active'));
+
+      // Show target view
+      const targetElement = document.getElementById(`settings-${targetView}`);
+      if (targetElement) {
+        targetElement.classList.add('active');
+      }
+    });
+  });
+
+  // Handle back button clicks
+  backBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetView = btn.dataset.back;
+
+      // Hide all views
+      settingsViews.forEach(view => view.classList.remove('active'));
+
+      // Show target view (main menu)
+      const targetElement = document.getElementById(`settings-${targetView}`);
+      if (targetElement) {
+        targetElement.classList.add('active');
+      }
+    });
+  });
 }
 
 /**
