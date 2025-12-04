@@ -33,53 +33,12 @@
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://www.reddit.com/*", "https://reddit.com/*"],
-      "js": [
-        "src/parsers/address.js",
-        "src/adapters/base.js",
-        "src/adapters/reddit.js",
-        "src/ui/constants.js",
-        "src/ui/spinner.js",
-        "src/ui/popover.js",
-        "src/ui/button.js",
-        "src/utils/api.js",
-        "src/content/content.js"
-      ],
-      "css": ["src/ui/animate.min.css", "src/ui/styles.css"],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": [
-        "https://www.youtube.com/*",
-        "https://youtube.com/*",
-        "https://youtu.be/*"
-      ],
-      "js": [
-        "src/parsers/address.js",
-        "src/adapters/base.js",
-        "src/adapters/youtube.js",
-        "src/ui/constants.js",
-        "src/ui/spinner.js",
-        "src/ui/popover.js",
-        "src/ui/button.js",
-        "src/utils/api.js",
-        "src/content/content.js"
-      ],
-      "css": ["src/ui/animate.min.css", "src/ui/styles.css"],
-      "run_at": "document_idle"
-    },
-    {
       "matches": ["https://*/*", "http://*/*"],
       "exclude_matches": [
         "https://twitter.com/*",
         "https://www.twitter.com/*",
         "https://x.com/*",
-        "https://www.x.com/*",
-        "https://reddit.com/*",
-        "https://www.reddit.com/*",
-        "https://youtube.com/*",
-        "https://www.youtube.com/*",
-        "https://youtu.be/*"
+        "https://www.x.com/*"
       ],
       "js": [
         "src/parsers/address.js",

@@ -320,6 +320,16 @@ function setupEventListeners() {
   document.querySelectorAll('.action-btn').forEach(btn => {
     btn.addEventListener('click', () => showToast('Coming Soon'));
   });
+
+  // Listen for storage changes (e.g., when webapp injects JWT via external messaging)
+  chrome.storage.onChanged.addListener(async (changes, areaName) => {
+    if (areaName === 'local' && changes[STORAGE_KEYS.JWT]) {
+      console.log('[Grove Extension] JWT changed in storage, refreshing...');
+      const newJwt = changes[STORAGE_KEYS.JWT].newValue;
+      updateAuthState(newJwt);
+      await fetchBalance();
+    }
+  });
 }
 
 /**
@@ -935,9 +945,11 @@ async function handleDevModeToggle(e) {
     const currentChain = chainName.textContent;
     if (currentChain === 'Base') {
       await handleChainSelection({ currentTarget: { dataset: { chain: 'base-sepolia' } } }, true);
-    } else if (currentChain === 'Solana') {
-      await handleChainSelection({ currentTarget: { dataset: { chain: 'solana-devnet' } } }, true);
     }
+    // Solana chain selection commented out - Base/Base Sepolia only for now
+    // else if (currentChain === 'Solana') {
+    //   await handleChainSelection({ currentTarget: { dataset: { chain: 'solana-devnet' } } }, true);
+    // }
   } else {
     // Disable developer mode
     document.body.classList.remove('developer-mode');
@@ -955,9 +967,11 @@ async function handleDevModeToggle(e) {
     const currentChain = chainName.textContent;
     if (currentChain === 'Base Sepolia') {
       await handleChainSelection({ currentTarget: { dataset: { chain: 'base' } } }, true);
-    } else if (currentChain === 'Solana Devnet') {
-      await handleChainSelection({ currentTarget: { dataset: { chain: 'solana' } } }, true);
     }
+    // Solana chain selection commented out - Base/Base Sepolia only for now
+    // else if (currentChain === 'Solana Devnet') {
+    //   await handleChainSelection({ currentTarget: { dataset: { chain: 'solana' } } }, true);
+    // }
   }
 }
 
