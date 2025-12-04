@@ -1596,7 +1596,7 @@ body.developer-mode .testnet-option {
 
 .switcher-btn {
   flex: 1;
-  padding: 8px 16px;
+  padding: 8px 12px;
   background: transparent;
   border: none;
   color: var(--color-text-secondary);
@@ -1605,6 +1605,7 @@ body.developer-mode .testnet-option {
   cursor: pointer;
   border-radius: 6px;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .switcher-btn.active {
