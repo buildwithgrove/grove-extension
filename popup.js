@@ -78,6 +78,7 @@ const STORAGE_KEYS = {
   CONFIRM_TIP: 'GROVE_CONFIRM_TIP',
   AUTO_REPLY: 'GROVE_AUTO_REPLY',
   AUTO_REPLY_MESSAGE: 'GROVE_AUTO_REPLY_MESSAGE',
+  LIKE_ON_TIP: 'GROVE_LIKE_ON_TIP',
   ENVIRONMENT: 'groveEnvironment',
   CHAIN: 'groveChain',
   ENDPOINT: 'groveEndpoint',
@@ -94,6 +95,9 @@ Find out more → {grove_link}`;
 // X Login Elements
 const xLoginStatus = document.getElementById('xLoginStatus');
 const xLoginBtn = document.getElementById('xLoginBtn');
+const xPreConnectInfo = document.getElementById('xPreConnectInfo');
+const xPostConnectOptions = document.getElementById('xPostConnectOptions');
+const likeOnTipToggle = document.getElementById('likeOnTipToggle');
 const autoReplyToggle = document.getElementById('autoReplyToggle');
 const autoReplyMessageContainer = document.getElementById('autoReplyMessageContainer');
 const autoReplyMessageInput = document.getElementById('autoReplyMessageInput');
@@ -150,6 +154,7 @@ async function init() {
   await loadJWT();
   await loadTipAmount();
   await loadConfirmTip();
+  await loadLikeOnTip();
   await loadAutoReply();
   await loadAutoReplyMessage();
   await loadXLoginStatus();
@@ -291,6 +296,11 @@ function setupEventListeners() {
   // X Login
   if (xLoginBtn) {
     xLoginBtn.addEventListener('click', handleXLogin);
+  }
+
+  // Like on Tip Toggle
+  if (likeOnTipToggle) {
+    likeOnTipToggle.addEventListener('change', handleLikeOnTipToggle);
   }
 
   // Auto Reply Toggle
@@ -632,6 +642,24 @@ async function handleAutoReplyToggle() {
 }
 
 /**
+ * Like on Tip Toggle
+ */
+async function loadLikeOnTip() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.LIKE_ON_TIP]);
+  // Default to true (ON by default)
+  const enabled = result[STORAGE_KEYS.LIKE_ON_TIP] !== false;
+  if (likeOnTipToggle) {
+    likeOnTipToggle.checked = enabled;
+  }
+}
+
+async function handleLikeOnTipToggle() {
+  const enabled = likeOnTipToggle.checked;
+  await chrome.storage.local.set({ [STORAGE_KEYS.LIKE_ON_TIP]: enabled });
+  showToast(enabled ? 'Like on tip enabled' : 'Like on tip disabled');
+}
+
+/**
  * Update visibility of auto-reply message container
  */
 function updateAutoReplyMessageVisibility(enabled) {
@@ -703,6 +731,13 @@ async function loadXLoginStatus() {
       if (xLoginBtn) {
         xLoginBtn.textContent = 'Disconnect';
       }
+      // Show post-connect options, hide pre-connect info
+      if (xPreConnectInfo) {
+        xPreConnectInfo.classList.add('hidden');
+      }
+      if (xPostConnectOptions) {
+        xPostConnectOptions.classList.remove('hidden');
+      }
     } else {
       if (xLoginStatus) {
         xLoginStatus.textContent = 'Not connected';
@@ -710,6 +745,13 @@ async function loadXLoginStatus() {
       }
       if (xLoginBtn) {
         xLoginBtn.textContent = 'Connect';
+      }
+      // Show pre-connect info, hide post-connect options
+      if (xPreConnectInfo) {
+        xPreConnectInfo.classList.remove('hidden');
+      }
+      if (xPostConnectOptions) {
+        xPostConnectOptions.classList.add('hidden');
       }
       // Disable auto-reply if not logged in
       if (autoReplyToggle && autoReplyToggle.checked) {
@@ -753,6 +795,13 @@ async function handleXLogin() {
       if (xLoginBtn) {
         xLoginBtn.textContent = 'Disconnect';
         xLoginBtn.disabled = false;
+      }
+      // Show post-connect options, hide pre-connect info
+      if (xPreConnectInfo) {
+        xPreConnectInfo.classList.add('hidden');
+      }
+      if (xPostConnectOptions) {
+        xPostConnectOptions.classList.remove('hidden');
       }
 
       showToast(isRealUsername ? `Connected as @${userInfo.username}` : 'Connected to X');

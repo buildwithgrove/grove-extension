@@ -6,7 +6,7 @@
 class XAuth {
   static CLIENT_ID = 'UHQwQXlCRFZHY1F1VmZ3RmVXU0Y6MTpjaQ';
   static REDIRECT_URI = 'https://cailijeophmjabfnilbhajbegndlhelf.chromiumapp.org/callback';
-  static SCOPES = ['tweet.read', 'tweet.write', 'users.read', 'offline.access'];
+  static SCOPES = ['tweet.read', 'tweet.write', 'users.read', 'like.write', 'offline.access'];
 
   static STORAGE_KEYS = {
     ACCESS_TOKEN: 'GROVE_X_ACCESS_TOKEN',
@@ -333,6 +333,43 @@ class XAuth {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.detail || error.title || 'Failed to post reply');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Like a tweet
+   * @param {string} tweetId - The ID of the tweet to like
+   * @returns {Promise<Object>} - The like result
+   */
+  static async likeTweet(tweetId) {
+    const accessToken = await this.getAccessToken();
+
+    if (!accessToken) {
+      throw new Error('Not logged in to X');
+    }
+
+    // Get user info to get the user ID
+    const userInfo = await this.getStoredUserInfo();
+    if (!userInfo || !userInfo.id || userInfo.id === 'unknown') {
+      throw new Error('User ID not available');
+    }
+
+    const response = await fetch(`https://api.twitter.com/2/users/${userInfo.id}/likes`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        tweet_id: tweetId,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || error.title || 'Failed to like tweet');
     }
 
     return response.json();

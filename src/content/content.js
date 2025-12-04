@@ -1123,6 +1123,7 @@ Find out more → {grove_link}`;
     let jwt = '';
     let autoReplyEnabled = false;
     let autoReplyMessage = DEFAULT_AUTO_REPLY_MESSAGE;
+    let likeOnTipEnabled = true; // Default to true
     let chainName = 'Base';
     let explorerBaseUrl = 'https://basescan.org/tx/';
     let explorerSuffix = '';
@@ -1134,11 +1135,13 @@ Find out more → {grove_link}`;
         return;
       }
 
-      const result = await chrome.storage.local.get(['GROVE_API_JWT', 'GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'groveChain']);
+      const result = await chrome.storage.local.get(['GROVE_API_JWT', 'GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'GROVE_LIKE_ON_TIP', 'groveChain']);
       jwt = result.GROVE_API_JWT || '';
       autoReplyEnabled = result.GROVE_AUTO_REPLY || false;
       autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
-      console.log('[Grove Extension] Storage loaded:', { hasJwt: !!jwt, autoReply: autoReplyEnabled, chain: result.groveChain });
+      // Like on tip defaults to true
+      likeOnTipEnabled = result.GROVE_LIKE_ON_TIP !== false;
+      console.log('[Grove Extension] Storage loaded:', { hasJwt: !!jwt, autoReply: autoReplyEnabled, likeOnTip: likeOnTipEnabled, chain: result.groveChain });
 
       // Get friendly chain name and explorer URL
       const chain = result.groveChain || 'base';
@@ -1185,34 +1188,48 @@ Find out more → {grove_link}`;
     if (response.success) {
       buttonWrapper.setSuccess();
 
-      // Post auto-reply if enabled
-      if (autoReplyEnabled && typeof XAuth !== 'undefined') {
+      // Like and/or reply if X features are enabled
+      if ((likeOnTipEnabled || autoReplyEnabled) && typeof XAuth !== 'undefined') {
         try {
           const tweetId = XAuth.extractTweetId(tweetUrl);
           if (tweetId) {
             const isLoggedIn = await XAuth.isLoggedIn();
             if (isLoggedIn) {
-              const txHash = response.data?.tx_hash || '';
-              const txLink = `${explorerBaseUrl}${txHash}${explorerSuffix}`;
+              // Like the tweet if enabled
+              if (likeOnTipEnabled) {
+                try {
+                  await XAuth.likeTweet(tweetId);
+                  console.log("[Grove Extension] Tweet liked successfully");
+                } catch (likeError) {
+                  // Don't fail if like fails (might already be liked)
+                  console.error("[Grove Extension] Like failed:", likeError);
+                }
+              }
 
-              // Build reply text from template
-              const replyText = buildAutoReplyMessage(autoReplyMessage, {
-                username: username,
-                amount: `$${tipAmount.toFixed(2)}`,
-                chain: chainName,
-                tx_link: txLink,
-                grove_link: 'grove.city'
-              });
+              // Post auto-reply if enabled
+              if (autoReplyEnabled) {
+                const txHash = response.data?.tx_hash || '';
+                const txLink = `${explorerBaseUrl}${txHash}${explorerSuffix}`;
 
-              await XAuth.postReply(tweetId, replyText);
-              console.log("[Grove Extension] Auto-reply posted successfully");
+                // Build reply text from template
+                const replyText = buildAutoReplyMessage(autoReplyMessage, {
+                  username: username,
+                  amount: `$${tipAmount.toFixed(2)}`,
+                  chain: chainName,
+                  tx_link: txLink,
+                  grove_link: 'grove.city'
+                });
+
+                await XAuth.postReply(tweetId, replyText);
+                console.log("[Grove Extension] Auto-reply posted successfully");
+              }
             } else {
-              console.log("[Grove Extension] Auto-reply skipped - not logged in to X");
+              console.log("[Grove Extension] X features skipped - not logged in to X");
             }
           }
-        } catch (replyError) {
-          // Don't fail the whole tip if reply fails
-          console.error("[Grove Extension] Auto-reply failed:", replyError);
+        } catch (error) {
+          // Don't fail the whole tip if X features fail
+          console.error("[Grove Extension] X features failed:", error);
         }
       }
     } else {
