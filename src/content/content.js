@@ -1049,25 +1049,40 @@
     let jwt = '';
     let autoReplyEnabled = false;
     let chainName = 'Base';
+    let explorerBaseUrl = 'https://basescan.org/tx/';
+    let explorerSuffix = '';
 
     try {
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        const result = await chrome.storage.local.get(['GROVE_API_JWT', 'GROVE_AUTO_REPLY', 'groveChain']);
-        jwt = result.GROVE_API_JWT || '';
-        autoReplyEnabled = result.GROVE_AUTO_REPLY || false;
-        // Get friendly chain name
-        const chain = result.groveChain || 'base';
-        const chainNames = {
-          'base': 'Base',
-          'base-sepolia': 'Base Sepolia',
-          'solana': 'Solana',
-          'solana-devnet': 'Solana Devnet'
-        };
-        chainName = chainNames[chain] || 'Base';
+      if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+        console.error("[Grove Extension] Extension context invalid. Please refresh the page.");
+        buttonWrapper.setError();
+        return;
+      }
+
+      const result = await chrome.storage.local.get(['GROVE_API_JWT', 'GROVE_AUTO_REPLY', 'groveChain']);
+      jwt = result.GROVE_API_JWT || '';
+      autoReplyEnabled = result.GROVE_AUTO_REPLY || false;
+      console.log('[Grove Extension] Storage loaded:', { hasJwt: !!jwt, autoReply: autoReplyEnabled, chain: result.groveChain });
+
+      // Get friendly chain name and explorer URL
+      const chain = result.groveChain || 'base';
+      const chainConfig = {
+        'base': { name: 'Base', explorer: 'https://basescan.org/tx/' },
+        'base-sepolia': { name: 'Base Sepolia', explorer: 'https://sepolia.basescan.org/tx/' },
+        'solana': { name: 'Solana', explorer: 'https://solscan.io/tx/' },
+        'solana-devnet': { name: 'Solana Devnet', explorer: 'https://solscan.io/tx/' }
+      };
+      const config = chainConfig[chain] || chainConfig['base'];
+      chainName = config.name;
+      explorerBaseUrl = config.explorer;
+      // Solana devnet needs cluster param
+      if (chain === 'solana-devnet') {
+        explorerBaseUrl = 'https://solscan.io/tx/';
+        explorerSuffix = '?cluster=devnet';
       }
 
       if (!jwt) {
-        console.error("[Grove Extension] No API key configured");
+        console.error("[Grove Extension] No API key configured. Try refreshing the page if you just reloaded the extension.");
         buttonWrapper.setError();
         return;
       }
@@ -1102,11 +1117,12 @@
             const isLoggedIn = await XAuth.isLoggedIn();
             if (isLoggedIn) {
               const txHash = response.data?.tx_hash || '';
-              const replyText = `Hey @${username}, I just sent you a $${tipAmount.toFixed(2)} tip over ${chainName} via @BuildWithGrove's tipping app.
+              const txLink = `${explorerBaseUrl}${txHash}${explorerSuffix}`;
+              const replyText = `Hey @${username}, loved this post! Just sent you a $${tipAmount.toFixed(2)} tip on ${chainName} via @BuildWithGrove.
 
-Tx: ${txHash}
+Tx: ${txLink}
 
-Find out more at grove.city`;
+Find out more → grove.city`;
               await XAuth.postReply(tweetId, replyText);
               console.log("[Grove Extension] Auto-reply posted successfully");
             } else {
