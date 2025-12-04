@@ -6,10 +6,21 @@
 (function () {
   "use strict";
 
-  // Signal to web pages that the extension is installed
-  window.dispatchEvent(new CustomEvent('grove-extension-ready', {
-    detail: { version: '1.0.2' }
-  }));
+  // Signal to web pages that the extension is installed (with key state)
+  function emitReadyEvent() {
+    chrome.storage.local.get(['GROVE_API_JWT'], (result) => {
+      const hasKey = !!(result.GROVE_API_JWT && result.GROVE_API_JWT.length > 0);
+      window.dispatchEvent(new CustomEvent('grove-extension-ready', {
+        detail: { version: '1.0.2', hasKey }
+      }));
+    });
+  }
+
+  // Emit immediately when content script loads
+  emitReadyEvent();
+
+  // Re-emit after delay to catch late-mounting React apps
+  setTimeout(emitReadyEvent, 500);
 
   // Configuration
   const ADVERTISING_MODE = true; // Set to true for more prominent button animation

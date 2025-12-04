@@ -17,6 +17,14 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
     return true;
   }
 
+  if (message.type === 'PING') {
+    chrome.storage.local.get(['GROVE_API_JWT'], (result) => {
+      const hasKey = !!(result.GROVE_API_JWT && result.GROVE_API_JWT.length > 0);
+      sendResponse({ hasKey });
+    });
+    return true;
+  }
+
   if (message.type === 'OPEN_POPUP') {
     const chromeVersion = parseInt(navigator.userAgent.match(/Chrome\/(\d+)/)?.[1] || '0');
 
