@@ -1296,6 +1296,10 @@ async function handleChainSelection(e, silent = false) {
 
   // Reload balance
   fetchBalance();
+
+  // Reload leaderboard data if on leaderboard tab
+  seenTxHashes.clear(); // Reset seen tips for new chain
+  refreshLeaderboard();
 }
 
 function updateTopUpLink(chain) {
@@ -1350,7 +1354,7 @@ function setupSettingsDrillDown() {
  * Leaderboard State
  */
 let currentPeriod = 'week';
-let currentLeaderboardView = 'tippers';
+let currentLeaderboardView = 'live';
 let livePollingInterval = null;
 let seenTxHashes = new Set();
 
@@ -1536,6 +1540,19 @@ function stopLivePolling() {
   if (livePollingInterval) {
     clearInterval(livePollingInterval);
     livePollingInterval = null;
+  }
+}
+
+/**
+ * Refresh current leaderboard view
+ */
+function refreshLeaderboard() {
+  if (currentLeaderboardView === 'live') {
+    loadLiveTips();
+  } else if (currentLeaderboardView === 'tippers') {
+    loadTopTippers();
+  } else if (currentLeaderboardView === 'tippees') {
+    loadTopTippees();
   }
 }
 

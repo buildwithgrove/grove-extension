@@ -272,13 +272,25 @@
 
       <!-- Switcher -->
       <div class="leaderboard-switcher">
-        <button class="switcher-btn active" data-view="tippers">Top Tippers</button>
+        <button class="switcher-btn active" data-view="live">Live</button>
+        <button class="switcher-btn" data-view="tippers">Top Tippers</button>
         <button class="switcher-btn" data-view="tippees">Top Earners</button>
-        <button class="switcher-btn" data-view="live">Live</button>
+      </div>
+
+      <!-- Live Tips View -->
+      <div class="leaderboard-view active" id="live-view">
+        <div class="leaderboard-loading" id="live-loading">
+          <div class="leaderboard-spinner"></div>
+        </div>
+        <div class="leaderboard-empty hidden" id="live-empty">
+          <div class="empty-icon">⚡</div>
+          <p>No recent tips</p>
+        </div>
+        <div class="live-tips-list" id="live-list"></div>
       </div>
 
       <!-- Top Tippers View -->
-      <div class="leaderboard-view active" id="tippers-view">
+      <div class="leaderboard-view" id="tippers-view">
         <div class="leaderboard-loading" id="tippers-loading">
           <div class="leaderboard-spinner"></div>
         </div>
@@ -299,18 +311,6 @@
           <p>No earners yet this period</p>
         </div>
         <div class="leaderboard-list" id="tippees-list"></div>
-      </div>
-
-      <!-- Live Tips View -->
-      <div class="leaderboard-view" id="live-view">
-        <div class="leaderboard-loading" id="live-loading">
-          <div class="leaderboard-spinner"></div>
-        </div>
-        <div class="leaderboard-empty hidden" id="live-empty">
-          <div class="empty-icon">⚡</div>
-          <p>No recent tips</p>
-        </div>
-        <div class="live-tips-list" id="live-list"></div>
       </div>
     </div>
 
