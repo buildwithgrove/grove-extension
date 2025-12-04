@@ -351,9 +351,25 @@ class XAuth {
     }
 
     // Get user info to get the user ID
-    const userInfo = await this.getStoredUserInfo();
+    let userInfo = await this.getStoredUserInfo();
+
+    // If user ID is missing, try to fetch it now
     if (!userInfo || !userInfo.id || userInfo.id === 'unknown') {
-      throw new Error('User ID not available');
+      try {
+        userInfo = await this.getUserInfo(accessToken);
+        // Update stored user info with the fetched data
+        const result = await chrome.storage.local.get([
+          this.STORAGE_KEYS.ACCESS_TOKEN,
+          this.STORAGE_KEYS.REFRESH_TOKEN,
+          this.STORAGE_KEYS.TOKEN_EXPIRY
+        ]);
+        await chrome.storage.local.set({
+          [this.STORAGE_KEYS.USER_INFO]: userInfo
+        });
+      } catch (fetchError) {
+        console.error('[Grove X Auth] Could not fetch user info for like:', fetchError);
+        throw new Error('User ID not available - try reconnecting X account');
+      }
     }
 
     const response = await fetch(`https://api.twitter.com/2/users/${userInfo.id}/likes`, {
