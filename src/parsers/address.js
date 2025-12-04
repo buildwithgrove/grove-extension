@@ -5,9 +5,9 @@
  */
 
 class AddressParser {
-  // ENS name pattern: alphanumeric + hyphens, ending in .eth
-  // Matches: vitalik.eth, foo-bar.eth, 123abc.eth
-  static ENS_PATTERN = /(?:^|\s|Tip:\s*)([a-zA-Z0-9][-a-zA-Z0-9]*\.eth)(?:\s|$|[,.\-])/i;
+  // ENS name pattern: alphanumeric + hyphens, supports subdomains, ending in .eth
+  // Matches: vitalik.eth, foo-bar.eth, jesse.base.eth, sub.name.eth
+  static ENS_PATTERN = /(?:^|\s|Tip:\s*)([a-zA-Z0-9][-a-zA-Z0-9]*(?:\.[a-zA-Z0-9][-a-zA-Z0-9]*)*\.eth)(?:\s|$|[,.\-])/i;
 
   // Solana address pattern: base58 encoded, 32-44 chars
   // Base58 excludes: 0, O, I, l
@@ -87,11 +87,12 @@ class AddressParser {
   }
 
   /**
-   * Resolve address from text - handles 0x addresses, ENS names, and Solana addresses
+   * Extract address from text - handles 0x addresses, ENS names, and Solana addresses
+   * Note: ENS names are passed directly to the backend API for resolution
    * @param {string} text - Text containing address or ENS
-   * @returns {Promise<{address: string|null, type: 'raw'|'ens'|'sol', original: string|null}>}
+   * @returns {{address: string|null, type: 'raw'|'ens'|'sol', original: string|null}}
    */
-  static async resolveAddress(text) {
+  static resolveAddress(text) {
     if (!text) return { address: null, type: null, original: null };
 
     // First try to extract a raw 0x address
@@ -100,11 +101,10 @@ class AddressParser {
       return { address: rawAddress, type: 'raw', original: rawAddress };
     }
 
-    // Try to extract and resolve ENS
+    // Try to extract ENS name (backend will resolve it)
     const ensName = this.extractENS(text);
     if (ensName) {
-      const resolved = await GroveAPI.resolveENS(ensName);
-      return { address: resolved, type: 'ens', original: ensName };
+      return { address: ensName, type: 'ens', original: ensName };
     }
 
     // Try to extract Solana address

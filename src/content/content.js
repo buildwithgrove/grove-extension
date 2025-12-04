@@ -16,7 +16,7 @@
   let navigationObserver = null;
   let tweetObserver = null;
   let tipPopover = null;
-  let resolvedAddress = null; // Stores resolved EVM address (from 0x or ENS)
+  let resolvedAddress = null; // Stores address info (0x address, ENS name, or Solana address)
 
   // Address cache: maps username -> { address, type, original, timestamp }
   // Cache entries expire after 10 minutes
@@ -180,19 +180,15 @@
           return;
         }
 
-        // Resolve address (handles both 0x and ENS)
-        const result = await AddressParser.resolveAddress(bio);
+        // Extract address (ENS names are resolved by the backend)
+        const result = AddressParser.resolveAddress(bio);
         if (!result.address) {
-          console.log("[Grove Extension] Could not resolve address - not showing button");
+          console.log("[Grove Extension] Could not extract address - not showing button");
           return;
         }
 
         resolvedAddress = result;
-        if (result.type === 'ens') {
-          console.log(`[Grove Extension] ✅ ENS RESOLVED: ${result.original} -> ${result.address}`);
-        } else {
-          console.log(`[Grove Extension] ✅ Address detected: ${result.address}`);
-        }
+        console.log(`[Grove Extension] ✅ Address detected: ${result.address} (type: ${result.type})`)
 
         // Cache the address by username for tweet tip buttons
         if (currentAdapter.getPlatformName() === 'twitter') {
@@ -300,8 +296,10 @@
     let jwt = '';
 
     try {
-      const result = await chrome.storage.local.get(['GROVE_API_JWT']);
-      jwt = result.GROVE_API_JWT || '';
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        const result = await chrome.storage.local.get(['GROVE_API_JWT']);
+        jwt = result.GROVE_API_JWT || '';
+      }
 
       if (!jwt) {
         console.error("[Grove Extension] No API key configured");
@@ -318,11 +316,15 @@
       return;
     }
 
-    // Get current page URL
-    const pageUrl = window.location.href;
+    // Determine tip destination: use ENS name directly if available, otherwise page URL
+    let tipDestination = window.location.href;
+    if (resolvedAddress && resolvedAddress.type === 'ens') {
+      tipDestination = resolvedAddress.address; // e.g., "vitalik.eth"
+      console.log(`[Grove Extension] Tipping to ENS name: ${tipDestination}`);
+    }
 
     // Send tip via API with JWT and amount
-    const response = await GroveAPI.sendTip(pageUrl, tipAmount, jwt);
+    const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt);
 
     // Handle response with animations
     if (response.success) {
@@ -397,16 +399,14 @@
       return;
     }
 
-    // Resolve address (handles both 0x and ENS)
-    const result = await AddressParser.resolveAddress(bio);
+    // Extract address (ENS names are resolved by the backend)
+    const result = AddressParser.resolveAddress(bio);
     if (!result.address) {
-      console.log("[Grove Extension] Could not resolve address in hover card");
+      console.log("[Grove Extension] Could not extract address in hover card");
       return;
     }
 
-    if (result.type === 'ens') {
-      console.log(`[Grove Extension] ENS resolved in hover card: ${result.original} -> ${result.address}`);
-    }
+    console.log(`[Grove Extension] Address found in hover card: ${result.address} (type: ${result.type})`)
 
     // Store for this hover card's tip button
     const hoverCardResolvedAddress = result;
@@ -752,13 +752,13 @@
       // Check if display name contains .eth or EVM address
       const hasAddress = AddressParser.hasAddresses(authorInfo.displayName);
       if (hasAddress) {
-        // Resolve the address
-        const addressResult = await AddressParser.resolveAddress(authorInfo.displayName);
+        // Extract the address (ENS names resolved by backend)
+        const addressResult = AddressParser.resolveAddress(authorInfo.displayName);
         if (addressResult.address) {
           hasTippableAddress = true;
           // Cache the positive result
           setCachedAddress(authorInfo.username, addressResult);
-          console.log(`[Grove Extension] Tweet: Found address for @${authorInfo.username}`);
+          console.log(`[Grove Extension] Tweet: Found address for @${authorInfo.username}: ${addressResult.address}`);
         }
       }
     }
@@ -1049,8 +1049,10 @@
     let jwt = '';
 
     try {
-      const result = await chrome.storage.local.get(['GROVE_API_JWT']);
-      jwt = result.GROVE_API_JWT || '';
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        const result = await chrome.storage.local.get(['GROVE_API_JWT']);
+        jwt = result.GROVE_API_JWT || '';
+      }
 
       if (!jwt) {
         console.error("[Grove Extension] No API key configured");
@@ -1063,8 +1065,19 @@
       return;
     }
 
-    // Use the tweet URL instead of current page URL
-    const response = await GroveAPI.sendTip(tweetUrl, tipAmount, jwt);
+    // Determine tip destination: check if user has cached ENS address
+    let tipDestination = tweetUrl;
+    const username = extractUsernameFromUrl(tweetUrl);
+    if (username) {
+      const cached = getCachedAddress(username);
+      if (cached && cached.type === 'ens' && cached.address) {
+        tipDestination = cached.address; // e.g., "vitalik.eth"
+        console.log(`[Grove Extension] Tipping to ENS name: ${tipDestination} (from @${username})`);
+      }
+    }
+
+    // Send tip via API
+    const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt);
 
     if (response.success) {
       buttonWrapper.setSuccess();

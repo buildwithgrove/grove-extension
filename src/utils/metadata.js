@@ -50,7 +50,7 @@ class MetadataFetcher {
 
           // Check if the content contains any tippable addresses
           if (AddressParser.hasAddresses(content)) {
-            const addressResult = await AddressParser.resolveAddress(content);
+            const addressResult = AddressParser.resolveAddress(content);
 
             if (addressResult.address) {
               const result = {
