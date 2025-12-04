@@ -194,6 +194,8 @@ class TipButton {
       z-index: 1 !important;
       animation: grove-sheen-slide 3s ease-in-out infinite !important;
     `;
+    this.sheenOverlay = sheenOverlay;
+    this.originalSheenBackground = sheenOverlay.style.background;
 
     // Add keyframe animation to document if not already added
     if (!document.querySelector('#grove-sheen-animation')) {
@@ -592,6 +594,8 @@ class TipButton {
       z-index: 1 !important;
       animation: grove-sheen-slide 3s ease-in-out infinite !important;
     `;
+    this.sheenOverlay = sheenOverlay;
+    this.originalSheenBackground = sheenOverlay.style.background;
 
     // Add keyframe animation to document if not already added
     if (!document.querySelector('#grove-sheen-animation')) {
@@ -764,9 +768,14 @@ class TipButton {
     this.button.disabled = false;
     this.button.style.pointerEvents = '';
 
-    // Restore original border/shadow
-    this.button.style.setProperty('border', this.originalBorder || `2px solid ${GROVE_COLORS.primary}`, 'important');
-    this.button.style.setProperty('box-shadow', this.originalBoxShadow || `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
+    // Apply temporary error border/glow
+    const errorBorder = GROVE_COLORS.error || '#ef4444';
+    const errorShadow = GROVE_COLORS.errorShadow || 'rgba(239, 68, 68, 0.55)';
+    this.button.style.setProperty('border', `2px solid ${errorBorder}`, 'important');
+    this.button.style.setProperty('box-shadow', `0 0 12px ${errorShadow}`, 'important');
+    if (this.sheenOverlay) {
+      this.sheenOverlay.style.background = 'linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.35), transparent)';
+    }
 
     // Add error styling
     this.button.classList.add('animate__animated', 'animate__shakeX', 'grove-tip-error');
@@ -810,6 +819,9 @@ class TipButton {
     // Restore original border/shadow
     this.button.style.setProperty('border', this.originalBorder || `2px solid ${GROVE_COLORS.primary}`, 'important');
     this.button.style.setProperty('box-shadow', this.originalBoxShadow || `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
+    if (this.sheenOverlay && this.originalSheenBackground) {
+      this.sheenOverlay.style.background = this.originalSheenBackground;
+    }
 
     // Remove all state classes
     this.button.classList.remove(

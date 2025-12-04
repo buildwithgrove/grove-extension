@@ -248,8 +248,9 @@ function setupEventListeners() {
 
   // JWT
   setupTokenBtn.addEventListener('click', () => {
-    // Navigate to settings and open edit
+    // Navigate to settings -> Account and open edit
     document.querySelector('[data-target="tab-settings"]').click();
+    showSettingsView('account');
     showJwtEdit();
   });
   
@@ -1317,6 +1318,21 @@ function updateTopUpLink(chain) {
 }
 
 /**
+ * Show a specific settings view (e.g., 'account', 'tipping').
+ * Used for programmatic navigation to settings subpages.
+ * @param {string} targetView - The view ID suffix (e.g., 'account' for 'settings-account')
+ */
+function showSettingsView(targetView) {
+  const settingsViews = document.querySelectorAll('.settings-view');
+  settingsViews.forEach(view => view.classList.remove('active'));
+
+  const targetElement = document.getElementById(`settings-${targetView}`);
+  if (targetElement) {
+    targetElement.classList.add('active');
+  }
+}
+
+/**
  * Setup Settings Drill-Down Navigation
  */
 function setupSettingsDrillDown() {
@@ -1329,14 +1345,7 @@ function setupSettingsDrillDown() {
     btn.addEventListener('click', () => {
       const targetView = btn.dataset.drill;
 
-      // Hide all views
-      settingsViews.forEach(view => view.classList.remove('active'));
-
-      // Show target view
-      const targetElement = document.getElementById(`settings-${targetView}`);
-      if (targetElement) {
-        targetElement.classList.add('active');
-      }
+      showSettingsView(targetView);
     });
   });
 
