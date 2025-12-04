@@ -191,6 +191,121 @@ class GroveAPI {
   }
 
   /**
+   * Fetch top tippers leaderboard
+   * @param {string} period - Time window: 'day', 'week', or 'month'
+   * @param {number} limit - Number of entries (default: 10)
+   * @returns {Promise<Object>} - Leaderboard data
+   */
+  static async getTopTippers(period = 'week', limit = 10) {
+    const baseURL = await this.getBaseURL();
+    const window = { 'day': '24h', 'week': '7d', 'month': '30d' }[period] || '7d';
+    const apiUrl = `${baseURL}/v1/leaderboard/tippers?window=${window}&limit=${limit}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data: {
+          token: data.token || 'USDC',
+          entries: (data.entries || []).map(entry => ({
+            address: entry.address,
+            totalUSD: parseFloat(entry.total_amount_usd) || 0,
+            tipCount: entry.tip_count || 0
+          }))
+        }
+      };
+    } catch (error) {
+      console.error('[Grove Extension] Top tippers fetch failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Fetch top tippees leaderboard
+   * @param {string} period - Time window: 'day', 'week', or 'month'
+   * @param {number} limit - Number of entries (default: 10)
+   * @returns {Promise<Object>} - Leaderboard data
+   */
+  static async getTopTippees(period = 'week', limit = 10) {
+    const baseURL = await this.getBaseURL();
+    const window = { 'day': '24h', 'week': '7d', 'month': '30d' }[period] || '7d';
+    const apiUrl = `${baseURL}/v1/leaderboard/tippees?window=${window}&limit=${limit}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data: {
+          token: data.token || 'USDC',
+          entries: (data.entries || []).map(entry => ({
+            address: entry.address,
+            totalUSD: parseFloat(entry.total_amount_usd) || 0,
+            tipCount: entry.tip_count || 0
+          }))
+        }
+      };
+    } catch (error) {
+      console.error('[Grove Extension] Top tippees fetch failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Fetch recent tips (real-time)
+   * @param {number} limit - Number of entries (default: 10)
+   * @returns {Promise<Object>} - Recent tips data
+   */
+  static async getRecentTips(limit = 10) {
+    const baseURL = await this.getBaseURL();
+    const apiUrl = `${baseURL}/v1/leaderboard/tippees/recent?limit=${limit}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data: {
+          entries: (data.entries || []).map(entry => ({
+            address: entry.address,
+            amountUSD: parseFloat(entry.amount_usd) || 0,
+            confirmedAt: entry.confirmed_at,
+            txHash: entry.tx_hash
+          }))
+        }
+      };
+    } catch (error) {
+      console.error('[Grove Extension] Recent tips fetch failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
    * Send a tip to the current page URL
    * @param {string} pageUrl - Full page URL (e.g., "https://twitter.com/olshansky")
    * @param {number} tipAmount - Tip amount in dollars (default: 0.05)
