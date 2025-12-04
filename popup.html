@@ -11,6 +11,7 @@
   <script src="src/utils/balance.js"></script>
   <script src="src/storage/keyManager.js"></script>
   <script src="src/ui/prevKeysUI.js"></script>
+  <script src="src/auth/xAuth.js"></script>
 </head>
 <body class="theme-dark">
   <!-- Header -->
@@ -375,150 +376,329 @@
 
     <!-- Settings Page -->
     <div class="page" id="tab-settings">
-      <h2 class="page-title">Settings</h2>
 
-      <div class="settings-group">
-        <div class="settings-label">Account</div>
+      <!-- Settings Main Menu -->
+      <div class="settings-view active" id="settings-main">
+        <h2 class="page-title">Settings</h2>
 
-        <!-- JWT Management -->
-        <div class="settings-item-column" id="jwtSettingsSection">
-          <div class="settings-row">
-            <div class="settings-info">
-              <div class="settings-name">Secret Key</div>
-              <div class="settings-desc" id="jwtStatusDisplay">Not connected</div>
+        <div class="settings-menu">
+          <button class="settings-menu-item" data-drill="account">
+            <div class="settings-menu-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
             </div>
-            <button class="btn-text" id="manageJwtBtn">Manage</button>
-          </div>
-          
-          <!-- JWT Edit Form (Hidden by default) -->
-          <div class="jwt-edit-container hidden" id="jwtEditContainer">
-            <p class="info-text-sm">Get your key from <a href="https://app.grove.city" target="_blank" class="link-accent">app.grove.city</a></p>
-            <div class="input-group">
-              <input type="password" id="jwtInput" class="code-input" placeholder="Paste Secret Key">
-              <button type="button" class="input-toggle-btn" id="toggleJwtVisibility" aria-label="Toggle password visibility">
-                <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle class="eye-open" cx="12" cy="12" r="3"></circle>
-                  <path class="eye-closed hidden" d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                  <line class="eye-closed hidden" x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>
-              </button>
+            <div class="settings-menu-content">
+              <div class="settings-menu-name">Account</div>
+              <div class="settings-menu-desc">Secret keys & connection</div>
             </div>
-            <div class="form-actions">
-              <button class="btn-danger btn-sm hidden" id="removeJwtBtn">Disconnect</button>
-              <button class="btn-secondary btn-sm" id="cancelJwtBtn">Cancel</button>
-              <button class="btn-primary btn-sm" id="saveJwtBtn">Save</button>
+            <div class="settings-menu-arrow">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
             </div>
-          </div>
+          </button>
+
+          <button class="settings-menu-item" data-drill="tipping">
+            <div class="settings-menu-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            </div>
+            <div class="settings-menu-content">
+              <div class="settings-menu-name">Tipping</div>
+              <div class="settings-menu-desc">Default amount & confirmation</div>
+            </div>
+            <div class="settings-menu-arrow">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+          </button>
+
+          <button class="settings-menu-item" data-drill="twitter">
+            <div class="settings-menu-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </div>
+            <div class="settings-menu-content">
+              <div class="settings-menu-name">X (Twitter)</div>
+              <div class="settings-menu-desc">Auto-reply & integration</div>
+            </div>
+            <div class="settings-menu-arrow">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+          </button>
+
+          <button class="settings-menu-item" data-drill="developer">
+            <div class="settings-menu-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            </div>
+            <div class="settings-menu-content">
+              <div class="settings-menu-name">Developer</div>
+              <div class="settings-menu-desc">API endpoints & testing</div>
+            </div>
+            <div class="settings-menu-arrow">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+          </button>
+
+          <button class="settings-menu-item" data-drill="about">
+            <div class="settings-menu-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            </div>
+            <div class="settings-menu-content">
+              <div class="settings-menu-name">About</div>
+              <div class="settings-menu-desc">Links, FAQ & legal</div>
+            </div>
+            <div class="settings-menu-arrow">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Account Settings View -->
+      <div class="settings-view" id="settings-account">
+        <div class="settings-header">
+          <button class="settings-back" data-back="main">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <h2 class="page-title">Account</h2>
         </div>
 
-        <!-- Previous Secret Keys -->
-        <div class="settings-item-column" id="prevKeysSection">
-          <div class="settings-row">
-            <div class="settings-info">
-              <div class="settings-name">Previous Secret Keys</div>
-              <div class="settings-desc" id="prevKeysCount">No previous keys</div>
+        <div class="settings-group">
+          <!-- JWT Management -->
+          <div class="settings-item-column" id="jwtSettingsSection">
+            <div class="settings-row">
+              <div class="settings-info">
+                <div class="settings-name">Secret Key</div>
+                <div class="settings-desc" id="jwtStatusDisplay">Not connected</div>
+              </div>
+              <button class="btn-text" id="manageJwtBtn">Manage</button>
             </div>
-            <button class="btn-text" id="viewPrevKeysBtn">View</button>
+
+            <!-- JWT Edit Form (Hidden by default) -->
+            <div class="jwt-edit-container hidden" id="jwtEditContainer">
+              <p class="info-text-sm">Get your key from <a href="https://app.grove.city" target="_blank" class="link-accent">app.grove.city</a></p>
+              <div class="input-group">
+                <input type="password" id="jwtInput" class="code-input" placeholder="Paste Secret Key">
+                <button type="button" class="input-toggle-btn" id="toggleJwtVisibility" aria-label="Toggle password visibility">
+                  <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle class="eye-open" cx="12" cy="12" r="3"></circle>
+                    <path class="eye-closed hidden" d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line class="eye-closed hidden" x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                </button>
+              </div>
+              <div class="form-actions">
+                <button class="btn-danger btn-sm hidden" id="removeJwtBtn">Disconnect</button>
+                <button class="btn-secondary btn-sm" id="cancelJwtBtn">Cancel</button>
+                <button class="btn-primary btn-sm" id="saveJwtBtn">Save</button>
+              </div>
+            </div>
           </div>
 
-          <!-- Previous Keys List (Hidden by default) -->
-          <div class="prev-keys-container hidden" id="prevKeysContainer">
-            <div class="prev-keys-list" id="prevKeysList">
-              <!-- Keys will be populated by JavaScript -->
+          <!-- Previous Secret Keys -->
+          <div class="settings-item-column" id="prevKeysSection">
+            <div class="settings-row">
+              <div class="settings-info">
+                <div class="settings-name">Previous Secret Keys</div>
+                <div class="settings-desc" id="prevKeysCount">No previous keys</div>
+              </div>
+              <button class="btn-text" id="viewPrevKeysBtn">View</button>
             </div>
-            <div class="form-actions">
-              <button class="btn-secondary btn-sm" id="closePrevKeysBtn">Close</button>
+
+            <!-- Previous Keys List (Hidden by default) -->
+            <div class="prev-keys-container hidden" id="prevKeysContainer">
+              <div class="prev-keys-list" id="prevKeysList">
+                <!-- Keys will be populated by JavaScript -->
+              </div>
+              <div class="form-actions">
+                <button class="btn-secondary btn-sm" id="closePrevKeysBtn">Close</button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="settings-group">
-        <div class="settings-label">Tipping</div>
-        <div class="settings-item">
-          <div class="settings-info">
-            <div class="settings-name">Confirm before tipping</div>
-            <div class="settings-desc">Edit the amount before each tip</div>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="confirmTipToggle">
-            <span class="slider"></span>
-          </label>
-        </div>
-      </div>
-
-      <div class="settings-group">
-        <div class="settings-label">Developer</div>
-        <div class="settings-item">
-          <div class="settings-info">
-            <div class="settings-name">Developer Mode</div>
-            <div class="settings-desc">Enable local testing</div>
-          </div>
-          <div class="toggle-switch" id="devModeToggle">
-            <input type="checkbox" id="devModeCheckbox">
-            <span class="slider"></span>
-          </div>
+      <!-- Tipping Settings View -->
+      <div class="settings-view" id="settings-tipping">
+        <div class="settings-header">
+          <button class="settings-back" data-back="main">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <h2 class="page-title">Tipping</h2>
         </div>
 
-        <!-- API Endpoint Selector (shown only in dev mode) -->
-        <div class="settings-item-column hidden" id="endpointSelector">
-          <div class="settings-row">
+        <div class="settings-group">
+          <div class="settings-item">
             <div class="settings-info">
-              <div class="settings-name">API Endpoint</div>
-              <div class="settings-desc" id="endpointDisplay">production</div>
+              <div class="settings-name">Confirm before tipping</div>
+              <div class="settings-desc">Edit the amount before each tip</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="confirmTipToggle">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- X (Twitter) Settings View -->
+      <div class="settings-view" id="settings-twitter">
+        <div class="settings-header">
+          <button class="settings-back" data-back="main">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <h2 class="page-title">X (Twitter)</h2>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-item-column" id="xLoginSection">
+            <div class="settings-row">
+              <div class="settings-info">
+                <div class="settings-name">Connected Account</div>
+                <div class="settings-desc" id="xLoginStatus">Not connected</div>
+              </div>
+              <button class="btn-text" id="xLoginBtn">Connect</button>
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-info">
+              <div class="settings-name">Auto-reply on tip</div>
+              <div class="settings-desc">Post a reply when you tip a tweet</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="autoReplyToggle">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Developer Settings View -->
+      <div class="settings-view" id="settings-developer">
+        <div class="settings-header">
+          <button class="settings-back" data-back="main">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <h2 class="page-title">Developer</h2>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-item">
+            <div class="settings-info">
+              <div class="settings-name">Developer Mode</div>
+              <div class="settings-desc">Enable local testing</div>
+            </div>
+            <div class="toggle-switch" id="devModeToggle">
+              <input type="checkbox" id="devModeCheckbox">
+              <span class="slider"></span>
             </div>
           </div>
 
-          <div class="endpoint-options" style="padding: 12px 16px;">
-            <div class="endpoint-option" data-endpoint="production">
-              <input type="radio" name="endpoint" id="endpoint-production" value="production">
-              <label for="endpoint-production">
-                <div class="endpoint-name">Production</div>
-                <div class="endpoint-url">api.grove.city</div>
-              </label>
+          <!-- API Endpoint Selector (shown only in dev mode) -->
+          <div class="settings-item-column hidden" id="endpointSelector">
+            <div class="settings-row">
+              <div class="settings-info">
+                <div class="settings-name">API Endpoint</div>
+                <div class="settings-desc" id="endpointDisplay">production</div>
+              </div>
             </div>
-            <div class="endpoint-option" data-endpoint="testnet">
-              <input type="radio" name="endpoint" id="endpoint-testnet" value="testnet">
-              <label for="endpoint-testnet">
-                <div class="endpoint-name">Testnet</div>
-                <div class="endpoint-url">api.testnet.grove.city</div>
-              </label>
-            </div>
-            <div class="endpoint-option" data-endpoint="localhost">
-              <input type="radio" name="endpoint" id="endpoint-localhost" value="localhost">
-              <label for="endpoint-localhost">
-                <div class="endpoint-name">Localhost</div>
-                <div class="endpoint-url">localhost:8000</div>
-              </label>
-            </div>
-            <div class="endpoint-option" data-endpoint="localhost:3000">
-              <input type="radio" name="endpoint" id="endpoint-localhost-3000" value="localhost:3000">
-              <label for="endpoint-localhost-3000">
-                <div class="endpoint-name">Localhost</div>
-                <div class="endpoint-url">localhost:3000</div>
-              </label>
+
+            <div class="endpoint-options" style="padding: 12px 16px;">
+              <div class="endpoint-option" data-endpoint="production">
+                <input type="radio" name="endpoint" id="endpoint-production" value="production">
+                <label for="endpoint-production">
+                  <div class="endpoint-name">Production</div>
+                  <div class="endpoint-url">api.grove.city</div>
+                </label>
+              </div>
+              <div class="endpoint-option" data-endpoint="testnet">
+                <input type="radio" name="endpoint" id="endpoint-testnet" value="testnet">
+                <label for="endpoint-testnet">
+                  <div class="endpoint-name">Testnet</div>
+                  <div class="endpoint-url">api.testnet.grove.city</div>
+                </label>
+              </div>
+              <div class="endpoint-option" data-endpoint="localhost">
+                <input type="radio" name="endpoint" id="endpoint-localhost" value="localhost">
+                <label for="endpoint-localhost">
+                  <div class="endpoint-name">Localhost</div>
+                  <div class="endpoint-url">localhost:8000</div>
+                </label>
+              </div>
+              <div class="endpoint-option" data-endpoint="localhost:3000">
+                <input type="radio" name="endpoint" id="endpoint-localhost-3000" value="localhost:3000">
+                <label for="endpoint-localhost-3000">
+                  <div class="endpoint-name">Localhost</div>
+                  <div class="endpoint-url">localhost:3000</div>
+                </label>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="settings-group">
-        <div class="settings-label">Resources</div>
-        <a href="https://discord.gg/build-with-grove" target="_blank" class="settings-item">
-          <div class="settings-info">
-            <div class="settings-name">Discord Support</div>
-            <div class="settings-desc">discord.gg/build-with-grove</div>
-          </div>
-          <div class="settings-arrow">›</div>
-        </a>
-        <a href="https://grove.city/docs" target="_blank" class="settings-item">
-          <div class="settings-info">
-            <div class="settings-name">Documentation</div>
-            <div class="settings-desc">grove.city/docs</div>
-          </div>
-          <div class="settings-arrow">›</div>
-        </a>
+      <!-- About Settings View -->
+      <div class="settings-view" id="settings-about">
+        <div class="settings-header">
+          <button class="settings-back" data-back="main">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <h2 class="page-title">About</h2>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-label">Grove</div>
+          <a href="https://grove.city" target="_blank" class="settings-item">
+            <div class="settings-info">
+              <div class="settings-name">Website</div>
+              <div class="settings-desc">grove.city</div>
+            </div>
+            <div class="settings-arrow">›</div>
+          </a>
+          <a href="https://x.com/BuildWithGrove" target="_blank" class="settings-item">
+            <div class="settings-info">
+              <div class="settings-name">Follow us on X</div>
+              <div class="settings-desc">@BuildWithGrove</div>
+            </div>
+            <div class="settings-arrow">›</div>
+          </a>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-label">Support</div>
+          <a href="https://grove.city/faq" target="_blank" class="settings-item">
+            <div class="settings-info">
+              <div class="settings-name">FAQ</div>
+              <div class="settings-desc">grove.city/faq</div>
+            </div>
+            <div class="settings-arrow">›</div>
+          </a>
+          <a href="https://discord.gg/build-with-grove" target="_blank" class="settings-item">
+            <div class="settings-info">
+              <div class="settings-name">Discord</div>
+              <div class="settings-desc">discord.gg/build-with-grove</div>
+            </div>
+            <div class="settings-arrow">›</div>
+          </a>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-label">Legal</div>
+          <a href="https://grove.city/terms" target="_blank" class="settings-item">
+            <div class="settings-info">
+              <div class="settings-name">Terms of Service</div>
+              <div class="settings-desc">grove.city/terms</div>
+            </div>
+            <div class="settings-arrow">›</div>
+          </a>
+          <a href="https://grove.city/privacy" target="_blank" class="settings-item">
+            <div class="settings-info">
+              <div class="settings-name">Privacy Policy</div>
+              <div class="settings-desc">grove.city/privacy</div>
+            </div>
+            <div class="settings-arrow">›</div>
+          </a>
+        </div>
+
+        <div class="version-info">
+          <span>Grove Extension v<span id="extensionVersion">1.0.0</span></span>
+        </div>
       </div>
     </div>
 

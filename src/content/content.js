@@ -1045,13 +1045,15 @@
   async function sendTweetTip(tipAmount, buttonWrapper, tweetUrl) {
     buttonWrapper.setLoading();
 
-    // Get JWT from storage
+    // Get JWT and settings from storage
     let jwt = '';
+    let autoReplyEnabled = false;
 
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        const result = await chrome.storage.local.get(['GROVE_API_JWT']);
+        const result = await chrome.storage.local.get(['GROVE_API_JWT', 'GROVE_AUTO_REPLY']);
         jwt = result.GROVE_API_JWT || '';
+        autoReplyEnabled = result.GROVE_AUTO_REPLY || false;
       }
 
       if (!jwt) {
@@ -1081,6 +1083,26 @@
 
     if (response.success) {
       buttonWrapper.setSuccess();
+
+      // Post auto-reply if enabled
+      if (autoReplyEnabled && typeof XAuth !== 'undefined') {
+        try {
+          const tweetId = XAuth.extractTweetId(tweetUrl);
+          if (tweetId) {
+            const isLoggedIn = await XAuth.isLoggedIn();
+            if (isLoggedIn) {
+              const replyText = `Just sent you a $${tipAmount.toFixed(2)} tip via @GroveCity!`;
+              await XAuth.postReply(tweetId, replyText);
+              console.log("[Grove Extension] Auto-reply posted successfully");
+            } else {
+              console.log("[Grove Extension] Auto-reply skipped - not logged in to X");
+            }
+          }
+        } catch (replyError) {
+          // Don't fail the whole tip if reply fails
+          console.error("[Grove Extension] Auto-reply failed:", replyError);
+        }
+      }
     } else {
       console.error("[Grove Extension] Tweet tip failed:", response.error);
       buttonWrapper.setError();

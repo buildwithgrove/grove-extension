@@ -67,11 +67,17 @@ const STORAGE_KEYS = {
   JWT: 'GROVE_API_JWT',
   TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
   CONFIRM_TIP: 'GROVE_CONFIRM_TIP',
+  AUTO_REPLY: 'GROVE_AUTO_REPLY',
   ENVIRONMENT: 'groveEnvironment',
   CHAIN: 'groveChain',
   ENDPOINT: 'groveEndpoint',
   LAST_BALANCES: 'GROVE_LAST_BALANCES',
 };
+
+// X Login Elements
+const xLoginStatus = document.getElementById('xLoginStatus');
+const xLoginBtn = document.getElementById('xLoginBtn');
+const autoReplyToggle = document.getElementById('autoReplyToggle');
 
 // Defaults
 const DEFAULT_TIP_AMOUNT = 0.10;
@@ -123,14 +129,28 @@ async function init() {
   await loadJWT();
   await loadTipAmount();
   await loadConfirmTip();
+  await loadAutoReply();
+  await loadXLoginStatus();
   await loadEnvironment();
   await loadChain();
   await loadEndpoint();
   await prevKeysUI.updateCount();
+  loadExtensionVersion();
   setupEventListeners();
 
   // Fetch balance after everything is loaded
   await fetchBalance();
+}
+
+/**
+ * Load extension version from manifest
+ */
+function loadExtensionVersion() {
+  const versionElement = document.getElementById('extensionVersion');
+  if (versionElement && chrome.runtime.getManifest) {
+    const manifest = chrome.runtime.getManifest();
+    versionElement.textContent = manifest.version;
+  }
 }
 
 /**
@@ -144,6 +164,9 @@ function setupEventListeners() {
 
   // Leaderboard switcher
   setupLeaderboardSwitcher();
+
+  // Settings drill-down navigation
+  setupSettingsDrillDown();
 
   // Chain Selector
   chainSelectorBtn.addEventListener('click', (e) => {
@@ -226,6 +249,16 @@ function setupEventListeners() {
   endpointOptions.forEach(option => {
     option.addEventListener('change', handleEndpointChange);
   });
+
+  // X Login
+  if (xLoginBtn) {
+    xLoginBtn.addEventListener('click', handleXLogin);
+  }
+
+  // Auto Reply Toggle
+  if (autoReplyToggle) {
+    autoReplyToggle.addEventListener('change', handleAutoReplyToggle);
+  }
 
   // Quick Actions (Placeholders)
   document.querySelectorAll('.action-btn').forEach(btn => {
@@ -486,6 +519,111 @@ async function handleConfirmTipToggle() {
 }
 
 /**
+ * Auto Reply Toggle
+ */
+async function loadAutoReply() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.AUTO_REPLY]);
+  const enabled = result[STORAGE_KEYS.AUTO_REPLY] || false;
+  if (autoReplyToggle) {
+    autoReplyToggle.checked = enabled;
+  }
+}
+
+async function handleAutoReplyToggle() {
+  const enabled = autoReplyToggle.checked;
+
+  // Check if user is logged in to X when enabling
+  if (enabled) {
+    const isLoggedIn = await XAuth.isLoggedIn();
+    if (!isLoggedIn) {
+      autoReplyToggle.checked = false;
+      showToast('Connect X account first');
+      return;
+    }
+  }
+
+  await chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY]: enabled });
+  showToast(enabled ? 'Auto-reply enabled' : 'Auto-reply disabled');
+}
+
+/**
+ * X (Twitter) Login
+ */
+async function loadXLoginStatus() {
+  try {
+    const isLoggedIn = await XAuth.isLoggedIn();
+
+    if (isLoggedIn) {
+      const userInfo = await XAuth.getStoredUserInfo();
+      if (userInfo && xLoginStatus) {
+        xLoginStatus.textContent = `@${userInfo.username}`;
+        xLoginStatus.style.color = 'var(--color-primary)';
+      }
+      if (xLoginBtn) {
+        xLoginBtn.textContent = 'Disconnect';
+      }
+    } else {
+      if (xLoginStatus) {
+        xLoginStatus.textContent = 'Not connected';
+        xLoginStatus.style.color = 'var(--color-text-secondary)';
+      }
+      if (xLoginBtn) {
+        xLoginBtn.textContent = 'Connect';
+      }
+      // Disable auto-reply if not logged in
+      if (autoReplyToggle && autoReplyToggle.checked) {
+        autoReplyToggle.checked = false;
+        await chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY]: false });
+      }
+    }
+  } catch (error) {
+    console.error('[Grove Extension] X login status check failed:', error);
+  }
+}
+
+async function handleXLogin() {
+  const isLoggedIn = await XAuth.isLoggedIn();
+
+  if (isLoggedIn) {
+    // Logout
+    await XAuth.logout();
+    await loadXLoginStatus();
+    // Disable auto-reply when disconnecting
+    if (autoReplyToggle) {
+      autoReplyToggle.checked = false;
+      await chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY]: false });
+    }
+    showToast('Disconnected from X');
+  } else {
+    // Login
+    try {
+      xLoginBtn.textContent = 'Connecting...';
+      xLoginBtn.disabled = true;
+
+      const userInfo = await XAuth.login();
+
+      if (xLoginStatus) {
+        xLoginStatus.textContent = `@${userInfo.username}`;
+        xLoginStatus.style.color = 'var(--color-primary)';
+      }
+      if (xLoginBtn) {
+        xLoginBtn.textContent = 'Disconnect';
+        xLoginBtn.disabled = false;
+      }
+
+      showToast(`Connected as @${userInfo.username}`);
+    } catch (error) {
+      console.error('[Grove Extension] X login failed:', error);
+      if (xLoginBtn) {
+        xLoginBtn.textContent = 'Connect';
+        xLoginBtn.disabled = false;
+      }
+      showToast('Login failed: ' + error.message);
+    }
+  }
+}
+
+/**
  * Balance
  */
 function formatBalance(balance) {
@@ -710,6 +848,47 @@ function updateTopUpLink(chain) {
   const config = NETWORKS[chain] || NETWORKS[DEFAULT_CHAIN];
   const isTestnet = (config.type || '').toLowerCase() === 'testnet';
   topUpBtn.href = isTestnet ? TOP_UP_URLS.testnet : TOP_UP_URLS.mainnet;
+}
+
+/**
+ * Setup Settings Drill-Down Navigation
+ */
+function setupSettingsDrillDown() {
+  const menuItems = document.querySelectorAll('.settings-menu-item');
+  const backBtns = document.querySelectorAll('.settings-back');
+  const settingsViews = document.querySelectorAll('.settings-view');
+
+  // Handle menu item clicks
+  menuItems.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetView = btn.dataset.drill;
+
+      // Hide all views
+      settingsViews.forEach(view => view.classList.remove('active'));
+
+      // Show target view
+      const targetElement = document.getElementById(`settings-${targetView}`);
+      if (targetElement) {
+        targetElement.classList.add('active');
+      }
+    });
+  });
+
+  // Handle back button clicks
+  backBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetView = btn.dataset.back;
+
+      // Hide all views
+      settingsViews.forEach(view => view.classList.remove('active'));
+
+      // Show target view (main menu)
+      const targetElement = document.getElementById(`settings-${targetView}`);
+      if (targetElement) {
+        targetElement.classList.add('active');
+      }
+    });
+  });
 }
 
 /**
