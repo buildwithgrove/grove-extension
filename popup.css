@@ -412,15 +412,14 @@ body.developer-mode .testnet-option {
 /* Clickable Section Card (button) */
 button.section-card-btn {
   width: calc(100% - 32px);
-  border: 1px solid var(--color-border);
+  border: none;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease;
   text-align: left;
 }
 
 button.section-card-btn:hover {
   background-color: var(--color-surface-hover);
-  border-color: var(--color-primary);
 }
 
 button.section-card-btn .quick-access-icon {
@@ -853,20 +852,21 @@ button.section-card-btn:hover .quick-access-icon {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: 14px 12px;
+  justify-content: center;
+  gap: 10px;
+  padding: 18px 14px;
   background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: none;
   border-radius: var(--radius-lg);
   cursor: default;
-  min-height: 100px;
   text-align: center;
 }
 
 .quick-access-item .card-label {
-  font-size: 11px;
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
 }
 
 .quick-access-item .amount-display {
@@ -875,13 +875,18 @@ button.section-card-btn:hover .quick-access-icon {
   justify-content: center;
 }
 
-.quick-access-item .btn-text,
+.quick-access-item .btn-text {
+  font-size: 12px;
+  padding: 4px 12px;
+}
+
 .quick-access-item .quick-access-label {
-  font-size: 11px;
-  padding: 4px 8px;
-  min-height: 20px;
-  display: flex;
-  align-items: center;
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+}
+
+.quick-access-item .demo-tip-button {
+  margin: 4px 0;
 }
 
 button.quick-access-item {
@@ -913,6 +918,82 @@ button.quick-access-item:hover .quick-access-icon {
   font-size: 11px;
   color: var(--color-text-secondary);
   text-align: center;
+}
+
+/* Home Settings Panel (X Settings drill-down) */
+.home-settings-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.home-settings-header .settings-back {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  margin: -4px;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s ease;
+}
+
+.home-settings-header .settings-back:hover {
+  color: var(--color-text-primary);
+}
+
+.settings-panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.home-settings-group {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.home-settings-group:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.home-settings-group:first-of-type {
+  padding-top: 0;
+}
+
+.home-settings-group .settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-settings-group .settings-row + .settings-row {
+  margin-top: 12px;
+}
+
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.feature-item svg {
+  color: var(--color-primary);
+  flex-shrink: 0;
 }
 
 /* Special layout for step 4 with button */

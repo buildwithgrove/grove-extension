@@ -282,12 +282,46 @@ function setupEventListeners() {
     showJwtEdit();
   });
 
-  // Home screen Twitter settings shortcut
+  // Home screen Twitter settings drill-down
   const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
-  if (homeTwitterSettingsBtn) {
+  const homeTwitterSettingsPanel = document.getElementById('homeTwitterSettingsPanel');
+  const homeTwitterSettingsBack = document.getElementById('homeTwitterSettingsBack');
+
+  if (homeTwitterSettingsBtn && homeTwitterSettingsPanel) {
     homeTwitterSettingsBtn.addEventListener('click', () => {
-      document.querySelector('[data-target="tab-settings"]').click();
-      showSettingsView('twitter');
+      homeTwitterSettingsBtn.classList.add('hidden');
+      homeTwitterSettingsPanel.classList.remove('hidden');
+    });
+  }
+
+  if (homeTwitterSettingsBack && homeTwitterSettingsPanel) {
+    homeTwitterSettingsBack.addEventListener('click', () => {
+      homeTwitterSettingsPanel.classList.add('hidden');
+      homeTwitterSettingsBtn.classList.remove('hidden');
+    });
+  }
+
+  // Home X login button - call the same handler
+  const homeXLoginBtnEl = document.getElementById('homeXLoginBtn');
+  if (homeXLoginBtnEl) {
+    homeXLoginBtnEl.addEventListener('click', handleXLogin);
+  }
+
+  // Sync home toggles with settings toggles
+  const homeLikeOnTipToggle = document.getElementById('homeLikeOnTipToggle');
+  const homeAutoReplyToggle = document.getElementById('homeAutoReplyToggle');
+
+  if (homeLikeOnTipToggle) {
+    homeLikeOnTipToggle.addEventListener('change', (e) => {
+      if (likeOnTipToggle) likeOnTipToggle.checked = e.target.checked;
+      chrome.storage.local.set({ [STORAGE_KEYS.LIKE_ON_TIP]: e.target.checked });
+    });
+  }
+
+  if (homeAutoReplyToggle) {
+    homeAutoReplyToggle.addEventListener('change', (e) => {
+      if (autoReplyToggle) autoReplyToggle.checked = e.target.checked;
+      chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY]: e.target.checked });
     });
   }
 
@@ -712,6 +746,11 @@ async function loadAutoReply() {
   if (autoReplyToggle) {
     autoReplyToggle.checked = enabled;
   }
+  // Sync home toggle
+  const homeAutoReplyToggle = document.getElementById('homeAutoReplyToggle');
+  if (homeAutoReplyToggle) {
+    homeAutoReplyToggle.checked = enabled;
+  }
 }
 
 async function handleAutoReplyToggle() {
@@ -744,6 +783,11 @@ async function loadLikeOnTip() {
   const enabled = result[STORAGE_KEYS.LIKE_ON_TIP] !== false;
   if (likeOnTipToggle) {
     likeOnTipToggle.checked = enabled;
+  }
+  // Sync home toggle
+  const homeLikeOnTipToggle = document.getElementById('homeLikeOnTipToggle');
+  if (homeLikeOnTipToggle) {
+    homeLikeOnTipToggle.checked = enabled;
   }
 }
 
@@ -812,29 +856,47 @@ async function resetAutoReplyMessage() {
 /**
  * X (Twitter) Login
  */
+
+// Home screen X elements
+const homeXLoginStatus = document.getElementById('homeXLoginStatus');
+const homeXLoginBtn = document.getElementById('homeXLoginBtn');
+const homeXPreConnectInfo = document.getElementById('homeXPreConnectInfo');
+const homeXPostConnectOptions = document.getElementById('homeXPostConnectOptions');
+
 async function loadXLoginStatus() {
   try {
     const isLoggedIn = await XAuth.isLoggedIn();
 
     if (isLoggedIn) {
       const userInfo = await XAuth.getStoredUserInfo();
-      if (userInfo && xLoginStatus) {
-        const isRealUsername = userInfo.username && userInfo.username !== 'Connected';
-        xLoginStatus.textContent = isRealUsername ? `@${userInfo.username}` : 'Connected';
+      const isRealUsername = userInfo?.username && userInfo.username !== 'Connected';
+      const displayName = isRealUsername ? `@${userInfo.username}` : 'Connected';
+
+      // Update settings page
+      if (xLoginStatus) {
+        xLoginStatus.textContent = displayName;
         xLoginStatus.style.color = 'var(--color-primary)';
       }
       if (xLoginBtn) {
         xLoginBtn.textContent = 'Disconnect';
         xLoginBtn.classList.add('btn-danger-text');
       }
-      // Show post-connect options, hide pre-connect info
-      if (xPreConnectInfo) {
-        xPreConnectInfo.classList.add('hidden');
+      if (xPreConnectInfo) xPreConnectInfo.classList.add('hidden');
+      if (xPostConnectOptions) xPostConnectOptions.classList.remove('hidden');
+
+      // Update home screen
+      if (homeXLoginStatus) {
+        homeXLoginStatus.textContent = displayName;
+        homeXLoginStatus.style.color = 'var(--color-primary)';
       }
-      if (xPostConnectOptions) {
-        xPostConnectOptions.classList.remove('hidden');
+      if (homeXLoginBtn) {
+        homeXLoginBtn.textContent = 'Disconnect';
+        homeXLoginBtn.classList.add('btn-danger-text');
       }
+      if (homeXPreConnectInfo) homeXPreConnectInfo.classList.add('hidden');
+      if (homeXPostConnectOptions) homeXPostConnectOptions.classList.remove('hidden');
     } else {
+      // Update settings page
       if (xLoginStatus) {
         xLoginStatus.textContent = 'Not connected';
         xLoginStatus.style.color = 'var(--color-text-secondary)';
@@ -843,13 +905,20 @@ async function loadXLoginStatus() {
         xLoginBtn.textContent = 'Connect';
         xLoginBtn.classList.remove('btn-danger-text');
       }
-      // Show pre-connect info, hide post-connect options
-      if (xPreConnectInfo) {
-        xPreConnectInfo.classList.remove('hidden');
+      if (xPreConnectInfo) xPreConnectInfo.classList.remove('hidden');
+      if (xPostConnectOptions) xPostConnectOptions.classList.add('hidden');
+
+      // Update home screen
+      if (homeXLoginStatus) {
+        homeXLoginStatus.textContent = 'Not connected';
+        homeXLoginStatus.style.color = 'var(--color-text-secondary)';
       }
-      if (xPostConnectOptions) {
-        xPostConnectOptions.classList.add('hidden');
+      if (homeXLoginBtn) {
+        homeXLoginBtn.textContent = 'Connect';
+        homeXLoginBtn.classList.remove('btn-danger-text');
       }
+      if (homeXPreConnectInfo) homeXPreConnectInfo.classList.remove('hidden');
+      if (homeXPostConnectOptions) homeXPostConnectOptions.classList.add('hidden');
     }
   } catch (error) {
     console.error('[Grove Extension] X login status check failed:', error);
