@@ -852,9 +852,9 @@ button.section-card-btn:hover .quick-access-icon {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 18px 14px;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 14px 14px 12px;
   background-color: var(--color-surface);
   border: none;
   border-radius: var(--radius-lg);
@@ -886,7 +886,11 @@ button.section-card-btn:hover .quick-access-icon {
 }
 
 .quick-access-item .demo-tip-button {
-  margin: 4px 0;
+  margin: 0;
+}
+
+.quick-access-item .quick-access-label {
+  margin-top: auto;
 }
 
 button.quick-access-item {
