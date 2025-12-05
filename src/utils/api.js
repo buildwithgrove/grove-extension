@@ -200,13 +200,13 @@ class GroveAPI {
 
   /**
    * Fetch top tippers leaderboard
-   * @param {string} period - Time window: 'day', 'week', or 'month'
+   * @param {string} period - Time window: 'day', 'week', 'month', or 'all'
    * @param {number} limit - Number of entries (default: 10)
    * @returns {Promise<Object>} - Leaderboard data
    */
   static async getTopTippers(period = 'week', limit = 10) {
     const baseURL = await this.getBaseURL();
-    const window = { 'day': '24h', 'week': '7d', 'month': '30d' }[period] || '7d';
+    const window = { 'day': '24h', 'week': '7d', 'month': '30d', 'all': 'all' }[period] || '7d';
     const apiUrl = `${baseURL}/v1/leaderboard/tippers?window=${window}&limit=${limit}`;
 
     try {
@@ -239,13 +239,13 @@ class GroveAPI {
 
   /**
    * Fetch top earners leaderboard
-   * @param {string} period - Time window: 'day', 'week', or 'month'
+   * @param {string} period - Time window: 'day', 'week', 'month', or 'all'
    * @param {number} limit - Number of entries (default: 10)
    * @returns {Promise<Object>} - Leaderboard data
    */
   static async getTopEarners(period = 'week', limit = 10) {
     const baseURL = await this.getBaseURL();
-    const window = { 'day': '24h', 'week': '7d', 'month': '30d' }[period] || '7d';
+    const window = { 'day': '24h', 'week': '7d', 'month': '30d', 'all': 'all' }[period] || '7d';
     const apiUrl = `${baseURL}/v1/leaderboard/tippees?window=${window}&limit=${limit}`;
 
     try {
