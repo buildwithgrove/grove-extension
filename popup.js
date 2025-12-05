@@ -2115,18 +2115,23 @@ function formatAddress(address) {
 }
 
 /**
- * Format USD Amount (up to 6 decimals when needed)
+ * Format USD Amount (always at least 2 decimals, up to 6 when needed)
  */
 function formatUSD(amount) {
   if (amount >= 1000) {
-    return '$' + amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    return '$' + amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-  if (amount >= 1) {
+  if (amount >= 0.01) {
     return '$' + amount.toFixed(2);
   }
-  // For small amounts, show up to 6 decimals but trim trailing zeros
-  const formatted = amount.toFixed(6).replace(/\.?0+$/, '');
-  return '$' + (formatted === '' ? '0' : formatted);
+  // For very small amounts, show up to 6 decimals but keep at least 2
+  const formatted = amount.toFixed(6).replace(/0+$/, '');
+  // Ensure at least 2 decimal places
+  const decimalPart = formatted.split('.')[1] || '';
+  if (decimalPart.length < 2) {
+    return '$' + amount.toFixed(2);
+  }
+  return '$' + formatted;
 }
 
 /**
