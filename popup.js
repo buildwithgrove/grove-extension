@@ -101,17 +101,13 @@ Tx: {tx_link}
 
 Find out more and start tipping your favorite creators → {grove_link}`;
 
-// X Login Elements
-const xLoginStatus = document.getElementById('xLoginStatus');
-const xLoginBtn = document.getElementById('xLoginBtn');
-const xPreConnectInfo = document.getElementById('xPreConnectInfo');
-const xPostConnectOptions = document.getElementById('xPostConnectOptions');
-const likeOnTipToggle = document.getElementById('likeOnTipToggle');
-const autoReplyToggle = document.getElementById('autoReplyToggle');
-const autoReplyMessageContainer = document.getElementById('autoReplyMessageContainer');
-const autoReplyMessageInput = document.getElementById('autoReplyMessageInput');
-const saveAutoReplyMessageBtn = document.getElementById('saveAutoReplyMessageBtn');
-const resetAutoReplyMessageBtn = document.getElementById('resetAutoReplyMessageBtn');
+// X Login Elements (now on home screen)
+const likeOnTipToggle = document.getElementById('homeLikeOnTipToggle');
+const autoReplyToggle = document.getElementById('homeAutoReplyToggle');
+const autoReplyMessageContainer = document.getElementById('homeAutoReplyMessageContainer');
+const autoReplyMessageInput = document.getElementById('homeAutoReplyMessageInput');
+const saveAutoReplyMessageBtn = document.getElementById('homeSaveAutoReplyMessageBtn');
+const resetAutoReplyMessageBtn = document.getElementById('homeResetAutoReplyMessageBtn');
 
 // Defaults
 const DEFAULT_TIP_AMOUNT = 0.10;
@@ -307,81 +303,6 @@ function setupEventListeners() {
     homeXLoginBtnEl.addEventListener('click', handleXLogin);
   }
 
-  // Sync home toggles with settings toggles
-  const homeLikeOnTipToggle = document.getElementById('homeLikeOnTipToggle');
-  const homeAutoReplyToggle = document.getElementById('homeAutoReplyToggle');
-
-  if (homeLikeOnTipToggle) {
-    homeLikeOnTipToggle.addEventListener('change', (e) => {
-      if (likeOnTipToggle) likeOnTipToggle.checked = e.target.checked;
-      chrome.storage.local.set({ [STORAGE_KEYS.LIKE_ON_TIP]: e.target.checked });
-    });
-  }
-
-  if (homeAutoReplyToggle) {
-    homeAutoReplyToggle.addEventListener('change', async (e) => {
-      const enabled = e.target.checked;
-
-      // Check if user is logged in when enabling
-      if (enabled) {
-        const isLoggedIn = await XAuth.isLoggedIn();
-        if (!isLoggedIn) {
-          homeAutoReplyToggle.checked = false;
-          showToast('Connect X account first');
-          return;
-        }
-      }
-
-      if (autoReplyToggle) autoReplyToggle.checked = enabled;
-      chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY]: enabled });
-
-      // Show/hide message container
-      const homeAutoReplyMessageContainer = document.getElementById('homeAutoReplyMessageContainer');
-      if (homeAutoReplyMessageContainer) {
-        if (enabled) {
-          homeAutoReplyMessageContainer.classList.remove('hidden');
-        } else {
-          homeAutoReplyMessageContainer.classList.add('hidden');
-        }
-      }
-      // Also update settings page container
-      if (autoReplyMessageContainer) {
-        if (enabled) {
-          autoReplyMessageContainer.classList.remove('hidden');
-        } else {
-          autoReplyMessageContainer.classList.add('hidden');
-        }
-      }
-    });
-  }
-
-  // Home auto-reply message save/reset
-  const homeAutoReplyMessageInput = document.getElementById('homeAutoReplyMessageInput');
-  const homeSaveAutoReplyMessageBtn = document.getElementById('homeSaveAutoReplyMessageBtn');
-  const homeResetAutoReplyMessageBtn = document.getElementById('homeResetAutoReplyMessageBtn');
-
-  if (homeSaveAutoReplyMessageBtn && homeAutoReplyMessageInput) {
-    homeSaveAutoReplyMessageBtn.addEventListener('click', async () => {
-      const message = homeAutoReplyMessageInput.value.trim();
-      if (message) {
-        await chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY_MESSAGE]: message });
-        // Sync with settings page
-        if (autoReplyMessageInput) autoReplyMessageInput.value = message;
-        showToast('Message saved');
-      }
-    });
-  }
-
-  if (homeResetAutoReplyMessageBtn && homeAutoReplyMessageInput) {
-    homeResetAutoReplyMessageBtn.addEventListener('click', async () => {
-      homeAutoReplyMessageInput.value = DEFAULT_AUTO_REPLY_MESSAGE;
-      await chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY_MESSAGE]: DEFAULT_AUTO_REPLY_MESSAGE });
-      // Sync with settings page
-      if (autoReplyMessageInput) autoReplyMessageInput.value = DEFAULT_AUTO_REPLY_MESSAGE;
-      showToast('Message reset to default');
-    });
-  }
-
   manageJwtBtn.addEventListener('click', () => {
     if (jwtEditContainer.classList.contains('hidden')) {
       showJwtEdit();
@@ -435,10 +356,6 @@ function setupEventListeners() {
     option.addEventListener('change', handleEndpointChange);
   });
 
-  // X Login
-  if (xLoginBtn) {
-    xLoginBtn.addEventListener('click', handleXLogin);
-  }
 
   // Like on Tip Toggle
   if (likeOnTipToggle) {
@@ -803,18 +720,12 @@ async function loadAutoReply() {
   if (autoReplyToggle) {
     autoReplyToggle.checked = enabled;
   }
-  // Sync home toggle
-  const homeAutoReplyToggle = document.getElementById('homeAutoReplyToggle');
-  if (homeAutoReplyToggle) {
-    homeAutoReplyToggle.checked = enabled;
-  }
   // Show/hide message container based on toggle state
-  const homeAutoReplyMessageContainer = document.getElementById('homeAutoReplyMessageContainer');
-  if (homeAutoReplyMessageContainer) {
+  if (autoReplyMessageContainer) {
     if (enabled) {
-      homeAutoReplyMessageContainer.classList.remove('hidden');
+      autoReplyMessageContainer.classList.remove('hidden');
     } else {
-      homeAutoReplyMessageContainer.classList.add('hidden');
+      autoReplyMessageContainer.classList.add('hidden');
     }
   }
 }
@@ -850,11 +761,6 @@ async function loadLikeOnTip() {
   if (likeOnTipToggle) {
     likeOnTipToggle.checked = enabled;
   }
-  // Sync home toggle
-  const homeLikeOnTipToggle = document.getElementById('homeLikeOnTipToggle');
-  if (homeLikeOnTipToggle) {
-    homeLikeOnTipToggle.checked = enabled;
-  }
 }
 
 async function handleLikeOnTipToggle() {
@@ -887,12 +793,6 @@ async function loadAutoReplyMessage() {
 
   if (autoReplyMessageInput) {
     autoReplyMessageInput.value = message;
-  }
-
-  // Sync home message input
-  const homeAutoReplyMessageInput = document.getElementById('homeAutoReplyMessageInput');
-  if (homeAutoReplyMessageInput) {
-    homeAutoReplyMessageInput.value = message;
   }
 
   // Show/hide based on auto-reply toggle state
@@ -932,7 +832,6 @@ async function resetAutoReplyMessage() {
 // Home screen X elements
 const homeXLoginStatus = document.getElementById('homeXLoginStatus');
 const homeXLoginBtn = document.getElementById('homeXLoginBtn');
-const homeXPreConnectInfo = document.getElementById('homeXPreConnectInfo');
 const homeXPostConnectOptions = document.getElementById('homeXPostConnectOptions');
 
 async function loadXLoginStatus() {
@@ -944,19 +843,6 @@ async function loadXLoginStatus() {
       const isRealUsername = userInfo?.username && userInfo.username !== 'Connected';
       const displayName = isRealUsername ? `@${userInfo.username}` : 'Connected';
 
-      // Update settings page
-      if (xLoginStatus) {
-        xLoginStatus.textContent = displayName;
-        xLoginStatus.style.color = 'var(--color-primary)';
-      }
-      if (xLoginBtn) {
-        xLoginBtn.textContent = 'Disconnect';
-        xLoginBtn.classList.add('btn-danger-text');
-      }
-      if (xPreConnectInfo) xPreConnectInfo.classList.add('hidden');
-      if (xPostConnectOptions) xPostConnectOptions.classList.remove('hidden');
-
-      // Update home screen
       if (homeXLoginStatus) {
         homeXLoginStatus.textContent = displayName;
         homeXLoginStatus.style.color = 'var(--color-primary)';
@@ -965,22 +851,8 @@ async function loadXLoginStatus() {
         homeXLoginBtn.textContent = 'Disconnect';
         homeXLoginBtn.classList.add('btn-danger-text');
       }
-      if (homeXPreConnectInfo) homeXPreConnectInfo.classList.add('hidden');
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.remove('hidden');
     } else {
-      // Update settings page
-      if (xLoginStatus) {
-        xLoginStatus.textContent = 'Not connected';
-        xLoginStatus.style.color = 'var(--color-text-secondary)';
-      }
-      if (xLoginBtn) {
-        xLoginBtn.textContent = 'Connect';
-        xLoginBtn.classList.remove('btn-danger-text');
-      }
-      if (xPreConnectInfo) xPreConnectInfo.classList.remove('hidden');
-      if (xPostConnectOptions) xPostConnectOptions.classList.add('hidden');
-
-      // Update home screen
       if (homeXLoginStatus) {
         homeXLoginStatus.textContent = 'Not connected';
         homeXLoginStatus.style.color = 'var(--color-text-secondary)';
@@ -989,7 +861,6 @@ async function loadXLoginStatus() {
         homeXLoginBtn.textContent = 'Connect';
         homeXLoginBtn.classList.remove('btn-danger-text');
       }
-      if (homeXPreConnectInfo) homeXPreConnectInfo.classList.remove('hidden');
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.add('hidden');
     }
   } catch (error) {
@@ -1008,32 +879,16 @@ async function handleXLogin() {
   } else {
     // Login
     try {
-      xLoginBtn.textContent = 'Connecting...';
-      xLoginBtn.disabled = true;
+      if (homeXLoginBtn) {
+        homeXLoginBtn.textContent = 'Connecting...';
+        homeXLoginBtn.disabled = true;
+      }
 
       const userInfo = await XAuth.login();
 
       const isRealUsername = userInfo.username && userInfo.username !== 'Connected';
       const displayName = isRealUsername ? `@${userInfo.username}` : 'Connected';
 
-      // Update settings page
-      if (xLoginStatus) {
-        xLoginStatus.textContent = displayName;
-        xLoginStatus.style.color = 'var(--color-primary)';
-      }
-      if (xLoginBtn) {
-        xLoginBtn.textContent = 'Disconnect';
-        xLoginBtn.classList.add('btn-danger-text');
-        xLoginBtn.disabled = false;
-      }
-      if (xPreConnectInfo) {
-        xPreConnectInfo.classList.add('hidden');
-      }
-      if (xPostConnectOptions) {
-        xPostConnectOptions.classList.remove('hidden');
-      }
-
-      // Update home screen
       if (homeXLoginStatus) {
         homeXLoginStatus.textContent = displayName;
         homeXLoginStatus.style.color = 'var(--color-primary)';
@@ -1041,9 +896,7 @@ async function handleXLogin() {
       if (homeXLoginBtn) {
         homeXLoginBtn.textContent = 'Disconnect';
         homeXLoginBtn.classList.add('btn-danger-text');
-      }
-      if (homeXPreConnectInfo) {
-        homeXPreConnectInfo.classList.add('hidden');
+        homeXLoginBtn.disabled = false;
       }
       if (homeXPostConnectOptions) {
         homeXPostConnectOptions.classList.remove('hidden');
@@ -1052,9 +905,9 @@ async function handleXLogin() {
       showToast(isRealUsername ? `Connected as @${userInfo.username}` : 'Connected to X');
     } catch (error) {
       console.error('[Grove Extension] X login failed:', error);
-      if (xLoginBtn) {
-        xLoginBtn.textContent = 'Connect';
-        xLoginBtn.disabled = false;
+      if (homeXLoginBtn) {
+        homeXLoginBtn.textContent = 'Connect';
+        homeXLoginBtn.disabled = false;
       }
       showToast('Login failed: ' + error.message);
     }

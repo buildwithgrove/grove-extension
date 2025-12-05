@@ -47,18 +47,26 @@ class GroveAPI {
   }
 
   /**
+   * Get the current chain ID (e.g., 'base', 'base-sepolia')
+   * @returns {Promise<string>} - Chain ID string
+   */
+  static async getChainId() {
+    try {
+      const result = await chrome.storage.local.get(['groveChain']);
+      return result.groveChain || 'base';
+    } catch (error) {
+      console.log("[Grove Extension] Chain ID load failed, using base");
+      return 'base';
+    }
+  }
+
+  /**
    * Get the current chain configuration
    * @returns {Promise<Object>} - Chain configuration with RPC endpoints
    */
   static async getChainConfig() {
-    try {
-      const result = await chrome.storage.local.get(['groveChain']);
-      const chain = result.groveChain || 'base';
-      return this.CHAIN_RPC_ENDPOINTS[chain] || this.CHAIN_RPC_ENDPOINTS['base'];
-    } catch (error) {
-      console.log("[Grove Extension] Chain config load failed, using Base");
-      return this.CHAIN_RPC_ENDPOINTS['base'];
-    }
+    const chain = await this.getChainId();
+    return this.CHAIN_RPC_ENDPOINTS[chain] || this.CHAIN_RPC_ENDPOINTS['base'];
   }
 
   /**
@@ -399,11 +407,12 @@ class GroveAPI {
    */
   static async sendTip(pageUrl, tipAmount = this.DEFAULT_TIP_AMOUNT, groveApiJwt = this.GROVE_API_JWT) {
     const baseURL = await this.getBaseURL();
-
+    const network = await this.getChainId();
 
     const tipDomain = this.buildTipDomainFromURL(pageUrl);
 
-    const apiUrl = `${baseURL}/v1/tip/${tipDomain}/${tipAmount}`;
+    // Include network parameter to ensure correct chain is used
+    const apiUrl = `${baseURL}/v1/tip/${tipDomain}/${tipAmount}?network=${network}`;
 
 
     try {
