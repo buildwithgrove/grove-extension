@@ -6,10 +6,21 @@
 (function () {
   "use strict";
 
-  // Signal to web pages that the extension is installed
-  window.dispatchEvent(new CustomEvent('grove-extension-ready', {
-    detail: { version: '1.0.2' }
-  }));
+  // Signal to web pages that the extension is installed (with key state)
+  function emitReadyEvent() {
+    chrome.storage.local.get(['GROVE_API_JWT'], (result) => {
+      const hasKey = !!(result.GROVE_API_JWT && result.GROVE_API_JWT.length > 0);
+      window.dispatchEvent(new CustomEvent('grove-extension-ready', {
+        detail: { version: '1.0.2', hasKey }
+      }));
+    });
+  }
+
+  // Emit immediately when content script loads
+  emitReadyEvent();
+
+  // Re-emit after delay to catch late-mounting React apps
+  setTimeout(emitReadyEvent, 500);
 
   // Configuration
   const ADVERTISING_MODE = true; // Set to true for more prominent button animation
@@ -30,6 +41,36 @@
 
   // Track which tweets already have buttons to avoid duplicates
   const processedTweets = new WeakSet();
+
+  /**
+   * Show a small inline error/warning anchored to the tip button.
+   * Delegates to TipErrorHandler.showInlineMessage() which handles positioning,
+   * deduplication, and cleanup.
+   *
+   * @param {HTMLElement} buttonEl - The rendered button element
+   * @param {Object|string} parsedErrorOrMessage - Parsed error object or plain message
+   */
+  function showInlineTipError(buttonEl, parsedErrorOrMessage) {
+    let message = '';
+    let variant = 'error';
+
+    if (typeof parsedErrorOrMessage === 'string') {
+      message = parsedErrorOrMessage;
+    } else if (parsedErrorOrMessage) {
+      message = parsedErrorOrMessage.userMessage || parsedErrorOrMessage.message || '';
+      variant = parsedErrorOrMessage.variant || 'error';
+    }
+
+    if (!message) return;
+
+    if (typeof TipErrorHandler !== 'undefined') {
+      TipErrorHandler.showInlineMessage(buttonEl, message, variant);
+    } else {
+      // TipErrorHandler should always be available via manifest.json,
+      // but log if it's missing for debugging
+      console.warn('[Grove Extension] TipErrorHandler not available, error bubble skipped');
+    }
+  }
 
   /**
    * Initialize the extension
@@ -314,6 +355,10 @@
         console.error("[Grove Extension] No API key configured");
         if (button) {
           button.setError();
+          showInlineTipError(button.button, {
+            message: 'Missing secret key in the extension settings.',
+            variant: 'error'
+          });
         }
         return;
       }
@@ -321,6 +366,10 @@
       console.error("[Grove Extension] Settings load failed:", error);
       if (button) {
         button.setError();
+        showInlineTipError(button.button, {
+          message: 'Could not read settings. Refresh and try again.',
+          variant: 'error'
+        });
       }
       return;
     }
@@ -331,6 +380,10 @@
     // Send tip via API with JWT and amount
     const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt);
 
+    const parsedError = (!response.success && typeof TipErrorHandler !== 'undefined')
+      ? TipErrorHandler.parse(response)
+      : null;
+
     // Handle response with animations
     if (response.success) {
       if (button) {
@@ -340,6 +393,7 @@
       console.error("[Grove Extension] Tip failed:", response.error);
       if (button) {
         button.setError();
+        showInlineTipError(button.button, parsedError || response.error || 'Tip failed. Please try again.');
       }
     }
   }
@@ -637,6 +691,7 @@
       z-index: 1 !important;
       animation: grove-sheen-slide 3s ease-in-out infinite !important;
     `;
+    const defaultSheenBackground = sheenOverlay.style.background;
 
     textSpan.appendChild(emojiSpan);
     button.appendChild(sheenOverlay);
@@ -687,6 +742,7 @@
           button.style.pointerEvents = '';
           button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
           button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
+          sheenOverlay.style.background = defaultSheenBackground;
           textSpan.textContent = 'Sent! ✓';
           button.classList.add('animate__animated', 'animate__bounceIn');
           setTimeout(() => {
@@ -699,14 +755,18 @@
           if (button._loadingInterval) clearInterval(button._loadingInterval);
           button.disabled = false;
           button.style.pointerEvents = '';
-          button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
-          button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
+          button.style.setProperty('border', `2px solid ${GROVE_COLORS.error || '#ef4444'}`, 'important');
+          button.style.setProperty('box-shadow', `0 0 12px ${GROVE_COLORS.errorShadow || 'rgba(239, 68, 68, 0.55)'}`, 'important');
+          sheenOverlay.style.background = 'linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.35), transparent)';
           textSpan.textContent = 'Failed ✗';
           button.classList.add('animate__animated', 'animate__shakeX');
           setTimeout(() => {
             textSpan.textContent = 'Tip';
             textSpan.appendChild(emojiSpan);
             button.classList.remove('animate__animated', 'animate__shakeX');
+            button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
+            button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
+            sheenOverlay.style.background = defaultSheenBackground;
           }, 2000);
         }
       };
@@ -961,6 +1021,7 @@
       z-index: 1 !important;
       animation: grove-sheen-slide 3s ease-in-out infinite !important;
     `;
+    const defaultSheenBackground = sheenOverlay.style.background;
 
     // Assemble the structure
     textSpan.appendChild(emojiSpan);
@@ -1015,6 +1076,7 @@
           button.style.pointerEvents = '';
           button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
           button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
+          sheenOverlay.style.background = defaultSheenBackground;
           textSpan.textContent = 'Sent! ✓';
           button.classList.add('animate__animated', 'animate__bounceIn');
           setTimeout(() => {
@@ -1029,14 +1091,18 @@
           }
           button.disabled = false;
           button.style.pointerEvents = '';
-          button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
-          button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
+          button.style.setProperty('border', `2px solid ${GROVE_COLORS.error || '#ef4444'}`, 'important');
+          button.style.setProperty('box-shadow', `0 0 12px ${GROVE_COLORS.errorShadow || 'rgba(239, 68, 68, 0.55)'}`, 'important');
+          sheenOverlay.style.background = 'linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.35), transparent)';
           textSpan.textContent = 'Failed ✗';
           button.classList.add('animate__animated', 'animate__shakeX');
           setTimeout(() => {
             textSpan.textContent = 'Tip';
             textSpan.appendChild(emojiSpan);
             button.classList.remove('animate__animated', 'animate__shakeX');
+            button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
+            button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
+            sheenOverlay.style.background = defaultSheenBackground;
           }, 2000);
         }
       };
@@ -1170,11 +1236,19 @@ Find out more → {grove_link}`;
       if (!jwt) {
         console.error("[Grove Extension] No API key configured. Try refreshing the page if you just reloaded the extension.");
         buttonWrapper.setError();
+        showInlineTipError(buttonWrapper.button, {
+          message: 'Missing secret key in the extension settings.',
+          variant: 'error'
+        });
         return;
       }
     } catch (error) {
       console.error("[Grove Extension] Settings load failed:", error);
       buttonWrapper.setError();
+      showInlineTipError(buttonWrapper.button, {
+        message: 'Could not read settings. Refresh and try again.',
+        variant: 'error'
+      });
       return;
     }
 
@@ -1183,6 +1257,9 @@ Find out more → {grove_link}`;
 
     // Send tip via API
     const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt);
+    const parsedError = (!response.success && typeof TipErrorHandler !== 'undefined')
+      ? TipErrorHandler.parse(response)
+      : null;
 
     if (response.success) {
       buttonWrapper.setSuccess();
@@ -1234,6 +1311,7 @@ Find out more → {grove_link}`;
     } else {
       console.error("[Grove Extension] Tweet tip failed:", response.error);
       buttonWrapper.setError();
+      showInlineTipError(buttonWrapper.button, parsedError || response.error || 'Tip failed. Please try again.');
     }
   }
 

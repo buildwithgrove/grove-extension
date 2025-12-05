@@ -1,6 +1,8 @@
 /**
  * Twitter Adapter
  * Handles Twitter/X profile pages and tweets
+ *
+ * Requires: src/adapters/base.js (BaseAdapter)
  */
 
 class TwitterAdapter extends BaseAdapter {
@@ -9,9 +11,35 @@ class TwitterAdapter extends BaseAdapter {
    * @returns {boolean}
    */
   detectProfilePage() {
-    const url = window.location.href;
-    // Match twitter.com/username or x.com/username (not /status, /search, etc.)
-    return /^https:\/\/(twitter|x)\.com\/[^\/]+\/?$/.test(url);
+    try {
+      const url = new URL(window.location.href);
+      const segments = url.pathname.split('/').filter(Boolean); // e.g., ['olshansky', 'likes']
+
+      // Must have at least the username
+      if (segments.length === 0) return false;
+
+      const username = segments[0];
+
+      // Non-profile top-level routes (system pages, not user profiles)
+      const systemRoutes = [
+        'home', 'i', 'intent', 'search', 'explore', 'settings',
+        'messages', 'notifications', 'compose', 'login', 'signup'
+      ];
+      if (systemRoutes.includes(username.toLowerCase())) return false;
+
+      // Profile subpages like /user/likes, /user/media are still profile pages.
+      // Only /user/status/* are individual tweet pages (not profiles).
+      const subpage = segments[1];
+      const tweetPagePrefixes = ['status', 'statuses'];
+      if (subpage && tweetPagePrefixes.some(prefix => subpage.toLowerCase().startsWith(prefix))) {
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      console.error('[Grove Extension] detectProfilePage failed:', err);
+      return false;
+    }
   }
 
   /**
