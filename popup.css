@@ -853,14 +853,13 @@ button.section-card-btn:hover .quick-access-icon {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 16px 12px;
+  justify-content: space-between;
+  padding: 14px 12px;
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   cursor: default;
-  min-height: 110px;
+  min-height: 100px;
   text-align: center;
 }
 
@@ -876,9 +875,13 @@ button.section-card-btn:hover .quick-access-icon {
   justify-content: center;
 }
 
-.quick-access-item .btn-text {
-  font-size: 12px;
+.quick-access-item .btn-text,
+.quick-access-item .quick-access-label {
+  font-size: 11px;
   padding: 4px 8px;
+  min-height: 20px;
+  display: flex;
+  align-items: center;
 }
 
 button.quick-access-item {
