@@ -1973,6 +1973,10 @@ body.developer-mode .testnet-option {
   background: rgba(255, 255, 255, 0.1);
 }
 
+.history-platform-link-empty {
+  visibility: hidden;
+}
+
 /* TX link icon (to block explorer) */
 .history-tx-link {
   display: flex;
