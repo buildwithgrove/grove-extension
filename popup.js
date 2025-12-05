@@ -2043,7 +2043,8 @@ function getExplorerUrl(network, txHash) {
     return `https://solscan.io/tx/${txHash}${cluster}`;
   }
 
-  return null;
+  // Default to Base mainnet if network unknown but tx_hash exists
+  return `https://basescan.org/tx/${txHash}`;
 }
 
 /**
