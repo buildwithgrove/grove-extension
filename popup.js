@@ -854,11 +854,6 @@ async function handleXLogin() {
     // Logout
     await XAuth.logout();
     await loadXLoginStatus();
-    // Disable auto-reply when disconnecting
-    if (autoReplyToggle) {
-      autoReplyToggle.checked = false;
-      await chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY]: false });
-    }
     showToast('Disconnected from X');
   } else {
     // Login
