@@ -1316,6 +1316,11 @@ async function handleChainSelection(e, silent = false) {
   // Reload balance
   fetchBalance();
 
+  // Reload history (reset state and refetch)
+  historyTransactions = [];
+  historyCurrentPage = 0;
+  loadHistory();
+
   // Reload leaderboard data
   seenTxHashes.clear(); // Reset seen tips for new chain
   refreshLeaderboard();
