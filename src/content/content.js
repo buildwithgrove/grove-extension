@@ -1221,8 +1221,8 @@ Find out more → {grove_link}`;
       console.log('[Grove Extension] Storage loaded:', { hasJwt: !!jwt, autoReply: autoReplyEnabled, likeOnTip: likeOnTipEnabled, chain: result.groveChain });
 
       // Get friendly chain name and explorer URL
-      // Normalize chain: replace underscores with hyphens, default to testnet
-      const rawChain = result.groveChain || 'base-sepolia';
+      // Normalize chain: replace underscores with hyphens, default to mainnet
+      const rawChain = result.groveChain || 'base';
       const chain = rawChain.toLowerCase().replace(/_/g, '-');
       const chainConfig = {
         'base': { name: 'Base', explorer: 'https://basescan.org/tx/' },
@@ -1231,7 +1231,7 @@ Find out more → {grove_link}`;
         // 'solana': { name: 'Solana', explorer: 'https://solscan.io/tx/' },
         // 'solana-devnet': { name: 'Solana Devnet', explorer: 'https://solscan.io/tx/' }
       };
-      const config = chainConfig[chain] || chainConfig['base-sepolia'];
+      const config = chainConfig[chain] || chainConfig['base'];
       chainName = config.name;
       explorerBaseUrl = config.explorer;
       // Solana devnet cluster param commented out - Base/Base Sepolia only for now

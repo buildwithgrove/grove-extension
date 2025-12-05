@@ -115,7 +115,7 @@ const resetAutoReplyMessageBtn = document.getElementById('resetAutoReplyMessageB
 
 // Defaults
 const DEFAULT_TIP_AMOUNT = 0.10;
-const DEFAULT_CHAIN = 'base-sepolia';
+const DEFAULT_CHAIN = 'base';
 const DEFAULT_ENV = 'prod';
 const DEFAULT_ENDPOINT = 'testnet';
 const DEFAULT_BALANCE_DISPLAY = '0.00';

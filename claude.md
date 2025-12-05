@@ -58,9 +58,9 @@ GROVE_COLORS = {
 ## Chain/Network Configuration
 
 ### Default Chain
-The default chain is `base-sepolia` (testnet). This should be consistent across:
-- `popup.js`: `DEFAULT_CHAIN = 'base-sepolia'`
-- `content.js`: Default fallback should be `'base-sepolia'`
+The default chain is `base` (mainnet). This should be consistent across:
+- `popup.js`: `DEFAULT_CHAIN = 'base'`
+- `content.js`: Default fallback should be `'base'`
 
 ### Network Naming
 API may return network names with underscores (e.g., `base_sepolia`). Always normalize:
