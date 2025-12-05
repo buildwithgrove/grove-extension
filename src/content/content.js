@@ -1305,7 +1305,7 @@ Find out more and start tipping your favorite creators → {grove_link}`;
                 // Build reply text from template
                 const replyText = buildAutoReplyMessage(autoReplyMessage, {
                   username: username,
-                  amount: `$${tipAmount.toFixed(2)}`,
+                  amount: `$${tipAmount.toFixed(2)} USDC`,
                   chain: chainName,
                   tx_link: txLink,
                   grove_link: 'grove.city'
