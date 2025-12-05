@@ -638,12 +638,27 @@ body.developer-mode .testnet-option {
 .onboarding-icon {
   font-size: 64px;
   margin-bottom: 24px;
+  animation: wave 2.5s ease-in-out infinite;
+  transform-origin: 70% 70%;
+}
+
+@keyframes wave {
+  0%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  30% { transform: rotate(14deg); }
+  40% { transform: rotate(-4deg); }
+  50%, 100% { transform: rotate(0deg); }
 }
 
 .onboarding-card h3 {
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 12px;
+  background: linear-gradient(135deg, #ffffff 0%, #a3a3a3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .onboarding-card p {
@@ -655,6 +670,12 @@ body.developer-mode .testnet-option {
 
 .onboarding-card .btn-primary {
   margin-bottom: 10px;
+  box-shadow: 0 0 20px rgba(56, 159, 88, 0.4);
+  transition: all 0.2s ease;
+}
+
+.onboarding-card .btn-primary:hover {
+  box-shadow: 0 0 30px rgba(56, 159, 88, 0.6);
 }
 
 .onboarding-card .info-text-xs {
@@ -1683,6 +1704,12 @@ body.developer-mode .testnet-option {
   display: flex;
   gap: 4px;
   flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+.period-selector.hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .period-btn {

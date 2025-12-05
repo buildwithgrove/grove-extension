@@ -1429,6 +1429,12 @@ function setupLeaderboardSwitcher() {
   leaderboardSwitcherBtns = document.querySelectorAll('.switcher-btn');
   leaderboardViews = document.querySelectorAll('.leaderboard-view');
 
+  // Hide period selector initially (Live is default view)
+  const periodSelector = document.querySelector('.period-selector');
+  if (periodSelector) {
+    periodSelector.classList.add('hidden');
+  }
+
   // Period selector
   periodBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -1459,6 +1465,11 @@ function setupLeaderboardSwitcher() {
 
         leaderboardViews.forEach(v => v.classList.remove('active'));
         document.getElementById(`${view}-view`).classList.add('active');
+
+        // Show/hide period selector (not relevant for Live view)
+        if (periodSelector) {
+          periodSelector.classList.toggle('hidden', view === 'live');
+        }
 
         // Load data for the selected view
         if (view === 'tippers') {
