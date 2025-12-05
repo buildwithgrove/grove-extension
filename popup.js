@@ -180,6 +180,31 @@ async function init() {
 
   // Resolve ENS name in the background (don't await to avoid blocking UI)
   loadAndResolveEnsName();
+
+  // Refresh data when popup regains focus
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+}
+
+/**
+ * Handle visibility change - refresh current tab data when popup becomes visible
+ */
+function handleVisibilityChange() {
+  if (document.visibilityState !== 'visible') return;
+
+  // Find active tab
+  const activeTab = document.querySelector('.page.active');
+  if (!activeTab) return;
+
+  const tabId = activeTab.id;
+
+  // Refresh based on active tab
+  if (tabId === 'tab-home') {
+    fetchBalance();
+  } else if (tabId === 'tab-history') {
+    loadHistory();
+  } else if (tabId === 'tab-leaderboard') {
+    refreshLeaderboard();
+  }
 }
 
 /**
@@ -204,6 +229,9 @@ function setupEventListeners() {
 
   // Leaderboard switcher
   setupLeaderboardSwitcher();
+
+  // History tab
+  setupHistoryTab();
 
   // Settings drill-down navigation
   setupSettingsDrillDown();
@@ -378,6 +406,11 @@ async function handleNavigation(e) {
   // Refresh balance when navigating to home
   if (targetId === 'tab-home') {
     await fetchBalance();
+  }
+
+  // Load history when navigating to history tab
+  if (targetId === 'tab-history') {
+    loadHistory();
   }
 
   // Load leaderboard data when navigating to leaderboard
@@ -781,6 +814,7 @@ async function loadXLoginStatus() {
       }
       if (xLoginBtn) {
         xLoginBtn.textContent = 'Disconnect';
+        xLoginBtn.classList.add('btn-danger-text');
       }
       // Show post-connect options, hide pre-connect info
       if (xPreConnectInfo) {
@@ -796,6 +830,7 @@ async function loadXLoginStatus() {
       }
       if (xLoginBtn) {
         xLoginBtn.textContent = 'Connect';
+        xLoginBtn.classList.remove('btn-danger-text');
       }
       // Show pre-connect info, hide post-connect options
       if (xPreConnectInfo) {
@@ -845,6 +880,7 @@ async function handleXLogin() {
       }
       if (xLoginBtn) {
         xLoginBtn.textContent = 'Disconnect';
+        xLoginBtn.classList.add('btn-danger-text');
         xLoginBtn.disabled = false;
       }
       // Show post-connect options, hide pre-connect info
@@ -1305,6 +1341,11 @@ async function handleChainSelection(e, silent = false) {
   // Reload balance
   fetchBalance();
 
+  // Reload history (reset state and refetch)
+  historyTransactions = [];
+  historyCurrentPage = 0;
+  loadHistory();
+
   // Reload leaderboard data
   seenTxHashes.clear(); // Reset seen tips for new chain
   refreshLeaderboard();
@@ -1373,6 +1414,15 @@ let currentPeriod = 'day';
 let currentLeaderboardView = 'live';
 let livePollingInterval = null;
 let seenTxHashes = new Set();
+
+/**
+ * History State
+ */
+let historyTransactions = [];
+let historyFilter = 'all';
+let historyCurrentPage = 0;
+let historyTotalCount = 0;
+const HISTORY_PAGE_SIZE = 10;
 
 /**
  * Setup Leaderboard
@@ -1570,6 +1620,489 @@ function refreshLeaderboard() {
   } else if (currentLeaderboardView === 'tippees') {
     loadTopTippees();
   }
+}
+
+/**
+ * Setup History Tab
+ */
+function setupHistoryTab() {
+  const filterBtns = document.querySelectorAll('.history-filter .filter-btn');
+  const prevBtn = document.getElementById('history-prev-btn');
+  const nextBtn = document.getElementById('history-next-btn');
+  const retryBtn = document.getElementById('history-retry-btn');
+
+  // Filter buttons
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const filter = e.target.dataset.filter;
+      historyFilter = filter;
+      historyCurrentPage = 0;
+
+      filterBtns.forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+
+      renderHistoryList();
+    });
+  });
+
+  // Pagination
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      if (historyCurrentPage > 0) {
+        historyCurrentPage--;
+        renderHistoryList();
+      }
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      const filteredCount = getFilteredTransactions().length;
+      const totalPages = Math.ceil(filteredCount / HISTORY_PAGE_SIZE);
+      if (historyCurrentPage < totalPages - 1) {
+        historyCurrentPage++;
+        renderHistoryList();
+      }
+    });
+  }
+
+  // Retry button
+  if (retryBtn) {
+    retryBtn.addEventListener('click', () => {
+      loadHistory();
+    });
+  }
+}
+
+/**
+ * Load Transaction History
+ */
+async function loadHistory() {
+  const loading = document.getElementById('history-loading');
+  const error = document.getElementById('history-error');
+  const empty = document.getElementById('history-empty');
+  const notConnected = document.getElementById('history-not-connected');
+  const list = document.getElementById('history-list');
+  const pagination = document.getElementById('history-pagination');
+
+  // Reset states
+  loading.classList.remove('hidden');
+  error.classList.add('hidden');
+  empty.classList.add('hidden');
+  notConnected.classList.add('hidden');
+  list.innerHTML = '';
+  pagination.classList.add('hidden');
+
+  // Check if connected
+  const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
+  const jwt = result[STORAGE_KEYS.JWT];
+
+  if (!jwt) {
+    loading.classList.add('hidden');
+    notConnected.classList.remove('hidden');
+    return;
+  }
+
+  try {
+    // Fetch both tip and fund history in parallel
+    const [tipResult, fundResult] = await Promise.allSettled([
+      GroveAPI.getTipHistory(jwt, 100, 0),
+      GroveAPI.getFundHistory(jwt, 100, 0)
+    ]);
+
+    loading.classList.add('hidden');
+
+    // Process results
+    const tips = tipResult.status === 'fulfilled' && tipResult.value.success
+      ? tipResult.value.data.entries : [];
+    const funds = fundResult.status === 'fulfilled' && fundResult.value.success
+      ? fundResult.value.data.entries : [];
+
+    // Check if both failed
+    if (tips.length === 0 && funds.length === 0 &&
+        tipResult.status === 'rejected' && fundResult.status === 'rejected') {
+      error.classList.remove('hidden');
+      document.getElementById('history-error-message').textContent = 'Unable to load transactions';
+      return;
+    }
+
+    // Transform and combine transactions
+    const tipTransactions = tips.map(tip => ({
+      id: `tip-${tip.id}`,
+      type: tip.direction === 'sent' ? 'tip_sent' : 'tip_received',
+      amount_usd: tip.amount_usd,
+      token_symbol: tip.token_symbol,
+      network: tip.network,
+      status: tip.status,
+      created_at: tip.created_at,
+      tx_hash: tip.tx_hash,
+      counterparty_address: tip.counterparty_address,
+      destination: tip.destination,
+      social_graph: tip.tip_social_graph
+    }));
+
+    const fundTransactions = funds.map(fund => ({
+      id: `fund-${fund.id}`,
+      type: 'deposit',
+      amount_usd: fund.amount_usd,
+      token_symbol: fund.token_symbol,
+      network: fund.network,
+      status: fund.status,
+      created_at: fund.created_at,
+      tx_hash: fund.tx_hash
+    }));
+
+    // Combine and sort by date (newest first)
+    historyTransactions = [...tipTransactions, ...fundTransactions]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    historyTotalCount = historyTransactions.length;
+    historyCurrentPage = 0;
+
+    renderHistoryList();
+
+  } catch (err) {
+    console.error('[Grove Extension] History load failed:', err);
+    loading.classList.add('hidden');
+    error.classList.remove('hidden');
+  }
+}
+
+/**
+ * Get filtered transactions based on current filter
+ */
+function getFilteredTransactions() {
+  return historyTransactions.filter(tx => {
+    if (historyFilter === 'all') return true;
+    if (historyFilter === 'tips') return tx.type === 'tip_sent' || tx.type === 'tip_received';
+    if (historyFilter === 'deposits') return tx.type === 'deposit';
+    return true;
+  });
+}
+
+/**
+ * Render History List
+ */
+function renderHistoryList() {
+  const empty = document.getElementById('history-empty');
+  const emptyMessage = document.getElementById('history-empty-message');
+  const list = document.getElementById('history-list');
+  const pagination = document.getElementById('history-pagination');
+  const pageInfo = document.getElementById('history-page-info');
+  const prevBtn = document.getElementById('history-prev-btn');
+  const nextBtn = document.getElementById('history-next-btn');
+
+  const filtered = getFilteredTransactions();
+
+  if (filtered.length === 0) {
+    empty.classList.remove('hidden');
+    list.innerHTML = '';
+    pagination.classList.add('hidden');
+
+    // Contextual empty message
+    if (historyFilter === 'tips') {
+      emptyMessage.textContent = 'No tips yet';
+    } else if (historyFilter === 'deposits') {
+      emptyMessage.textContent = 'No deposits yet';
+    } else {
+      emptyMessage.textContent = 'No transactions yet';
+    }
+    return;
+  }
+
+  empty.classList.add('hidden');
+
+  // Paginate
+  const totalPages = Math.ceil(filtered.length / HISTORY_PAGE_SIZE);
+  const start = historyCurrentPage * HISTORY_PAGE_SIZE;
+  const pageItems = filtered.slice(start, start + HISTORY_PAGE_SIZE);
+
+  // Render items
+  list.innerHTML = pageItems.map(tx => {
+    const icon = getTransactionIcon(tx.type);
+    const label = getTransactionLabel(tx.type);
+    const amount = formatHistoryAmount(tx);
+    const time = formatRelativeTime(tx.created_at);
+    const amountClass = tx.type === 'tip_sent' ? 'sent' : 'received';
+
+    const explorerUrl = getExplorerUrl(tx.network, tx.tx_hash);
+    const parsed = parseDestination(tx.destination);
+
+    // Build description with links
+    let descriptionHtml;
+    if (parsed.profileHandle && parsed.profileUrl) {
+      // Twitter/X: show @username linking to profile
+      descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="history-item-desc-link">${parsed.profileHandle}</a>`;
+    } else if (parsed.postUrl) {
+      // Other URL: show truncated destination
+      descriptionHtml = `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="history-item-desc-link">${truncateDestination(tx.destination)}</a>`;
+    } else if (tx.counterparty_address) {
+      descriptionHtml = formatAddress(tx.counterparty_address);
+    } else {
+      descriptionHtml = formatNetwork(tx.network);
+    }
+
+    // Platform link icon (X icon for Twitter/X tips)
+    // Check both destination and social_graph for Twitter context
+    const isTwitterFromDestination = parsed.profileUrl && (parsed.profileUrl.includes('x.com') || parsed.profileUrl.includes('twitter.com'));
+    const isTwitterFromSocialGraph = tx.social_graph && (tx.social_graph.includes('x.com') || tx.social_graph.includes('twitter.com'));
+    const isTwitter = isTwitterFromDestination || isTwitterFromSocialGraph;
+
+    // Use destination URL if Twitter, otherwise fall back to social_graph
+    let platformUrl = null;
+    let platformTitle = 'View on X';
+    if (isTwitterFromDestination) {
+      platformUrl = parsed.postUrl || parsed.profileUrl;
+      platformTitle = parsed.postUrl ? 'View post' : 'View profile';
+    } else if (isTwitterFromSocialGraph) {
+      // social_graph contains the Twitter source (e.g., where ENS was found)
+      platformUrl = tx.social_graph.startsWith('http') ? tx.social_graph : `https://${tx.social_graph}`;
+      platformTitle = 'View source';
+    }
+
+    // Always render platform icon slot for alignment, but only make it clickable if there's a URL
+    const platformLinkHtml = isTwitter && platformUrl
+      ? `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="${platformTitle}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        </a>`
+      : `<span class="history-platform-link history-platform-link-empty"></span>`;
+
+    // TX link icon (chain icon)
+    const txLinkHtml = explorerUrl
+      ? `<a href="${explorerUrl}" target="_blank" rel="noopener noreferrer" class="history-tx-link" title="View transaction">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+        </a>`
+      : '';
+
+    return `
+      <div class="history-item">
+        <div class="history-item-icon ${tx.type}">${icon}</div>
+        <div class="history-item-details">
+          <div class="history-item-label">${label}</div>
+          <div class="history-item-description">${descriptionHtml}</div>
+        </div>
+        <div class="history-item-right">
+          <div class="history-item-amount ${amountClass}">${amount}</div>
+          <div class="history-item-time">${time}</div>
+        </div>
+        <div class="history-item-links">
+          ${platformLinkHtml}
+          ${txLinkHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Update pagination
+  if (totalPages > 1) {
+    pagination.classList.remove('hidden');
+    pageInfo.textContent = `${historyCurrentPage + 1} of ${totalPages}`;
+    prevBtn.disabled = historyCurrentPage === 0;
+    nextBtn.disabled = historyCurrentPage >= totalPages - 1;
+  } else {
+    pagination.classList.add('hidden');
+  }
+}
+
+/**
+ * Get transaction icon based on type
+ */
+function getTransactionIcon(type) {
+  switch (type) {
+    case 'tip_sent':
+      return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5m0 0l-7 7m7-7l7 7"/></svg>';
+    case 'tip_received':
+      return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m0 0l7-7m-7 7l-7-7"/></svg>';
+    case 'deposit':
+      return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>';
+    default:
+      return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>';
+  }
+}
+
+/**
+ * Get transaction label based on type
+ */
+function getTransactionLabel(type) {
+  switch (type) {
+    case 'tip_sent': return 'Tip Sent';
+    case 'tip_received': return 'Tip Received';
+    case 'deposit': return 'Deposit';
+    default: return 'Transaction';
+  }
+}
+
+/**
+ * Get transaction description
+ */
+function getTransactionDescription(tx) {
+  if (tx.type === 'tip_sent' || tx.type === 'tip_received') {
+    if (tx.destination) {
+      // Show destination (twitter.com/username)
+      return truncateDestination(tx.destination);
+    }
+    if (tx.counterparty_address) {
+      return formatAddress(tx.counterparty_address);
+    }
+    return formatNetwork(tx.network);
+  }
+  return formatNetwork(tx.network);
+}
+
+/**
+ * Get block explorer URL for a transaction
+ */
+function getExplorerUrl(network, txHash) {
+  if (!txHash) return null;
+
+  // Normalize: lowercase and replace underscores with hyphens
+  const normalized = (network || '').toLowerCase().replace(/_/g, '-');
+
+  if (normalized.includes('base')) {
+    const isTestnet = normalized.includes('sepolia') || normalized.includes('testnet');
+    const baseUrl = isTestnet ? 'https://sepolia.basescan.org' : 'https://basescan.org';
+    return `${baseUrl}/tx/${txHash}`;
+  }
+
+  if (normalized.includes('solana') || normalized.includes('sol')) {
+    const isDevnet = normalized.includes('devnet') || normalized.includes('testnet');
+    const cluster = isDevnet ? '?cluster=devnet' : '';
+    return `https://solscan.io/tx/${txHash}${cluster}`;
+  }
+
+  return null;
+}
+
+/**
+ * Get URL for the tipped content (tweet, etc)
+ */
+function getDestinationUrl(destination) {
+  if (!destination) return null;
+
+  // If it already has a protocol, return as-is
+  if (destination.startsWith('http://') || destination.startsWith('https://')) {
+    return destination;
+  }
+
+  // Construct full URL from destination (e.g., "x.com/user/status/123" -> "https://x.com/user/status/123")
+  return `https://${destination}`;
+}
+
+/**
+ * Parse destination to extract profile URL and check if it's a specific post
+ * Returns { profileUrl, postUrl, profileHandle }
+ */
+function parseDestination(destination) {
+  if (!destination) return { profileUrl: null, postUrl: null, profileHandle: null };
+
+  // Check if it's a .base.eth name
+  if (destination.endsWith('.base.eth')) {
+    const name = destination.replace('.base.eth', '');
+    return {
+      profileUrl: `https://www.base.org/name/${name}`,
+      postUrl: null,
+      profileHandle: destination
+    };
+  }
+
+  // Check if it's a .eth name (but not .base.eth)
+  if (destination.endsWith('.eth')) {
+    return {
+      profileUrl: `https://app.ens.domains/${destination}`,
+      postUrl: null,
+      profileHandle: destination
+    };
+  }
+
+  // Normalize: add https if needed
+  const fullUrl = destination.startsWith('http') ? destination : `https://${destination}`;
+
+  // Check if it's a Twitter/X status URL
+  const statusMatch = destination.match(/^(x\.com|twitter\.com)\/([^\/]+)\/status\/(\d+)/i);
+  if (statusMatch) {
+    const domain = statusMatch[1];
+    const username = statusMatch[2];
+    return {
+      profileUrl: `https://${domain}/${username}`,
+      postUrl: fullUrl,
+      profileHandle: `@${username}`
+    };
+  }
+
+  // Check if it's just a Twitter/X profile
+  const profileMatch = destination.match(/^(x\.com|twitter\.com)\/([^\/]+)\/?$/i);
+  if (profileMatch) {
+    const username = profileMatch[2];
+    return {
+      profileUrl: fullUrl,
+      postUrl: null,
+      profileHandle: `@${username}`
+    };
+  }
+
+  // For other URLs, just return the destination as-is
+  return {
+    profileUrl: null,
+    postUrl: fullUrl,
+    profileHandle: null
+  };
+}
+
+/**
+ * Truncate destination string
+ */
+function truncateDestination(dest) {
+  if (!dest) return '';
+  if (dest.length <= 24) return dest;
+  return dest.slice(0, 24) + '...';
+}
+
+/**
+ * Format network name
+ */
+function formatNetwork(network) {
+  if (!network) return '';
+  if (network.includes('base')) return 'Base';
+  if (network.includes('solana')) return 'Solana';
+  return network.charAt(0).toUpperCase() + network.slice(1);
+}
+
+/**
+ * Format history amount with sign
+ */
+function formatHistoryAmount(tx) {
+  const amount = parseFloat(tx.amount_usd) || 0;
+  const formatted = formatUSD(amount);
+  if (tx.type === 'tip_sent') {
+    return '-' + formatted;
+  }
+  return '+' + formatted;
+}
+
+/**
+ * Format relative time (enhanced version)
+ */
+function formatRelativeTime(dateString) {
+  if (!dateString) return '';
+  const now = new Date();
+  const then = new Date(dateString);
+  const seconds = Math.floor((now - then) / 1000);
+
+  if (seconds < 60) return 'Just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+
+  const days = Math.floor(seconds / 86400);
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days}d ago`;
+
+  // Format as date for older items
+  return then.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 /**

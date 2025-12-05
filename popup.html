@@ -254,12 +254,64 @@
 
     <!-- History Page -->
     <div class="page" id="tab-history">
-      <h2 class="page-title">History</h2>
+      <h2 class="page-title">Transaction History</h2>
 
-      <div class="empty-state coming-soon-state">
-        <div class="empty-icon">📊</div>
-        <h3>Coming Soon</h3>
-        <p>Your tip history will appear here</p>
+      <!-- Filter Tabs -->
+      <div class="history-filter">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="tips">Tips</button>
+        <button class="filter-btn" data-filter="deposits">Deposits</button>
+      </div>
+
+      <!-- Loading State -->
+      <div class="history-loading" id="history-loading">
+        <div class="history-spinner"></div>
+      </div>
+
+      <!-- Error State -->
+      <div class="history-error hidden" id="history-error">
+        <div class="empty-icon">!</div>
+        <p id="history-error-message">Unable to load transactions</p>
+        <button class="btn-secondary btn-sm" id="history-retry-btn">Try Again</button>
+      </div>
+
+      <!-- Empty State -->
+      <div class="history-empty hidden" id="history-empty">
+        <div class="empty-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+        </div>
+        <p id="history-empty-message">No transactions yet</p>
+      </div>
+
+      <!-- Not Connected State -->
+      <div class="history-not-connected hidden" id="history-not-connected">
+        <div class="empty-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+        </div>
+        <p>Connect your account to see history</p>
+      </div>
+
+      <!-- Transaction List -->
+      <div class="history-list" id="history-list"></div>
+
+      <!-- Pagination -->
+      <div class="history-pagination hidden" id="history-pagination">
+        <button class="pagination-btn" id="history-prev-btn" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <span class="pagination-info" id="history-page-info">1 of 1</span>
+        <button class="pagination-btn" id="history-next-btn" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -288,7 +340,11 @@
           <div class="leaderboard-spinner"></div>
         </div>
         <div class="leaderboard-empty hidden" id="live-empty">
-          <div class="empty-icon">⚡</div>
+          <div class="empty-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+          </div>
           <p>No recent tips</p>
         </div>
         <div class="live-tips-list" id="live-list"></div>
@@ -300,7 +356,16 @@
           <div class="leaderboard-spinner"></div>
         </div>
         <div class="leaderboard-empty hidden" id="tippers-empty">
-          <div class="empty-icon">🏆</div>
+          <div class="empty-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+              <path d="M4 22h16"></path>
+              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+              <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+            </svg>
+          </div>
           <p>No tippers yet this period</p>
         </div>
         <div class="leaderboard-list" id="tippers-list"></div>
@@ -312,7 +377,12 @@
           <div class="leaderboard-spinner"></div>
         </div>
         <div class="leaderboard-empty hidden" id="tippees-empty">
-          <div class="empty-icon">🌟</div>
+          <div class="empty-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+          </div>
           <p>No earners yet this period</p>
         </div>
         <div class="leaderboard-list" id="tippees-list"></div>
@@ -870,7 +940,7 @@
         <line x1="18" y1="20" x2="18" y2="4"></line>
         <line x1="6" y1="20" x2="6" y2="16"></line>
       </svg>
-      <span class="nav-label">Leaders</span>
+      <span class="nav-label">Leaderboard</span>
     </button>
     <button class="nav-item" data-target="tab-earn">
       <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
