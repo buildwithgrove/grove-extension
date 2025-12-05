@@ -1857,10 +1857,10 @@ function renderHistoryList() {
 
   // Render items
   list.innerHTML = pageItems.map(tx => {
-    const icon = getTransactionIcon(tx.type);
-    const label = getTransactionLabel(tx.type);
     const isFailed = tx.status === 'failed';
-    const amount = isFailed ? 'Failed' : formatHistoryAmount(tx);
+    const icon = isFailed ? getTransactionIcon('failed') : getTransactionIcon(tx.type);
+    const label = isFailed ? 'Tip Failed' : getTransactionLabel(tx.type);
+    const amount = formatHistoryAmount(tx);
     const time = formatRelativeTime(tx.created_at);
     const amountClass = isFailed ? 'failed' : (tx.type === 'tip_sent' ? 'sent' : 'received');
 
@@ -1951,7 +1951,7 @@ function renderHistoryList() {
 
     return `
       <div class="history-item">
-        <div class="history-item-icon ${tx.type}">${icon}</div>
+        <div class="history-item-icon ${isFailed ? 'failed' : tx.type}">${icon}</div>
         <div class="history-item-details">
           <div class="history-item-label">${label}</div>
           <div class="history-item-description">${descriptionHtml}</div>
@@ -1990,6 +1990,8 @@ function getTransactionIcon(type) {
       return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m0 0l7-7m-7 7l-7-7"/></svg>';
     case 'deposit':
       return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>';
+    case 'failed':
+      return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>';
     default:
       return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>';
   }
