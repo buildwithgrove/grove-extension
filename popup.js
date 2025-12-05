@@ -1707,7 +1707,8 @@ async function loadHistory() {
       created_at: tip.created_at,
       tx_hash: tip.tx_hash,
       counterparty_address: tip.counterparty_address,
-      destination: tip.destination
+      destination: tip.destination,
+      social_graph: tip.tip_social_graph
     }));
 
     const fundTransactions = funds.map(fund => ({
@@ -1812,10 +1813,25 @@ function renderHistoryList() {
     }
 
     // Platform link icon (X icon for Twitter/X tips)
-    const isTwitter = parsed.profileUrl && (parsed.profileUrl.includes('x.com') || parsed.profileUrl.includes('twitter.com'));
-    const platformUrl = parsed.postUrl || parsed.profileUrl;
+    // Check both destination and social_graph for Twitter context
+    const isTwitterFromDestination = parsed.profileUrl && (parsed.profileUrl.includes('x.com') || parsed.profileUrl.includes('twitter.com'));
+    const isTwitterFromSocialGraph = tx.social_graph && (tx.social_graph.includes('x.com') || tx.social_graph.includes('twitter.com'));
+    const isTwitter = isTwitterFromDestination || isTwitterFromSocialGraph;
+
+    // Use destination URL if Twitter, otherwise fall back to social_graph
+    let platformUrl = null;
+    let platformTitle = 'View on X';
+    if (isTwitterFromDestination) {
+      platformUrl = parsed.postUrl || parsed.profileUrl;
+      platformTitle = parsed.postUrl ? 'View post' : 'View profile';
+    } else if (isTwitterFromSocialGraph) {
+      // social_graph contains the Twitter source (e.g., where ENS was found)
+      platformUrl = tx.social_graph.startsWith('http') ? tx.social_graph : `https://${tx.social_graph}`;
+      platformTitle = 'View source';
+    }
+
     const platformLinkHtml = isTwitter && platformUrl
-      ? `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="${parsed.postUrl ? 'View post' : 'View profile'}">
+      ? `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="${platformTitle}">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
           </svg>
