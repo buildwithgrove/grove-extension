@@ -853,7 +853,7 @@ button.section-card-btn:hover .quick-access-icon {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 8px;
   padding: 16px 12px;
   background-color: var(--color-surface);
@@ -861,6 +861,7 @@ button.section-card-btn:hover .quick-access-icon {
   border-radius: var(--radius-lg);
   cursor: default;
   min-height: 110px;
+  text-align: center;
 }
 
 .quick-access-item .card-label {
@@ -871,15 +872,13 @@ button.section-card-btn:hover .quick-access-icon {
 
 .quick-access-item .amount-display {
   margin: 0;
+  display: flex;
+  justify-content: center;
 }
 
 .quick-access-item .btn-text {
   font-size: 12px;
   padding: 4px 8px;
-}
-
-.quick-access-item .quick-access-label {
-  margin-top: auto;
 }
 
 button.quick-access-item {
