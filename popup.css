@@ -852,15 +852,14 @@ button.section-card-btn:hover .quick-access-icon {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 14px 14px;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px 14px;
   background-color: var(--color-surface);
   border: none;
   border-radius: var(--radius-lg);
   cursor: default;
   text-align: center;
-  min-height: 90px;
 }
 
 .quick-access-item .card-label {
