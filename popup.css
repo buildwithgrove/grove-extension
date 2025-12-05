@@ -878,11 +878,17 @@ button.section-card-btn:hover .quick-access-icon {
 .quick-access-item .btn-text {
   font-size: 12px;
   padding: 4px 12px;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
 }
 
 .quick-access-item .quick-access-label {
   font-size: 10px;
   color: var(--color-text-secondary);
+  min-height: 24px;
+  display: flex;
+  align-items: center;
 }
 
 button.quick-access-item {
