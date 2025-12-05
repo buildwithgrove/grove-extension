@@ -330,15 +330,27 @@ class GroveAPI {
         }
       });
 
-      const data = await response.json();
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.warn('[Grove Extension] Tip response parse failed:', parseError);
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || `API request failed with status ${response.status}`);
+        const message = data?.detail?.error || data?.message || `API request failed with status ${response.status}`;
+        return {
+          success: false,
+          error: message,
+          status: response.status,
+          data
+        };
       }
 
       return {
         success: true,
-        data: data
+        data: data,
+        status: response.status
       };
 
     } catch (error) {
@@ -346,7 +358,8 @@ class GroveAPI {
 
       return {
         success: false,
-        error: error.message
+        error: error.message,
+        status: null
       };
     }
   }
