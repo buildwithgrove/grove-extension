@@ -17,6 +17,9 @@ class KeyManager {
     const result = await chrome.storage.local.get([STORAGE_KEY]);
     let prevJwts = result[STORAGE_KEY] || [];
 
+    // Remove if already exists to prevent duplicates
+    prevJwts = prevJwts.filter(item => item.key !== currentJwt);
+
     // Add current JWT to previous keys with timestamp
     prevJwts.unshift({
       key: currentJwt,
