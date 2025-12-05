@@ -104,3 +104,20 @@ For destructive actions requiring confirmation, add `.confirming` class to pulse
   animation: pulse-danger 0.5s ease-in-out infinite alternate;
 }
 ```
+
+## Tipping Currency
+
+All tips are sent in **USDC** on both Base and Base Sepolia networks. The currency is currently hardcoded as "USDC" in the auto-reply message (`src/content/content.js`). If additional currencies are supported in the future, consider adding a `currency` property to the chain config in `src/config/networks.js`.
+
+## Auto-Reply Message
+
+The default auto-reply message template is defined in two places (must be kept in sync):
+- `popup.js`: `DEFAULT_AUTO_REPLY_MESSAGE`
+- `src/content/content.js`: `DEFAULT_AUTO_REPLY_MESSAGE`
+
+Available placeholders:
+- `{username}` - Twitter username of the tip recipient
+- `{amount}` - Tip amount with currency (e.g., "$0.10 USDC")
+- `{chain}` - Network name (e.g., "Base", "Base Sepolia")
+- `{tx_link}` - Block explorer link to the transaction
+- `{grove_link}` - Link to Grove website (grove.city)
