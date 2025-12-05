@@ -319,9 +319,66 @@ function setupEventListeners() {
   }
 
   if (homeAutoReplyToggle) {
-    homeAutoReplyToggle.addEventListener('change', (e) => {
-      if (autoReplyToggle) autoReplyToggle.checked = e.target.checked;
-      chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY]: e.target.checked });
+    homeAutoReplyToggle.addEventListener('change', async (e) => {
+      const enabled = e.target.checked;
+
+      // Check if user is logged in when enabling
+      if (enabled) {
+        const isLoggedIn = await XAuth.isLoggedIn();
+        if (!isLoggedIn) {
+          homeAutoReplyToggle.checked = false;
+          showToast('Connect X account first');
+          return;
+        }
+      }
+
+      if (autoReplyToggle) autoReplyToggle.checked = enabled;
+      chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY]: enabled });
+
+      // Show/hide message container
+      const homeAutoReplyMessageContainer = document.getElementById('homeAutoReplyMessageContainer');
+      if (homeAutoReplyMessageContainer) {
+        if (enabled) {
+          homeAutoReplyMessageContainer.classList.remove('hidden');
+        } else {
+          homeAutoReplyMessageContainer.classList.add('hidden');
+        }
+      }
+      // Also update settings page container
+      if (autoReplyMessageContainer) {
+        if (enabled) {
+          autoReplyMessageContainer.classList.remove('hidden');
+        } else {
+          autoReplyMessageContainer.classList.add('hidden');
+        }
+      }
+    });
+  }
+
+  // Home auto-reply message save/reset
+  const homeAutoReplyMessageInput = document.getElementById('homeAutoReplyMessageInput');
+  const homeSaveAutoReplyMessageBtn = document.getElementById('homeSaveAutoReplyMessageBtn');
+  const homeResetAutoReplyMessageBtn = document.getElementById('homeResetAutoReplyMessageBtn');
+
+  if (homeSaveAutoReplyMessageBtn && homeAutoReplyMessageInput) {
+    homeSaveAutoReplyMessageBtn.addEventListener('click', async () => {
+      const message = homeAutoReplyMessageInput.value.trim();
+      if (message) {
+        await chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY_MESSAGE]: message });
+        // Sync with settings page
+        if (autoReplyMessageInput) autoReplyMessageInput.value = message;
+        showToast('Message saved');
+      }
+    });
+  }
+
+  if (homeResetAutoReplyMessageBtn && homeAutoReplyMessageInput) {
+    homeResetAutoReplyMessageBtn.addEventListener('click', async () => {
+      homeAutoReplyMessageInput.value = DEFAULT_AUTO_REPLY_MESSAGE;
+      await chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY_MESSAGE]: DEFAULT_AUTO_REPLY_MESSAGE });
+      // Sync with settings page
+      if (autoReplyMessageInput) autoReplyMessageInput.value = DEFAULT_AUTO_REPLY_MESSAGE;
+      showToast('Message reset to default');
     });
   }
 
@@ -751,6 +808,15 @@ async function loadAutoReply() {
   if (homeAutoReplyToggle) {
     homeAutoReplyToggle.checked = enabled;
   }
+  // Show/hide message container based on toggle state
+  const homeAutoReplyMessageContainer = document.getElementById('homeAutoReplyMessageContainer');
+  if (homeAutoReplyMessageContainer) {
+    if (enabled) {
+      homeAutoReplyMessageContainer.classList.remove('hidden');
+    } else {
+      homeAutoReplyMessageContainer.classList.add('hidden');
+    }
+  }
 }
 
 async function handleAutoReplyToggle() {
@@ -821,6 +887,12 @@ async function loadAutoReplyMessage() {
 
   if (autoReplyMessageInput) {
     autoReplyMessageInput.value = message;
+  }
+
+  // Sync home message input
+  const homeAutoReplyMessageInput = document.getElementById('homeAutoReplyMessageInput');
+  if (homeAutoReplyMessageInput) {
+    homeAutoReplyMessageInput.value = message;
   }
 
   // Show/hide based on auto-reply toggle state

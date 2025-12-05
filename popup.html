@@ -320,6 +320,19 @@
                 <span class="slider"></span>
               </label>
             </div>
+
+            <!-- Custom Auto-Reply Message -->
+            <div class="home-auto-reply-message hidden" id="homeAutoReplyMessageContainer">
+              <div class="settings-info" style="margin-bottom: 8px;">
+                <div class="settings-name">Custom Message</div>
+                <div class="settings-desc">Use: {username}, {amount}, {chain}, {tx_link}, {grove_link}</div>
+              </div>
+              <textarea id="homeAutoReplyMessageInput" class="message-textarea" rows="4" placeholder="Enter your custom auto-reply message..."></textarea>
+              <div class="form-actions" style="margin-top: 8px;">
+                <button class="btn-secondary btn-sm" id="homeResetAutoReplyMessageBtn">Reset</button>
+                <button class="btn-primary btn-sm" id="homeSaveAutoReplyMessageBtn">Save</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -1000,6 +1000,17 @@ button.quick-access-item:hover .quick-access-icon {
   flex-shrink: 0;
 }
 
+.home-auto-reply-message {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.home-auto-reply-message .message-textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 /* Special layout for step 4 with button */
 .step-card:last-child {
   align-items: center;
