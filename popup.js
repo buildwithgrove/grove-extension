@@ -180,6 +180,31 @@ async function init() {
 
   // Resolve ENS name in the background (don't await to avoid blocking UI)
   loadAndResolveEnsName();
+
+  // Refresh data when popup regains focus
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+}
+
+/**
+ * Handle visibility change - refresh current tab data when popup becomes visible
+ */
+function handleVisibilityChange() {
+  if (document.visibilityState !== 'visible') return;
+
+  // Find active tab
+  const activeTab = document.querySelector('.page.active');
+  if (!activeTab) return;
+
+  const tabId = activeTab.id;
+
+  // Refresh based on active tab
+  if (tabId === 'tab-home') {
+    fetchBalance();
+  } else if (tabId === 'tab-history') {
+    loadHistory();
+  } else if (tabId === 'tab-leaderboard') {
+    refreshLeaderboard();
+  }
 }
 
 /**

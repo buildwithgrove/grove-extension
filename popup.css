@@ -1704,12 +1704,19 @@ body.developer-mode .testnet-option {
 }
 
 .leaderboard-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--color-border);
-  border-top-color: var(--color-primary);
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  border: 2px solid #444;
+  box-shadow:
+    -10px -10px 10px var(--color-primary),
+    0px -10px 10px 0px #389f58,
+    10px -10px 10px #f0ad4e,
+    10px 0 10px #f0ad4e,
+    10px 10px 10px 0px #f0ad4e,
+    0 10px 10px 0px #389f58,
+    -10px 10px 10px 0px var(--color-primary);
+  animation: balance-spin 0.7s linear infinite;
 }
 
 @keyframes spin {
@@ -1858,12 +1865,19 @@ body.developer-mode .testnet-option {
 }
 
 .history-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--color-border);
-  border-top-color: var(--color-primary);
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  border: 2px solid #444;
+  box-shadow:
+    -10px -10px 10px var(--color-primary),
+    0px -10px 10px 0px #389f58,
+    10px -10px 10px #f0ad4e,
+    10px 0 10px #f0ad4e,
+    10px 10px 10px 0px #f0ad4e,
+    0 10px 10px 0px #389f58,
+    -10px 10px 10px 0px var(--color-primary);
+  animation: balance-spin 0.7s linear infinite;
 }
 
 /* History Error State */
