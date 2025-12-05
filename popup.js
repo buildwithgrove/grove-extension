@@ -1775,7 +1775,8 @@ async function loadHistory() {
       tx_hash: tip.tx_hash,
       counterparty_address: tip.counterparty_address,
       destination: tip.destination,
-      social_graph: tip.tip_social_graph
+      social_graph: tip.tip_social_graph,
+      context: tip.context
     }));
 
     const fundTransactions = funds.map(fund => ({
@@ -1864,35 +1865,64 @@ function renderHistoryList() {
 
     const explorerUrl = getExplorerUrl(tx.network, tx.tx_hash);
     const parsed = parseDestination(tx.destination);
+    const ctx = tx.context || {};
 
-    // Build description with links
+    // Build description with links - prefer context data when available
     let descriptionHtml;
-    if (parsed.profileHandle && parsed.profileUrl) {
-      // Twitter/X: show @username linking to profile
-      descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="history-item-desc-link">${parsed.profileHandle}</a>`;
-    } else if (parsed.postUrl) {
-      // Other URL: show truncated destination
-      descriptionHtml = `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="history-item-desc-link">${truncateDestination(tx.destination)}</a>`;
-    } else if (tx.counterparty_address) {
-      descriptionHtml = formatAddress(tx.counterparty_address);
+
+    if (tx.type === 'tip_sent') {
+      // For sent tips: show recipient
+      if (ctx.recipient_username) {
+        const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
+        descriptionHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="history-item-desc-link">@${escapeHtml(ctx.recipient_username)}</a>`;
+      } else if (parsed.profileHandle && parsed.profileUrl) {
+        descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="history-item-desc-link">${parsed.profileHandle}</a>`;
+      } else if (parsed.postUrl) {
+        descriptionHtml = `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="history-item-desc-link">${truncateDestination(tx.destination)}</a>`;
+      } else if (tx.counterparty_address) {
+        descriptionHtml = formatAddress(tx.counterparty_address);
+      } else {
+        descriptionHtml = formatNetwork(tx.network);
+      }
+    } else if (tx.type === 'tip_received') {
+      // For received tips: show sender if available
+      if (ctx.sender_username) {
+        const profileUrl = ctx.sender_profile_url || `https://x.com/${ctx.sender_username}`;
+        descriptionHtml = `<span class="history-from-label">from</span> <a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="history-item-desc-link">@${escapeHtml(ctx.sender_username)}</a>`;
+      } else if (tx.counterparty_address) {
+        descriptionHtml = `<span class="history-from-label">from</span> ${formatAddress(tx.counterparty_address)}`;
+      } else if (parsed.profileHandle && parsed.profileUrl) {
+        descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="history-item-desc-link">${parsed.profileHandle}</a>`;
+      } else {
+        descriptionHtml = formatNetwork(tx.network);
+      }
     } else {
-      descriptionHtml = formatNetwork(tx.network);
+      // Deposits and other types
+      if (tx.counterparty_address) {
+        descriptionHtml = formatAddress(tx.counterparty_address);
+      } else {
+        descriptionHtml = formatNetwork(tx.network);
+      }
     }
 
+
     // Platform link icon (X icon for Twitter/X tips)
-    // Check both destination and social_graph for Twitter context
+    // Check context, destination, and social_graph for Twitter
+    const isTwitterFromContext = ctx.sender_platform === 'twitter';
     const isTwitterFromDestination = parsed.profileUrl && (parsed.profileUrl.includes('x.com') || parsed.profileUrl.includes('twitter.com'));
     const isTwitterFromSocialGraph = tx.social_graph && (tx.social_graph.includes('x.com') || tx.social_graph.includes('twitter.com'));
-    const isTwitter = isTwitterFromDestination || isTwitterFromSocialGraph;
+    const isTwitter = isTwitterFromContext || isTwitterFromDestination || isTwitterFromSocialGraph;
 
-    // Use destination URL if Twitter, otherwise fall back to social_graph
+    // Use source_post_url from context first, then destination URL, then social_graph
     let platformUrl = null;
     let platformTitle = 'View on X';
-    if (isTwitterFromDestination) {
+    if (ctx.source_post_url) {
+      platformUrl = ctx.source_post_url;
+      platformTitle = ctx.source_post_url.includes('/status/') ? 'View post' : 'View profile';
+    } else if (isTwitterFromDestination) {
       platformUrl = parsed.postUrl || parsed.profileUrl;
       platformTitle = parsed.postUrl ? 'View post' : 'View profile';
     } else if (isTwitterFromSocialGraph) {
-      // social_graph contains the Twitter source (e.g., where ENS was found)
       platformUrl = tx.social_graph.startsWith('http') ? tx.social_graph : `https://${tx.social_graph}`;
       platformTitle = 'View source';
     }

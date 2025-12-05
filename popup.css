@@ -2329,6 +2329,11 @@ button.quick-access-item:hover .quick-access-icon {
   text-overflow: ellipsis;
 }
 
+.history-from-label {
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+}
+
 /* History Item Right */
 .history-item-right {
   text-align: right;
