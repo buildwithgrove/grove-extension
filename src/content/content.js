@@ -381,8 +381,32 @@
       console.log(`[Grove Extension] Tipping to ENS name: ${tipDestination}`);
     }
 
-    // Send tip via API with JWT and amount
-    const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt);
+    // Build context metadata for the tip
+    const username = extractUsernameFromUrl(window.location.href);
+    const context = {
+      source_post_url: window.location.href,
+      sender_platform: 'twitter'
+    };
+    if (username) {
+      context.recipient_username = username;
+      context.recipient_profile_url = `https://x.com/${username}`;
+    }
+
+    // Add sender info if X is authenticated
+    if (typeof XAuth !== 'undefined') {
+      try {
+        const senderInfo = await XAuth.getStoredUserInfo();
+        if (senderInfo && senderInfo.username) {
+          context.sender_username = senderInfo.username;
+          context.sender_profile_url = `https://x.com/${senderInfo.username}`;
+        }
+      } catch (e) {
+        // Ignore - sender info is optional
+      }
+    }
+
+    // Send tip via API with JWT, amount, and context
+    const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt, context);
 
     const parsedError = (!response.success && typeof TipErrorHandler !== 'undefined')
       ? TipErrorHandler.parse(response)
@@ -1270,8 +1294,31 @@ Find out more and start tipping your favorite creators → {grove_link}`;
       }
     }
 
-    // Send tip via API
-    const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt);
+    // Build context metadata for the tip
+    const context = {
+      source_post_url: tweetUrl,
+      sender_platform: 'twitter'
+    };
+    if (username) {
+      context.recipient_username = username;
+      context.recipient_profile_url = `https://x.com/${username}`;
+    }
+
+    // Add sender info if X is authenticated
+    if (typeof XAuth !== 'undefined') {
+      try {
+        const senderInfo = await XAuth.getStoredUserInfo();
+        if (senderInfo && senderInfo.username) {
+          context.sender_username = senderInfo.username;
+          context.sender_profile_url = `https://x.com/${senderInfo.username}`;
+        }
+      } catch (e) {
+        // Ignore - sender info is optional
+      }
+    }
+
+    // Send tip via API with context
+    const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt, context);
     const parsedError = (!response.success && typeof TipErrorHandler !== 'undefined')
       ? TipErrorHandler.parse(response)
       : null;

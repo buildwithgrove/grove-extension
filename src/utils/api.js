@@ -403,17 +403,32 @@ class GroveAPI {
    * @param {string} pageUrl - Full page URL (e.g., "https://twitter.com/olshansky")
    * @param {number} tipAmount - Tip amount in dollars (default: 0.05)
    * @param {string} groveApiJwt - JWT token for authentication
+   * @param {Object} context - Optional context metadata for the tip
+   * @param {string} context.source_post_url - URL of the post where the tip originated
+   * @param {string} context.recipient_username - Username of the tip recipient
+   * @param {string} context.recipient_profile_url - Profile URL of the recipient
+   * @param {string} context.sender_platform - Platform identifier (e.g., "twitter")
    * @returns {Promise<Object>} - API response
    */
-  static async sendTip(pageUrl, tipAmount = this.DEFAULT_TIP_AMOUNT, groveApiJwt = this.GROVE_API_JWT) {
+  static async sendTip(pageUrl, tipAmount = this.DEFAULT_TIP_AMOUNT, groveApiJwt = this.GROVE_API_JWT, context = null) {
     const baseURL = await this.getBaseURL();
     const network = await this.getChainId();
 
     const tipDomain = this.buildTipDomainFromURL(pageUrl);
 
-    // Include network parameter to ensure correct chain is used
-    const apiUrl = `${baseURL}/v1/tip/${tipDomain}/${tipAmount}?network=${network}`;
+    const apiUrl = `${baseURL}/v1/tip`;
 
+    // Build request body
+    const body = {
+      destination: tipDomain,
+      amount: String(tipAmount),
+      network: network
+    };
+
+    // Add context if provided
+    if (context) {
+      body.context = context;
+    }
 
     try {
       const response = await fetch(apiUrl, {
@@ -421,7 +436,8 @@ class GroveAPI {
         headers: {
           'Authorization': `Bearer ${groveApiJwt}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify(body)
       });
 
       let data = null;
