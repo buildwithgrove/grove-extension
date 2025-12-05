@@ -1724,8 +1724,9 @@ body.developer-mode .testnet-option {
 }
 
 .leaderboard-empty .empty-icon {
-  font-size: 32px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+  color: var(--color-text-tertiary);
 }
 
 .leaderboard-empty p {
