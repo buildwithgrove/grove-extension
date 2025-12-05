@@ -381,8 +381,34 @@
       console.log(`[Grove Extension] Tipping to ENS name: ${tipDestination}`);
     }
 
-    // Send tip via API with JWT and amount
-    const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt);
+    // Build context metadata for the tip
+    // Note: sender_platform can be 'x' or 'twitter' - both map to X/Twitter
+    const username = extractUsernameFromUrl(window.location.href);
+    const context = {
+      source_post_url: window.location.href,
+      sender_platform: 'x'
+    };
+    if (username) {
+      context.recipient_username = username;
+      context.recipient_profile_url = `https://x.com/${username}`;
+    }
+
+    // Add sender info if X is authenticated with real username
+    if (typeof XAuth !== 'undefined') {
+      try {
+        const senderInfo = await XAuth.getStoredUserInfo();
+        // Only use if we have a real username (not the fallback 'Connected')
+        if (senderInfo && senderInfo.username && senderInfo.username !== 'Connected') {
+          context.sender_username = senderInfo.username;
+          context.sender_profile_url = `https://x.com/${senderInfo.username}`;
+        }
+      } catch (e) {
+        // Ignore - sender info is optional
+      }
+    }
+
+    // Send tip via API with JWT, amount, and context
+    const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt, context);
 
     const parsedError = (!response.success && typeof TipErrorHandler !== 'undefined')
       ? TipErrorHandler.parse(response)
@@ -1165,11 +1191,11 @@
   }
 
   // Default auto-reply message template (must match popup.js)
-  const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I loved this post so much that I just sent you a {amount} tip on {chain} via @BuildWithGrove.
+  const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, just sent you a {amount} tip on {chain}! #TipWithGroveOnBase
 
 Tx: {tx_link}
 
-Find out more and start tipping your favorite creators → {grove_link}`;
+Tip creators you love → {grove_link}`;
 
   /**
    * Build auto-reply message from template
@@ -1270,8 +1296,33 @@ Find out more and start tipping your favorite creators → {grove_link}`;
       }
     }
 
-    // Send tip via API
-    const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt);
+    // Build context metadata for the tip
+    // Note: sender_platform can be 'x' or 'twitter' - both map to X/Twitter
+    const context = {
+      source_post_url: tweetUrl,
+      sender_platform: 'x'
+    };
+    if (username) {
+      context.recipient_username = username;
+      context.recipient_profile_url = `https://x.com/${username}`;
+    }
+
+    // Add sender info if X is authenticated with real username
+    if (typeof XAuth !== 'undefined') {
+      try {
+        const senderInfo = await XAuth.getStoredUserInfo();
+        // Only use if we have a real username (not the fallback 'Connected')
+        if (senderInfo && senderInfo.username && senderInfo.username !== 'Connected') {
+          context.sender_username = senderInfo.username;
+          context.sender_profile_url = `https://x.com/${senderInfo.username}`;
+        }
+      } catch (e) {
+        // Ignore - sender info is optional
+      }
+    }
+
+    // Send tip via API with context
+    const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt, context);
     const parsedError = (!response.success && typeof TipErrorHandler !== 'undefined')
       ? TipErrorHandler.parse(response)
       : null;
