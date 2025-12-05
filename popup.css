@@ -882,15 +882,13 @@ button.section-card-btn:hover .quick-access-icon {
 
 .quick-access-item .quick-access-label {
   font-size: 10px;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
 }
 
 .quick-access-item .demo-tip-button {
-  margin: 0;
-}
-
-.quick-access-item .quick-access-label {
-  margin-top: auto;
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
 
 button.quick-access-item {
