@@ -1907,8 +1907,9 @@ function renderHistoryList() {
 
 
     // Platform link icon (X icon for Twitter/X tips)
-    // Check context, destination, and social_graph for Twitter
-    const isTwitterFromContext = ctx.sender_platform === 'twitter' ||
+    // Check context, destination, and social_graph for Twitter/X
+    // Note: sender_platform can be 'x' or 'twitter' - both are valid and map to X/Twitter
+    const isTwitterFromContext = ctx.sender_platform === 'twitter' || ctx.sender_platform === 'x' ||
       (ctx.source_post_url && (ctx.source_post_url.includes('x.com') || ctx.source_post_url.includes('twitter.com')));
     const isTwitterFromDestination = parsed.profileUrl && (parsed.profileUrl.includes('x.com') || parsed.profileUrl.includes('twitter.com'));
     const isTwitterFromSocialGraph = tx.social_graph && (tx.social_graph.includes('x.com') || tx.social_graph.includes('twitter.com'));

@@ -382,10 +382,11 @@
     }
 
     // Build context metadata for the tip
+    // Note: sender_platform can be 'x' or 'twitter' - both map to X/Twitter
     const username = extractUsernameFromUrl(window.location.href);
     const context = {
       source_post_url: window.location.href,
-      sender_platform: 'twitter'
+      sender_platform: 'x'
     };
     if (username) {
       context.recipient_username = username;
@@ -1296,9 +1297,10 @@ Tip creators you love → {grove_link}`;
     }
 
     // Build context metadata for the tip
+    // Note: sender_platform can be 'x' or 'twitter' - both map to X/Twitter
     const context = {
       source_post_url: tweetUrl,
-      sender_platform: 'twitter'
+      sender_platform: 'x'
     };
     if (username) {
       context.recipient_username = username;
