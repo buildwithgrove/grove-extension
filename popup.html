@@ -210,20 +210,36 @@
 
 
 
-        <!-- Default Tip Settings -->
-        <div class="section-card">
+        <!-- Default Tip & Tip Button Grid -->
+        <div class="quick-access-grid">
+          <!-- Default Tip -->
+          <div class="quick-access-item" id="defaultTipCard">
+            <div class="card-label">Default Tip</div>
+            <div class="amount-display" id="tipAmountDisplay">
+              <span class="currency-symbol">$</span>
+              <span class="amount-value">0.10</span>
+            </div>
+            <button class="btn-text btn-sm" id="editTipAmount">Edit</button>
+          </div>
+          <!-- Tip Button Demo -->
+          <div class="quick-access-item">
+            <div class="card-label">Tip Button</div>
+            <div class="demo-tip-button">
+              <span>Tip</span>
+              <span class="tip-emoji">🌿</span>
+            </div>
+            <span class="quick-access-label">Look for this on <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle; margin-left: 2px;"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></span>
+          </div>
+        </div>
+
+        <!-- Default Tip Edit Form (shown when editing) -->
+        <div class="section-card hidden" id="tipAmountEdit">
           <div class="card-row">
             <div class="card-content">
               <div class="card-label">Default Tip</div>
-              <div class="amount-display" id="tipAmountDisplay">
-                <span class="currency-symbol">$</span>
-                <span class="amount-value">0.10</span>
-              </div>
             </div>
-            <button class="card-action-btn" id="editTipAmount">Edit</button>
           </div>
-
-          <div class="tip-edit-form hidden" id="tipAmountEdit">
+          <div class="tip-edit-form">
             <div class="input-group">
               <span class="input-prefix">$</span>
               <input type="number" id="tipAmountInput" step="0.01" min="0.01" value="0.10" placeholder="0.00">
@@ -235,19 +251,18 @@
           </div>
         </div>
 
-        <!-- Tip Insight -->
-        <div class="section-card">
+        <!-- X (Twitter) Settings -->
+        <button class="section-card section-card-btn" id="homeTwitterSettingsBtn">
           <div class="card-row">
             <div class="card-content">
-              <div class="card-label">Tip Button</div>
-              <p class="card-description">Look for this on X</p>
+              <div class="card-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle; margin-right: 6px;"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>Settings</div>
+              <p class="card-description">Auto-like & reply on tip</p>
             </div>
-            <div class="demo-tip-button">
-              <span>Tip</span>
-              <span class="tip-emoji">🌿</span>
-            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="quick-access-icon">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
           </div>
-        </div>
+        </button>
       </div>
     </div>
 

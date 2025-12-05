@@ -281,7 +281,16 @@ function setupEventListeners() {
     showSettingsView('account');
     showJwtEdit();
   });
-  
+
+  // Home screen Twitter settings shortcut
+  const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
+  if (homeTwitterSettingsBtn) {
+    homeTwitterSettingsBtn.addEventListener('click', () => {
+      document.querySelector('[data-target="tab-settings"]').click();
+      showSettingsView('twitter');
+    });
+  }
+
   manageJwtBtn.addEventListener('click', () => {
     if (jwtEditContainer.classList.contains('hidden')) {
       showJwtEdit();
@@ -627,19 +636,19 @@ function updateTipUI(amount) {
 }
 
 function showTipEdit() {
-  // Hide the entire card row
-  const cardRow = document.querySelector('#tipAmountDisplay').closest('.card-row');
-  if (cardRow) {
-    cardRow.classList.add('hidden');
+  // Hide the default tip card in the grid
+  const defaultTipCard = document.getElementById('defaultTipCard');
+  if (defaultTipCard) {
+    defaultTipCard.classList.add('hidden');
   }
   tipAmountEdit.classList.remove('hidden');
 }
 
 function hideTipEdit() {
-  // Show the entire card row
-  const cardRow = document.querySelector('#tipAmountDisplay').closest('.card-row');
-  if (cardRow) {
-    cardRow.classList.remove('hidden');
+  // Show the default tip card in the grid
+  const defaultTipCard = document.getElementById('defaultTipCard');
+  if (defaultTipCard) {
+    defaultTipCard.classList.remove('hidden');
   }
   tipAmountEdit.classList.add('hidden');
 }

@@ -406,7 +406,30 @@ body.developer-mode .testnet-option {
   background-color: var(--color-surface);
   border-radius: var(--radius-lg);
   padding: 24px;
-  margin: 20px 16px;
+  margin: 16px 16px;
+}
+
+/* Clickable Section Card (button) */
+button.section-card-btn {
+  width: calc(100% - 32px);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  text-align: left;
+}
+
+button.section-card-btn:hover {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-primary);
+}
+
+button.section-card-btn .quick-access-icon {
+  color: var(--color-text-secondary);
+  transition: color 0.15s ease;
+}
+
+button.section-card-btn:hover .quick-access-icon {
+  color: var(--color-primary);
 }
 
 .card-header {
@@ -816,6 +839,78 @@ body.developer-mode .testnet-option {
 .demo-tip-button-small .tip-emoji {
   font-size: 14px;
   filter: saturate(1.5);
+}
+
+/* Quick Access Grid (Home Screen) */
+.quick-access-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 0 16px;
+}
+
+.quick-access-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 16px 12px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: default;
+  min-height: 110px;
+}
+
+.quick-access-item .card-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.quick-access-item .amount-display {
+  margin: 0;
+}
+
+.quick-access-item .btn-text {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.quick-access-item .quick-access-label {
+  margin-top: auto;
+}
+
+button.quick-access-item {
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+button.quick-access-item:hover {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-primary);
+}
+
+.quick-access-icons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quick-access-icon {
+  color: var(--color-text-secondary);
+  transition: color 0.15s ease;
+}
+
+button.quick-access-item:hover .quick-access-icon {
+  color: var(--color-primary);
+}
+
+.quick-access-label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-align: center;
 }
 
 /* Special layout for step 4 with button */
