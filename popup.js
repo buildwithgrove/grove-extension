@@ -95,11 +95,11 @@ const STORAGE_KEYS = {
 };
 
 // Default auto-reply message template
-const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I loved this post so much that I just sent you a {amount} tip on {chain} via @BuildWithGrove.
+const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, just sent you a {amount} tip on {chain}! #TipWithGroveOnBase
 
 Tx: {tx_link}
 
-Find out more and start tipping your favorite creators → {grove_link}`;
+Tip creators you love → {grove_link}`;
 
 // X Login Elements (now on home screen)
 const likeOnTipToggle = document.getElementById('homeLikeOnTipToggle');
