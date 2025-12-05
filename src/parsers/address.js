@@ -7,7 +7,8 @@
 class AddressParser {
   // ENS name pattern: alphanumeric + hyphens, supports subdomains, ending in .eth
   // Matches: vitalik.eth, foo-bar.eth, jesse.base.eth, sub.name.eth
-  static ENS_PATTERN = /(?:^|\s|Tip:\s*)([a-zA-Z0-9][-a-zA-Z0-9]*(?:\.[a-zA-Z0-9][-a-zA-Z0-9]*)*\.eth)(?:\s|$|[,.\-])/i;
+  // Also matches when wrapped in parentheses like (dave.base.eth)
+  static ENS_PATTERN = /(?:^|\s|Tip:\s*|\()([a-zA-Z0-9][-a-zA-Z0-9]*(?:\.[a-zA-Z0-9][-a-zA-Z0-9]*)*\.eth)(?:\s|$|[,.\-)])/i;
 
   // Solana address pattern commented out - Base/Base Sepolia only for now
   // Solana address pattern: base58 encoded, 32-44 chars
