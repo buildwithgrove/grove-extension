@@ -1901,9 +1901,9 @@ body.developer-mode .testnet-option {
 
 .history-empty .empty-icon,
 .history-not-connected .empty-icon {
-  font-size: 32px;
-  margin-bottom: 8px;
-  opacity: 0.6;
+  margin-bottom: 12px;
+  opacity: 0.5;
+  color: var(--color-text-tertiary);
 }
 
 .history-empty p,

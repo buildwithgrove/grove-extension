@@ -277,13 +277,22 @@
 
       <!-- Empty State -->
       <div class="history-empty hidden" id="history-empty">
-        <div class="empty-icon">📊</div>
+        <div class="empty-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+        </div>
         <p id="history-empty-message">No transactions yet</p>
       </div>
 
       <!-- Not Connected State -->
       <div class="history-not-connected hidden" id="history-not-connected">
-        <div class="empty-icon">🔗</div>
+        <div class="empty-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+        </div>
         <p>Connect your account to see history</p>
       </div>
 
