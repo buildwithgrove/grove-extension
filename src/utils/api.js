@@ -293,6 +293,7 @@ class GroveAPI {
         data: {
           entries: (data.entries || []).map(entry => ({
             address: entry.address,
+            destination: entry.destination || null,
             amountUSD: parseFloat(entry.amount_usd) || 0,
             confirmedAt: entry.confirmed_at,
             txHash: entry.tx_hash

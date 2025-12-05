@@ -1598,6 +1598,20 @@ body.developer-mode .testnet-option {
   font-family: 'SF Mono', Monaco, monospace;
 }
 
+.leaderboard-item .wallet-address.secondary {
+  color: var(--color-text-secondary);
+  font-weight: 400;
+  font-size: 11px;
+  margin-bottom: 0;
+}
+
+.leaderboard-item .display-name {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
 .leaderboard-item .tip-count {
   color: var(--color-text-secondary);
   font-size: 12px;
@@ -1781,9 +1795,21 @@ body.developer-mode .testnet-option {
 
 .live-tip-item .tip-recipient {
   flex: 1;
-  font-family: 'SF Mono', Monaco, monospace;
   font-size: 12px;
   color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.live-tip-item .tip-recipient .live-tip-link {
+  color: var(--color-text-primary);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.live-tip-item .tip-recipient .live-tip-link:hover {
+  color: var(--color-primary);
 }
 
 .live-tip-item .tip-amount {
@@ -1806,6 +1832,14 @@ body.developer-mode .testnet-option {
 }
 
 .leaderboard-item .wallet-address {
+  font-size: 12px;
+}
+
+.leaderboard-item .wallet-address.secondary {
+  font-size: 10px;
+}
+
+.leaderboard-item .display-name {
   font-size: 12px;
 }
 

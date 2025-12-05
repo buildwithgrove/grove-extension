@@ -1577,10 +1577,25 @@ async function loadLiveTips(isRefresh = false) {
 
   list.innerHTML = result.data.entries.map((entry) => {
     const isNew = newEntries.some(n => n.txHash === entry.txHash) && isRefresh;
+    const parsed = parseDestination(entry.destination);
+
+    // Determine display text
+    let recipientHtml;
+    if (parsed.profileHandle) {
+      // Twitter/ENS/Base name - show as linked handle
+      recipientHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="live-tip-link">${escapeHtml(parsed.profileHandle)}</a>`;
+    } else if (parsed.postUrl) {
+      // Other URL - show truncated
+      recipientHtml = `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="live-tip-link">${truncateDestination(entry.destination)}</a>`;
+    } else {
+      // Fallback to address
+      recipientHtml = formatAddress(entry.address);
+    }
+
     return `
       <div class="live-tip-item${isNew ? ' new' : ''}">
         <div class="tip-time">${formatTimeAgo(entry.confirmedAt)}</div>
-        <div class="tip-recipient">${formatAddress(entry.address)}</div>
+        <div class="tip-recipient">${recipientHtml}</div>
         <div class="tip-amount">${formatUSD(entry.amountUSD)}</div>
       </div>
     `;
@@ -2147,6 +2162,16 @@ function formatTimeAgo(timestamp) {
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
   return `${Math.floor(seconds / 86400)}d ago`;
+}
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 /**
