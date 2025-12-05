@@ -392,11 +392,12 @@
       context.recipient_profile_url = `https://x.com/${username}`;
     }
 
-    // Add sender info if X is authenticated
+    // Add sender info if X is authenticated with real username
     if (typeof XAuth !== 'undefined') {
       try {
         const senderInfo = await XAuth.getStoredUserInfo();
-        if (senderInfo && senderInfo.username) {
+        // Only use if we have a real username (not the fallback 'Connected')
+        if (senderInfo && senderInfo.username && senderInfo.username !== 'Connected') {
           context.sender_username = senderInfo.username;
           context.sender_profile_url = `https://x.com/${senderInfo.username}`;
         }
@@ -1189,11 +1190,11 @@
   }
 
   // Default auto-reply message template (must match popup.js)
-  const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I loved this post so much that I just sent you a {amount} tip on {chain} via @BuildWithGrove.
+  const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, just sent you a {amount} tip on {chain}! #TipWithGroveOnBase
 
 Tx: {tx_link}
 
-Find out more and start tipping your favorite creators → {grove_link}`;
+Tip creators you love → {grove_link}`;
 
   /**
    * Build auto-reply message from template
@@ -1304,11 +1305,12 @@ Find out more and start tipping your favorite creators → {grove_link}`;
       context.recipient_profile_url = `https://x.com/${username}`;
     }
 
-    // Add sender info if X is authenticated
+    // Add sender info if X is authenticated with real username
     if (typeof XAuth !== 'undefined') {
       try {
         const senderInfo = await XAuth.getStoredUserInfo();
-        if (senderInfo && senderInfo.username) {
+        // Only use if we have a real username (not the fallback 'Connected')
+        if (senderInfo && senderInfo.username && senderInfo.username !== 'Connected') {
           context.sender_username = senderInfo.username;
           context.sender_profile_url = `https://x.com/${senderInfo.username}`;
         }
