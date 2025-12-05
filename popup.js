@@ -1016,6 +1016,7 @@ async function handleXLogin() {
       const isRealUsername = userInfo.username && userInfo.username !== 'Connected';
       const displayName = isRealUsername ? `@${userInfo.username}` : 'Connected';
 
+      // Update settings page
       if (xLoginStatus) {
         xLoginStatus.textContent = displayName;
         xLoginStatus.style.color = 'var(--color-primary)';
@@ -1025,12 +1026,27 @@ async function handleXLogin() {
         xLoginBtn.classList.add('btn-danger-text');
         xLoginBtn.disabled = false;
       }
-      // Show post-connect options, hide pre-connect info
       if (xPreConnectInfo) {
         xPreConnectInfo.classList.add('hidden');
       }
       if (xPostConnectOptions) {
         xPostConnectOptions.classList.remove('hidden');
+      }
+
+      // Update home screen
+      if (homeXLoginStatus) {
+        homeXLoginStatus.textContent = displayName;
+        homeXLoginStatus.style.color = 'var(--color-primary)';
+      }
+      if (homeXLoginBtn) {
+        homeXLoginBtn.textContent = 'Disconnect';
+        homeXLoginBtn.classList.add('btn-danger-text');
+      }
+      if (homeXPreConnectInfo) {
+        homeXPreConnectInfo.classList.add('hidden');
+      }
+      if (homeXPostConnectOptions) {
+        homeXPostConnectOptions.classList.remove('hidden');
       }
 
       showToast(isRealUsername ? `Connected as @${userInfo.username}` : 'Connected to X');
