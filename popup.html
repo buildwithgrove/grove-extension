@@ -254,12 +254,55 @@
 
     <!-- History Page -->
     <div class="page" id="tab-history">
-      <h2 class="page-title">History</h2>
+      <h2 class="page-title">Transaction History</h2>
 
-      <div class="empty-state coming-soon-state">
+      <!-- Filter Tabs -->
+      <div class="history-filter">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="tips">Tips</button>
+        <button class="filter-btn" data-filter="deposits">Deposits</button>
+      </div>
+
+      <!-- Loading State -->
+      <div class="history-loading" id="history-loading">
+        <div class="history-spinner"></div>
+      </div>
+
+      <!-- Error State -->
+      <div class="history-error hidden" id="history-error">
+        <div class="empty-icon">!</div>
+        <p id="history-error-message">Unable to load transactions</p>
+        <button class="btn-secondary btn-sm" id="history-retry-btn">Try Again</button>
+      </div>
+
+      <!-- Empty State -->
+      <div class="history-empty hidden" id="history-empty">
         <div class="empty-icon">📊</div>
-        <h3>Coming Soon</h3>
-        <p>Your tip history will appear here</p>
+        <p id="history-empty-message">No transactions yet</p>
+      </div>
+
+      <!-- Not Connected State -->
+      <div class="history-not-connected hidden" id="history-not-connected">
+        <div class="empty-icon">🔗</div>
+        <p>Connect your account to see history</p>
+      </div>
+
+      <!-- Transaction List -->
+      <div class="history-list" id="history-list"></div>
+
+      <!-- Pagination -->
+      <div class="history-pagination hidden" id="history-pagination">
+        <button class="pagination-btn" id="history-prev-btn" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <span class="pagination-info" id="history-page-info">1 of 1</span>
+        <button class="pagination-btn" id="history-next-btn" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
       </div>
     </div>
 

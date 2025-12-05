@@ -306,6 +306,90 @@ class GroveAPI {
   }
 
   /**
+   * Fetch tip history for the authenticated user
+   * @param {string} groveApiJwt - JWT token for authentication
+   * @param {number} limit - Number of entries (default: 50, max: 100)
+   * @param {number} offset - Offset for pagination (default: 0)
+   * @returns {Promise<Object>} - Tip history data
+   */
+  static async getTipHistory(groveApiJwt, limit = 50, offset = 0) {
+    const baseURL = await this.getBaseURL();
+    const params = new URLSearchParams({
+      limit: Math.min(Math.max(1, limit), 100).toString(),
+      offset: Math.max(0, offset).toString(),
+    });
+    const apiUrl = `${baseURL}/v1/account/tip_history?${params}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${groveApiJwt}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data: {
+          entries: data.entries || [],
+          total: data.total || 0
+        }
+      };
+    } catch (error) {
+      console.error('[Grove Extension] Tip history fetch failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Fetch fund/deposit history for the authenticated user
+   * @param {string} groveApiJwt - JWT token for authentication
+   * @param {number} limit - Number of entries (default: 50, max: 100)
+   * @param {number} offset - Offset for pagination (default: 0)
+   * @returns {Promise<Object>} - Fund history data
+   */
+  static async getFundHistory(groveApiJwt, limit = 50, offset = 0) {
+    const baseURL = await this.getBaseURL();
+    const params = new URLSearchParams({
+      limit: Math.min(Math.max(1, limit), 100).toString(),
+      offset: Math.max(0, offset).toString(),
+    });
+    const apiUrl = `${baseURL}/v1/account/fund_history?${params}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${groveApiJwt}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data: {
+          entries: data.entries || [],
+          total: data.total || 0
+        }
+      };
+    } catch (error) {
+      console.error('[Grove Extension] Fund history fetch failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
    * Send a tip to the current page URL
    * @param {string} pageUrl - Full page URL (e.g., "https://twitter.com/olshansky")
    * @param {number} tipAmount - Tip amount in dollars (default: 0.05)

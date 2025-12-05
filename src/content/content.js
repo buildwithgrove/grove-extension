@@ -1200,8 +1200,8 @@ Find out more → {grove_link}`;
     let autoReplyEnabled = false;
     let autoReplyMessage = DEFAULT_AUTO_REPLY_MESSAGE;
     let likeOnTipEnabled = true; // Default to true
-    let chainName = 'Base';
-    let explorerBaseUrl = 'https://basescan.org/tx/';
+    let chainName = 'Base Sepolia';
+    let explorerBaseUrl = 'https://sepolia.basescan.org/tx/';
     let explorerSuffix = '';
 
     try {
@@ -1220,7 +1220,9 @@ Find out more → {grove_link}`;
       console.log('[Grove Extension] Storage loaded:', { hasJwt: !!jwt, autoReply: autoReplyEnabled, likeOnTip: likeOnTipEnabled, chain: result.groveChain });
 
       // Get friendly chain name and explorer URL
-      const chain = result.groveChain || 'base';
+      // Normalize chain: replace underscores with hyphens, default to testnet
+      const rawChain = result.groveChain || 'base-sepolia';
+      const chain = rawChain.toLowerCase().replace(/_/g, '-');
       const chainConfig = {
         'base': { name: 'Base', explorer: 'https://basescan.org/tx/' },
         'base-sepolia': { name: 'Base Sepolia', explorer: 'https://sepolia.basescan.org/tx/' }
@@ -1228,7 +1230,7 @@ Find out more → {grove_link}`;
         // 'solana': { name: 'Solana', explorer: 'https://solscan.io/tx/' },
         // 'solana-devnet': { name: 'Solana Devnet', explorer: 'https://solscan.io/tx/' }
       };
-      const config = chainConfig[chain] || chainConfig['base'];
+      const config = chainConfig[chain] || chainConfig['base-sepolia'];
       chainName = config.name;
       explorerBaseUrl = config.explorer;
       // Solana devnet cluster param commented out - Base/Base Sepolia only for now
