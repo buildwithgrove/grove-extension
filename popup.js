@@ -1859,9 +1859,10 @@ function renderHistoryList() {
   list.innerHTML = pageItems.map(tx => {
     const icon = getTransactionIcon(tx.type);
     const label = getTransactionLabel(tx.type);
-    const amount = formatHistoryAmount(tx);
+    const isFailed = tx.status === 'failed';
+    const amount = isFailed ? 'Failed' : formatHistoryAmount(tx);
     const time = formatRelativeTime(tx.created_at);
-    const amountClass = tx.type === 'tip_sent' ? 'sent' : 'received';
+    const amountClass = isFailed ? 'failed' : (tx.type === 'tip_sent' ? 'sent' : 'received');
 
     const explorerUrl = getExplorerUrl(tx.network, tx.tx_hash);
     const parsed = parseDestination(tx.destination);

@@ -2360,6 +2360,11 @@ button.quick-access-item:hover .quick-access-icon {
   color: var(--color-primary);
 }
 
+.history-item-amount.failed {
+  color: var(--color-danger);
+  font-size: 12px;
+}
+
 .history-item-time {
   color: var(--color-text-tertiary);
   font-size: 11px;
