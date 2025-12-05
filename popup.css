@@ -2284,6 +2284,10 @@ button.quick-access-item:hover .quick-access-icon {
   background: rgba(56, 159, 88, 0.1);
 }
 
+.history-tx-link-empty {
+  visibility: hidden;
+}
+
 /* History Item Icon */
 .history-item-icon {
   width: 36px;
