@@ -1955,8 +1955,8 @@ body.developer-mode .testnet-option {
   margin-left: 8px;
 }
 
-/* Post link icon (to tweet/content) */
-.history-post-link {
+/* Platform link icon (X/Twitter) */
+.history-platform-link {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1968,9 +1968,9 @@ body.developer-mode .testnet-option {
   transition: all 0.2s;
 }
 
-.history-post-link:hover {
-  color: #1d9bf0;
-  background: rgba(29, 155, 240, 0.1);
+.history-platform-link:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* TX link icon (to block explorer) */

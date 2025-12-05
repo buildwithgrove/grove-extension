@@ -1811,9 +1811,11 @@ function renderHistoryList() {
       descriptionHtml = formatNetwork(tx.network);
     }
 
-    // Tweet/post link icon (if there's a specific post, not just a profile)
-    const postLinkHtml = parsed.postUrl && parsed.profileUrl
-      ? `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="history-post-link" title="View post">
+    // Platform link icon (X icon for Twitter/X tips)
+    const isTwitter = parsed.profileUrl && (parsed.profileUrl.includes('x.com') || parsed.profileUrl.includes('twitter.com'));
+    const platformUrl = parsed.postUrl || parsed.profileUrl;
+    const platformLinkHtml = isTwitter && platformUrl
+      ? `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="${parsed.postUrl ? 'View post' : 'View profile'}">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
           </svg>
@@ -1842,7 +1844,7 @@ function renderHistoryList() {
           <div class="history-item-time">${time}</div>
         </div>
         <div class="history-item-links">
-          ${postLinkHtml}
+          ${platformLinkHtml}
           ${txLinkHtml}
         </div>
       </div>
