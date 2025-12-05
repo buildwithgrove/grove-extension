@@ -116,7 +116,7 @@ const resetAutoReplyMessageBtn = document.getElementById('resetAutoReplyMessageB
 // Defaults
 const DEFAULT_TIP_AMOUNT = 0.10;
 const DEFAULT_CHAIN = 'base-sepolia';
-const DEFAULT_ENV = 'local';
+const DEFAULT_ENV = 'prod';
 const DEFAULT_ENDPOINT = 'testnet';
 const DEFAULT_BALANCE_DISPLAY = '0.00';
 const TOP_UP_URLS = {
@@ -698,7 +698,8 @@ async function handleConfirmTipToggle() {
  */
 async function loadAutoReply() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.AUTO_REPLY]);
-  const enabled = result[STORAGE_KEYS.AUTO_REPLY] || false;
+  // Auto-reply defaults to true
+  const enabled = result[STORAGE_KEYS.AUTO_REPLY] !== false;
   if (autoReplyToggle) {
     autoReplyToggle.checked = enabled;
   }
@@ -762,7 +763,8 @@ function updateAutoReplyMessageVisibility(enabled) {
 async function loadAutoReplyMessage() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.AUTO_REPLY_MESSAGE, STORAGE_KEYS.AUTO_REPLY]);
   const message = result[STORAGE_KEYS.AUTO_REPLY_MESSAGE] || DEFAULT_AUTO_REPLY_MESSAGE;
-  const autoReplyEnabled = result[STORAGE_KEYS.AUTO_REPLY] || false;
+  // Auto-reply defaults to true
+  const autoReplyEnabled = result[STORAGE_KEYS.AUTO_REPLY] !== false;
 
   if (autoReplyMessageInput) {
     autoReplyMessageInput.value = message;
@@ -838,11 +840,6 @@ async function loadXLoginStatus() {
       }
       if (xPostConnectOptions) {
         xPostConnectOptions.classList.add('hidden');
-      }
-      // Disable auto-reply if not logged in
-      if (autoReplyToggle && autoReplyToggle.checked) {
-        autoReplyToggle.checked = false;
-        await chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY]: false });
       }
     }
   } catch (error) {
