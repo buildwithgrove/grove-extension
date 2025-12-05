@@ -230,12 +230,12 @@ class GroveAPI {
   }
 
   /**
-   * Fetch top tippees leaderboard
+   * Fetch top earners leaderboard
    * @param {string} period - Time window: 'day', 'week', or 'month'
    * @param {number} limit - Number of entries (default: 10)
    * @returns {Promise<Object>} - Leaderboard data
    */
-  static async getTopTippees(period = 'week', limit = 10) {
+  static async getTopEarners(period = 'week', limit = 10) {
     const baseURL = await this.getBaseURL();
     const window = { 'day': '24h', 'week': '7d', 'month': '30d' }[period] || '7d';
     const apiUrl = `${baseURL}/v1/leaderboard/tippees?window=${window}&limit=${limit}`;
@@ -263,7 +263,7 @@ class GroveAPI {
         }
       };
     } catch (error) {
-      console.error('[Grove Extension] Top tippees fetch failed:', error);
+      console.error('[Grove Extension] Top earners fetch failed:', error);
       return { success: false, error: error.message };
     }
   }

@@ -417,8 +417,8 @@ async function handleNavigation(e) {
   if (targetId === 'tab-leaderboard') {
     if (currentLeaderboardView === 'tippers') {
       loadTopTippers();
-    } else if (currentLeaderboardView === 'tippees') {
-      loadTopTippees();
+    } else if (currentLeaderboardView === 'earners') {
+      loadTopEarners();
     } else if (currentLeaderboardView === 'live') {
       loadLiveTips();
       startLivePolling();
@@ -1444,8 +1444,8 @@ function setupLeaderboardSwitcher() {
       // Reload current leaderboard view
       if (currentLeaderboardView === 'tippers') {
         loadTopTippers();
-      } else if (currentLeaderboardView === 'tippees') {
-        loadTopTippees();
+      } else if (currentLeaderboardView === 'earners') {
+        loadTopEarners();
       }
     });
   });
@@ -1467,8 +1467,8 @@ function setupLeaderboardSwitcher() {
         if (view === 'tippers') {
           loadTopTippers();
           stopLivePolling();
-        } else if (view === 'tippees') {
-          loadTopTippees();
+        } else if (view === 'earners') {
+          loadTopEarners();
           stopLivePolling();
         } else if (view === 'live') {
           loadLiveTips();
@@ -1513,18 +1513,18 @@ async function loadTopTippers() {
 }
 
 /**
- * Load Top Tippees
+ * Load Top Earners
  */
-async function loadTopTippees() {
-  const loading = document.getElementById('tippees-loading');
-  const empty = document.getElementById('tippees-empty');
-  const list = document.getElementById('tippees-list');
+async function loadTopEarners() {
+  const loading = document.getElementById('earners-loading');
+  const empty = document.getElementById('earners-empty');
+  const list = document.getElementById('earners-list');
 
   loading.classList.remove('hidden');
   empty.classList.add('hidden');
   list.innerHTML = '';
 
-  const result = await GroveAPI.getTopTippees(currentPeriod, 10);
+  const result = await GroveAPI.getTopEarners(currentPeriod, 10);
 
   loading.classList.add('hidden');
 
@@ -1632,8 +1632,8 @@ function refreshLeaderboard() {
     loadLiveTips();
   } else if (currentLeaderboardView === 'tippers') {
     loadTopTippers();
-  } else if (currentLeaderboardView === 'tippees') {
-    loadTopTippees();
+  } else if (currentLeaderboardView === 'earners') {
+    loadTopEarners();
   }
 }
 
