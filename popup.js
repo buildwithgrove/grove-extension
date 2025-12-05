@@ -121,7 +121,7 @@ const DEFAULT_ENDPOINT = 'testnet';
 const DEFAULT_BALANCE_DISPLAY = '0.00';
 const TOP_UP_URLS = {
   mainnet: 'https://app.grove.city/profile',
-  testnet: 'https://testnet.grove.city/profile'
+  testnet: 'https://app.testnet.grove.city/profile'
 };
 
 /**
