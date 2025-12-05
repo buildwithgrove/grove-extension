@@ -227,7 +227,10 @@ class GroveAPI {
           entries: (data.entries || []).map(entry => ({
             address: entry.address,
             totalUSD: parseFloat(entry.total_amount_usd) || 0,
-            tipCount: entry.tip_count || 0
+            tipCount: entry.tip_count || 0,
+            lastTipDestination: entry.last_tip_destination,
+            lastTipSocialGraph: entry.last_tip_social_graph,
+            lastTipContext: entry.last_tip_context
           }))
         }
       };
@@ -266,7 +269,10 @@ class GroveAPI {
           entries: (data.entries || []).map(entry => ({
             address: entry.address,
             totalUSD: parseFloat(entry.total_amount_usd) || 0,
-            tipCount: entry.tip_count || 0
+            tipCount: entry.tip_count || 0,
+            lastTipDestination: entry.last_tip_destination,
+            lastTipSocialGraph: entry.last_tip_social_graph,
+            lastTipContext: entry.last_tip_context
           }))
         }
       };
@@ -278,12 +284,72 @@ class GroveAPI {
 
   /**
    * Fetch recent tips (real-time)
+   * Fetches both tippees and tippers endpoints and merges them (like the website)
    * @param {number} limit - Number of entries (default: 10)
-   * @returns {Promise<Object>} - Recent tips data
+   * @returns {Promise<Object>} - Recent tips data with tipper info
    */
   static async getRecentTips(limit = 10) {
     const baseURL = await this.getBaseURL();
-    const apiUrl = `${baseURL}/v1/leaderboard/tippees/recent?limit=${limit}`;
+    const tippeesUrl = `${baseURL}/v1/leaderboard/tippees/recent?limit=${limit}`;
+    const tippersUrl = `${baseURL}/v1/leaderboard/tippers/recent?limit=${limit}`;
+
+    try {
+      // Fetch both endpoints in parallel (like the website)
+      const [tippeesRes, tippersRes] = await Promise.all([
+        fetch(tippeesUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } }),
+        fetch(tippersUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } })
+      ]);
+
+      if (!tippeesRes.ok) {
+        throw new Error(`Tippees API request failed with status ${tippeesRes.status}`);
+      }
+
+      const tippeesData = await tippeesRes.json();
+
+      // Build a map of tx_hash -> tipper info
+      let tippersMap = new Map();
+      if (tippersRes.ok) {
+        const tippersData = await tippersRes.json();
+        (tippersData.entries || []).forEach(entry => {
+          tippersMap.set(entry.tx_hash, {
+            address: entry.address,
+            context: entry.context
+          });
+        });
+      }
+
+      // Merge tipper data into tippee entries
+      return {
+        success: true,
+        data: {
+          entries: (tippeesData.entries || []).map(entry => {
+            const tipperInfo = tippersMap.get(entry.tx_hash) || {};
+            return {
+              address: entry.address,
+              destination: entry.destination || null,
+              amountUSD: parseFloat(entry.amount_usd) || 0,
+              confirmedAt: entry.confirmed_at,
+              txHash: entry.tx_hash,
+              network: entry.network || null,
+              tipperAddress: tipperInfo.address || null,
+              context: entry.context || tipperInfo.context || null
+            };
+          })
+        }
+      };
+    } catch (error) {
+      console.error('[Grove Extension] Recent tips fetch failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Fetch total funds/deposits stats
+   * @returns {Promise<Object>} - Total funds data
+   */
+  static async getFundsTotal() {
+    const baseURL = await this.getBaseURL();
+    const apiUrl = `${baseURL}/v1/leaderboard/funds/total`;
 
     try {
       const response = await fetch(apiUrl, {
@@ -299,17 +365,132 @@ class GroveAPI {
       return {
         success: true,
         data: {
-          entries: (data.entries || []).map(entry => ({
-            address: entry.address,
-            destination: entry.destination || null,
-            amountUSD: parseFloat(entry.amount_usd) || 0,
-            confirmedAt: entry.confirmed_at,
-            txHash: entry.tx_hash
-          }))
+          token: data.token || 'USDC',
+          totalUSD: parseFloat(data.total_amount_usd) || 0,
+          totalFundCount: data.total_fund_count || 0,
+          uniqueAccountCount: data.unique_account_count || 0
         }
       };
     } catch (error) {
-      console.error('[Grove Extension] Recent tips fetch failed:', error);
+      console.error('[Grove Extension] Funds total fetch failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Fetch total tips stats
+   * @returns {Promise<Object>} - Total tips data
+   */
+  static async getTipsTotal() {
+    const baseURL = await this.getBaseURL();
+    const apiUrl = `${baseURL}/v1/leaderboard/tips/total`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data: {
+          token: data.token || 'USDC',
+          totalUSD: parseFloat(data.total_amount_usd) || 0,
+          totalTipCount: data.total_tip_count || 0,
+          uniqueTipperCount: data.unique_tipper_count || 0,
+          uniqueRecipientCount: data.unique_recipient_count || 0
+        }
+      };
+    } catch (error) {
+      console.error('[Grove Extension] Tips total fetch failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Fetch leaderboard stats for a period
+   * For 'all' period, uses the total endpoints
+   * For other periods, aggregates from leaderboard data
+   * @param {string} period - Time window: 'day', 'week', 'month', or 'all'
+   * @returns {Promise<Object>} - Stats data with deposits, tips, tippers, recipients
+   */
+  static async getLeaderboardStats(period = 'day') {
+    try {
+      // For 'all' period, use the dedicated total endpoints
+      if (period === 'all') {
+        const [fundsRes, tipsRes] = await Promise.all([
+          this.getFundsTotal(),
+          this.getTipsTotal()
+        ]);
+
+        if (!fundsRes.success || !tipsRes.success) {
+          throw new Error('Failed to fetch totals');
+        }
+
+        return {
+          success: true,
+          data: {
+            deposits: fundsRes.data.totalUSD,
+            tips: tipsRes.data.totalUSD,
+            tippers: tipsRes.data.uniqueTipperCount,
+            recipients: tipsRes.data.uniqueRecipientCount
+          }
+        };
+      }
+
+      // For time-based periods, fetch from leaderboard endpoints with high limit
+      const baseURL = await this.getBaseURL();
+      const window = { 'day': '24h', 'week': '7d', 'month': '30d' }[period] || '24h';
+
+      const [fundersRes, tippersRes, tippeesRes] = await Promise.all([
+        fetch(`${baseURL}/v1/leaderboard/funders?window=${window}&limit=500`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        }),
+        fetch(`${baseURL}/v1/leaderboard/tippers?window=${window}&limit=500`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        }),
+        fetch(`${baseURL}/v1/leaderboard/tippees?window=${window}&limit=500`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        })
+      ]);
+
+      if (!fundersRes.ok || !tippersRes.ok || !tippeesRes.ok) {
+        throw new Error('Failed to fetch leaderboard data');
+      }
+
+      const [fundersData, tippersData, tippeesData] = await Promise.all([
+        fundersRes.json(),
+        tippersRes.json(),
+        tippeesRes.json()
+      ]);
+
+      // Aggregate totals
+      const totalDeposits = (fundersData.entries || []).reduce(
+        (sum, entry) => sum + parseFloat(entry.total_amount_usd || 0), 0
+      );
+      const totalTips = (tippeesData.entries || []).reduce(
+        (sum, entry) => sum + parseFloat(entry.total_amount_usd || 0), 0
+      );
+
+      return {
+        success: true,
+        data: {
+          deposits: totalDeposits,
+          tips: totalTips,
+          tippers: (tippersData.entries || []).length,
+          recipients: (tippeesData.entries || []).length
+        }
+      };
+    } catch (error) {
+      console.error('[Grove Extension] Leaderboard stats fetch failed:', error);
       return { success: false, error: error.message };
     }
   }

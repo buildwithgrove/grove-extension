@@ -433,8 +433,10 @@ async function handleNavigation(e) {
   // Load leaderboard data when navigating to leaderboard
   if (targetId === 'tab-leaderboard') {
     if (currentLeaderboardView === 'tippers') {
+      loadLeaderboardStats();
       loadTopTippers();
     } else if (currentLeaderboardView === 'earners') {
+      loadLeaderboardStats();
       loadTopEarners();
     } else if (currentLeaderboardView === 'live') {
       loadLiveTips();
@@ -1443,10 +1445,14 @@ function setupLeaderboardSwitcher() {
   leaderboardSwitcherBtns = document.querySelectorAll('.switcher-btn');
   leaderboardViews = document.querySelectorAll('.leaderboard-view');
 
-  // Hide period selector initially (Live is default view)
+  // Hide period selector and stats initially (Live is default view)
   const periodSelector = document.querySelector('.period-selector');
+  const statsSection = document.getElementById('leaderboard-stats');
   if (periodSelector) {
     periodSelector.classList.add('hidden');
+  }
+  if (statsSection) {
+    statsSection.classList.add('hidden');
   }
 
   // Period selector
@@ -1458,7 +1464,8 @@ function setupLeaderboardSwitcher() {
       periodBtns.forEach(b => b.classList.remove('active'));
       e.target.classList.add('active');
 
-      // Reload current leaderboard view
+      // Reload stats and current leaderboard view
+      loadLeaderboardStats();
       if (currentLeaderboardView === 'tippers') {
         loadTopTippers();
       } else if (currentLeaderboardView === 'earners') {
@@ -1480,16 +1487,22 @@ function setupLeaderboardSwitcher() {
         leaderboardViews.forEach(v => v.classList.remove('active'));
         document.getElementById(`${view}-view`).classList.add('active');
 
-        // Show/hide period selector (not relevant for Live view)
+        // Show/hide period selector and stats (not relevant for Live view)
+        const isLive = view === 'live';
         if (periodSelector) {
-          periodSelector.classList.toggle('hidden', view === 'live');
+          periodSelector.classList.toggle('hidden', isLive);
+        }
+        if (statsSection) {
+          statsSection.classList.toggle('hidden', isLive);
         }
 
         // Load data for the selected view
         if (view === 'tippers') {
+          loadLeaderboardStats();
           loadTopTippers();
           stopLivePolling();
         } else if (view === 'earners') {
+          loadLeaderboardStats();
           loadTopEarners();
           stopLivePolling();
         } else if (view === 'live') {
@@ -1522,16 +1535,60 @@ async function loadTopTippers() {
     return;
   }
 
-  list.innerHTML = result.data.entries.map((entry, i) => `
-    <div class="leaderboard-item">
-      <div class="rank">${i + 1}</div>
-      <div class="user-info">
-        <div class="wallet-address">${formatAddress(entry.address)}</div>
-        <div class="tip-count">${entry.tipCount.toLocaleString()} tips sent</div>
+  list.innerHTML = result.data.entries.map((entry, i) => {
+    const ctx = entry.lastTipContext || {};
+    const parsed = entry.lastTipDestination ? parseDestination(entry.lastTipDestination) : {};
+
+    // Icon with rank number
+    const rankIcon = `<span class="rank-number">${i + 1}</span>`;
+
+    // Label: wallet address or username
+    let labelHtml = formatAddress(entry.address);
+
+    // Description: last tip recipient
+    let descriptionHtml;
+    if (ctx.recipient_username) {
+      const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
+      descriptionHtml = `Last tip: <a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.recipient_username)}</a>`;
+    } else if (parsed.profileHandle && parsed.profileUrl) {
+      descriptionHtml = `Last tip: <a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
+    } else {
+      descriptionHtml = `${entry.tipCount.toLocaleString()} tips sent`;
+    }
+
+    // Platform link icon (X icon for Twitter/X tips)
+    const isTwitter = (ctx.source_post_url && (ctx.source_post_url.includes('x.com') || ctx.source_post_url.includes('twitter.com'))) ||
+      (parsed.profileUrl && (parsed.profileUrl.includes('x.com') || parsed.profileUrl.includes('twitter.com'))) ||
+      (entry.lastTipSocialGraph && (entry.lastTipSocialGraph.includes('x.com') || entry.lastTipSocialGraph.includes('twitter.com')));
+
+    let platformUrl = ctx.source_post_url || parsed.postUrl || parsed.profileUrl ||
+      (entry.lastTipSocialGraph && (entry.lastTipSocialGraph.startsWith('http') ? entry.lastTipSocialGraph : `https://${entry.lastTipSocialGraph}`));
+
+    const platformLinkHtml = isTwitter && platformUrl
+      ? `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="View on X">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        </a>`
+      : `<span class="history-platform-link history-platform-link-empty"></span>`;
+
+    return `
+      <div class="transaction-item">
+        <div class="transaction-item-icon rank-icon">${rankIcon}</div>
+        <div class="transaction-item-details">
+          <div class="transaction-item-label">${labelHtml}</div>
+          <div class="transaction-item-description">${descriptionHtml}</div>
+        </div>
+        <div class="transaction-item-right">
+          <div class="transaction-item-amount received">${formatUSD(entry.totalUSD)}</div>
+          <div class="transaction-item-time">${entry.tipCount} tips</div>
+        </div>
+        <div class="transaction-item-links">
+          ${platformLinkHtml}
+        </div>
       </div>
-      <div class="amount">${formatUSD(entry.totalUSD)}</div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 /**
@@ -1555,16 +1612,60 @@ async function loadTopEarners() {
     return;
   }
 
-  list.innerHTML = result.data.entries.map((entry, i) => `
-    <div class="leaderboard-item">
-      <div class="rank">${i + 1}</div>
-      <div class="user-info">
-        <div class="wallet-address">${formatAddress(entry.address)}</div>
-        <div class="tip-count">${entry.tipCount.toLocaleString()} tips received</div>
+  list.innerHTML = result.data.entries.map((entry, i) => {
+    const ctx = entry.lastTipContext || {};
+    const parsed = entry.lastTipDestination ? parseDestination(entry.lastTipDestination) : {};
+
+    // Icon with rank number
+    const rankIcon = `<span class="rank-number">${i + 1}</span>`;
+
+    // Label: show the earner's identity (recipient username or address)
+    let labelHtml;
+    if (ctx.recipient_username) {
+      const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
+      labelHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.recipient_username)}</a>`;
+    } else if (parsed.profileHandle && parsed.profileUrl) {
+      labelHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
+    } else {
+      labelHtml = formatAddress(entry.address);
+    }
+
+    // Description: tip count
+    const descriptionHtml = `${entry.tipCount.toLocaleString()} tips received`;
+
+    // Platform link icon (X icon for Twitter/X tips)
+    const isTwitter = (ctx.source_post_url && (ctx.source_post_url.includes('x.com') || ctx.source_post_url.includes('twitter.com'))) ||
+      (parsed.profileUrl && (parsed.profileUrl.includes('x.com') || parsed.profileUrl.includes('twitter.com'))) ||
+      (entry.lastTipSocialGraph && (entry.lastTipSocialGraph.includes('x.com') || entry.lastTipSocialGraph.includes('twitter.com')));
+
+    let platformUrl = ctx.source_post_url || parsed.postUrl || parsed.profileUrl ||
+      (entry.lastTipSocialGraph && (entry.lastTipSocialGraph.startsWith('http') ? entry.lastTipSocialGraph : `https://${entry.lastTipSocialGraph}`));
+
+    const platformLinkHtml = isTwitter && platformUrl
+      ? `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="View on X">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        </a>`
+      : `<span class="history-platform-link history-platform-link-empty"></span>`;
+
+    return `
+      <div class="transaction-item">
+        <div class="transaction-item-icon rank-icon">${rankIcon}</div>
+        <div class="transaction-item-details">
+          <div class="transaction-item-label">${labelHtml}</div>
+          <div class="transaction-item-description">${descriptionHtml}</div>
+        </div>
+        <div class="transaction-item-right">
+          <div class="transaction-item-amount received">${formatUSD(entry.totalUSD)}</div>
+          <div class="transaction-item-time">${entry.tipCount} tips</div>
+        </div>
+        <div class="transaction-item-links">
+          ${platformLinkHtml}
+        </div>
       </div>
-      <div class="amount">${formatUSD(entry.totalUSD)}</div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 /**
@@ -1600,25 +1701,64 @@ async function loadLiveTips(isRefresh = false) {
   list.innerHTML = result.data.entries.map((entry) => {
     const isNew = newEntries.some(n => n.txHash === entry.txHash) && isRefresh;
     const parsed = parseDestination(entry.destination);
+    const ctx = entry.context || {};
 
-    // Determine display text
-    let recipientHtml;
-    if (parsed.profileHandle) {
-      // Twitter/ENS/Base name - show as linked handle
-      recipientHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="live-tip-link">${escapeHtml(parsed.profileHandle)}</a>`;
-    } else if (parsed.postUrl) {
-      // Other URL - show truncated
-      recipientHtml = `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="live-tip-link">${truncateDestination(entry.destination)}</a>`;
+    // Dollar icon for tips
+    const icon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>';
+
+    // Label: recipient name (the main info)
+    let labelHtml;
+    if (ctx.recipient_username) {
+      const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
+      labelHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.recipient_username)}</a>`;
+    } else if (parsed.profileHandle) {
+      labelHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${escapeHtml(parsed.profileHandle)}</a>`;
     } else {
-      // Fallback to address
-      recipientHtml = formatAddress(entry.address);
+      labelHtml = formatAddress(entry.address);
     }
 
+    // Description: "Tip Received"
+    const descriptionHtml = 'Tip Received';
+
+    // Platform link (X icon) - show if it's a Twitter/X tip
+    const isTwitter = (ctx.source_post_url && (ctx.source_post_url.includes('x.com') || ctx.source_post_url.includes('twitter.com'))) ||
+      (parsed.profileUrl && (parsed.profileUrl.includes('x.com') || parsed.profileUrl.includes('twitter.com')));
+
+    let platformUrl = ctx.source_post_url || parsed.postUrl || parsed.profileUrl;
+    const platformLinkHtml = isTwitter && platformUrl
+      ? `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="View on X">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        </a>`
+      : `<span class="history-platform-link history-platform-link-empty"></span>`;
+
+    // TX link (chain icon)
+    const explorerUrl = getExplorerUrl(entry.network, entry.txHash);
+    const txLinkHtml = explorerUrl
+      ? `<a href="${explorerUrl}" target="_blank" rel="noopener noreferrer" class="history-tx-link" title="View transaction">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+        </a>`
+      : `<span class="history-tx-link history-tx-link-empty"></span>`;
+
     return `
-      <div class="live-tip-item${isNew ? ' new' : ''}">
-        <div class="tip-time">${formatTimeAgo(entry.confirmedAt)}</div>
-        <div class="tip-recipient">${recipientHtml}</div>
-        <div class="tip-amount">${formatUSD(entry.amountUSD)}</div>
+      <div class="transaction-item${isNew ? ' new' : ''}">
+        <div class="transaction-item-icon tip_received">${icon}</div>
+        <div class="transaction-item-details">
+          <div class="transaction-item-label">${labelHtml}</div>
+          <div class="transaction-item-description">${descriptionHtml}</div>
+        </div>
+        <div class="transaction-item-right">
+          <div class="transaction-item-amount received">${formatUSD(entry.amountUSD)}</div>
+          <div class="transaction-item-time">${formatTimeAgo(entry.confirmedAt)}</div>
+        </div>
+        <div class="transaction-item-links">
+          ${platformLinkHtml}
+          ${txLinkHtml}
+        </div>
       </div>
     `;
   }).join('');
@@ -1656,6 +1796,83 @@ function refreshLeaderboard() {
     loadTopTippers();
   } else if (currentLeaderboardView === 'earners') {
     loadTopEarners();
+  }
+}
+
+/**
+ * Format USD value for stats display (compact)
+ */
+function formatStatUSD(value) {
+  if (value >= 999500) {
+    // 999,500+ rounds to 1M or shows as X.XM
+    return '$' + (value / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  } else if (value >= 10000) {
+    return '$' + Math.round(value / 1000) + 'K';
+  } else if (value >= 1000) {
+    return '$' + (value / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  } else if (value >= 100) {
+    return '$' + Math.round(value);
+  } else {
+    return '$' + value.toFixed(2);
+  }
+}
+
+/**
+ * Format count value for stats display (compact)
+ */
+function formatStatCount(value) {
+  if (value >= 999500) {
+    // 999,500+ rounds to 1M or shows as X.XM
+    return (value / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  } else if (value >= 10000) {
+    return Math.round(value / 1000) + 'K';
+  } else if (value >= 1000) {
+    return (value / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  } else {
+    return value.toString();
+  }
+}
+
+/**
+ * Load leaderboard stats
+ */
+async function loadLeaderboardStats() {
+  const depositsEl = document.getElementById('stat-deposits');
+  const tipsEl = document.getElementById('stat-tips');
+  const tippersEl = document.getElementById('stat-tippers');
+  const recipientsEl = document.getElementById('stat-recipients');
+
+  // Show loading state
+  [depositsEl, tipsEl, tippersEl, recipientsEl].forEach(el => {
+    if (el) {
+      el.classList.add('loading');
+      el.textContent = '...';
+    }
+  });
+
+  try {
+    const result = await GroveAPI.getLeaderboardStats(currentPeriod);
+
+    if (result.success) {
+      if (depositsEl) {
+        depositsEl.textContent = formatStatUSD(result.data.deposits);
+        depositsEl.classList.remove('loading');
+      }
+      if (tipsEl) {
+        tipsEl.textContent = formatStatUSD(result.data.tips);
+        tipsEl.classList.remove('loading');
+      }
+      if (tippersEl) {
+        tippersEl.textContent = formatStatCount(result.data.tippers);
+        tippersEl.classList.remove('loading');
+      }
+      if (recipientsEl) {
+        recipientsEl.textContent = formatStatCount(result.data.recipients);
+        recipientsEl.classList.remove('loading');
+      }
+    }
+  } catch (error) {
+    console.error('[Grove Extension] Failed to load leaderboard stats:', error);
   }
 }
 
@@ -1875,11 +2092,11 @@ function renderHistoryList() {
       // For sent tips: show recipient
       if (ctx.recipient_username) {
         const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
-        descriptionHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="history-item-desc-link">@${escapeHtml(ctx.recipient_username)}</a>`;
+        descriptionHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.recipient_username)}</a>`;
       } else if (parsed.profileHandle && parsed.profileUrl) {
-        descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="history-item-desc-link">${parsed.profileHandle}</a>`;
+        descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
       } else if (parsed.postUrl) {
-        descriptionHtml = `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="history-item-desc-link">${truncateDestination(tx.destination)}</a>`;
+        descriptionHtml = `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${truncateDestination(tx.destination)}</a>`;
       } else if (tx.counterparty_address) {
         descriptionHtml = formatAddress(tx.counterparty_address);
       } else {
@@ -1889,11 +2106,11 @@ function renderHistoryList() {
       // For received tips: show sender if available
       if (ctx.sender_username) {
         const profileUrl = ctx.sender_profile_url || `https://x.com/${ctx.sender_username}`;
-        descriptionHtml = `<span class="history-from-label">from</span> <a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="history-item-desc-link">@${escapeHtml(ctx.sender_username)}</a>`;
+        descriptionHtml = `<span class="history-from-label">from</span> <a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.sender_username)}</a>`;
       } else if (tx.counterparty_address) {
         descriptionHtml = `<span class="history-from-label">from</span> ${formatAddress(tx.counterparty_address)}`;
       } else if (parsed.profileHandle && parsed.profileUrl) {
-        descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="history-item-desc-link">${parsed.profileHandle}</a>`;
+        descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
       } else {
         descriptionHtml = formatNetwork(tx.network);
       }
@@ -1950,17 +2167,17 @@ function renderHistoryList() {
       : `<span class="history-tx-link history-tx-link-empty"></span>`;
 
     return `
-      <div class="history-item">
-        <div class="history-item-icon ${isFailed ? 'failed' : tx.type}">${icon}</div>
-        <div class="history-item-details">
-          <div class="history-item-label">${label}</div>
-          <div class="history-item-description">${descriptionHtml}</div>
+      <div class="transaction-item">
+        <div class="transaction-item-icon ${isFailed ? 'failed' : tx.type}">${icon}</div>
+        <div class="transaction-item-details">
+          <div class="transaction-item-label">${label}</div>
+          <div class="transaction-item-description">${descriptionHtml}</div>
         </div>
-        <div class="history-item-right">
-          <div class="history-item-amount ${amountClass}">${amount}</div>
-          <div class="history-item-time">${time}</div>
+        <div class="transaction-item-right">
+          <div class="transaction-item-amount ${amountClass}">${amount}</div>
+          <div class="transaction-item-time">${time}</div>
         </div>
-        <div class="history-item-links">
+        <div class="transaction-item-links">
           ${platformLinkHtml}
           ${txLinkHtml}
         </div>
