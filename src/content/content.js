@@ -1165,7 +1165,7 @@
   }
 
   // Default auto-reply message template (must match popup.js)
-  const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I loved this post so much that I just sent you a {amount} tip on {chain} via @BuildWithGrove's tipping tool.
+  const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I loved this post so much that I just sent you a {amount} tip on {chain} via @BuildWithGrove.
 
 Tx: {tx_link}
 
