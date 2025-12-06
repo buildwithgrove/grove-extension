@@ -30,7 +30,7 @@
         "src/auth/xAuth.js",
         "src/content/content.js"
       ],
-      "css": ["src/ui/animate.min.css", "src/ui/styles.css"],
+      "css": ["src/ui/styles.css"],
       "run_at": "document_idle"
     },
     {
@@ -54,7 +54,7 @@
         "src/utils/tipErrors.js",
         "src/content/content.js"
       ],
-      "css": ["src/ui/animate.min.css", "src/ui/styles.css"],
+      "css": ["src/ui/styles.css"],
       "run_at": "document_idle"
     }
   ],

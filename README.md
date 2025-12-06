@@ -66,11 +66,9 @@ To reload after changes: click the refresh icon on the extension card or use [Ex
 └── src/
     ├── adapters/          # Platform-specific adapters
     │   ├── base.js        # Base adapter class
-    │   ├── twitter.js     # X/Twitter adapter
-    │   ├── youtube.js     # YouTube adapter
-    │   ├── reddit.js      # Reddit adapter
-    │   └── generic.js     # Generic website adapter
-    ├── auth/
+    │   ├── twitter.js     # Twitter adapter
+    │   ├── generic.js     # Generic adapter (llms.txt/ai.txt)
+        ├── auth/
     │   └── xAuth.js       # X OAuth 2.0 with PKCE
     ├── config/
     │   └── networks.js    # Chain configurations
@@ -124,10 +122,8 @@ Provide the following prompt to Claude (or similar AI):
 ```
 I need you to create a platform adapter for the Grove Tip Extension to add a tip button on [PLATFORM_NAME].
 
-Reference the existing adapters for Twitter, Reddit, and YouTube as examples:
+Reference the existing adapter for Twitter as an example:
 - src/adapters/twitter.js
-- src/adapters/reddit.js
-- src/adapters/youtube.js
 
 Here's a screenshot showing where the button should appear:
 [Attach screenshot]
