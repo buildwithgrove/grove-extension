@@ -2108,10 +2108,10 @@ function renderHistoryList() {
       // For received tips: show sender if available
       if (ctx.sender_username) {
         const profileUrl = ctx.sender_profile_url || `https://x.com/${ctx.sender_username}`;
-        descriptionHtml = `<span class="history-from-label">from</span> <a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.sender_username)}</a>`;
+        descriptionHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.sender_username)}</a>`;
       } else if (tx.counterparty_address) {
         const addressUrl = getAddressExplorerUrl(tx.network, tx.counterparty_address);
-        descriptionHtml = `<span class="history-from-label">from</span> <a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(tx.counterparty_address)}</a>`;
+        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(tx.counterparty_address)}</a>`;
       } else if (parsed.profileHandle && parsed.profileUrl) {
         descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
       } else {
@@ -2174,8 +2174,8 @@ function renderHistoryList() {
       <div class="transaction-item">
         <div class="transaction-item-icon ${isFailed ? 'failed' : tx.type}">${icon}</div>
         <div class="transaction-item-details">
-          <div class="transaction-item-label">${label}</div>
-          <div class="transaction-item-description">${descriptionHtml}</div>
+          <div class="transaction-item-label">${descriptionHtml}</div>
+          <div class="transaction-item-description">${label}</div>
         </div>
         <div class="transaction-item-right">
           <div class="transaction-item-amount ${amountClass}">${amount}</div>
