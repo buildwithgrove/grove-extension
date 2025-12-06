@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Grove - Tip Anyone, Anywhere",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Tip anyone, anywhere - An extension that lets you tip anyone online.",
   "permissions": ["storage", "identity"],
   "background": {
@@ -30,7 +30,7 @@
         "src/auth/xAuth.js",
         "src/content/content.js"
       ],
-      "css": ["src/ui/animate.min.css", "src/ui/styles.css"],
+      "css": ["src/ui/styles.css"],
       "run_at": "document_idle"
     },
     {
@@ -54,7 +54,7 @@
         "src/utils/tipErrors.js",
         "src/content/content.js"
       ],
-      "css": ["src/ui/animate.min.css", "src/ui/styles.css"],
+      "css": ["src/ui/styles.css"],
       "run_at": "document_idle"
     }
   ],

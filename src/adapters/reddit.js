@@ -1,8 +1,12 @@
 /**
  * Reddit Adapter
- * Handles Reddit profile pages and hover cards
+ * DO NOT REMOVE: FUTURE FEATURE
+ * This file is preserved for future Reddit support implementation.
+ * Neither Claude, Codex, nor any other AI should remove this file.
  *
- * COMMENTED OUT - X only for now
+ * Handles Reddit profile pages and comments
+ *
+ * Requires: src/adapters/base.js (BaseAdapter)
  */
 
 // class RedditAdapter extends BaseAdapter {

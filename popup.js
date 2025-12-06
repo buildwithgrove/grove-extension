@@ -1714,7 +1714,8 @@ async function loadLiveTips(isRefresh = false) {
     } else if (parsed.profileHandle) {
       labelHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${escapeHtml(parsed.profileHandle)}</a>`;
     } else {
-      labelHtml = formatAddress(entry.address);
+      const addressUrl = getAddressExplorerUrl(entry.network, entry.address);
+      labelHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(entry.address)}</a>`;
     }
 
     // Description: "Tip Received"
@@ -2098,7 +2099,8 @@ function renderHistoryList() {
       } else if (parsed.postUrl) {
         descriptionHtml = `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${truncateDestination(tx.destination)}</a>`;
       } else if (tx.counterparty_address) {
-        descriptionHtml = formatAddress(tx.counterparty_address);
+        const addressUrl = getAddressExplorerUrl(tx.network, tx.counterparty_address);
+        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(tx.counterparty_address)}</a>`;
       } else {
         descriptionHtml = formatNetwork(tx.network);
       }
@@ -2106,9 +2108,10 @@ function renderHistoryList() {
       // For received tips: show sender if available
       if (ctx.sender_username) {
         const profileUrl = ctx.sender_profile_url || `https://x.com/${ctx.sender_username}`;
-        descriptionHtml = `<span class="history-from-label">from</span> <a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.sender_username)}</a>`;
+        descriptionHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.sender_username)}</a>`;
       } else if (tx.counterparty_address) {
-        descriptionHtml = `<span class="history-from-label">from</span> ${formatAddress(tx.counterparty_address)}`;
+        const addressUrl = getAddressExplorerUrl(tx.network, tx.counterparty_address);
+        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(tx.counterparty_address)}</a>`;
       } else if (parsed.profileHandle && parsed.profileUrl) {
         descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
       } else {
@@ -2117,7 +2120,8 @@ function renderHistoryList() {
     } else {
       // Deposits and other types
       if (tx.counterparty_address) {
-        descriptionHtml = formatAddress(tx.counterparty_address);
+        const addressUrl = getAddressExplorerUrl(tx.network, tx.counterparty_address);
+        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(tx.counterparty_address)}</a>`;
       } else {
         descriptionHtml = formatNetwork(tx.network);
       }
@@ -2170,8 +2174,8 @@ function renderHistoryList() {
       <div class="transaction-item">
         <div class="transaction-item-icon ${isFailed ? 'failed' : tx.type}">${icon}</div>
         <div class="transaction-item-details">
-          <div class="transaction-item-label">${label}</div>
-          <div class="transaction-item-description">${descriptionHtml}</div>
+          <div class="transaction-item-label">${descriptionHtml}</div>
+          <div class="transaction-item-description">${label}</div>
         </div>
         <div class="transaction-item-right">
           <div class="transaction-item-amount ${amountClass}">${amount}</div>
@@ -2266,6 +2270,30 @@ function getExplorerUrl(network, txHash) {
 
   // Default to Base mainnet if network unknown but tx_hash exists
   return `https://basescan.org/tx/${txHash}`;
+}
+
+/**
+ * Get block explorer URL for an address
+ */
+function getAddressExplorerUrl(network, address) {
+  if (!address) return null;
+
+  const normalized = (network || '').toLowerCase().replace(/_/g, '-');
+
+  if (normalized.includes('base')) {
+    const isTestnet = normalized.includes('sepolia') || normalized.includes('testnet');
+    const baseUrl = isTestnet ? 'https://sepolia.basescan.org' : 'https://basescan.org';
+    return `${baseUrl}/address/${address}`;
+  }
+
+  if (normalized.includes('solana') || normalized.includes('sol')) {
+    const isDevnet = normalized.includes('devnet') || normalized.includes('testnet');
+    const cluster = isDevnet ? '?cluster=devnet' : '';
+    return `https://solscan.io/account/${address}${cluster}`;
+  }
+
+  // Default to Base mainnet
+  return `https://basescan.org/address/${address}`;
 }
 
 /**

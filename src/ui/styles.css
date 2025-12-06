@@ -102,8 +102,7 @@
   }
 }
 
-/* Reddit Button - COMMENTED OUT - X only for now */
-/*
+/* Reddit Button - DO NOT REMOVE: FUTURE FEATURE */
 .grove-tip-button-reddit {
   margin-left: auto !important;
   margin-right: 8px !important;
@@ -198,9 +197,9 @@
   transform: translateY(-1px);
   box-shadow: 0 4px 12px var(--grove-shadow-hover) !important;
 }
-*/
 
-/* YouTube Button - COMMENTED OUT - X only for now */
+
+/* YouTube Button - DO NOT REMOVE: FUTURE FEATURE */
 /*
 .grove-tip-button-youtube {
   background: linear-gradient(135deg, #000000 0%, #0a0a0a 100%) !important;
@@ -298,7 +297,7 @@
 }
 
 .grove-tip-button:disabled {
-/* Reddit/YouTube disabled states commented out - X only for now */
+/* Reddit/YouTube disabled states - DO NOT REMOVE: FUTURE FEATURE */
 /* .grove-tip-button-reddit:disabled,
 .grove-tip-button-youtube:disabled */
   opacity: 0.7;
@@ -316,4 +315,50 @@
 
 .grove-ad-mode {
   animation: grove-pulse-subtle 2s infinite;
+}
+
+/* Animation Utilities (replaced animate.min.css) */
+.animate__animated {
+  animation-duration: 1s;
+  animation-fill-mode: both;
+}
+
+.animate__infinite {
+  animation-iteration-count: infinite;
+}
+
+/* Bounce In */
+@keyframes bounceIn {
+  0%, 20%, 40%, 60%, 80%, to { animation-timing-function: cubic-bezier(.215,.61,.355,1); }
+  0% { opacity: 0; transform: scale3d(.3,.3,.3); }
+  20% { transform: scale3d(1.1,1.1,1.1); }
+  40% { transform: scale3d(.9,.9,.9); }
+  60% { opacity: 1; transform: scale3d(1.03,1.03,1.03); }
+  80% { transform: scale3d(.97,.97,.97); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+.animate__bounceIn {
+  animation-duration: .75s;
+  animation-name: bounceIn;
+}
+
+/* Shake X */
+@keyframes shakeX {
+  0%, to { transform: translateZ(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translate3d(-10px,0,0); }
+  20%, 40%, 60%, 80% { transform: translate3d(10px,0,0); }
+}
+.animate__shakeX {
+  animation-name: shakeX;
+}
+
+/* Pulse */
+@keyframes pulse {
+  0% { transform: scaleX(1); }
+  50% { transform: scale3d(1.05,1.05,1.05); }
+  to { transform: scaleX(1); }
+}
+.animate__pulse {
+  animation-name: pulse;
+  animation-timing-function: ease-in-out;
 }
