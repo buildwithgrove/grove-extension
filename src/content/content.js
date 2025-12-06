@@ -86,6 +86,17 @@
 
     console.log(`[Grove Extension] Platform detected: ${currentAdapter.getPlatformName()}`);
 
+    // Reddit support commented out - X only for now
+    // if (currentAdapter.getPlatformName() === "reddit") {
+    //   setupRedditHoverCardObserver();
+    //
+    //   // Also check if we're on a profile page and handle it
+    //   if (currentAdapter.detectProfilePage()) {
+    //     await initializeProfileButton();
+    //   }
+    //   return;
+    // }
+
     // For Twitter/X, handle tweet tip buttons on all pages
     if (currentAdapter.getPlatformName() === "twitter") {
       // If on a profile page, initialize profile button first (this caches the address)
@@ -163,6 +174,16 @@
       return new TwitterAdapter();
     }
 
+    // Reddit support commented out - X only for now
+    // if (hostname.includes("reddit.com")) {
+    //   return new RedditAdapter();
+    // }
+
+    // YouTube support commented out - X only for now
+    // if (hostname.includes("youtube.com") || hostname.includes("youtu.be")) {
+    //   return new YouTubeAdapter();
+    // }
+
     // Return GenericAdapter for all other websites
     // Only if GenericAdapter is available (loaded via manifest)
     if (typeof GenericAdapter !== 'undefined') {
@@ -191,37 +212,44 @@
       // Extract bio to check for addresses
       const bio = currentAdapter.extractBio();
 
-      if (!bio) {
-        console.log("[Grove Extension] No bio found - not showing button");
-        return;
-      }
-
-      console.log("[Grove Extension] Bio extracted");
-
-      // Check if bio contains tippable address
-      const hasAddress = AddressParser.hasAddresses(bio);
-      if (!hasAddress) {
-        console.log("[Grove Extension] No tippable address found in bio - not showing button");
-        return;
-      }
-
-      // Extract address (ENS names are resolved by the backend)
-      const result = AddressParser.resolveAddress(bio);
-      if (!result.address) {
-        console.log("[Grove Extension] Could not extract address - not showing button");
-        return;
-      }
-
-      resolvedAddress = result;
-      console.log(`[Grove Extension] ✅ Address detected: ${result.address} (type: ${result.type})`)
-
-      // Cache the address by username for tweet tip buttons
-      if (currentAdapter.getPlatformName() === 'twitter') {
-        const username = extractUsernameFromUrl(window.location.href);
-        if (username) {
-          setCachedAddress(username, result);
-          console.log(`[Grove Extension] Cached address for @${username}`);
+      // YouTube support commented out - X only for now
+      // if (currentAdapter.getPlatformName() !== 'youtube') {
+      if (true) {
+        if (!bio) {
+          console.log("[Grove Extension] No bio found - not showing button");
+          return;
         }
+
+        console.log("[Grove Extension] Bio extracted");
+
+        // Check if bio contains tippable address
+        const hasAddress = AddressParser.hasAddresses(bio);
+        if (!hasAddress) {
+          console.log("[Grove Extension] No tippable address found in bio - not showing button");
+          return;
+        }
+
+        // Extract address (ENS names are resolved by the backend)
+        const result = AddressParser.resolveAddress(bio);
+        if (!result.address) {
+          console.log("[Grove Extension] Could not extract address - not showing button");
+          return;
+        }
+
+        resolvedAddress = result;
+        console.log(`[Grove Extension] ✅ Address detected: ${result.address} (type: ${result.type})`)
+
+        // Cache the address by username for tweet tip buttons
+        if (currentAdapter.getPlatformName() === 'twitter') {
+          const username = extractUsernameFromUrl(window.location.href);
+          if (username) {
+            setCachedAddress(username, result);
+            console.log(`[Grove Extension] Cached address for @${username}`);
+          }
+        }
+      // YouTube support commented out - X only for now
+      // } else {
+      //   console.log("[Grove Extension] YouTube detected - skipping address validation");
       }
 
       // Get button placement location
@@ -399,6 +427,107 @@
       }
     }
   }
+
+  // Reddit hover card functions commented out - X only for now
+  // /**
+  //  * Setup observer for Reddit hover cards
+  //  * Reddit hover cards appear dynamically, so we need to watch for them
+  //  */
+  // function setupRedditHoverCardObserver() {
+  //   // Clean up existing observer
+  //   if (hoverCardObserver) {
+  //     hoverCardObserver.disconnect();
+  //   }
+  //
+  //   hoverCardObserver = new MutationObserver((mutations) => {
+  //     for (const mutation of mutations) {
+  //       for (const node of mutation.addedNodes) {
+  //         if (node.nodeType === Node.ELEMENT_NODE) {
+  //           // Check if this is a hover card
+  //           const hoverCard = node.querySelector
+  //             ? node.querySelector('[data-testid="user-hover-card"]')
+  //             : null;
+  //
+  //           if (hoverCard || (node.dataset && node.dataset.testid === "user-hover-card")) {
+  //             injectButtonIntoHoverCard(hoverCard || node);
+  //           }
+  //         }
+  //       }
+  //     }
+  //   });
+  //
+  //   // Start observing the document body for new elements
+  //   hoverCardObserver.observe(document.body, {
+  //     childList: true,
+  //     subtree: true,
+  //   });
+  //
+  // }
+  //
+  // /**
+  //  * Inject button into Reddit hover card
+  //  * @param {Element} hoverCard - The hover card element
+  //  */
+  // async function injectButtonIntoHoverCard(hoverCard) {
+  //
+  //   // Check if button already exists in this hover card
+  //   if (hoverCard.querySelector("#grove-tip-button")) {
+  //     return;
+  //   }
+  //
+  //   // Extract bio from hover card
+  //   const bioSpan = hoverCard.querySelector(".whitespace-normal");
+  //   if (!bioSpan) {
+  //     return;
+  //   }
+  //
+  //   const bio = bioSpan.textContent;
+  //
+  //   // Check if bio contains tippable address
+  //   const hasAddress = AddressParser.hasAddresses(bio);
+  //   if (!hasAddress) {
+  //     return;
+  //   }
+  //
+  //   // Extract address (ENS names are resolved by the backend)
+  //   const result = AddressParser.resolveAddress(bio);
+  //   if (!result.address) {
+  //     console.log("[Grove Extension] Could not extract address in hover card");
+  //     return;
+  //   }
+  //
+  //   console.log(`[Grove Extension] Address found in hover card: ${result.address} (type: ${result.type})`)
+  //
+  //   // Store for this hover card's tip button
+  //   const hoverCardResolvedAddress = result;
+  //
+  //   // Find the main content div that contains everything
+  //   const contentDiv = hoverCard.querySelector(".p-md.flex.flex-col");
+  //   if (!contentDiv) {
+  //     return;
+  //   }
+  //
+  //   // Find the top row with avatar and user info
+  //   const topRow = contentDiv.querySelector(".flex.flex-row.justify-items-start.items-center");
+  //   if (!topRow) {
+  //     return;
+  //   }
+  //
+  //   // Create and inject tip button with click handler
+  //   const tipButton = new TipButton(() => {
+  //     handleTipClick(tipButton);
+  //   }, "reddit");
+  //
+  //   const button = tipButton.create();
+  //
+  //   // Apply advertising mode class if enabled
+  //   if (ADVERTISING_MODE) {
+  //     button.classList.add("grove-ad-mode");
+  //   }
+  //
+  //   // Append button to the end of the top row (after user info)
+  //   topRow.appendChild(button);
+  // }
 
   /**
    * Setup observer for Twitter hover cards (profile popups)
