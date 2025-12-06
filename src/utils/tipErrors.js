@@ -149,7 +149,8 @@
     }
 
     /**
-     * Calculate bubble position anchored below the target element, centered horizontally.
+     * Calculate bubble position anchored to the target element, centered horizontally.
+     * Positions above if near bottom of viewport, otherwise below.
      * Clamps to viewport edges with padding.
      *
      * @param {HTMLElement} anchorEl - Element to anchor the bubble to
@@ -162,7 +163,18 @@
       const padding = 12;
       const gap = 8;
 
-      const top = anchorRect.bottom + window.scrollY + gap;
+      // Check if there's enough space below the button
+      const spaceBelow = window.innerHeight - anchorRect.bottom;
+      const needsFlip = spaceBelow < bubbleRect.height + gap + padding;
+
+      let top;
+      if (needsFlip) {
+        // Position above the button
+        top = anchorRect.top + window.scrollY - bubbleRect.height - gap;
+      } else {
+        // Position below the button
+        top = anchorRect.bottom + window.scrollY + gap;
+      }
 
       // Center horizontally under anchor, then clamp to viewport
       let left = anchorRect.left + window.scrollX + (anchorRect.width / 2) - (bubbleRect.width / 2);
