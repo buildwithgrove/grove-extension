@@ -2242,9 +2242,9 @@ button.quick-access-item:hover .quick-access-icon {
   background: var(--color-surface-hover);
 }
 
-/* Description link (to tweet/content) */
+/* Description link (to tweet/content) - clickable elements should be prominent */
 .transaction-item-desc-link {
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary);
   text-decoration: none;
   transition: color 0.2s;
 }
@@ -2382,7 +2382,7 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 .transaction-item-description {
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
   font-size: 11px;
   white-space: nowrap;
   overflow: hidden;

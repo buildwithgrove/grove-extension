@@ -1714,7 +1714,8 @@ async function loadLiveTips(isRefresh = false) {
     } else if (parsed.profileHandle) {
       labelHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${escapeHtml(parsed.profileHandle)}</a>`;
     } else {
-      labelHtml = formatAddress(entry.address);
+      const addressUrl = getAddressExplorerUrl(entry.network, entry.address);
+      labelHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(entry.address)}</a>`;
     }
 
     // Description: "Tip Received"
@@ -2266,6 +2267,30 @@ function getExplorerUrl(network, txHash) {
 
   // Default to Base mainnet if network unknown but tx_hash exists
   return `https://basescan.org/tx/${txHash}`;
+}
+
+/**
+ * Get block explorer URL for an address
+ */
+function getAddressExplorerUrl(network, address) {
+  if (!address) return null;
+
+  const normalized = (network || '').toLowerCase().replace(/_/g, '-');
+
+  if (normalized.includes('base')) {
+    const isTestnet = normalized.includes('sepolia') || normalized.includes('testnet');
+    const baseUrl = isTestnet ? 'https://sepolia.basescan.org' : 'https://basescan.org';
+    return `${baseUrl}/address/${address}`;
+  }
+
+  if (normalized.includes('solana') || normalized.includes('sol')) {
+    const isDevnet = normalized.includes('devnet') || normalized.includes('testnet');
+    const cluster = isDevnet ? '?cluster=devnet' : '';
+    return `https://solscan.io/account/${address}${cluster}`;
+  }
+
+  // Default to Base mainnet
+  return `https://basescan.org/address/${address}`;
 }
 
 /**
