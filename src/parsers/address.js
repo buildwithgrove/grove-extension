@@ -7,43 +7,28 @@
 class AddressParser {
   // ENS name pattern: alphanumeric + hyphens, supports subdomains, ending in .eth
   // Matches: vitalik.eth, foo-bar.eth, jesse.base.eth, sub.name.eth
-  // Also matches when wrapped in parentheses like (dave.base.eth)
-  // Also matches ENS with suffixes like sassal.eth/acc (common /acc pattern)
-  static ENS_PATTERN = /(?:^|\s|Tip:\s*|\()([a-zA-Z0-9][-a-zA-Z0-9]*(?:\.[a-zA-Z0-9][-a-zA-Z0-9]*)*\.eth)(?:\s|$|[,.\-)\/])/i;
+  static ENS_PATTERN = /[a-zA-Z0-9][-a-zA-Z0-9]*(?:\.[a-zA-Z0-9][-a-zA-Z0-9]*)*\.eth/i;
 
   // Solana address pattern commented out - Base/Base Sepolia only for now
   // Solana address pattern: base58 encoded, 32-44 chars
   // Base58 excludes: 0, O, I, l
   // static SOL_PATTERN = /(?:^|\s|Tip:\s*)([1-9A-HJ-NP-Za-km-z]{32,44})(?:\s|$|[,.\-])/;
 
+  // Generic 0x address pattern: any valid Ethereum address (0x + 40 hex chars)
+  static ETH_ADDRESS_PATTERN = /0x[a-fA-F0-9]{40}/;
+
   /**
    * Check if text contains any parseable addresses
    * Supported patterns:
-   * 1. TOKEN(network): 0xADDRESS (e.g., USDC(base): 0x9ab39B84aC4DE6D705C5f051c07db8fE72890953)
-   * 2. Tip: 0xADDRESS (defaults to BASE and USDC)
-   * 3. ENS names (e.g., vitalik.eth)
-   * (Solana addresses commented out - Base/Base Sepolia only for now)
+   * 1. Any 0x Ethereum address (0x + 40 hex characters)
+   * 2. ENS names (e.g., vitalik.eth)
    * @param {string} text - Text to check
    * @returns {boolean} - True if addresses found
    */
   static hasAddresses(text) {
     if (!text) return false;
 
-    // Pattern 1: TOKEN(network): 0xADDRESS
-    // Example: USDC(base): 0x9ab39B84aC4DE6D705C5f051c07db8fE72890953
-    const fullPattern = /\w+\(\w+\):\s*0x[a-fA-F0-9]{40}/;
-
-    // Pattern 2: Tip: 0xADDRESS (defaults to BASE and USDC)
-    // Example: Tip: 0xaa444C1470ad2618e1ce0d7de8BF9a56C28BBCc2
-    const tipPattern = /Tip:\s*0x[a-fA-F0-9]{40}/i;
-
-    // Pattern 3: ENS names (e.g., vitalik.eth)
-    const ensPattern = this.ENS_PATTERN;
-
-    // Pattern 4: Solana addresses - commented out
-    // const solPattern = this.SOL_PATTERN;
-
-    return fullPattern.test(text) || tipPattern.test(text) || ensPattern.test(text);
+    return this.ETH_ADDRESS_PATTERN.test(text) || this.ENS_PATTERN.test(text);
   }
 
   /**
@@ -54,7 +39,7 @@ class AddressParser {
   static extractENS(text) {
     if (!text) return null;
     const match = text.match(this.ENS_PATTERN);
-    return match ? match[1].toLowerCase() : null;
+    return match ? match[0].toLowerCase() : null;
   }
 
   // Solana address extraction commented out - Base/Base Sepolia only for now
@@ -77,17 +62,8 @@ class AddressParser {
   static extractRawAddress(text) {
     if (!text) return null;
 
-    // Try full pattern first: TOKEN(network): 0xADDRESS
-    const fullPattern = /\w+\(\w+\):\s*(0x[a-fA-F0-9]{40})/;
-    let match = text.match(fullPattern);
-    if (match) return match[1];
-
-    // Try tip pattern: Tip: 0xADDRESS
-    const tipPattern = /Tip:\s*(0x[a-fA-F0-9]{40})/i;
-    match = text.match(tipPattern);
-    if (match) return match[1];
-
-    return null;
+    const match = text.match(this.ETH_ADDRESS_PATTERN);
+    return match ? match[0] : null;
   }
 
   /**
