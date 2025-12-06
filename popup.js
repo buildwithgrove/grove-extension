@@ -2099,7 +2099,8 @@ function renderHistoryList() {
       } else if (parsed.postUrl) {
         descriptionHtml = `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${truncateDestination(tx.destination)}</a>`;
       } else if (tx.counterparty_address) {
-        descriptionHtml = formatAddress(tx.counterparty_address);
+        const addressUrl = getAddressExplorerUrl(tx.network, tx.counterparty_address);
+        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(tx.counterparty_address)}</a>`;
       } else {
         descriptionHtml = formatNetwork(tx.network);
       }
@@ -2109,7 +2110,8 @@ function renderHistoryList() {
         const profileUrl = ctx.sender_profile_url || `https://x.com/${ctx.sender_username}`;
         descriptionHtml = `<span class="history-from-label">from</span> <a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.sender_username)}</a>`;
       } else if (tx.counterparty_address) {
-        descriptionHtml = `<span class="history-from-label">from</span> ${formatAddress(tx.counterparty_address)}`;
+        const addressUrl = getAddressExplorerUrl(tx.network, tx.counterparty_address);
+        descriptionHtml = `<span class="history-from-label">from</span> <a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(tx.counterparty_address)}</a>`;
       } else if (parsed.profileHandle && parsed.profileUrl) {
         descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
       } else {
@@ -2118,7 +2120,8 @@ function renderHistoryList() {
     } else {
       // Deposits and other types
       if (tx.counterparty_address) {
-        descriptionHtml = formatAddress(tx.counterparty_address);
+        const addressUrl = getAddressExplorerUrl(tx.network, tx.counterparty_address);
+        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(tx.counterparty_address)}</a>`;
       } else {
         descriptionHtml = formatNetwork(tx.network);
       }
