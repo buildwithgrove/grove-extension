@@ -722,7 +722,7 @@ async function updateAuthState(jwt) {
 
 async function showJwtEdit() {
   jwtEditContainer.classList.remove('hidden');
-  manageJwtBtn.textContent = 'Close';
+  if (manageJwtBtn) manageJwtBtn.textContent = 'Close';
 
   // Get remove button if not already cached
   if (!removeJwtBtn) {
@@ -790,7 +790,7 @@ async function showJwtEditForSlot(slot) {
 
 function hideJwtEdit() {
   jwtEditContainer.classList.add('hidden');
-  manageJwtBtn.textContent = 'Manage';
+  if (manageJwtBtn) manageJwtBtn.textContent = 'Manage';
   jwtInput.value = ''; // Clear input for security
   currentEditSlot = null; // Reset slot state
 }
