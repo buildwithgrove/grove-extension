@@ -20,10 +20,13 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       groveChain: isTestnet ? 'base-sepolia' : 'base'
     };
 
-    // If testnet JWT, auto-enable developer mode
+    // Auto-switch developer mode based on environment
     if (isTestnet) {
-      dataToStore.groveEnvironment = 'local'; // This enables dev mode
+      dataToStore.groveEnvironment = 'local'; // Enable dev mode for testnet
       console.log('Testnet JWT received - enabling developer mode');
+    } else {
+      dataToStore.groveEnvironment = 'prod'; // Disable dev mode for production
+      console.log('Production JWT received - disabling developer mode');
     }
 
     // Clear cached balances and user data when switching accounts
