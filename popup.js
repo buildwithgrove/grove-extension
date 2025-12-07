@@ -61,6 +61,19 @@ const cancelJwtBtn = document.getElementById('cancelJwtBtn');
 const toggleJwtVisibility = document.getElementById('toggleJwtVisibility');
 let removeJwtBtn = null; // Will be set later since it might not exist initially.
 
+// JWT Slot Management (new dual-slot UI)
+const productionSlotDot = document.getElementById('productionSlotDot');
+const testnetSlotDot = document.getElementById('testnetSlotDot');
+const productionKeyStatus = document.getElementById('productionKeyStatus');
+const testnetKeyStatus = document.getElementById('testnetKeyStatus');
+const productionActiveBadge = document.getElementById('productionActiveBadge');
+const testnetActiveBadge = document.getElementById('testnetActiveBadge');
+const manageProductionKeyBtn = document.getElementById('manageProductionKeyBtn');
+const manageTestnetKeyBtn = document.getElementById('manageTestnetKeyBtn');
+const jwtEditSlotLabel = document.getElementById('jwtEditSlotLabel');
+const jwtEditAppLink = document.getElementById('jwtEditAppLink');
+let currentEditSlot = null; // Track which slot is being edited ('production' or 'testnet')
+
 // Previous Keys Management
 const prevKeysCount = document.getElementById('prevKeysCount');
 const viewPrevKeysBtn = document.getElementById('viewPrevKeysBtn');
@@ -170,7 +183,7 @@ async function init() {
       ? await KeyManager.getTestnetJWT()
       : await KeyManager.getProductionJWT();
     if (currentJwt) {
-      await KeyManager.archiveCurrentKey(currentJwt);
+      await KeyManager.archiveCurrentKey(currentJwt, isTestnet ? 'testnet' : 'production');
     }
 
     // Store in the appropriate slot
@@ -379,15 +392,39 @@ function setupEventListeners() {
     homeXLoginBtnEl.addEventListener('click', handleXLogin);
   }
 
-  manageJwtBtn.addEventListener('click', () => {
-    if (jwtEditContainer.classList.contains('hidden')) {
-      showJwtEdit();
-    } else {
-      hideJwtEdit();
-    }
-  });
+  // Legacy manage button (kept for compatibility but hidden)
+  if (manageJwtBtn) {
+    manageJwtBtn.addEventListener('click', () => {
+      if (jwtEditContainer.classList.contains('hidden')) {
+        showJwtEdit();
+      } else {
+        hideJwtEdit();
+      }
+    });
+  }
 
-  if (saveJwtBtn) saveJwtBtn.addEventListener('click', saveJwt);
+  // New slot-specific manage buttons
+  if (manageProductionKeyBtn) {
+    manageProductionKeyBtn.addEventListener('click', () => {
+      if (jwtEditContainer.classList.contains('hidden') || currentEditSlot !== 'production') {
+        showJwtEditForSlot('production');
+      } else {
+        hideJwtEdit();
+      }
+    });
+  }
+
+  if (manageTestnetKeyBtn) {
+    manageTestnetKeyBtn.addEventListener('click', () => {
+      if (jwtEditContainer.classList.contains('hidden') || currentEditSlot !== 'testnet') {
+        showJwtEditForSlot('testnet');
+      } else {
+        hideJwtEdit();
+      }
+    });
+  }
+
+  if (saveJwtBtn) saveJwtBtn.addEventListener('click', saveJwtForSlot);
   if (cancelJwtBtn) cancelJwtBtn.addEventListener('click', hideJwtEdit);
 
   // Get remove button and add event listener
@@ -568,6 +605,76 @@ async function loadJWT() {
   // Get JWT based on current dev mode
   const jwt = await getActiveJWT();
   await updateAuthState(jwt);
+  // Also update the slot UI
+  await loadJwtSlots();
+}
+
+/**
+ * Load and display both JWT slot statuses
+ */
+async function loadJwtSlots() {
+  const prodJwt = await KeyManager.getProductionJWT();
+  const testnetJwt = await KeyManager.getTestnetJWT();
+  const devMode = await isDevMode();
+
+  // Update production slot
+  if (productionSlotDot) {
+    if (prodJwt) {
+      productionSlotDot.classList.add('connected');
+      productionSlotDot.classList.remove('disconnected');
+    } else {
+      productionSlotDot.classList.remove('connected');
+      productionSlotDot.classList.add('disconnected');
+    }
+  }
+
+  if (productionKeyStatus) {
+    if (prodJwt) {
+      const first = prodJwt.substring(0, 6);
+      const last = prodJwt.substring(prodJwt.length - 4);
+      productionKeyStatus.innerHTML = `<span style="font-family: monospace">${first}...${last}</span>`;
+    } else {
+      productionKeyStatus.textContent = 'Not connected';
+    }
+  }
+
+  // Update testnet slot
+  if (testnetSlotDot) {
+    if (testnetJwt) {
+      testnetSlotDot.classList.add('connected');
+      testnetSlotDot.classList.remove('disconnected');
+    } else {
+      testnetSlotDot.classList.remove('connected');
+      testnetSlotDot.classList.add('disconnected');
+    }
+  }
+
+  if (testnetKeyStatus) {
+    if (testnetJwt) {
+      const first = testnetJwt.substring(0, 6);
+      const last = testnetJwt.substring(testnetJwt.length - 4);
+      testnetKeyStatus.innerHTML = `<span style="font-family: monospace">${first}...${last}</span>`;
+    } else {
+      testnetKeyStatus.textContent = 'Not connected';
+    }
+  }
+
+  // Update active badges based on dev mode
+  if (productionActiveBadge) {
+    if (!devMode) {
+      productionActiveBadge.classList.remove('hidden');
+    } else {
+      productionActiveBadge.classList.add('hidden');
+    }
+  }
+
+  if (testnetActiveBadge) {
+    if (devMode) {
+      testnetActiveBadge.classList.remove('hidden');
+    } else {
+      testnetActiveBadge.classList.add('hidden');
+    }
+  }
 }
 
 async function updateAuthState(jwt) {
@@ -639,10 +746,53 @@ async function showJwtEdit() {
   jwtInput.focus();
 }
 
+/**
+ * Show the JWT edit form for a specific slot (production or testnet)
+ * @param {string} slot - 'production' or 'testnet'
+ */
+async function showJwtEditForSlot(slot) {
+  currentEditSlot = slot;
+  jwtEditContainer.classList.remove('hidden');
+
+  // Update the label and link based on slot
+  if (jwtEditSlotLabel) {
+    jwtEditSlotLabel.textContent = slot === 'testnet' ? 'Testnet Key' : 'Mainnet Key';
+  }
+  if (jwtEditAppLink) {
+    jwtEditAppLink.href = slot === 'testnet' ? 'https://app.testnet.grove.city' : 'https://app.grove.city';
+    jwtEditAppLink.textContent = slot === 'testnet' ? 'app.testnet.grove.city' : 'app.grove.city';
+  }
+
+  // Get remove button if not already cached
+  if (!removeJwtBtn) {
+    removeJwtBtn = document.getElementById('removeJwtBtn');
+  }
+
+  // Get the JWT for the specific slot
+  const jwt = slot === 'testnet'
+    ? await KeyManager.getTestnetJWT()
+    : await KeyManager.getProductionJWT();
+
+  if (jwt && jwt.length > 0) {
+    if (removeJwtBtn) {
+      removeJwtBtn.classList.remove('hidden');
+    }
+    jwtInput.value = jwt;
+  } else {
+    if (removeJwtBtn) {
+      removeJwtBtn.classList.add('hidden');
+    }
+    jwtInput.value = '';
+  }
+
+  jwtInput.focus();
+}
+
 function hideJwtEdit() {
   jwtEditContainer.classList.add('hidden');
   manageJwtBtn.textContent = 'Manage';
   jwtInput.value = ''; // Clear input for security
+  currentEditSlot = null; // Reset slot state
 }
 
 async function saveJwt() {
@@ -666,7 +816,7 @@ async function saveJwt() {
 
     // If there's a current JWT and it's different from the new one, archive it
     if (currentJwt && currentJwt !== token) {
-      await KeyManager.archiveCurrentKey(currentJwt);
+      await KeyManager.archiveCurrentKey(currentJwt, isTestnet ? 'testnet' : 'production');
     }
 
     // Store in the appropriate slot
@@ -727,6 +877,75 @@ async function saveJwt() {
   }
 }
 
+/**
+ * Save JWT to the currently selected slot (production or testnet)
+ * Uses currentEditSlot to determine which slot to save to
+ */
+async function saveJwtForSlot() {
+  const token = jwtInput.value.trim();
+  if (!token) {
+    showToast('Please enter a token');
+    return;
+  }
+
+  // If no slot is set, fall back to auto-detection
+  if (!currentEditSlot) {
+    return saveJwt();
+  }
+
+  const isTestnet = currentEditSlot === 'testnet';
+
+  // Validate the token works for the expected environment
+  showToast('Validating key...');
+  const { environment } = await GroveAPI.detectJWTEnvironment(token);
+
+  if (!environment) {
+    showToast('Invalid key - not recognized on any environment');
+    return;
+  }
+
+  // Warn if key doesn't match the expected slot
+  const keyIsTestnet = environment === 'testnet';
+  if (keyIsTestnet !== isTestnet) {
+    const expectedEnv = isTestnet ? 'testnet' : 'mainnet';
+    const actualEnv = keyIsTestnet ? 'testnet' : 'mainnet';
+    showToast(`This is a ${actualEnv} key, but you're editing the ${expectedEnv} slot`);
+    return;
+  }
+
+  // Get current JWT in slot before saving new one
+  const currentJwt = isTestnet
+    ? await KeyManager.getTestnetJWT()
+    : await KeyManager.getProductionJWT();
+
+  // Archive current JWT if different
+  if (currentJwt && currentJwt !== token) {
+    await KeyManager.archiveCurrentKey(currentJwt, isTestnet ? 'testnet' : 'production');
+  }
+
+  // Store in the slot
+  if (isTestnet) {
+    await KeyManager.setTestnetJWT(token);
+  } else {
+    await KeyManager.setProductionJWT(token);
+  }
+
+  // Update the slot UI
+  await loadJwtSlots();
+  hideJwtEdit();
+
+  const envLabel = isTestnet ? 'Testnet' : 'Mainnet';
+  showToast(`${envLabel} key saved`);
+  await prevKeysUI.updateCount();
+
+  // If this slot is the active one, refresh the balance
+  const devMode = await isDevMode();
+  if ((devMode && isTestnet) || (!devMode && !isTestnet)) {
+    await updateAuthState(token);
+    await fetchBalance();
+  }
+}
+
 let removeJwtPending = false;
 
 async function removeJwt() {
@@ -752,29 +971,43 @@ async function removeJwt() {
   removeJwtBtn.textContent = 'Disconnect';
   removeJwtBtn.classList.remove('confirming');
 
-  // Get current dev mode and JWT
+  // Determine which slot to clear - use currentEditSlot if set, otherwise use devMode
   const devMode = await isDevMode();
-  const currentJwt = await getActiveJWT();
+  const slotToRemove = currentEditSlot || (devMode ? 'testnet' : 'production');
+  const isTestnetSlot = slotToRemove === 'testnet';
 
-  // Archive current JWT before removing
-  if (currentJwt) {
-    await KeyManager.archiveCurrentKey(currentJwt);
+  // Get the JWT from the slot being removed
+  const jwtToRemove = isTestnetSlot
+    ? await KeyManager.getTestnetJWT()
+    : await KeyManager.getProductionJWT();
+
+  // Archive JWT before removing
+  if (jwtToRemove) {
+    await KeyManager.archiveCurrentKey(jwtToRemove, slotToRemove);
   }
 
-  // Clear the JWT in the current slot
-  if (devMode) {
+  // Clear the JWT in the slot
+  if (isTestnetSlot) {
     await KeyManager.clearTestnetJWT();
   } else {
     await KeyManager.clearProductionJWT();
   }
 
-  // Remove client address and ENS name
-  await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
-  await updateAuthState(null);
-  updateEarnAddressDisplay(null);
-  updateEnsNameDisplay(null);
+  // Update the slot UI
+  await loadJwtSlots();
+
+  // Only update auth state if we removed the active slot
+  const removedActiveSlot = (devMode && isTestnetSlot) || (!devMode && !isTestnetSlot);
+  if (removedActiveSlot) {
+    await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
+    await updateAuthState(null);
+    updateEarnAddressDisplay(null);
+    updateEnsNameDisplay(null);
+  }
+
   hideJwtEdit();
-  showToast('Key saved to history');
+  const envLabel = isTestnetSlot ? 'Testnet' : 'Mainnet';
+  showToast(`${envLabel} key removed`);
   await prevKeysUI.updateCount();
 
   // Refresh previous keys list if visible
@@ -1433,6 +1666,7 @@ async function handleDevModeToggle(e) {
     document.body.classList.remove('developer-mode');
     if (testBanner) {
       testBanner.classList.remove('visible');
+      testBanner.classList.add('hidden');
     }
     if (endpointSelector) endpointSelector.classList.add('hidden');
 

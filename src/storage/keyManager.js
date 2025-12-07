@@ -103,8 +103,9 @@ class KeyManager {
   /**
    * Save current JWT to previous keys before replacing it
    * @param {string} currentJwt - The current JWT to archive
+   * @param {string} environment - The environment ('production' or 'testnet')
    */
-  static async archiveCurrentKey(currentJwt) {
+  static async archiveCurrentKey(currentJwt, environment = null) {
     if (!currentJwt) return;
 
     const result = await chrome.storage.local.get([STORAGE_KEY]);
@@ -113,10 +114,11 @@ class KeyManager {
     // Remove if already exists to prevent duplicates
     prevJwts = prevJwts.filter(item => item.key !== currentJwt);
 
-    // Add current JWT to previous keys with timestamp
+    // Add current JWT to previous keys with timestamp and environment
     prevJwts.unshift({
       key: currentJwt,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      environment: environment
     });
 
     // Keep only last MAX_KEYS keys

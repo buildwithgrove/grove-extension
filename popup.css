@@ -1498,6 +1498,56 @@ button.quick-access-item:hover .quick-access-icon {
   color: var(--color-text-secondary);
 }
 
+/* JWT Slot Styles */
+.jwt-slot {
+  position: relative;
+}
+
+.jwt-slot-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.slot-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--color-text-tertiary);
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.slot-dot.connected {
+  background-color: var(--color-primary);
+  box-shadow: 0 0 6px var(--color-primary);
+}
+
+.slot-dot.disconnected {
+  background-color: var(--color-text-tertiary);
+}
+
+.slot-active-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-primary);
+  background-color: var(--color-primary-light);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.jwt-edit-header {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+}
+
 .settings-arrow {
   color: var(--color-text-tertiary);
   font-size: 20px;
