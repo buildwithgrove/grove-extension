@@ -52,38 +52,49 @@ class PreviousKeysUI {
    * Render the list of previous keys
    */
   async render() {
-    const prevJwts = await KeyManager.getPreviousKeys();
+    try {
+      const prevJwts = await KeyManager.getPreviousKeys();
 
-    if (prevJwts.length === 0) {
-      this.listElement.innerHTML = '<p style="color: var(--color-text-secondary); font-size: 12px; text-align: center; padding: 20px;">No previous keys stored</p>';
-      return;
+      if (prevJwts.length === 0) {
+        this.listElement.innerHTML = '<p style="color: var(--color-text-secondary); font-size: 12px; text-align: center; padding: 20px;">No previous keys stored</p>';
+        return;
+      }
+
+      this.listElement.innerHTML = prevJwts.map((item, index) => {
+        // Defensive checks for malformed data
+        if (!item || !item.key) return '';
+
+        const date = item.timestamp ? new Date(item.timestamp) : new Date();
+        const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        const maskedKey = this._maskKey(item.key);
+        const env = item.environment;
+        const envLabel = env === 'testnet' ? 'Testnet' : (env === 'production' ? 'Mainnet' : '');
+        const envBadge = envLabel ? ` <span class="key-env-badge ${env === 'testnet' ? 'testnet' : ''}">${envLabel}</span>` : '';
+
+        return `
+          <div class="prev-key-item">
+            <div class="prev-key-info">
+              <span class="prev-key-value">${maskedKey}</span>${envBadge}
+              <span class="prev-key-date">${formattedDate}</span>
+            </div>
+            <div class="prev-key-actions">
+              <button class="prev-key-btn use-key-btn" data-index="${index}" title="Use this key">
+                Use
+              </button>
+              <button class="prev-key-btn delete-key-btn" data-index="${index}" title="Delete this key">
+                Delete
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Add event listeners
+      this._attachHandlers();
+    } catch (error) {
+      console.error('[PreviousKeysUI] Error rendering keys:', error);
+      this.listElement.innerHTML = '<p style="color: var(--color-danger); font-size: 12px; text-align: center; padding: 20px;">Error loading keys</p>';
     }
-
-    this.listElement.innerHTML = prevJwts.map((item, index) => {
-      const date = new Date(item.timestamp);
-      const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-      const maskedKey = this._maskKey(item.key);
-
-      return `
-        <div class="prev-key-item">
-          <div class="prev-key-info">
-            <span class="prev-key-value">${maskedKey}</span>
-            <span class="prev-key-date">${formattedDate}</span>
-          </div>
-          <div class="prev-key-actions">
-            <button class="prev-key-btn use-key-btn" data-index="${index}" title="Use this key">
-              Use
-            </button>
-            <button class="prev-key-btn delete-key-btn" data-index="${index}" title="Delete this key">
-              Delete
-            </button>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    // Add event listeners
-    this._attachHandlers();
   }
 
   /**

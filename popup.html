@@ -55,7 +55,8 @@
             </svg>
           </div>
         </div>
-        <div class="chain-option testnet-option" data-chain="base-sepolia">
+        <!-- Testnet option - hidden by default, shown when dev mode is enabled -->
+        <div class="chain-option testnet-option hidden" data-chain="base-sepolia">
           <div class="chain-icon-wrapper">
             <svg class="chain-logo" width="24" height="24" viewBox="0 0 249 249" fill="none">
               <rect width="249" height="249" rx="50" fill="#0052FF" />
@@ -71,6 +72,27 @@
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
           </div>
+        </div>
+        <!-- Solana - Coming Soon (grayed out) -->
+        <div class="chain-option mainnet-option disabled" data-chain="solana" style="opacity: 0.5; pointer-events: none;">
+          <div class="chain-icon-wrapper">
+            <svg class="chain-logo" width="24" height="24" viewBox="0 0 398 312" fill="none">
+              <defs>
+                <linearGradient id="solGrad1a" x1="360.879" y1="-37.455" x2="141.213" y2="383.294" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#00FFA3" />
+                  <stop offset="1" stop-color="#DC1FFF" />
+                </linearGradient>
+              </defs>
+              <path d="M64.6 237.9c2.4-2.4 5.7-3.8 9.2-3.8h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1l62.7-62.7z" fill="url(#solGrad1a)" />
+              <path d="M64.6 3.8C67.1 1.4 70.4 0 73.8 0h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1L64.6 3.8z" fill="url(#solGrad1a)" />
+              <path d="M333.1 120.1c-2.4-2.4-5.7-3.8-9.2-3.8H6.5c-5.8 0-8.7 7-4.6 11.1l62.7 62.7c2.4 2.4 5.7 3.8 9.2 3.8h317.4c5.8 0 8.7-7 4.6-11.1l-62.7-62.7z" fill="url(#solGrad1a)" />
+            </svg>
+          </div>
+          <div class="chain-option-info">
+            <div class="chain-option-name">Solana</div>
+            <div class="chain-option-type">Coming Soon</div>
+          </div>
+          <div class="chain-selected-check" style="opacity: 0;"></div>
         </div>
         <!-- Solana chain options commented out - Base/Base Sepolia only for now -->
         <!--
@@ -645,41 +667,73 @@
         </div>
 
         <div class="settings-group">
-          <!-- JWT Management -->
-          <div class="settings-item-column" id="jwtSettingsSection">
-            <div class="settings-row">
-              <div class="settings-info">
-                <div class="settings-name">Secret Key</div>
-                <div class="settings-desc" id="jwtStatusDisplay">Not connected</div>
-              </div>
-              <button class="btn-text" id="manageJwtBtn">Manage</button>
-            </div>
+          <div class="settings-label">Secret Keys</div>
 
-            <!-- JWT Edit Form (Hidden by default) -->
-            <div class="jwt-edit-container hidden" id="jwtEditContainer">
-              <p class="info-text-sm">Get your key from <a href="https://app.grove.city" target="_blank"
-                  class="link-accent">app.grove.city</a></p>
-              <div class="input-group">
-                <input type="password" id="jwtInput" class="code-input" placeholder="Paste Secret Key">
-                <button type="button" class="input-toggle-btn" id="toggleJwtVisibility"
-                  aria-label="Toggle password visibility">
-                  <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle class="eye-open" cx="12" cy="12" r="3"></circle>
-                    <path class="eye-closed hidden"
-                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
-                    </path>
-                    <line class="eye-closed hidden" x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                </button>
-              </div>
-              <div class="form-actions">
-                <button class="btn-danger btn-sm hidden" id="removeJwtBtn">Disconnect</button>
-                <button class="btn-secondary btn-sm" id="cancelJwtBtn">Cancel</button>
-                <button class="btn-primary btn-sm" id="saveJwtBtn">Save</button>
-              </div>
+          <!-- Production Key Slot -->
+          <div class="settings-item jwt-slot" id="productionKeySlot" data-slot="production">
+            <div class="jwt-slot-indicator">
+              <span class="slot-dot" id="productionSlotDot"></span>
             </div>
+            <div class="settings-info">
+              <div class="settings-name">
+                Mainnet
+                <span class="slot-active-badge hidden" id="productionActiveBadge">Active</span>
+              </div>
+              <div class="settings-desc" id="productionKeyStatus">Not connected</div>
+            </div>
+            <button class="btn-text" id="manageProductionKeyBtn">Manage</button>
+          </div>
+
+          <!-- Testnet Key Slot -->
+          <div class="settings-item jwt-slot" id="testnetKeySlot" data-slot="testnet">
+            <div class="jwt-slot-indicator">
+              <span class="slot-dot" id="testnetSlotDot"></span>
+            </div>
+            <div class="settings-info">
+              <div class="settings-name">
+                Testnet
+                <span class="slot-active-badge hidden" id="testnetActiveBadge">Active</span>
+              </div>
+              <div class="settings-desc" id="testnetKeyStatus">Not connected</div>
+            </div>
+            <button class="btn-text" id="manageTestnetKeyBtn">Manage</button>
+          </div>
+
+          <!-- JWT Edit Form (Hidden by default) -->
+          <div class="jwt-edit-container hidden" id="jwtEditContainer">
+            <div class="jwt-edit-header">
+              <span id="jwtEditSlotLabel">Mainnet Key</span>
+            </div>
+            <p class="info-text-sm">Get your key from <a href="https://app.grove.city" target="_blank"
+                class="link-accent" id="jwtEditAppLink">app.grove.city</a></p>
+            <div class="input-group">
+              <input type="password" id="jwtInput" class="code-input" placeholder="Paste Secret Key">
+              <button type="button" class="input-toggle-btn" id="toggleJwtVisibility"
+                aria-label="Toggle password visibility">
+                <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle class="eye-open" cx="12" cy="12" r="3"></circle>
+                  <path class="eye-closed hidden"
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+                  </path>
+                  <line class="eye-closed hidden" x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              </button>
+            </div>
+            <div class="form-actions">
+              <button class="btn-danger btn-sm hidden" id="removeJwtBtn">Disconnect</button>
+              <button class="btn-secondary btn-sm" id="cancelJwtBtn">Cancel</button>
+              <button class="btn-primary btn-sm" id="saveJwtBtn">Save</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <!-- Legacy jwtStatusDisplay for backward compatibility - hidden -->
+          <div class="hidden" id="jwtSettingsSection">
+            <div id="jwtStatusDisplay"></div>
+            <button id="manageJwtBtn" class="hidden"></button>
           </div>
 
           <!-- Previous Secret Keys -->
