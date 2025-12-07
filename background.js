@@ -3,9 +3,19 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
   console.log('Received external message from:', sender.origin);
 
   if (message.type === 'SET_JWT') {
-    chrome.storage.local.set({ GROVE_API_JWT: message.jwt }, () => {
+    // Store JWT and optionally environment/chain if provided by webapp
+    const dataToStore = { GROVE_API_JWT: message.jwt };
+
+    // If webapp provides environment info, use it to auto-switch
+    if (message.environment === 'production' || message.environment === 'testnet') {
+      dataToStore.groveEndpoint = message.environment;
+      dataToStore.groveChain = message.environment === 'production' ? 'base' : 'base-sepolia';
+      console.log(`JWT stored with environment: ${message.environment}`);
+    }
+
+    chrome.storage.local.set(dataToStore, () => {
       console.log('JWT stored successfully');
-      sendResponse({ success: true });
+      sendResponse({ success: true, environment: message.environment || null });
     });
     return true; // Keep channel open for async response
   }

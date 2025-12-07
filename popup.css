@@ -175,6 +175,22 @@ body.developer-mode .testnet-option {
   opacity: 0.6;
 }
 
+.key-env-badge {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.key-env-badge.testnet {
+  background-color: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+}
+
 /* Chain Dropdown */
 .chain-dropdown {
   position: absolute;

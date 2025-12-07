@@ -129,6 +129,15 @@ async function init() {
 
   // Set up callback for when a previous key is used
   prevKeysUI.setOnUseKey(async (key) => {
+    // Detect which environment this JWT belongs to
+    showToast('Detecting environment...');
+    const { environment, chain } = await GroveAPI.detectJWTEnvironment(key);
+
+    if (!environment) {
+      showToast('Key no longer valid');
+      return;
+    }
+
     // Archive current key first (if any)
     const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
     const currentJwt = result[STORAGE_KEYS.JWT];
@@ -136,8 +145,17 @@ async function init() {
       await KeyManager.archiveCurrentKey(currentJwt);
     }
 
-    // Set the selected key as current
-    await chrome.storage.local.set({ [STORAGE_KEYS.JWT]: key });
+    // Set the selected key as current and auto-switch environment, clear cached balances
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.JWT]: key,
+      [STORAGE_KEYS.ENDPOINT]: environment,
+      [STORAGE_KEYS.CHAIN]: chain,
+      [STORAGE_KEYS.LAST_BALANCES]: {}, // Clear cached balances when switching keys
+    });
+
+    // Update chain UI
+    updateChainUI(chain);
+    updateTopUpLink(chain);
 
     // Delete the key from previous keys (since it's now current)
     const keys = await KeyManager.getPreviousKeys();
@@ -147,10 +165,13 @@ async function init() {
     }
 
     // Update UI
-    updateAuthState(key);
+    await updateAuthState(key);
     await prevKeysUI.updateCount();
     await prevKeysUI.render();
     await fetchBalance();
+
+    const envLabel = environment === 'production' ? 'Mainnet' : 'Testnet';
+    showToast(`Connected to ${envLabel}`);
 
     // Navigate to home
     document.querySelector('[data-target="tab-home"]').click();
@@ -392,11 +413,20 @@ function setupEventListeners() {
 
   // Listen for storage changes (e.g., when webapp injects JWT via external messaging)
   chrome.storage.onChanged.addListener(async (changes, areaName) => {
-    if (areaName === 'local' && changes[STORAGE_KEYS.JWT]) {
+    if (areaName !== 'local') return;
+
+    if (changes[STORAGE_KEYS.JWT]) {
       console.log('[Grove Extension] JWT changed in storage, refreshing...');
       const newJwt = changes[STORAGE_KEYS.JWT].newValue;
-      updateAuthState(newJwt);
+      await updateAuthState(newJwt);
       await fetchBalance();
+    }
+
+    if (changes[STORAGE_KEYS.CHAIN]) {
+      console.log('[Grove Extension] Chain changed in storage, updating UI...');
+      const newChain = changes[STORAGE_KEYS.CHAIN].newValue;
+      updateChainUI(newChain);
+      updateTopUpLink(newChain);
     }
   });
 }
@@ -455,25 +485,25 @@ async function loadJWT() {
     const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
     const jwt = result[STORAGE_KEYS.JWT];
 
-  updateAuthState(jwt);
+  await updateAuthState(jwt);
 }
 
-function updateAuthState(jwt) {
+async function updateAuthState(jwt) {
     if (jwt && jwt.length > 0) {
     // Connected
     onboardingState.classList.add('hidden');
     connectedState.classList.remove('hidden');
 
-    // Settings Display - show full key if short, truncate if long
-    if (jwt.length <= 20) {
-      jwtStatusDisplay.textContent = jwt;
-    } else {
-      const first = jwt.substring(0, 6);
-      const last = jwt.substring(jwt.length - 4);
-      jwtStatusDisplay.textContent = `${first}...${last}`;
-    }
+    // Get environment from storage to show in status
+    const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
+    const endpoint = result[STORAGE_KEYS.ENDPOINT] || 'production';
+    const envLabel = endpoint === 'testnet' ? 'Testnet' : 'Mainnet';
+
+    // Settings Display - show truncated key + environment
+    const first = jwt.substring(0, 6);
+    const last = jwt.substring(jwt.length - 4);
+    jwtStatusDisplay.innerHTML = `<span style="font-family: monospace">${first}...${last}</span> <span class="key-env-badge ${endpoint === 'testnet' ? 'testnet' : ''}">${envLabel}</span>`;
     jwtStatusDisplay.style.color = 'var(--color-primary)';
-    jwtStatusDisplay.style.fontFamily = 'monospace';
 
     // Get remove button if not already cached
     if (!removeJwtBtn) {
@@ -537,6 +567,15 @@ function hideJwtEdit() {
 async function saveJwt() {
   const token = jwtInput.value.trim();
   if (token) {
+    // Detect which environment this JWT belongs to
+    showToast('Detecting environment...');
+    const { environment, chain } = await GroveAPI.detectJWTEnvironment(token);
+
+    if (!environment) {
+      showToast('Invalid key - not recognized on any environment');
+      return;
+    }
+
     // Get current JWT before saving new one
     const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
     const currentJwt = result[STORAGE_KEYS.JWT];
@@ -546,11 +585,23 @@ async function saveJwt() {
       await KeyManager.archiveCurrentKey(currentJwt);
     }
 
-    // Save new JWT
-    await chrome.storage.local.set({ [STORAGE_KEYS.JWT]: token });
-    updateAuthState(token);
+    // Auto-switch to detected environment and chain, clear cached balances for new key
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.JWT]: token,
+      [STORAGE_KEYS.ENDPOINT]: environment,
+      [STORAGE_KEYS.CHAIN]: chain,
+      [STORAGE_KEYS.LAST_BALANCES]: {}, // Clear cached balances when switching keys
+    });
+
+    // Update chain UI
+    updateChainUI(chain);
+    updateTopUpLink(chain);
+
+    await updateAuthState(token);
     hideJwtEdit();
-    showToast('Account connected');
+
+    const envLabel = environment === 'production' ? 'Mainnet' : 'Testnet';
+    showToast(`Connected to ${envLabel}`);
     await prevKeysUI.updateCount();
 
     // Fetch balance with new token
@@ -559,7 +610,7 @@ async function saveJwt() {
     // Go back to home if we were onboarding
     if (!onboardingState.classList.contains('hidden')) {
       document.querySelector('[data-target="tab-home"]').click();
-  }
+    }
   } else {
     showToast('Please enter a token');
   }
@@ -601,7 +652,7 @@ async function removeJwt() {
 
   // Remove current JWT, client address, and ENS name
   await chrome.storage.local.remove([STORAGE_KEYS.JWT, STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
-  updateAuthState(null);
+  await updateAuthState(null);
   updateEarnAddressDisplay(null);
   updateEnsNameDisplay(null);
   hideJwtEdit();
