@@ -1654,6 +1654,9 @@ async function handleDevModeToggle(e) {
     updateEarnAddressDisplay(null); // Clear address until balance is fetched
     updateEnsNameDisplay(null);
 
+    // Update slot UI to show testnet as active
+    await loadJwtSlots();
+
     if (testnetJwt) {
       await fetchBalance();
       loadAndResolveEnsName();
@@ -1686,6 +1689,9 @@ async function handleDevModeToggle(e) {
     await updateAuthState(prodJwt);
     updateEarnAddressDisplay(null); // Clear address until balance is fetched
     updateEnsNameDisplay(null);
+
+    // Update slot UI to show mainnet as active
+    await loadJwtSlots();
 
     if (prodJwt) {
       await fetchBalance();
