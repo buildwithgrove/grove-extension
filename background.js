@@ -54,12 +54,24 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
   }
 
   if (message.type === 'PING') {
-    // Check if there's an active JWT for the current mode
+    // Check if there's a JWT for the requested environment (or current mode if not specified)
     chrome.storage.local.get(['groveEnvironment', JWT_STORAGE.PRODUCTION, JWT_STORAGE.TESTNET], (result) => {
       const isDevMode = result.groveEnvironment === 'local';
-      const jwt = isDevMode ? result[JWT_STORAGE.TESTNET] : result[JWT_STORAGE.PRODUCTION];
+
+      // If environment is specified, check that specific slot
+      // Otherwise fall back to current dev mode
+      let jwt;
+      if (message.environment === 'testnet') {
+        jwt = result[JWT_STORAGE.TESTNET];
+      } else if (message.environment === 'production') {
+        jwt = result[JWT_STORAGE.PRODUCTION];
+      } else {
+        // No environment specified - use current mode (backward compatible)
+        jwt = isDevMode ? result[JWT_STORAGE.TESTNET] : result[JWT_STORAGE.PRODUCTION];
+      }
+
       const hasKey = !!(jwt && jwt.length > 0);
-      sendResponse({ hasKey, isDevMode });
+      sendResponse({ hasKey, isDevMode, environment: message.environment || (isDevMode ? 'testnet' : 'production') });
     });
     return true;
   }
