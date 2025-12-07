@@ -1,12 +1,105 @@
 /**
  * Key Manager
- * Handles storage and retrieval of previous JWT keys
+ * Handles storage and retrieval of JWT keys with dual-slot architecture
+ *
+ * Storage structure:
+ * - GROVE_JWT_PRODUCTION: Active production JWT (for Base mainnet)
+ * - GROVE_JWT_TESTNET: Active testnet JWT (for Base Sepolia)
+ * - GROVE_PREV_JWTS: Archive of previous keys (for recovery)
  */
 
 const STORAGE_KEY = 'GROVE_PREV_JWTS';
+const STORAGE_KEY_PROD = 'GROVE_JWT_PRODUCTION';
+const STORAGE_KEY_TESTNET = 'GROVE_JWT_TESTNET';
+const LEGACY_JWT_KEY = 'GROVE_API_JWT';
 const MAX_KEYS = 10;
 
 class KeyManager {
+  /**
+   * Get the production JWT
+   * @returns {Promise<string|null>}
+   */
+  static async getProductionJWT() {
+    const result = await chrome.storage.local.get([STORAGE_KEY_PROD]);
+    return result[STORAGE_KEY_PROD] || null;
+  }
+
+  /**
+   * Set the production JWT
+   * @param {string} jwt
+   */
+  static async setProductionJWT(jwt) {
+    await chrome.storage.local.set({ [STORAGE_KEY_PROD]: jwt });
+  }
+
+  /**
+   * Get the testnet JWT
+   * @returns {Promise<string|null>}
+   */
+  static async getTestnetJWT() {
+    const result = await chrome.storage.local.get([STORAGE_KEY_TESTNET]);
+    return result[STORAGE_KEY_TESTNET] || null;
+  }
+
+  /**
+   * Set the testnet JWT
+   * @param {string} jwt
+   */
+  static async setTestnetJWT(jwt) {
+    await chrome.storage.local.set({ [STORAGE_KEY_TESTNET]: jwt });
+  }
+
+  /**
+   * Get the active JWT based on dev mode
+   * @param {boolean} isDevMode - Whether developer mode is enabled
+   * @returns {Promise<string|null>}
+   */
+  static async getActiveJWT(isDevMode) {
+    return isDevMode ? this.getTestnetJWT() : this.getProductionJWT();
+  }
+
+  /**
+   * Clear the production JWT
+   */
+  static async clearProductionJWT() {
+    await chrome.storage.local.remove([STORAGE_KEY_PROD]);
+  }
+
+  /**
+   * Clear the testnet JWT
+   */
+  static async clearTestnetJWT() {
+    await chrome.storage.local.remove([STORAGE_KEY_TESTNET]);
+  }
+
+  /**
+   * Migrate from legacy single-JWT storage to dual-slot architecture
+   * Should be called once on extension init
+   */
+  static async migrateFromLegacy() {
+    const result = await chrome.storage.local.get([LEGACY_JWT_KEY, 'groveEndpoint', STORAGE_KEY_PROD, STORAGE_KEY_TESTNET]);
+    const legacyJwt = result[LEGACY_JWT_KEY];
+    const endpoint = result['groveEndpoint'];
+
+    // Skip if no legacy JWT or if already migrated (has new keys)
+    if (!legacyJwt || result[STORAGE_KEY_PROD] || result[STORAGE_KEY_TESTNET]) {
+      return false;
+    }
+
+    // Determine where to put the legacy JWT based on endpoint
+    if (endpoint === 'testnet' || endpoint === 'localhost' || endpoint === 'localhost:3000') {
+      await this.setTestnetJWT(legacyJwt);
+    } else {
+      await this.setProductionJWT(legacyJwt);
+    }
+
+    // Remove legacy key
+    await chrome.storage.local.remove([LEGACY_JWT_KEY]);
+
+    console.log('[KeyManager] Migrated legacy JWT to new dual-slot architecture');
+    return true;
+  }
+
   /**
    * Save current JWT to previous keys before replacing it
    * @param {string} currentJwt - The current JWT to archive

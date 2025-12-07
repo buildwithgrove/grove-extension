@@ -6,10 +6,31 @@
 (function () {
   "use strict";
 
+  // JWT Storage Keys (must match keyManager.js and popup.js)
+  const JWT_KEYS = {
+    PRODUCTION: 'GROVE_JWT_PRODUCTION',
+    TESTNET: 'GROVE_JWT_TESTNET',
+    ENVIRONMENT: 'groveEnvironment'
+  };
+
+  /**
+   * Get the active JWT based on current dev mode state
+   * @returns {Promise<string|null>}
+   */
+  function getActiveJWT() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get([JWT_KEYS.PRODUCTION, JWT_KEYS.TESTNET, JWT_KEYS.ENVIRONMENT], (result) => {
+        const isDevMode = result[JWT_KEYS.ENVIRONMENT] === 'local';
+        const jwt = isDevMode ? result[JWT_KEYS.TESTNET] : result[JWT_KEYS.PRODUCTION];
+        resolve(jwt || null);
+      });
+    });
+  }
+
   // Signal to web pages that the extension is installed (with key state)
   function emitReadyEvent() {
-    chrome.storage.local.get(['GROVE_API_JWT'], (result) => {
-      const hasKey = !!(result.GROVE_API_JWT && result.GROVE_API_JWT.length > 0);
+    getActiveJWT().then((jwt) => {
+      const hasKey = !!(jwt && jwt.length > 0);
       window.dispatchEvent(new CustomEvent('grove-extension-ready', {
         detail: { version: '1.0.2', hasKey }
       }));
@@ -342,14 +363,11 @@
       button.setLoading();
     }
 
-    // Get JWT from storage
+    // Get JWT from storage (uses dev mode-aware getter)
     let jwt = '';
 
     try {
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        const result = await chrome.storage.local.get(['GROVE_API_JWT']);
-        jwt = result.GROVE_API_JWT || '';
-      }
+      jwt = await getActiveJWT() || '';
 
       if (!jwt) {
         console.error("[Grove Extension] No API key configured");
@@ -1237,8 +1255,11 @@ Tip creators you love → {grove_link}`;
         return;
       }
 
-      const result = await chrome.storage.local.get(['GROVE_API_JWT', 'GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'GROVE_LIKE_ON_TIP', 'groveChain']);
-      jwt = result.GROVE_API_JWT || '';
+      // Get JWT using dev mode-aware getter
+      jwt = await getActiveJWT() || '';
+
+      // Get other settings from storage
+      const result = await chrome.storage.local.get(['GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'GROVE_LIKE_ON_TIP', 'groveChain']);
       // Auto-reply defaults to true
       autoReplyEnabled = result.GROVE_AUTO_REPLY !== false;
       autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;

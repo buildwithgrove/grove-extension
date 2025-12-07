@@ -80,7 +80,11 @@ let prevKeysUI = null;
 
 // Storage Keys
 const STORAGE_KEYS = {
-  JWT: 'GROVE_API_JWT',
+  // Dual JWT slots
+  JWT_PRODUCTION: 'GROVE_JWT_PRODUCTION',
+  JWT_TESTNET: 'GROVE_JWT_TESTNET',
+  JWT: 'GROVE_API_JWT', // Legacy - for migration only
+  // Settings
   TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
   CONFIRM_TIP: 'GROVE_CONFIRM_TIP',
   AUTO_REPLY: 'GROVE_AUTO_REPLY',
@@ -93,6 +97,24 @@ const STORAGE_KEYS = {
   CLIENT_ADDRESS: 'GROVE_CLIENT_ADDRESS',
   ENS_NAME: 'GROVE_ENS_NAME',
 };
+
+/**
+ * Check if developer mode is enabled
+ * @returns {Promise<boolean>}
+ */
+async function isDevMode() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ENVIRONMENT]);
+  return result[STORAGE_KEYS.ENVIRONMENT] === 'local';
+}
+
+/**
+ * Get the active JWT based on current dev mode state
+ * @returns {Promise<string|null>}
+ */
+async function getActiveJWT() {
+  const devMode = await isDevMode();
+  return KeyManager.getActiveJWT(devMode);
+}
 
 // Default auto-reply message template
 const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, just sent you a {amount} tip on {chain}! #TipWithGroveOnBase
@@ -124,6 +146,9 @@ const TOP_UP_URLS = {
  * Initialize Popup
  */
 async function init() {
+  // Migrate from legacy single-JWT storage (runs once)
+  await KeyManager.migrateFromLegacy();
+
   // Initialize Previous Keys UI
   prevKeysUI = new PreviousKeysUI(prevKeysCount, prevKeysList, prevKeysContainer);
 
@@ -138,24 +163,54 @@ async function init() {
       return;
     }
 
-    // Archive current key first (if any)
-    const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
-    const currentJwt = result[STORAGE_KEYS.JWT];
+    const isTestnet = environment === 'testnet';
+
+    // Archive current key in that slot first (if any)
+    const currentJwt = isTestnet
+      ? await KeyManager.getTestnetJWT()
+      : await KeyManager.getProductionJWT();
     if (currentJwt) {
       await KeyManager.archiveCurrentKey(currentJwt);
     }
 
-    // Set the selected key as current and auto-switch environment, clear cached balances
+    // Store in the appropriate slot
+    if (isTestnet) {
+      await KeyManager.setTestnetJWT(key);
+    } else {
+      await KeyManager.setProductionJWT(key);
+    }
+
+    // Update environment and chain settings
+    const newEnv = isTestnet ? 'local' : 'prod';
     await chrome.storage.local.set({
-      [STORAGE_KEYS.JWT]: key,
       [STORAGE_KEYS.ENDPOINT]: environment,
       [STORAGE_KEYS.CHAIN]: chain,
+      [STORAGE_KEYS.ENVIRONMENT]: newEnv,
       [STORAGE_KEYS.LAST_BALANCES]: {}, // Clear cached balances when switching keys
     });
 
     // Update chain UI
     updateChainUI(chain);
     updateTopUpLink(chain);
+    updateNetworkSelectorVisibility(isTestnet);
+
+    // Update dev mode toggle
+    if (devModeToggle) {
+      devModeToggle.checked = isTestnet;
+    }
+    const testBanner = document.getElementById('testModeBanner');
+    if (isTestnet) {
+      document.body.classList.add('developer-mode');
+      if (testBanner) {
+        testBanner.classList.remove('hidden');
+        testBanner.classList.add('visible');
+      }
+      if (endpointSelector) endpointSelector.classList.remove('hidden');
+    } else {
+      document.body.classList.remove('developer-mode');
+      if (testBanner) testBanner.classList.remove('visible');
+      if (endpointSelector) endpointSelector.classList.add('hidden');
+    }
 
     // Delete the key from previous keys (since it's now current)
     const keys = await KeyManager.getPreviousKeys();
@@ -170,7 +225,7 @@ async function init() {
     await prevKeysUI.render();
     await fetchBalance();
 
-    const envLabel = environment === 'production' ? 'Mainnet' : 'Testnet';
+    const envLabel = isTestnet ? 'Testnet' : 'Mainnet';
     showToast(`Connected to ${envLabel}`);
 
     // Navigate to home
@@ -415,11 +470,39 @@ function setupEventListeners() {
   chrome.storage.onChanged.addListener(async (changes, areaName) => {
     if (areaName !== 'local') return;
 
-    if (changes[STORAGE_KEYS.JWT]) {
+    // Handle JWT changes (either slot)
+    if (changes[STORAGE_KEYS.JWT_PRODUCTION] || changes[STORAGE_KEYS.JWT_TESTNET]) {
       console.log('[Grove Extension] JWT changed in storage, refreshing...');
-      const newJwt = changes[STORAGE_KEYS.JWT].newValue;
-      await updateAuthState(newJwt);
+      const jwt = await getActiveJWT();
+      await updateAuthState(jwt);
       await fetchBalance();
+    }
+
+    // Handle environment (dev mode) changes from background
+    if (changes[STORAGE_KEYS.ENVIRONMENT]) {
+      console.log('[Grove Extension] Environment changed in storage, updating UI...');
+      const newEnv = changes[STORAGE_KEYS.ENVIRONMENT].newValue;
+      const isDevMode = newEnv === 'local';
+
+      // Update dev mode toggle
+      if (devModeToggle) devModeToggle.checked = isDevMode;
+
+      // Update dev mode UI
+      const testBanner = document.getElementById('testModeBanner');
+      if (isDevMode) {
+        document.body.classList.add('developer-mode');
+        if (testBanner) {
+          testBanner.classList.remove('hidden');
+          testBanner.classList.add('visible');
+        }
+        if (endpointSelector) endpointSelector.classList.remove('hidden');
+      } else {
+        document.body.classList.remove('developer-mode');
+        if (testBanner) testBanner.classList.remove('visible');
+        if (endpointSelector) endpointSelector.classList.add('hidden');
+      }
+
+      updateNetworkSelectorVisibility(isDevMode);
     }
 
     if (changes[STORAGE_KEYS.CHAIN]) {
@@ -482,9 +565,8 @@ async function handleNavigation(e) {
  * JWT & Auth State
  */
 async function loadJWT() {
-    const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
-    const jwt = result[STORAGE_KEYS.JWT];
-
+  // Get JWT based on current dev mode
+  const jwt = await getActiveJWT();
   await updateAuthState(jwt);
 }
 
@@ -541,8 +623,7 @@ async function showJwtEdit() {
   }
 
   // Check if JWT exists to show/hide remove button and populate input
-  const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
-  const jwt = result[STORAGE_KEYS.JWT];
+  const jwt = await getActiveJWT();
   if (jwt && jwt.length > 0) {
     if (removeJwtBtn) {
       removeJwtBtn.classList.remove('hidden');
@@ -576,31 +657,61 @@ async function saveJwt() {
       return;
     }
 
-    // Get current JWT before saving new one
-    const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
-    const currentJwt = result[STORAGE_KEYS.JWT];
+    const isTestnet = environment === 'testnet';
+
+    // Get current JWT in that slot before saving new one
+    const currentJwt = isTestnet
+      ? await KeyManager.getTestnetJWT()
+      : await KeyManager.getProductionJWT();
 
     // If there's a current JWT and it's different from the new one, archive it
     if (currentJwt && currentJwt !== token) {
       await KeyManager.archiveCurrentKey(currentJwt);
     }
 
-    // Auto-switch to detected environment and chain, clear cached balances for new key
+    // Store in the appropriate slot
+    if (isTestnet) {
+      await KeyManager.setTestnetJWT(token);
+    } else {
+      await KeyManager.setProductionJWT(token);
+    }
+
+    // Auto-switch to detected environment and chain
+    const newEnv = isTestnet ? 'local' : 'prod';
     await chrome.storage.local.set({
-      [STORAGE_KEYS.JWT]: token,
       [STORAGE_KEYS.ENDPOINT]: environment,
       [STORAGE_KEYS.CHAIN]: chain,
+      [STORAGE_KEYS.ENVIRONMENT]: newEnv,
       [STORAGE_KEYS.LAST_BALANCES]: {}, // Clear cached balances when switching keys
     });
 
     // Update chain UI
     updateChainUI(chain);
     updateTopUpLink(chain);
+    updateNetworkSelectorVisibility(isTestnet);
+
+    // Update dev mode toggle and banner
+    if (devModeToggle) {
+      devModeToggle.checked = isTestnet;
+    }
+    const testBanner = document.getElementById('testModeBanner');
+    if (isTestnet) {
+      document.body.classList.add('developer-mode');
+      if (testBanner) {
+        testBanner.classList.remove('hidden');
+        testBanner.classList.add('visible');
+      }
+      if (endpointSelector) endpointSelector.classList.remove('hidden');
+    } else {
+      document.body.classList.remove('developer-mode');
+      if (testBanner) testBanner.classList.remove('visible');
+      if (endpointSelector) endpointSelector.classList.add('hidden');
+    }
 
     await updateAuthState(token);
     hideJwtEdit();
 
-    const envLabel = environment === 'production' ? 'Mainnet' : 'Testnet';
+    const envLabel = isTestnet ? 'Testnet' : 'Mainnet';
     showToast(`Connected to ${envLabel}`);
     await prevKeysUI.updateCount();
 
@@ -641,17 +752,24 @@ async function removeJwt() {
   removeJwtBtn.textContent = 'Disconnect';
   removeJwtBtn.classList.remove('confirming');
 
-  // Get current JWT before removing it
-  const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
-  const currentJwt = result[STORAGE_KEYS.JWT];
+  // Get current dev mode and JWT
+  const devMode = await isDevMode();
+  const currentJwt = await getActiveJWT();
 
   // Archive current JWT before removing
   if (currentJwt) {
     await KeyManager.archiveCurrentKey(currentJwt);
   }
 
-  // Remove current JWT, client address, and ENS name
-  await chrome.storage.local.remove([STORAGE_KEYS.JWT, STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
+  // Clear the JWT in the current slot
+  if (devMode) {
+    await KeyManager.clearTestnetJWT();
+  } else {
+    await KeyManager.clearProductionJWT();
+  }
+
+  // Remove client address and ENS name
+  await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
   await updateAuthState(null);
   updateEarnAddressDisplay(null);
   updateEnsNameDisplay(null);
@@ -981,13 +1099,14 @@ function formatBalance(balance) {
 async function fetchBalance() {
   balanceDisplay.classList.add('loading');
 
-  // Get JWT, chain, and any cached balances first so we can render immediately
+  // Get JWT based on current dev mode
+  const jwt = await getActiveJWT();
+
+  // Get chain and cached balances
   const storageResult = await chrome.storage.local.get([
-    STORAGE_KEYS.JWT,
     STORAGE_KEYS.CHAIN,
     STORAGE_KEYS.LAST_BALANCES
   ]);
-  const jwt = storageResult[STORAGE_KEYS.JWT];
   const chain = storageResult[STORAGE_KEYS.CHAIN] || DEFAULT_CHAIN;
   const cachedBalances = storageResult[STORAGE_KEYS.LAST_BALANCES] || {};
   const cachedBalance = cachedBalances[chain];
@@ -1246,8 +1365,9 @@ async function loadEnvironment() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.ENVIRONMENT]);
   const env = result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV;
   const testBanner = document.getElementById('testModeBanner');
+  const isDevMode = env === 'local';
 
-  if (env === 'local') {
+  if (isDevMode) {
     if (devModeToggle) devModeToggle.checked = true;
     document.body.classList.add('developer-mode');
     if (testBanner) {
@@ -1263,6 +1383,9 @@ async function loadEnvironment() {
     }
     if (endpointSelector) endpointSelector.classList.add('hidden');
   }
+
+  // Update network selector visibility based on dev mode
+  updateNetworkSelectorVisibility(isDevMode);
 }
 
 async function handleDevModeToggle(e) {
@@ -1280,21 +1403,31 @@ async function handleDevModeToggle(e) {
       testBanner.classList.add('visible');
     }
     if (endpointSelector) endpointSelector.classList.remove('hidden');
-    setTimeout(() => showToast('Developer Mode Enabled'), 350);
 
-    // Switch to testnet endpoint
-    await chrome.storage.local.set({ [STORAGE_KEYS.ENDPOINT]: 'testnet' });
+    // Switch to testnet endpoint and Base Sepolia
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.ENDPOINT]: 'testnet',
+      [STORAGE_KEYS.CHAIN]: 'base-sepolia',
+      [STORAGE_KEYS.LAST_BALANCES]: {}, // Clear cached balances
+    });
     await loadEndpoint();
+    updateChainUI('base-sepolia');
+    updateTopUpLink('base-sepolia');
+    updateNetworkSelectorVisibility(true);
 
-    // Check if current chain is a mainnet and switch to testnet
-    const currentChain = chainName.textContent;
-    if (currentChain === 'Base') {
-      await handleChainSelection({ currentTarget: { dataset: { chain: 'base-sepolia' } } }, true);
+    // Switch to testnet JWT context
+    const testnetJwt = await KeyManager.getTestnetJWT();
+    await updateAuthState(testnetJwt);
+    updateEarnAddressDisplay(null); // Clear address until balance is fetched
+    updateEnsNameDisplay(null);
+
+    if (testnetJwt) {
+      await fetchBalance();
+      loadAndResolveEnsName();
+      showToast('Switched to Testnet');
+    } else {
+      showToast('Developer Mode - Connect via testnet app');
     }
-    // Solana chain selection commented out - Base/Base Sepolia only for now
-    // else if (currentChain === 'Solana') {
-    //   await handleChainSelection({ currentTarget: { dataset: { chain: 'solana-devnet' } } }, true);
-    // }
   } else {
     // Disable developer mode
     document.body.classList.remove('developer-mode');
@@ -1302,21 +1435,31 @@ async function handleDevModeToggle(e) {
       testBanner.classList.remove('visible');
     }
     if (endpointSelector) endpointSelector.classList.add('hidden');
-    showToast('Developer Mode Disabled');
 
-    // Reset to production endpoint
-    await chrome.storage.local.set({ [STORAGE_KEYS.ENDPOINT]: 'production' });
+    // Reset to production endpoint and Base mainnet
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.ENDPOINT]: 'production',
+      [STORAGE_KEYS.CHAIN]: 'base',
+      [STORAGE_KEYS.LAST_BALANCES]: {}, // Clear cached balances
+    });
     await loadEndpoint();
+    updateChainUI('base');
+    updateTopUpLink('base');
+    updateNetworkSelectorVisibility(false);
 
-    // Check if current chain is a testnet and switch to mainnet
-    const currentChain = chainName.textContent;
-    if (currentChain === 'Base Sepolia') {
-      await handleChainSelection({ currentTarget: { dataset: { chain: 'base' } } }, true);
+    // Switch to production JWT context
+    const prodJwt = await KeyManager.getProductionJWT();
+    await updateAuthState(prodJwt);
+    updateEarnAddressDisplay(null); // Clear address until balance is fetched
+    updateEnsNameDisplay(null);
+
+    if (prodJwt) {
+      await fetchBalance();
+      loadAndResolveEnsName();
+      showToast('Switched to Mainnet');
+    } else {
+      showToast('Developer Mode Disabled - Connect via grove.city');
     }
-    // Solana chain selection commented out - Base/Base Sepolia only for now
-    // else if (currentChain === 'Solana Devnet') {
-    //   await handleChainSelection({ currentTarget: { dataset: { chain: 'solana' } } }, true);
-    // }
   }
 }
 
@@ -1385,6 +1528,35 @@ function updateChainUI(chain) {
       chainIcon.appendChild(logo);
     }
   }
+
+  // Update selected state in dropdown
+  chainOptions.forEach(opt => {
+    const check = opt.querySelector('.chain-selected-check');
+    if (opt.dataset.chain === chain) {
+      if (check) check.style.opacity = '1';
+    } else {
+      if (check) check.style.opacity = '0';
+    }
+  });
+}
+
+/**
+ * Update network selector visibility based on dev mode
+ * - Production users: Only see Base + grayed Solana
+ * - Dev mode users: See Base, Base Sepolia + grayed Solana options
+ * @param {boolean} devModeEnabled
+ */
+function updateNetworkSelectorVisibility(devModeEnabled) {
+  // Get testnet options
+  const testnetOptions = document.querySelectorAll('.chain-option.testnet-option');
+
+  testnetOptions.forEach(option => {
+    if (devModeEnabled) {
+      option.classList.remove('hidden');
+    } else {
+      option.classList.add('hidden');
+    }
+  });
 }
 
 async function handleChainSelection(e, silent = false) {
@@ -2000,8 +2172,7 @@ async function loadHistory() {
   pagination.classList.add('hidden');
 
   // Check if connected
-  const result = await chrome.storage.local.get([STORAGE_KEYS.JWT]);
-  const jwt = result[STORAGE_KEYS.JWT];
+  const jwt = await getActiveJWT();
 
   if (!jwt) {
     loading.classList.add('hidden');
