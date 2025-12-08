@@ -3,6 +3,9 @@
  * Dark Mode + Grove Brand Colors
  */
 
+/* Import Grove Design System tokens from submodule */
+@import url('./design-system/tokens.css');
+
 :root {
   /* Grove Brand Colors */
   --grove-font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
