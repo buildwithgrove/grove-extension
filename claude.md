@@ -121,3 +121,41 @@ Available placeholders:
 - `{chain}` - Network name (e.g., "Base", "Base Sepolia")
 - `{tx_link}` - Block explorer link to the transaction
 - `{grove_link}` - Link to Grove website (grove.city)
+
+## Design System
+
+This project uses the Grove Design System via git submodule at `./design-system/`.
+
+### Tokens
+
+Design tokens are imported from `design-system/tokens.css` at the top of `popup.css`. These provide canonical CSS variables for colors, typography, spacing, etc.
+
+Token naming: `--grove-colors-brand-primary`, `--grove-colors-accent-orange`, etc.
+
+### Keeping Tokens Updated
+
+```bash
+# Pull latest design system changes
+git submodule update --remote
+
+# Commit the updated reference
+git add design-system
+git commit -m "chore: update design-system tokens"
+git push
+```
+
+### After Cloning
+
+```bash
+# Clone with submodules
+git clone --recurse-submodules <repo-url>
+
+# Or initialize after cloning
+git submodule update --init
+```
+
+### Making Token Changes
+
+1. Make changes in the `design-system` repo (not the submodule copy)
+2. Push to design-system
+3. In this repo, run `git submodule update --remote` to pull latest
