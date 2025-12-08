@@ -5,11 +5,11 @@
  */
 
 var GROVE_COLORS = {
-  primary: '#389f58',
-  primaryHover: '#2f8549',
-  primaryLight: '#4fb76d',
-  shadow: 'rgba(56, 159, 88, 0.3)',
-  shadowHover: 'rgba(56, 159, 88, 0.5)',
+  primary: 'var(--grove-primary)',
+  primaryHover: 'var(--grove-primary-hover)',
+  primaryLight: 'var(--grove-primary-light)',
+  shadow: 'var(--grove-shadow)',
+  shadowHover: 'var(--grove-shadow-hover)',
   error: '#ef4444',
   errorShadow: 'rgba(239, 68, 68, 0.55)',
   warning: '#f59e0b',

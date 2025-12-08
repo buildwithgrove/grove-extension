@@ -99,7 +99,7 @@ class TipPopover {
     closeBtn.style.cssText = `
       background: none;
       border: none;
-      color: #888;
+      color: rgba(255, 255, 255, 0.5);
       font-size: 20px;
       cursor: pointer;
       padding: 0;
@@ -110,7 +110,7 @@ class TipPopover {
       closeBtn.style.color = '#fff';
     });
     closeBtn.addEventListener('mouseleave', () => {
-      closeBtn.style.color = '#888';
+      closeBtn.style.color = 'rgba(255, 255, 255, 0.5)';
     });
     closeBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -127,7 +127,7 @@ class TipPopover {
       display: flex;
       align-items: center;
       background: #000;
-      border: 1px solid #333;
+      border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 8px;
       padding: 6px 10px;
       margin-bottom: 10px;
@@ -137,7 +137,7 @@ class TipPopover {
     const currencySymbol = document.createElement('span');
     currencySymbol.textContent = '$';
     currencySymbol.style.cssText = `
-      color: #888;
+      color: rgba(255, 255, 255, 0.5);
       font-size: 16px;
       font-weight: 500;
       margin-right: 4px;
@@ -164,7 +164,7 @@ class TipPopover {
       input.select();
     });
     input.addEventListener('blur', () => {
-      inputGroup.style.borderColor = '#333';
+      inputGroup.style.borderColor = 'rgba(255, 255, 255, 0.2)';
     });
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
