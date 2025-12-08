@@ -549,6 +549,7 @@ function setupEventListeners() {
       }
 
       updateNetworkSelectorVisibility(isDevMode);
+      await fetchBalance();
     }
 
     if (changes[STORAGE_KEYS.CHAIN]) {
@@ -556,6 +557,7 @@ function setupEventListeners() {
       const newChain = changes[STORAGE_KEYS.CHAIN].newValue;
       updateChainUI(newChain);
       updateTopUpLink(newChain);
+      await fetchBalance();
     }
   });
 }
