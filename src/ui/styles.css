@@ -5,6 +5,8 @@
  */
 
 :root {
+  --grove-font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --grove-font-heading: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --grove-primary: #389f58;
   --grove-primary-hover: #2f8549;
   --grove-primary-light: #389f58;
@@ -28,7 +30,7 @@
   align-items: center !important;
   justify-content: center !important;
   gap: 6px !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-family: var(--grove-font-body) !important;
   cursor: pointer !important;
   height: 32px !important;
   min-width: 64px !important;
