@@ -109,6 +109,7 @@ body {
   overflow: hidden;
   padding: 0 16px;
   transition: max-height 0.2s ease-out, padding 0.2s ease-out;
+  cursor: pointer;
 }
 
 .test-mode-banner.visible {

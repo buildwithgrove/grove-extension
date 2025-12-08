@@ -367,6 +367,15 @@ function setupEventListeners() {
     showJwtEdit();
   });
 
+  // Developer Mode Banner - click to go to developer settings
+  const testModeBanner = document.getElementById('testModeBanner');
+  if (testModeBanner) {
+    testModeBanner.addEventListener('click', () => {
+      document.querySelector('[data-target="tab-settings"]').click();
+      showSettingsView('developer');
+    });
+  }
+
   // Home screen Twitter settings drill-down
   const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
   const homeTwitterSettingsPanel = document.getElementById('homeTwitterSettingsPanel');
