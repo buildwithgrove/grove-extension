@@ -159,3 +159,35 @@ After generating the adapter code:
 - [ ] Add platform-specific styles in `src/ui/styles.css`
 - [ ] Update `manifest.json` with URL patterns and content scripts
 - [ ] Test on multiple pages/profiles on the platform
+
+## Design System
+
+This project uses the [Grove Design System](https://github.com/buildwithgrove/design-system) via git submodule.
+
+### Setup (After Cloning)
+
+```bash
+# Clone with submodules
+git clone --recurse-submodules https://github.com/buildwithgrove/grove-extension.git
+
+# Or initialize submodules after cloning
+git submodule update --init
+```
+
+### Updating Design Tokens
+
+When design tokens are updated in the design-system repo:
+
+```bash
+# Pull latest design system changes
+git submodule update --remote
+
+# Commit the updated reference
+git add design-system
+git commit -m "chore: update design-system tokens"
+git push
+```
+
+### Token Location
+
+Design tokens are imported from `design-system/tokens.css` in `popup.css`.
