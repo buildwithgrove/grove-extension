@@ -261,7 +261,7 @@
 
 /* States */
 .grove-tip-success {
-  background: #389f58 !important; /* Success Green */
+  background: var(--grove-primary) !important; /* Success Green */
   box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3) !important;
 }
 
