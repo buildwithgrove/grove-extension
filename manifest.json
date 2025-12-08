@@ -3,6 +3,7 @@
   "name": "Grove - Tip Anyone, Anywhere",
   "version": "1.0.3",
   "description": "Tip anyone, anywhere - An extension that lets you tip anyone online.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqyvQaRXWjwGm8dOGC3xEN5rQNGqgNJa3OZDN14yGNwDovom7Y3gxB4yAO5yiZyrIgRb5/yCePaO17LN92sXqm9zFUyF8EOZQL5SODH66qtNj/9/9afoNgl1BeEb/RWfj9QqI5LWbTjrZEq3N8wLWMXLQ6xahuh5Mr4Hyl0BLbauNLf4KXLnLhl2VWu+wJ8I/3zrVQ51/v9kFUerZ32DgDmLTmFQfjniceAg35KelBeyVUejEkZLh9EUkxRjxUo11f8YQTCQZ80UivXBWk4kbGOw8EtLTpPuobw91fFRo1sd6nwfU7vekHiSpKwQO8ML8g+pQueMHj6sBDNcha2+M0QIDAQAB",
   "permissions": ["storage", "identity"],
   "background": {
     "service_worker": "background.js"
