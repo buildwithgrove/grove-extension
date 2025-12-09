@@ -9,7 +9,6 @@ class GroveAPI {
     'testnet': 'https://api.testnet.grove.city',
     'localhost': 'http://localhost:8000',
     'localhost:8000': 'http://localhost:8000',
-    'localhost:3000': 'http://localhost:3000',
   };
 
   static DEFAULT_TIP_AMOUNT = 0.05; // $0.05 default

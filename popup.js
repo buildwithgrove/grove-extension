@@ -160,7 +160,6 @@ const ENDPOINT_LABELS = {
   'production': 'api.grove.city',
   'testnet': 'api.testnet.grove.city',
   'localhost': 'localhost:8000',
-  'localhost:3000': 'localhost:3000',
 };
 
 /**
@@ -269,6 +268,12 @@ async function init() {
   loadExtensionVersion();
   setupEventListeners();
 
+  // Ensure chain dropdown options match current endpoint on init
+  const endpointInit = await GroveAPI.getBaseURL().then(() => {
+    return chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
+  }).then(res => res[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT).catch(() => DEFAULT_ENDPOINT);
+  updateNetworkSelectorVisibility(endpointInit);
+
   // Fetch balance after everything is loaded (also updates client address)
   await fetchBalance();
 
@@ -333,6 +338,11 @@ function setupEventListeners() {
   // Chain Selector
   chainSelectorBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    // Refresh visibility based on current endpoint before showing dropdown
+    chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]).then(res => {
+      const endpoint = res[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
+      updateNetworkSelectorVisibility(endpoint);
+    });
     chainDropdown.classList.toggle('hidden');
   });
 
@@ -1823,9 +1833,7 @@ async function handleEndpointChange(e) {
     'production': 'Production (api.grove.city)',
     'testnet': 'Testnet (api.testnet.grove.city)',
     'localhost': 'Localhost:8000',
-    'localhost:3000': 'Localhost:3000',
   };
-
   showToast(`Switched to ${endpointNames[endpoint] || endpoint}`);
 }
 
@@ -1909,7 +1917,7 @@ function updateTestnetKeyVisibility(devModeEnabled) {
 }
 
 function isTestEndpoint(endpoint) {
-  return endpoint === 'testnet' || endpoint === 'localhost' || endpoint === 'localhost:3000';
+  return endpoint === 'testnet' || endpoint === 'localhost';
 }
 
 function getDefaultChainForEndpoint(endpoint) {
@@ -1923,7 +1931,7 @@ function getEndpointLabel(endpoint) {
 function setTestModeBannerText(endpoint) {
   const banner = document.getElementById('testModeBanner');
   if (!banner) return;
-  const textNode = document.getElementById('testModeBannerText') || banner.querySelector('.banner-text') || banner;
+  const textNode = document.getElementById('testModeBannerText') || banner;
   const label = getEndpointLabel(endpoint);
   textNode.textContent = `Developer Mode (${label})`;
 }

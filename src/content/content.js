@@ -23,7 +23,7 @@
       chrome.storage.local.get([JWT_KEYS.PRODUCTION, JWT_KEYS.TESTNET, JWT_KEYS.ENVIRONMENT, JWT_KEYS.ENDPOINT], (result) => {
         const isDevMode = result[JWT_KEYS.ENVIRONMENT] === 'local';
         const endpoint = result[JWT_KEYS.ENDPOINT] || 'production';
-        const useTestnetSlot = isDevMode && (endpoint === 'testnet' || endpoint === 'localhost' || endpoint === 'localhost:3000');
+        const useTestnetSlot = isDevMode && (endpoint === 'testnet' || endpoint === 'localhost');
         const jwt = useTestnetSlot ? result[JWT_KEYS.TESTNET] : result[JWT_KEYS.PRODUCTION];
         resolve(jwt || null);
       });

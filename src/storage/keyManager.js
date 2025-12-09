@@ -61,7 +61,7 @@ class KeyManager {
 
     // If caller provided isDevMode, keep honoring it; otherwise derive from env
     const devMode = typeof isDevMode === 'boolean' ? isDevMode : (env === 'local');
-    const useTestnetSlot = devMode && (endpoint === 'testnet' || endpoint === 'localhost' || endpoint === 'localhost:3000');
+    const useTestnetSlot = devMode && (endpoint === 'testnet' || endpoint === 'localhost');
 
     return useTestnetSlot ? this.getTestnetJWT() : this.getProductionJWT();
   }
@@ -95,7 +95,7 @@ class KeyManager {
     }
 
     // Determine where to put the legacy JWT based on endpoint
-    if (endpoint === 'testnet' || endpoint === 'localhost' || endpoint === 'localhost:3000') {
+    if (endpoint === 'testnet' || endpoint === 'localhost') {
       await this.setTestnetJWT(legacyJwt);
     } else {
       await this.setProductionJWT(legacyJwt);
