@@ -165,9 +165,14 @@
   </header>
 
   <!-- Test Mode Banner -->
-  <div class="test-mode-banner hidden" id="testModeBanner">
-    <span>Developer Mode is Active</span>
-  </div>
+  <button class="test-mode-banner hidden" id="testModeBanner" type="button" aria-label="Open developer settings">
+    <span class="banner-icon" aria-hidden="true">⚙</span>
+    <span class="banner-text">
+      <span id="testModeBannerText">Developer Mode is Active</span>
+      <span class="banner-hint">Open developer settings</span>
+    </span>
+    <span class="banner-chevron" aria-hidden="true">›</span>
+  </button>
 
   <!-- Main Content Area -->
   <main class="content" id="mainContent">

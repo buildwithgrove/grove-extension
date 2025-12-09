@@ -100,16 +100,23 @@ body {
 .test-mode-banner {
   background-color: #f59e0b;
   color: #000;
-  padding: 8px 16px;
-  text-align: center;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.3px;
   max-height: 0;
   overflow: hidden;
   padding: 0 16px;
-  transition: max-height 0.2s ease-out, padding 0.2s ease-out;
+  transition: max-height 0.2s ease-out, padding 0.2s ease-out, background-color 0.15s ease;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  outline: none;
+  border-radius: 4px;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.15);
 }
 
 .test-mode-banner.visible {
@@ -117,27 +124,54 @@ body {
   padding: 8px 16px;
 }
 
+.test-mode-banner:hover {
+  background-color: #f08a00;
+}
+
 .test-mode-banner span {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
 }
 
+.test-mode-banner .banner-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.test-mode-banner .banner-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+
+.test-mode-banner .banner-hint {
+  font-size: 10px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.test-mode-banner .banner-chevron {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  transition: transform 0.15s ease;
+}
+
+.test-mode-banner:hover .banner-chevron {
+  transform: translateX(2px);
+}
+
+.test-mode-banner:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}
+
 /* Chain filtering for normal mode - hide testnets, show mainnets */
-.mainnet-option {
-  display: flex !important;
-}
-
-.testnet-option {
-  display: none !important;
-}
-
-/* Chain filtering for developer mode - show both mainnet and testnet networks */
-body.developer-mode .mainnet-option {
-  display: flex !important;
-}
-
 body.developer-mode .testnet-option {
   display: flex !important;
 }

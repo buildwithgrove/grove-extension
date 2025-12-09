@@ -1923,9 +1923,9 @@ function getEndpointLabel(endpoint) {
 function setTestModeBannerText(endpoint) {
   const banner = document.getElementById('testModeBanner');
   if (!banner) return;
+  const textNode = document.getElementById('testModeBannerText') || banner.querySelector('.banner-text') || banner;
   const label = getEndpointLabel(endpoint);
-  const textEl = banner.querySelector('span') || banner;
-  textEl.textContent = `Developer Mode (${label})`;
+  textNode.textContent = `Developer Mode (${label})`;
 }
 
 async function handleChainSelection(e, silent = false) {
