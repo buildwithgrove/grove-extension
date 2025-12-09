@@ -4,7 +4,7 @@
 
 # Extension metadata
 EXTENSION_NAME := grove-extension
-VERSION := 1.0.1
+VERSION := 1.0.3
 
 # Chrome Web Store URLs
 CHROME_STORE_CONSOLE := https://chrome.google.com/webstore/devconsole/21d27706-ef22-4f83-8ddc-9f6109acef7d/jheejecmpfgifgdodgipilpgfaiecndm/edit/package
@@ -77,7 +77,7 @@ build_release: ## Bump version, prompt to commit/push, and prepare for Chrome We
 	@sed -i '' 's/"version": "$(CURRENT_VERSION)"/"version": "$(NEW_VERSION)"/' manifest.json
 	@# Update version in build.mk
 	$(call print_info,Updating build.mk...)
-	@sed -i '' 's/^VERSION := $(CURRENT_VERSION)/VERSION := $(NEW_VERSION)/' makefiles/build.mk
+	@sed -i '' 's/^VERSION := [0-9]*\.[0-9]*\.[0-9]*/VERSION := $(NEW_VERSION)/' makefiles/build.mk
 	$(call print_success,Version bumped to $(NEW_VERSION))
 	@printf "\n"
 	@# Show git status
