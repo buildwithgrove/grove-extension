@@ -108,9 +108,11 @@ build_release: ## Bump version, prompt to commit/push, and prepare for Chrome We
 	@printf "   $(BLUE)$(CHROME_STORE_CONSOLE)$(RESET)\n"
 	@printf "\n"
 
-# Fixed asset name for consistent download URL
+# Release tags and asset names
 RELEASE_ASSET := $(BUILD_DIR)/grove-extension.zip
-RELEASE_TAG := grove-extension-latest
+GIT_SHA := $(shell git rev-parse --short HEAD)
+RELEASE_TAG_VERSION := grove-extension-v$(VERSION)-$(GIT_SHA)
+RELEASE_TAG_LATEST := grove-extension-latest
 
 .PHONY: build_zip_upload
 build_zip_upload: build_zip_extension ## Upload zip to public releases repo
@@ -120,11 +122,21 @@ build_zip_upload: build_zip_extension ## Upload zip to public releases repo
 		exit 1; \
 	fi
 	@cp $(ZIP_FILE) $(RELEASE_ASSET)
-	@gh release delete $(RELEASE_TAG) --repo $(RELEASES_REPO) --yes 2>/dev/null || true
-	@gh release create $(RELEASE_TAG) $(RELEASE_ASSET) \
+	$(call print_info,Creating versioned release $(RELEASE_TAG_VERSION)...)
+	@gh release create $(RELEASE_TAG_VERSION) $(RELEASE_ASSET) \
 		--repo $(RELEASES_REPO) \
-		--title "Grove Extension v$(VERSION)" \
-		--notes "Grove Extension v$(VERSION)" && \
-		printf "$(GREEN)$(CHECK) Release created!$(RESET)\n" && \
-		printf "$(CYAN)$(BOLD)🔗 Download:$(RESET) https://github.com/$(RELEASES_REPO)/releases/download/$(RELEASE_TAG)/grove-extension.zip\n" || \
-		{ printf "$(RED)$(CROSS) Failed to create release. Ensure $(RELEASES_REPO) exists and is public.$(RESET)\n"; exit 1; }
+		--title "Grove Extension v$(VERSION)-$(GIT_SHA)" \
+		--notes "Grove Extension v$(VERSION)-$(GIT_SHA)" && \
+		printf "$(GREEN)$(CHECK) Versioned release created!$(RESET)\n" || \
+		{ printf "$(YELLOW)$(WARN) Versioned release already exists, skipping...$(RESET)\n"; }
+	$(call print_info,Updating latest release...)
+	@gh release delete $(RELEASE_TAG_LATEST) --repo $(RELEASES_REPO) --yes 2>/dev/null || true
+	@gh release create $(RELEASE_TAG_LATEST) $(RELEASE_ASSET) \
+		--repo $(RELEASES_REPO) \
+		--title "Grove Extension v$(VERSION)-$(GIT_SHA) (Latest)" \
+		--notes "Grove Extension v$(VERSION)-$(GIT_SHA) - Latest release" && \
+		printf "$(GREEN)$(CHECK) Latest release updated!$(RESET)\n" || \
+		{ printf "$(RED)$(CROSS) Failed to create latest release.$(RESET)\n"; exit 1; }
+	@printf "\n$(CYAN)$(BOLD)🔗 Download URLs:$(RESET)\n"
+	@printf "   Latest:    https://github.com/$(RELEASES_REPO)/releases/download/$(RELEASE_TAG_LATEST)/grove-extension.zip\n"
+	@printf "   Versioned: https://github.com/$(RELEASES_REPO)/releases/download/$(RELEASE_TAG_VERSION)/grove-extension.zip\n"
