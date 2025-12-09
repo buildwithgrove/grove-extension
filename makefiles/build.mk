@@ -91,7 +91,7 @@ build_release: ## Bump version, prompt to commit/push, and prepare for Chrome We
 		git add manifest.json makefiles/build.mk && \
 		git commit -m "chore: bump version to $(NEW_VERSION)" && \
 		git push && \
-		printf "$(GREEN)$(TICK) Changes committed and pushed!$(RESET)\n"; \
+		printf "$(GREEN)$(CHECK) Changes committed and pushed!$(RESET)\n"; \
 	else \
 		printf "$(YELLOW)Skipping commit. Remember to commit manually.$(RESET)\n"; \
 	fi
@@ -104,3 +104,17 @@ build_release: ## Bump version, prompt to commit/push, and prepare for Chrome We
 	@printf "$(CYAN)2.$(RESET) Upload to Chrome Web Store:\n"
 	@printf "   $(BLUE)$(CHROME_STORE_CONSOLE)$(RESET)\n"
 	@printf "\n"
+
+.PHONY: build_upload_release
+build_upload_release: build_zip_extension ## Build zip and upload to GitHub release
+	$(call print_info_section,Uploading to GitHub Release)
+	@if ! command -v gh &> /dev/null; then \
+		printf "$(RED)$(CROSS) GitHub CLI (gh) not installed. Run: brew install gh$(RESET)\n"; \
+		exit 1; \
+	fi
+	@gh release create v$(VERSION) $(ZIP_FILE) \
+		--title "v$(VERSION)" \
+		--notes "Grove Extension v$(VERSION)" \
+		--latest
+	$(call print_success,Release v$(VERSION) created!)
+	@printf "$(CYAN)$(BOLD)🔗 Download:$(RESET) $$(gh release view v$(VERSION) --json assets --jq '.assets[0].url')\n"

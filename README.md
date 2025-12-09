@@ -5,7 +5,7 @@ Chrome extension that enables cryptocurrency tipping on social platforms and any
 - [Features](#features)
 - [Installation](#installation)
 - [Development](#development)
-- [Production](#production)
+- [Release](#release)
 - [Architecture](#architecture)
 - [Adding Support for New Platforms](#adding-support-for-new-platforms)
 
@@ -51,11 +51,12 @@ Chrome extension that enables cryptocurrency tipping on social platforms and any
 
 To reload after changes: click the refresh icon on the extension card or use [Extensions Reloader](https://chromewebstore.google.com/detail/extensions-reloader/fimgfedafeadlieiabdeeaodndnlbhid).
 
-## Production
+## Release
 
-1. `make build_zip_extension`
-2. Go to [the Grove package upload](https://chrome.google.com/webstore/devconsole/dae6b43a-3491-4dd0-8565-a29acfbd30f3/dlebkjfkgbobnfhdjkkmfllelijafkpn/edit/package)
-3. Upload the generated zip file
+- **Bump version**: `make build_release` — increments patch version, updates `manifest.json` and `build.mk`, prompts to commit
+- **Build zip**: `make build_zip_extension` — creates `build/grove-extension-vX.Y.Z.zip`
+- **Upload to GitHub**: `make build_upload_release` — builds zip and creates a GitHub release (requires `gh` CLI)
+- **Chrome Web Store**: Upload the zip at the [Chrome Web Store console](https://chrome.google.com/webstore/devconsole/21d27706-ef22-4f83-8ddc-9f6109acef7d/jheejecmpfgifgdodgipilpgfaiecndm/edit/package)
 
 ## Architecture
 
@@ -82,13 +83,15 @@ To reload after changes: click the refresh icon on the extension card or use [Ex
     │   └── keyManager.js  # Secret key management
     ├── ui/
     │   ├── button.js      # Tip button component
+    │   ├── constants.js   # Colors and styling constants
     │   ├── popover.js     # Tip confirmation popover
-    │   ├── spinner.js     # Loading spinner
-    │   └── styles.css     # Global styles
+    │   ├── prevKeysUI.js  # Previous keys management UI
+    │   └── styles.css     # Injected styles
     └── utils/
         ├── api.js         # Grove API client
         ├── balance.js     # Balance utilities
-        └── metadata.js    # llms.txt/ai.txt fetcher
+        ├── metadata.js    # llms.txt/ai.txt fetcher
+        └── tipErrors.js   # Error handling utilities
 ```
 
 ## Adding Support for New Platforms
