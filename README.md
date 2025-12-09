@@ -32,10 +32,11 @@ To reload after changes: click the refresh icon on the extension card or use [Ex
 
 ## Release
 
-- **Bump version**: `make build_release` — increments patch version, updates `manifest.json` and `build.mk`, prompts to commit
-- **Build zip**: `make build_zip_extension` — creates `build/grove-extension-vX.Y.Z.zip`
-- **Upload release**: `make build_zip_upload` — uploads zip to [grove-releases](https://github.com/buildwithgrove/grove-releases) (requires `gh` CLI)
-- **Chrome Web Store**: Upload the zip at the [Chrome Web Store console](https://chrome.google.com/webstore/devconsole/21d27706-ef22-4f83-8ddc-9f6109acef7d/jheejecmpfgifgdodgipilpgfaiecndm/edit/package)
+1. **Bump version**: `make build_release` — increments patch version, updates `manifest.json` and `build.mk`, prompts to commit
+2. **Build zip**: `make build_zip_extension` — creates `build/grove-extension-vX.Y.Z.zip`
+3. **Chrome Web Store**: Upload the zip at the [Chrome Web Store console](https://chrome.google.com/webstore/devconsole/21d27706-ef22-4f83-8ddc-9f6109acef7d/jheejecmpfgifgdodgipilpgfaiecndm/edit/package)
+
+_Optional_: `make build_zip_upload` uploads to [grove-releases](https://github.com/buildwithgrove/grove-releases) for easy onboarding (requires `gh` CLI)
 
 ## Features
 
