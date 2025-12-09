@@ -1212,7 +1212,7 @@
   }
 
   // Default auto-reply message template (must match popup.js)
-  const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, just sent you a {amount} tip on {chain}! #TipWithGrove
+  const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I just sent you a {amount} tip on {chain}! #TipWithGrove
 
 Tx: {tx_link}
 
