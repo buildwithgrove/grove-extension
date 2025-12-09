@@ -10,7 +10,8 @@
   const JWT_KEYS = {
     PRODUCTION: 'GROVE_JWT_PRODUCTION',
     TESTNET: 'GROVE_JWT_TESTNET',
-    ENVIRONMENT: 'groveEnvironment'
+    ENVIRONMENT: 'groveEnvironment',
+    ENDPOINT: 'groveEndpoint',
   };
 
   /**
@@ -19,9 +20,11 @@
    */
   function getActiveJWT() {
     return new Promise((resolve) => {
-      chrome.storage.local.get([JWT_KEYS.PRODUCTION, JWT_KEYS.TESTNET, JWT_KEYS.ENVIRONMENT], (result) => {
+      chrome.storage.local.get([JWT_KEYS.PRODUCTION, JWT_KEYS.TESTNET, JWT_KEYS.ENVIRONMENT, JWT_KEYS.ENDPOINT], (result) => {
         const isDevMode = result[JWT_KEYS.ENVIRONMENT] === 'local';
-        const jwt = isDevMode ? result[JWT_KEYS.TESTNET] : result[JWT_KEYS.PRODUCTION];
+        const endpoint = result[JWT_KEYS.ENDPOINT] || 'production';
+        const useTestnetSlot = isDevMode && (endpoint === 'testnet' || endpoint === 'localhost' || endpoint === 'localhost:3000');
+        const jwt = useTestnetSlot ? result[JWT_KEYS.TESTNET] : result[JWT_KEYS.PRODUCTION];
         resolve(jwt || null);
       });
     });
