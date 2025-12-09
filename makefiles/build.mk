@@ -108,17 +108,23 @@ build_release: ## Bump version, prompt to commit/push, and prepare for Chrome We
 	@printf "   $(BLUE)$(CHROME_STORE_CONSOLE)$(RESET)\n"
 	@printf "\n"
 
-.PHONY: build_upload_release
-build_upload_release: build_zip_extension ## Build zip and upload to public releases repo
+# Fixed asset name for consistent download URL
+RELEASE_ASSET := $(BUILD_DIR)/grove-extension.zip
+RELEASE_TAG := grove-extension-latest
+
+.PHONY: build_zip_upload
+build_zip_upload: build_zip_extension ## Upload zip to public releases repo
 	$(call print_info_section,Uploading to $(RELEASES_REPO))
 	@if ! command -v gh &> /dev/null; then \
 		printf "$(RED)$(CROSS) GitHub CLI (gh) not installed. Run: brew install gh$(RESET)\n"; \
 		exit 1; \
 	fi
-	@gh release create grove-extension-v$(VERSION) $(ZIP_FILE) \
+	@cp $(ZIP_FILE) $(RELEASE_ASSET)
+	@gh release delete $(RELEASE_TAG) --repo $(RELEASES_REPO) --yes 2>/dev/null || true
+	@gh release create $(RELEASE_TAG) $(RELEASE_ASSET) \
 		--repo $(RELEASES_REPO) \
 		--title "Grove Extension v$(VERSION)" \
 		--notes "Grove Extension v$(VERSION)" && \
 		printf "$(GREEN)$(CHECK) Release created!$(RESET)\n" && \
-		printf "$(CYAN)$(BOLD)🔗 Download:$(RESET) https://github.com/$(RELEASES_REPO)/releases/download/grove-extension-v$(VERSION)/$(EXTENSION_NAME)-v$(VERSION).zip\n" || \
+		printf "$(CYAN)$(BOLD)🔗 Download:$(RESET) https://github.com/$(RELEASES_REPO)/releases/download/$(RELEASE_TAG)/grove-extension.zip\n" || \
 		{ printf "$(RED)$(CROSS) Failed to create release. Ensure $(RELEASES_REPO) exists and is public.$(RESET)\n"; exit 1; }
