@@ -9,7 +9,6 @@ class GroveAPI {
     'testnet': 'https://api.testnet.grove.city',
     'localhost': 'http://localhost:8000',
     'localhost:8000': 'http://localhost:8000',
-    'localhost:3000': 'http://localhost:3000',
   };
 
   static DEFAULT_TIP_AMOUNT = 0.05; // $0.05 default
@@ -26,6 +25,18 @@ class GroveAPI {
       chainId: 84532,
       rpcUrl: 'https://sepolia.base.org',
       explorerUrl: 'https://sepolia.basescan.org'
+    },
+    'solana': {
+      name: 'Solana',
+      chainId: null,
+      rpcUrl: 'https://api.mainnet-beta.solana.com',
+      explorerUrl: 'https://explorer.solana.com'
+    },
+    'solana-devnet': {
+      name: 'Solana Devnet',
+      chainId: null,
+      rpcUrl: 'https://api.devnet.solana.com',
+      explorerUrl: 'https://explorer.solana.com?cluster=devnet'
     }
   };
 
@@ -37,8 +48,10 @@ class GroveAPI {
    */
   static async getBaseURL() {
     try {
-      const result = await chrome.storage.local.get(['groveEndpoint']);
-      const endpoint = result.groveEndpoint || 'production';
+      const result = await chrome.storage.local.get(['groveEndpoint', 'groveEnvironment']);
+      const env = result.groveEnvironment || 'prod';
+      const storedEndpoint = result.groveEndpoint || 'production';
+      const endpoint = env === 'local' ? storedEndpoint : 'production';
       return this.ENDPOINTS[endpoint] || this.ENDPOINTS['production'];
     } catch (error) {
       console.log("[Grove Extension] Endpoint load failed, using production");

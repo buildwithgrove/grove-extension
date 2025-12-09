@@ -50,12 +50,20 @@ class KeyManager {
   }
 
   /**
-   * Get the active JWT based on dev mode
-   * @param {boolean} isDevMode - Whether developer mode is enabled
+   * Get the active JWT based on environment and endpoint
+   * @param {boolean} isDevMode - Whether developer mode is enabled (optional, preserved for backward compatibility)
    * @returns {Promise<string|null>}
    */
-  static async getActiveJWT(isDevMode) {
-    return isDevMode ? this.getTestnetJWT() : this.getProductionJWT();
+  static async getActiveJWT(isDevMode = undefined) {
+    const result = await chrome.storage.local.get(['groveEndpoint', 'groveEnvironment']);
+    const endpoint = result['groveEndpoint'] || 'production';
+    const env = result['groveEnvironment'] || 'prod';
+
+    // If caller provided isDevMode, keep honoring it; otherwise derive from env
+    const devMode = typeof isDevMode === 'boolean' ? isDevMode : (env === 'local');
+    const useTestnetSlot = devMode && (endpoint === 'testnet' || endpoint === 'localhost');
+
+    return useTestnetSlot ? this.getTestnetJWT() : this.getProductionJWT();
   }
 
   /**
@@ -87,7 +95,7 @@ class KeyManager {
     }
 
     // Determine where to put the legacy JWT based on endpoint
-    if (endpoint === 'testnet' || endpoint === 'localhost' || endpoint === 'localhost:3000') {
+    if (endpoint === 'testnet' || endpoint === 'localhost') {
       await this.setTestnetJWT(legacyJwt);
     } else {
       await this.setProductionJWT(legacyJwt);

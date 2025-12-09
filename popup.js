@@ -68,6 +68,7 @@ const productionKeyStatus = document.getElementById('productionKeyStatus');
 const testnetKeyStatus = document.getElementById('testnetKeyStatus');
 const productionActiveBadge = document.getElementById('productionActiveBadge');
 const testnetActiveBadge = document.getElementById('testnetActiveBadge');
+const testnetKeySlot = document.getElementById('testnetKeySlot');
 const manageProductionKeyBtn = document.getElementById('manageProductionKeyBtn');
 const manageTestnetKeyBtn = document.getElementById('manageTestnetKeyBtn');
 const jwtEditSlotLabel = document.getElementById('jwtEditSlotLabel');
@@ -125,8 +126,7 @@ async function isDevMode() {
  * @returns {Promise<string|null>}
  */
 async function getActiveJWT() {
-  const devMode = await isDevMode();
-  return KeyManager.getActiveJWT(devMode);
+  return KeyManager.getActiveJWT();
 }
 
 // Default auto-reply message template
@@ -148,11 +148,18 @@ const resetAutoReplyMessageBtn = document.getElementById('homeResetAutoReplyMess
 const DEFAULT_TIP_AMOUNT = 0.10;
 const DEFAULT_CHAIN = 'base';
 const DEFAULT_ENV = 'prod';
-const DEFAULT_ENDPOINT = 'testnet';
+const DEFAULT_ENDPOINT = 'production';
 const DEFAULT_BALANCE_DISPLAY = '0.00';
 const TOP_UP_URLS = {
   mainnet: 'https://app.grove.city/profile',
   testnet: 'https://app.testnet.grove.city/profile'
+};
+const MAINNET_CHAINS = ['base', 'solana'];
+const TESTNET_CHAINS = ['base-sepolia', 'solana-devnet'];
+const ENDPOINT_LABELS = {
+  'production': 'api.grove.city',
+  'testnet': 'api.testnet.grove.city',
+  'localhost': 'localhost:8000',
 };
 
 /**
@@ -205,7 +212,8 @@ async function init() {
     // Update chain UI
     updateChainUI(chain);
     updateTopUpLink(chain);
-    updateNetworkSelectorVisibility(isTestnet);
+    updateNetworkSelectorVisibility(environment);
+    updateTestnetKeyVisibility(isTestnet);
 
     // Update dev mode toggle
     if (devModeToggle) {
@@ -259,6 +267,12 @@ async function init() {
   await loadClientAddress();
   loadExtensionVersion();
   setupEventListeners();
+
+  // Ensure chain dropdown options match current endpoint on init
+  const endpointInit = await GroveAPI.getBaseURL().then(() => {
+    return chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
+  }).then(res => res[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT).catch(() => DEFAULT_ENDPOINT);
+  updateNetworkSelectorVisibility(endpointInit);
 
   // Fetch balance after everything is loaded (also updates client address)
   await fetchBalance();
@@ -324,6 +338,11 @@ function setupEventListeners() {
   // Chain Selector
   chainSelectorBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    // Refresh visibility based on current endpoint before showing dropdown
+    chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]).then(res => {
+      const endpoint = res[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
+      updateNetworkSelectorVisibility(endpoint);
+    });
     chainDropdown.classList.toggle('hidden');
   });
 
@@ -548,7 +567,9 @@ function setupEventListeners() {
         if (endpointSelector) endpointSelector.classList.add('hidden');
       }
 
-      updateNetworkSelectorVisibility(isDevMode);
+      const endpointResult = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
+      const endpointValue = endpointResult[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
+      updateNetworkSelectorVisibility(endpointValue);
       await fetchBalance();
     }
 
@@ -626,7 +647,10 @@ async function loadJWT() {
 async function loadJwtSlots() {
   const prodJwt = await KeyManager.getProductionJWT();
   const testnetJwt = await KeyManager.getTestnetJWT();
-  const devMode = await isDevMode();
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT, STORAGE_KEYS.ENVIRONMENT]);
+  const endpoint = result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
+  const devMode = (result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV) === 'local';
+  const useTestnetSlot = devMode && (endpoint === 'testnet' || endpoint === 'localhost');
 
   // Update production slot
   if (productionSlotDot) {
@@ -672,7 +696,7 @@ async function loadJwtSlots() {
 
   // Update active badges based on dev mode
   if (productionActiveBadge) {
-    if (!devMode) {
+    if (!useTestnetSlot) {
       productionActiveBadge.classList.remove('hidden');
     } else {
       productionActiveBadge.classList.add('hidden');
@@ -680,12 +704,14 @@ async function loadJwtSlots() {
   }
 
   if (testnetActiveBadge) {
-    if (devMode) {
+    if (useTestnetSlot) {
       testnetActiveBadge.classList.remove('hidden');
     } else {
       testnetActiveBadge.classList.add('hidden');
     }
   }
+
+  updateTestnetKeyVisibility(devMode);
 }
 
 async function updateAuthState(jwt) {
@@ -849,7 +875,8 @@ async function saveJwt() {
     // Update chain UI
     updateChainUI(chain);
     updateTopUpLink(chain);
-    updateNetworkSelectorVisibility(isTestnet);
+    updateNetworkSelectorVisibility(environment);
+    setTestModeBannerText(environment);
 
     // Update dev mode toggle and banner
     if (devModeToggle) {
@@ -1606,10 +1633,26 @@ async function loadAndResolveEnsName() {
  * Environment
  */
 async function loadEnvironment() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.ENVIRONMENT]);
-  const env = result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV;
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ENVIRONMENT, STORAGE_KEYS.ENDPOINT, STORAGE_KEYS.CHAIN]);
+  let env = result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV;
+  let endpoint = result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
   const testBanner = document.getElementById('testModeBanner');
   const isDevMode = env === 'local';
+
+  // Force production defaults when not in dev mode
+  if (!isDevMode) {
+    env = 'prod';
+    endpoint = 'production';
+    const storedChain = result[STORAGE_KEYS.CHAIN] || DEFAULT_CHAIN;
+    const chainConfig = NETWORKS[storedChain] || NETWORKS[DEFAULT_CHAIN];
+    const isTestnetChain = (chainConfig.type || '').toLowerCase() === 'testnet';
+
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.ENVIRONMENT]: env,
+      [STORAGE_KEYS.ENDPOINT]: endpoint,
+      [STORAGE_KEYS.CHAIN]: isTestnetChain ? DEFAULT_CHAIN : storedChain,
+    });
+  }
 
   if (isDevMode) {
     if (devModeToggle) devModeToggle.checked = true;
@@ -1628,8 +1671,10 @@ async function loadEnvironment() {
     if (endpointSelector) endpointSelector.classList.add('hidden');
   }
 
-  // Update network selector visibility based on dev mode
-  updateNetworkSelectorVisibility(isDevMode);
+  // Update network selector visibility based on endpoint
+  updateNetworkSelectorVisibility(endpoint);
+  updateTestnetKeyVisibility(isDevMode);
+  setTestModeBannerText(endpoint);
 }
 
 async function handleDevModeToggle(e) {
@@ -1647,6 +1692,7 @@ async function handleDevModeToggle(e) {
       testBanner.classList.add('visible');
     }
     if (endpointSelector) endpointSelector.classList.remove('hidden');
+    updateTestnetKeyVisibility(true);
 
     // Switch to testnet endpoint and Base Sepolia
     await chrome.storage.local.set({
@@ -1655,9 +1701,10 @@ async function handleDevModeToggle(e) {
       [STORAGE_KEYS.LAST_BALANCES]: {}, // Clear cached balances
     });
     await loadEndpoint();
+    setTestModeBannerText('testnet');
     updateChainUI('base-sepolia');
     updateTopUpLink('base-sepolia');
-    updateNetworkSelectorVisibility(true);
+    updateNetworkSelectorVisibility('testnet');
 
     // Switch to testnet JWT context
     const testnetJwt = await KeyManager.getTestnetJWT();
@@ -1683,6 +1730,7 @@ async function handleDevModeToggle(e) {
       testBanner.classList.add('hidden');
     }
     if (endpointSelector) endpointSelector.classList.add('hidden');
+    updateTestnetKeyVisibility(false);
 
     // Reset to production endpoint and Base mainnet
     await chrome.storage.local.set({
@@ -1691,9 +1739,10 @@ async function handleDevModeToggle(e) {
       [STORAGE_KEYS.LAST_BALANCES]: {}, // Clear cached balances
     });
     await loadEndpoint();
+    setTestModeBannerText('production');
     updateChainUI('base');
     updateTopUpLink('base');
-    updateNetworkSelectorVisibility(false);
+    updateNetworkSelectorVisibility('production');
 
     // Switch to production JWT context
     const prodJwt = await KeyManager.getProductionJWT();
@@ -1718,8 +1767,19 @@ async function handleDevModeToggle(e) {
  * API Endpoint Selection
  */
 async function loadEndpoint() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
-  const endpoint = result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT, STORAGE_KEYS.ENVIRONMENT]);
+  const env = result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV;
+  const storedEndpoint = result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
+  const isDev = env === 'local';
+  const endpoint = isDev ? storedEndpoint : 'production';
+
+  // Persist production endpoint when dev mode is off
+  if (!isDev && storedEndpoint !== 'production') {
+    await chrome.storage.local.set({ [STORAGE_KEYS.ENDPOINT]: 'production' });
+  }
+
+  setTestModeBannerText(endpoint);
+  updateNetworkSelectorVisibility(endpoint);
 
   // Update UI
   if (endpointDisplay) {
@@ -1736,9 +1796,36 @@ async function handleEndpointChange(e) {
   const endpoint = e.target.value;
   await chrome.storage.local.set({ [STORAGE_KEYS.ENDPOINT]: endpoint });
 
+  const chainResult = await chrome.storage.local.get([STORAGE_KEYS.CHAIN]);
+  const allowedChains = isTestEndpoint(endpoint) ? TESTNET_CHAINS : MAINNET_CHAINS;
+  let chain = chainResult[STORAGE_KEYS.CHAIN] || getDefaultChainForEndpoint(endpoint);
+  const chainChangedBecauseEndpoint = !allowedChains.includes(chain);
+  if (chainChangedBecauseEndpoint) {
+    chain = getDefaultChainForEndpoint(endpoint);
+    await chrome.storage.local.set({ [STORAGE_KEYS.CHAIN]: chain });
+  }
+
   // Update display
   if (endpointDisplay) {
     endpointDisplay.textContent = endpoint;
+  }
+
+  updateNetworkSelectorVisibility(endpoint);
+  setTestModeBannerText(endpoint);
+  await loadJwtSlots();
+
+  const jwt = await getActiveJWT();
+  await updateAuthState(jwt);
+  updateChainUI(chain);
+  updateTopUpLink(chain);
+  await fetchBalance();
+
+  if (chainChangedBecauseEndpoint) {
+    historyTransactions = [];
+    historyCurrentPage = 0;
+    loadHistory();
+    seenTxHashes.clear();
+    refreshLeaderboard();
   }
 
   // Show friendly endpoint name in toast
@@ -1746,9 +1833,7 @@ async function handleEndpointChange(e) {
     'production': 'Production (api.grove.city)',
     'testnet': 'Testnet (api.testnet.grove.city)',
     'localhost': 'Localhost:8000',
-    'localhost:3000': 'Localhost:3000',
   };
-
   showToast(`Switched to ${endpointNames[endpoint] || endpoint}`);
 }
 
@@ -1756,8 +1841,16 @@ async function handleEndpointChange(e) {
  * Chain Selection
  */
 async function loadChain() {
-    const result = await chrome.storage.local.get([STORAGE_KEYS.CHAIN]);
-    const chain = result[STORAGE_KEYS.CHAIN] || DEFAULT_CHAIN;
+    const result = await chrome.storage.local.get([STORAGE_KEYS.CHAIN, STORAGE_KEYS.ENDPOINT]);
+    const endpoint = result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
+    const storedChain = result[STORAGE_KEYS.CHAIN] || getDefaultChainForEndpoint(endpoint);
+    const allowedChains = isTestEndpoint(endpoint) ? TESTNET_CHAINS : MAINNET_CHAINS;
+    const chain = allowedChains.includes(storedChain) ? storedChain : getDefaultChainForEndpoint(endpoint);
+
+    if (storedChain !== chain) {
+      await chrome.storage.local.set({ [STORAGE_KEYS.CHAIN]: chain });
+    }
+
     updateChainUI(chain);
     updateTopUpLink(chain);
 }
@@ -1792,22 +1885,57 @@ function updateChainUI(chain) {
 }
 
 /**
- * Update network selector visibility based on dev mode
- * - Production users: Only see Base + grayed Solana
- * - Dev mode users: See Base, Base Sepolia + grayed Solana options
- * @param {boolean} devModeEnabled
+ * Update network selector visibility based on endpoint
+ * - Production: show mainnet options (Base, Solana)
+ * - Testnet/local: show testnet options (Base Sepolia, Solana Devnet)
  */
-function updateNetworkSelectorVisibility(devModeEnabled) {
-  // Get testnet options
+function updateNetworkSelectorVisibility(endpoint) {
+  const isTest = isTestEndpoint(endpoint);
+  const mainnetOptions = document.querySelectorAll('.chain-option.mainnet-option');
   const testnetOptions = document.querySelectorAll('.chain-option.testnet-option');
 
-  testnetOptions.forEach(option => {
-    if (devModeEnabled) {
-      option.classList.remove('hidden');
-    } else {
-      option.classList.add('hidden');
-    }
+  mainnetOptions.forEach(option => {
+    option.classList.toggle('hidden', isTest);
+    option.style.display = isTest ? 'none' : 'flex';
   });
+
+  testnetOptions.forEach(option => {
+    option.classList.toggle('hidden', !isTest);
+    option.style.display = isTest ? 'flex' : 'none';
+  });
+}
+
+function updateTestnetKeyVisibility(devModeEnabled) {
+  if (!testnetKeySlot) return;
+
+  if (devModeEnabled) {
+    testnetKeySlot.classList.remove('hidden');
+  } else {
+    testnetKeySlot.classList.add('hidden');
+    if (currentEditSlot === 'testnet') {
+      hideJwtEdit();
+    }
+  }
+}
+
+function isTestEndpoint(endpoint) {
+  return endpoint === 'testnet' || endpoint === 'localhost';
+}
+
+function getDefaultChainForEndpoint(endpoint) {
+  return isTestEndpoint(endpoint) ? TESTNET_CHAINS[0] : MAINNET_CHAINS[0];
+}
+
+function getEndpointLabel(endpoint) {
+  return ENDPOINT_LABELS[endpoint] || endpoint || 'api.grove.city';
+}
+
+function setTestModeBannerText(endpoint) {
+  const banner = document.getElementById('testModeBanner');
+  if (!banner) return;
+  const textNode = document.getElementById('testModeBannerText') || banner;
+  const label = getEndpointLabel(endpoint);
+  textNode.textContent = `Developer Mode (${label})`;
 }
 
 async function handleChainSelection(e, silent = false) {
@@ -1822,6 +1950,9 @@ async function handleChainSelection(e, silent = false) {
   const isTestnet = (config.type || '').toLowerCase() === 'testnet';
   const newEndpoint = isTestnet ? 'testnet' : 'production';
   await chrome.storage.local.set({ [STORAGE_KEYS.ENDPOINT]: newEndpoint });
+  setTestModeBannerText(newEndpoint);
+  updateNetworkSelectorVisibility(newEndpoint);
+  await loadJwtSlots();
 
   if (!silent) showToast(`Switched to ${NETWORKS[chain].name}`);
 

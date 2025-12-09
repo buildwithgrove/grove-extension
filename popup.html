@@ -58,8 +58,7 @@
             </svg>
           </div>
         </div>
-        <!-- Testnet option - hidden by default, shown when dev mode is enabled -->
-        <div class="chain-option testnet-option hidden" data-chain="base-sepolia">
+        <div class="chain-option testnet-option" data-chain="base-sepolia">
           <div class="chain-icon-wrapper">
             <svg class="chain-logo" width="24" height="24" viewBox="0 0 249 249" fill="none">
               <rect width="249" height="249" rx="50" fill="#0052FF" />
@@ -76,29 +75,7 @@
             </svg>
           </div>
         </div>
-        <!-- Solana - Coming Soon (grayed out) -->
-        <div class="chain-option mainnet-option disabled" data-chain="solana" style="opacity: 0.5; pointer-events: none;">
-          <div class="chain-icon-wrapper">
-            <svg class="chain-logo" width="24" height="24" viewBox="0 0 398 312" fill="none">
-              <defs>
-                <linearGradient id="solGrad1a" x1="360.879" y1="-37.455" x2="141.213" y2="383.294" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#00FFA3" />
-                  <stop offset="1" stop-color="#DC1FFF" />
-                </linearGradient>
-              </defs>
-              <path d="M64.6 237.9c2.4-2.4 5.7-3.8 9.2-3.8h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1l62.7-62.7z" fill="url(#solGrad1a)" />
-              <path d="M64.6 3.8C67.1 1.4 70.4 0 73.8 0h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1L64.6 3.8z" fill="url(#solGrad1a)" />
-              <path d="M333.1 120.1c-2.4-2.4-5.7-3.8-9.2-3.8H6.5c-5.8 0-8.7 7-4.6 11.1l62.7 62.7c2.4 2.4 5.7 3.8 9.2 3.8h317.4c5.8 0 8.7-7 4.6-11.1l-62.7-62.7z" fill="url(#solGrad1a)" />
-            </svg>
-          </div>
-          <div class="chain-option-info">
-            <div class="chain-option-name">Solana</div>
-            <div class="chain-option-type">Coming Soon</div>
-          </div>
-          <div class="chain-selected-check" style="opacity: 0;"></div>
-        </div>
-        <!-- Solana chain options commented out - Base/Base Sepolia only for now -->
-        <!--
+        <!-- Solana chain options -->
         <div class="chain-option mainnet-option" data-chain="solana">
           <div class="chain-icon-wrapper">
             <svg class="chain-logo" width="24" height="24" viewBox="0 0 398 312" fill="none">
@@ -183,15 +160,16 @@
             </svg>
           </div>
         </div>
-        -->
       </div>
     </div>
   </header>
 
   <!-- Test Mode Banner -->
-  <div class="test-mode-banner hidden" id="testModeBanner">
-    <span>Developer Mode is Active</span>
-  </div>
+  <button class="test-mode-banner hidden" id="testModeBanner" type="button" aria-label="Open developer settings">
+    <span class="banner-icon" aria-hidden="true">⚙</span>
+    <span id="testModeBannerText">Developer Mode is Active</span>
+    <span class="banner-chevron" aria-hidden="true">›</span>
+  </button>
 
   <!-- Main Content Area -->
   <main class="content" id="mainContent">
@@ -871,13 +849,6 @@
                 <label for="endpoint-localhost">
                   <div class="endpoint-name">Localhost</div>
                   <div class="endpoint-url">localhost:8000</div>
-                </label>
-              </div>
-              <div class="endpoint-option" data-endpoint="localhost:3000">
-                <input type="radio" name="endpoint" id="endpoint-localhost-3000" value="localhost:3000">
-                <label for="endpoint-localhost-3000">
-                  <div class="endpoint-name">Localhost</div>
-                  <div class="endpoint-url">localhost:3000</div>
                 </label>
               </div>
             </div>
