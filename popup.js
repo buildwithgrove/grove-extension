@@ -650,7 +650,7 @@ async function loadJwtSlots() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT, STORAGE_KEYS.ENVIRONMENT]);
   const endpoint = result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
   const devMode = (result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV) === 'local';
-  const useTestnetSlot = devMode && (endpoint === 'testnet' || endpoint === 'localhost' || endpoint === 'localhost:3000');
+  const useTestnetSlot = devMode && (endpoint === 'testnet' || endpoint === 'localhost');
 
   // Update production slot
   if (productionSlotDot) {

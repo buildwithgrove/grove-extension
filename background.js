@@ -5,7 +5,7 @@ const JWT_STORAGE = {
   LEGACY: 'GROVE_API_JWT'
 };
 
-// Listen for messages from external web pages (e.g., localhost:3000)
+// Listen for messages from external web pages (e.g., localhost, testnet, production)
 chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
   console.log('Received external message from:', sender.origin);
 
