@@ -159,11 +159,6 @@ body {
   outline-offset: 2px;
 }
 
-/* Chain filtering for normal mode - hide testnets, show mainnets */
-body.developer-mode .testnet-option {
-  display: flex !important;
-}
-
 /* Chain Selector */
 .chain-selector-container {
   position: relative;

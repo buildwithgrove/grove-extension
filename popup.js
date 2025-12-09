@@ -1896,10 +1896,12 @@ function updateNetworkSelectorVisibility(endpoint) {
 
   mainnetOptions.forEach(option => {
     option.classList.toggle('hidden', isTest);
+    option.style.display = isTest ? 'none' : 'flex';
   });
 
   testnetOptions.forEach(option => {
     option.classList.toggle('hidden', !isTest);
+    option.style.display = isTest ? 'flex' : 'none';
   });
 }
 
