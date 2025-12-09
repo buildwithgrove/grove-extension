@@ -5,7 +5,9 @@
 
 class XAuth {
   static CLIENT_ID = 'UHQwQXlCRFZHY1F1VmZ3RmVXU0Y6MTpjaQ';
-  static REDIRECT_URI = 'https://cailijeophmjabfnilbhajbegndlhelf.chromiumapp.org/callback';
+  static get REDIRECT_URI() {
+    return `https://${chrome.runtime.id}.chromiumapp.org/callback`;
+  }
   static SCOPES = ['tweet.read', 'tweet.write', 'users.read', 'like.write', 'offline.access'];
 
   static STORAGE_KEYS = {
