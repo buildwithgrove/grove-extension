@@ -9,6 +9,9 @@ VERSION := 1.0.3
 # Chrome Web Store URLs
 CHROME_STORE_CONSOLE := https://chrome.google.com/webstore/devconsole/21d27706-ef22-4f83-8ddc-9f6109acef7d/jheejecmpfgifgdodgipilpgfaiecndm/edit/package
 
+# Public repo for hosting release downloads (must be public for shareable URLs)
+RELEASES_REPO := buildwithgrove/grove-releases
+
 # Build artifacts
 ZIP_FILE := $(BUILD_DIR)/$(EXTENSION_NAME)-v$(VERSION).zip
 
@@ -106,15 +109,16 @@ build_release: ## Bump version, prompt to commit/push, and prepare for Chrome We
 	@printf "\n"
 
 .PHONY: build_upload_release
-build_upload_release: build_zip_extension ## Build zip and upload to GitHub release
-	$(call print_info_section,Uploading to GitHub Release)
+build_upload_release: build_zip_extension ## Build zip and upload to public releases repo
+	$(call print_info_section,Uploading to $(RELEASES_REPO))
 	@if ! command -v gh &> /dev/null; then \
 		printf "$(RED)$(CROSS) GitHub CLI (gh) not installed. Run: brew install gh$(RESET)\n"; \
 		exit 1; \
 	fi
-	@gh release create v$(VERSION) $(ZIP_FILE) \
-		--title "v$(VERSION)" \
-		--notes "Grove Extension v$(VERSION)" \
-		--latest
-	$(call print_success,Release v$(VERSION) created!)
-	@printf "$(CYAN)$(BOLD)🔗 Download:$(RESET) $$(gh release view v$(VERSION) --json assets --jq '.assets[0].url')\n"
+	@gh release create grove-extension-v$(VERSION) $(ZIP_FILE) \
+		--repo $(RELEASES_REPO) \
+		--title "Grove Extension v$(VERSION)" \
+		--notes "Grove Extension v$(VERSION)" && \
+		printf "$(GREEN)$(CHECK) Release created!$(RESET)\n" && \
+		printf "$(CYAN)$(BOLD)🔗 Download:$(RESET) https://github.com/$(RELEASES_REPO)/releases/download/grove-extension-v$(VERSION)/$(EXTENSION_NAME)-v$(VERSION).zip\n" || \
+		{ printf "$(RED)$(CROSS) Failed to create release. Ensure $(RELEASES_REPO) exists and is public.$(RESET)\n"; exit 1; }
