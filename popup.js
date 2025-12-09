@@ -2150,32 +2150,21 @@ async function loadTopTippers() {
     // Label: wallet address or username
     let labelHtml = formatAddress(entry.address);
 
-    // Description: last tip recipient
+    // Description: latest tip recipient (prefer post/tweet URL over profile URL)
     let descriptionHtml;
     if (ctx.recipient_username) {
+      const postUrl = ctx.source_post_url || parsed.postUrl;
       const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
-      descriptionHtml = `Last tip: <a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.recipient_username)}</a>`;
-    } else if (parsed.profileHandle && parsed.profileUrl) {
-      descriptionHtml = `Last tip: <a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
+      const linkUrl = postUrl || profileUrl;
+      const linkText = postUrl ? `@${escapeHtml(ctx.recipient_username)}'s post` : `@${escapeHtml(ctx.recipient_username)}`;
+      descriptionHtml = `Latest tip: <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${linkText}</a>`;
+    } else if (parsed.profileHandle) {
+      const linkUrl = parsed.postUrl || parsed.profileUrl;
+      const linkText = parsed.postUrl ? `${parsed.profileHandle}'s post` : parsed.profileHandle;
+      descriptionHtml = `Latest tip: <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${linkText}</a>`;
     } else {
       descriptionHtml = `${entry.tipCount.toLocaleString()} tips sent`;
     }
-
-    // Platform link icon (X icon for Twitter/X tips)
-    const isTwitter = (ctx.source_post_url && (ctx.source_post_url.includes('x.com') || ctx.source_post_url.includes('twitter.com'))) ||
-      (parsed.profileUrl && (parsed.profileUrl.includes('x.com') || parsed.profileUrl.includes('twitter.com'))) ||
-      (entry.lastTipSocialGraph && (entry.lastTipSocialGraph.includes('x.com') || entry.lastTipSocialGraph.includes('twitter.com')));
-
-    let platformUrl = ctx.source_post_url || parsed.postUrl || parsed.profileUrl ||
-      (entry.lastTipSocialGraph && (entry.lastTipSocialGraph.startsWith('http') ? entry.lastTipSocialGraph : `https://${entry.lastTipSocialGraph}`));
-
-    const platformLinkHtml = isTwitter && platformUrl
-      ? `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="View on X">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-          </svg>
-        </a>`
-      : `<span class="history-platform-link history-platform-link-empty"></span>`;
 
     return `
       <div class="transaction-item">
@@ -2187,9 +2176,6 @@ async function loadTopTippers() {
         <div class="transaction-item-right">
           <div class="transaction-item-amount received">${formatUSD(entry.totalUSD)}</div>
           <div class="transaction-item-time">${entry.tipCount} tips</div>
-        </div>
-        <div class="transaction-item-links">
-          ${platformLinkHtml}
         </div>
       </div>
     `;
