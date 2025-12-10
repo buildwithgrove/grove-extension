@@ -1059,7 +1059,7 @@ async function clearAllKeys() {
  * Tip Amount
  */
 async function loadTipAmount() {
-    const result = await chrome.storage.local.get([STORAGE_KEYS.TIP_AMOUNT]);
+  const result = await chrome.storage.local.get([STORAGE_KEYS.TIP_AMOUNT]);
   const amount = result[STORAGE_KEYS.TIP_AMOUNT] || DEFAULT_TIP_AMOUNT;
   updateTipUI(amount);
 }
