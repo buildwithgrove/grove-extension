@@ -180,15 +180,13 @@ async function init() {
   prevKeysUI = new PreviousKeysUI(prevKeysCount, prevKeysList, prevKeysContainer);
 
   // Set up callback for when a previous key is used
-  prevKeysUI.setOnUseKey(async (key) => {
-    // Detect which environment this JWT belongs to
-    showToast('Detecting environment...');
-    const { environment, chain } = await GroveAPI.detectJWTEnvironment(key);
+  prevKeysUI.setOnUseKey(async (keyData) => {
+    const { key, environment: storedEnv } = keyData;
 
-    if (!environment) {
-      showToast('Key no longer valid');
-      return;
-    }
+    // Use stored environment, or fall back to active slot if not stored (legacy keys)
+    const environment = storedEnv || await KeyManager.getActiveSlotId();
+    const slotConfig = KeyManager.getEnvConfig(environment);
+    const chain = slotConfig?.isDevMode ? 'base-sepolia' : 'base';
 
     // Archive current key in that slot first (if any)
     const currentJwt = await KeyManager.getJWT(environment);
@@ -200,7 +198,6 @@ async function init() {
     await KeyManager.setJWT(environment, key);
 
     // Update environment and chain settings
-    const slotConfig = KeyManager.getEnvConfig(environment);
     const newEnv = slotConfig?.isDevMode ? 'local' : 'prod';
     await chrome.storage.local.set({
       [STORAGE_KEYS.ENDPOINT]: environment,
@@ -213,14 +210,14 @@ async function init() {
     updateChainUI(chain);
     updateTopUpLink(chain);
     updateNetworkSelectorVisibility(environment);
-    updateTestnetKeyVisibility(isTestnet);
+    updateTestnetKeyVisibility(slotConfig?.isDevMode);
 
     // Update dev mode toggle
     if (devModeToggle) {
-      devModeToggle.checked = isTestnet;
+      devModeToggle.checked = slotConfig?.isDevMode;
     }
     const testBanner = document.getElementById('testModeBanner');
-    if (isTestnet) {
+    if (slotConfig?.isDevMode) {
       document.body.classList.add('developer-mode');
       if (testBanner) {
         testBanner.classList.remove('hidden');
@@ -246,8 +243,7 @@ async function init() {
     await prevKeysUI.render();
     await fetchBalance();
 
-    const envLabel = isTestnet ? 'Testnet' : 'Mainnet';
-    showToast(`Connected to ${envLabel}`);
+    showToast(`Connected to ${slotConfig?.label || environment}`);
 
     // Navigate to home
     document.querySelector('[data-target="tab-home"]').click();
@@ -819,16 +815,10 @@ async function saveJwt() {
     return;
   }
 
-  // Detect which environment this JWT belongs to
-  showToast('Detecting environment...');
-  const { environment, chain } = await GroveAPI.detectJWTEnvironment(token);
-
-  if (!environment) {
-    showToast('Invalid key - not recognized on any environment');
-    return;
-  }
-
+  // Save to the currently active slot
+  const environment = await KeyManager.getActiveSlotId();
   const slotConfig = KeyManager.getEnvConfig(environment);
+  const chain = slotConfig.isDevMode ? 'base-sepolia' : 'base';
 
   // Get current JWT in that slot before saving new one
   const currentJwt = await KeyManager.getJWT(environment);
@@ -838,41 +828,18 @@ async function saveJwt() {
     await KeyManager.archiveCurrentKey(currentJwt, environment);
   }
 
-  // Store in the appropriate slot
+  // Store in the slot
   await KeyManager.setJWT(environment, token);
 
-  // Auto-switch to detected environment and chain
-  const newEnv = slotConfig.isDevMode ? 'local' : 'prod';
+  // Update chain settings
   await chrome.storage.local.set({
-    [STORAGE_KEYS.ENDPOINT]: environment,
     [STORAGE_KEYS.CHAIN]: chain,
-    [STORAGE_KEYS.ENVIRONMENT]: newEnv,
     [STORAGE_KEYS.LAST_BALANCES]: {}, // Clear cached balances when switching keys
   });
 
   // Update chain UI
   updateChainUI(chain);
   updateTopUpLink(chain);
-  updateNetworkSelectorVisibility(environment);
-  setTestModeBannerText(environment);
-
-  // Update dev mode toggle and banner
-  if (devModeToggle) {
-    devModeToggle.checked = slotConfig.isDevMode;
-  }
-  const testBanner = document.getElementById('testModeBanner');
-  if (slotConfig.isDevMode) {
-    document.body.classList.add('developer-mode');
-    if (testBanner) {
-      testBanner.classList.remove('hidden');
-      testBanner.classList.add('visible');
-    }
-    if (endpointSelector) endpointSelector.classList.remove('hidden');
-  } else {
-    document.body.classList.remove('developer-mode');
-    if (testBanner) testBanner.classList.remove('visible');
-    if (endpointSelector) endpointSelector.classList.add('hidden');
-  }
 
   await updateAuthState(token);
   hideJwtEdit();

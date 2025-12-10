@@ -14,7 +14,7 @@ class PreviousKeysUI {
 
   /**
    * Set callback for when a key is used/restored
-   * @param {Function} callback - Function to call with the key
+   * @param {Function} callback - Function to call with keyData object {key, environment, timestamp}
    */
   setOnUseKey(callback) {
     this.onUseKey = callback;
@@ -120,7 +120,7 @@ class PreviousKeysUI {
         const index = parseInt(btn.dataset.index);
         const keyData = await KeyManager.getKey(index);
         if (keyData && this.onUseKey) {
-          await this.onUseKey(keyData.key);
+          await this.onUseKey(keyData);
           this._showToast('Key restored');
         }
       });
