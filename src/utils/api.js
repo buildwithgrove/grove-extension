@@ -94,12 +94,13 @@ class GroveAPI {
   /**
    * Detect which environment a JWT belongs to by probing endpoints
    * @param {string} jwt - JWT token to test
-   * @returns {Promise<{environment: string|null, chain: string|null}>} - Detected environment ('production'/'testnet') and suggested chain, or null if invalid
+   * @returns {Promise<{environment: string|null, chain: string|null}>} - Detected environment ('production'/'testnet'/'localhost') and suggested chain, or null if invalid
    */
   static async detectJWTEnvironment(jwt) {
     const endpointsToTest = [
       { env: 'production', url: this.ENDPOINTS['production'], chain: 'base' },
       { env: 'testnet', url: this.ENDPOINTS['testnet'], chain: 'base-sepolia' },
+      { env: 'localhost', url: this.ENDPOINTS['localhost'], chain: 'base-sepolia' },
     ];
 
     for (const { env, url, chain } of endpointsToTest) {

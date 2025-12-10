@@ -61,19 +61,46 @@ const cancelJwtBtn = document.getElementById('cancelJwtBtn');
 const toggleJwtVisibility = document.getElementById('toggleJwtVisibility');
 let removeJwtBtn = null; // Will be set later since it might not exist initially.
 
-// JWT Slot Management (new dual-slot UI)
-const productionSlotDot = document.getElementById('productionSlotDot');
-const testnetSlotDot = document.getElementById('testnetSlotDot');
-const productionKeyStatus = document.getElementById('productionKeyStatus');
-const testnetKeyStatus = document.getElementById('testnetKeyStatus');
-const productionActiveBadge = document.getElementById('productionActiveBadge');
-const testnetActiveBadge = document.getElementById('testnetActiveBadge');
-const testnetKeySlot = document.getElementById('testnetKeySlot');
-const manageProductionKeyBtn = document.getElementById('manageProductionKeyBtn');
-const manageTestnetKeyBtn = document.getElementById('manageTestnetKeyBtn');
+// JWT Slot Management (multi-slot UI)
+// DOM element references organized by slot
+const slotElements = {
+  production: {
+    dot: document.getElementById('productionSlotDot'),
+    status: document.getElementById('productionKeyStatus'),
+    badge: document.getElementById('productionActiveBadge'),
+    slot: document.getElementById('productionKeySlot'),
+    manageBtn: document.getElementById('manageProductionKeyBtn'),
+  },
+  testnet: {
+    dot: document.getElementById('testnetSlotDot'),
+    status: document.getElementById('testnetKeyStatus'),
+    badge: document.getElementById('testnetActiveBadge'),
+    slot: document.getElementById('testnetKeySlot'),
+    manageBtn: document.getElementById('manageTestnetKeyBtn'),
+  },
+  localhost: {
+    dot: document.getElementById('localhostSlotDot'),
+    status: document.getElementById('localhostKeyStatus'),
+    badge: document.getElementById('localhostActiveBadge'),
+    slot: document.getElementById('localhostKeySlot'),
+    manageBtn: document.getElementById('manageLocalhostKeyBtn'),
+  },
+};
+
+// Legacy references for backward compatibility
+const productionSlotDot = slotElements.production.dot;
+const testnetSlotDot = slotElements.testnet.dot;
+const productionKeyStatus = slotElements.production.status;
+const testnetKeyStatus = slotElements.testnet.status;
+const productionActiveBadge = slotElements.production.badge;
+const testnetActiveBadge = slotElements.testnet.badge;
+const testnetKeySlot = slotElements.testnet.slot;
+const manageProductionKeyBtn = slotElements.production.manageBtn;
+const manageTestnetKeyBtn = slotElements.testnet.manageBtn;
+
 const jwtEditSlotLabel = document.getElementById('jwtEditSlotLabel');
 const jwtEditAppLink = document.getElementById('jwtEditAppLink');
-let currentEditSlot = null; // Track which slot is being edited ('production' or 'testnet')
+let currentEditSlot = null; // Track which slot is being edited ('production', 'testnet', or 'localhost')
 
 // Previous Keys Management
 const prevKeysCount = document.getElementById('prevKeysCount');
@@ -94,9 +121,10 @@ let prevKeysUI = null;
 
 // Storage Keys
 const STORAGE_KEYS = {
-  // Dual JWT slots
+  // Multi-slot JWT storage
   JWT_PRODUCTION: 'GROVE_JWT_PRODUCTION',
   JWT_TESTNET: 'GROVE_JWT_TESTNET',
+  JWT_LOCALHOST: 'GROVE_JWT_LOCALHOST',
   JWT: 'GROVE_API_JWT', // Legacy - for migration only
   // Settings
   TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
@@ -166,6 +194,9 @@ const ENDPOINT_LABELS = {
  * Initialize Popup
  */
 async function init() {
+  // Clear cached balance on popup open to ensure fresh data
+  await chrome.storage.local.set({ [STORAGE_KEYS.LAST_BALANCES]: {} });
+
   // Migrate from legacy single-JWT storage (runs once)
   await KeyManager.migrateFromLegacy();
 
@@ -183,25 +214,22 @@ async function init() {
       return;
     }
 
-    const isTestnet = environment === 'testnet';
+    // Environment is the slot ID ('production', 'testnet', or 'localhost')
+    const slotId = environment;
+    const envConfig = KeyManager.getEnvConfig(slotId);
+    const isDevEnv = envConfig?.isDevMode ?? false;
 
     // Archive current key in that slot first (if any)
-    const currentJwt = isTestnet
-      ? await KeyManager.getTestnetJWT()
-      : await KeyManager.getProductionJWT();
+    const currentJwt = await KeyManager.getJWT(slotId);
     if (currentJwt) {
-      await KeyManager.archiveCurrentKey(currentJwt, isTestnet ? 'testnet' : 'production');
+      await KeyManager.archiveCurrentKey(currentJwt, slotId);
     }
 
     // Store in the appropriate slot
-    if (isTestnet) {
-      await KeyManager.setTestnetJWT(key);
-    } else {
-      await KeyManager.setProductionJWT(key);
-    }
+    await KeyManager.setJWT(slotId, key);
 
     // Update environment and chain settings
-    const newEnv = isTestnet ? 'local' : 'prod';
+    const newEnv = isDevEnv ? 'local' : 'prod';
     await chrome.storage.local.set({
       [STORAGE_KEYS.ENDPOINT]: environment,
       [STORAGE_KEYS.CHAIN]: chain,
@@ -213,14 +241,14 @@ async function init() {
     updateChainUI(chain);
     updateTopUpLink(chain);
     updateNetworkSelectorVisibility(environment);
-    updateTestnetKeyVisibility(isTestnet);
+    updateDevKeySlotVisibility(isDevEnv);
 
     // Update dev mode toggle
     if (devModeToggle) {
-      devModeToggle.checked = isTestnet;
+      devModeToggle.checked = isDevEnv;
     }
     const testBanner = document.getElementById('testModeBanner');
-    if (isTestnet) {
+    if (isDevEnv) {
       document.body.classList.add('developer-mode');
       if (testBanner) {
         testBanner.classList.remove('hidden');
@@ -246,7 +274,7 @@ async function init() {
     await prevKeysUI.render();
     await fetchBalance();
 
-    const envLabel = isTestnet ? 'Testnet' : 'Mainnet';
+    const envLabel = envConfig?.label || slotId;
     showToast(`Connected to ${envLabel}`);
 
     // Navigate to home
@@ -431,26 +459,18 @@ function setupEventListeners() {
     });
   }
 
-  // New slot-specific manage buttons
-  if (manageProductionKeyBtn) {
-    manageProductionKeyBtn.addEventListener('click', () => {
-      if (jwtEditContainer.classList.contains('hidden') || currentEditSlot !== 'production') {
-        showJwtEditForSlot('production');
-      } else {
-        hideJwtEdit();
-      }
-    });
-  }
-
-  if (manageTestnetKeyBtn) {
-    manageTestnetKeyBtn.addEventListener('click', () => {
-      if (jwtEditContainer.classList.contains('hidden') || currentEditSlot !== 'testnet') {
-        showJwtEditForSlot('testnet');
-      } else {
-        hideJwtEdit();
-      }
-    });
-  }
+  // Slot-specific manage buttons - use loop for all slots
+  Object.entries(slotElements).forEach(([slotId, elements]) => {
+    if (elements.manageBtn) {
+      elements.manageBtn.addEventListener('click', () => {
+        if (jwtEditContainer.classList.contains('hidden') || currentEditSlot !== slotId) {
+          showJwtEditForSlot(slotId);
+        } else {
+          hideJwtEdit();
+        }
+      });
+    }
+  });
 
   if (saveJwtBtn) saveJwtBtn.addEventListener('click', saveJwtForSlot);
   if (cancelJwtBtn) cancelJwtBtn.addEventListener('click', hideJwtEdit);
@@ -642,76 +662,54 @@ async function loadJWT() {
 }
 
 /**
- * Load and display both JWT slot statuses
+ * Update UI for a single JWT slot
+ * @param {string} slotId - Slot ID ('production', 'testnet', 'localhost')
+ * @param {string|null} jwt - JWT token or null
+ * @param {boolean} isActive - Whether this slot is currently active
  */
+function updateSlotUI(slotId, jwt, isActive) {
+  const elements = slotElements[slotId];
+  if (!elements) return;
+
+  // Update connection dot
+  if (elements.dot) {
+    elements.dot.classList.toggle('connected', !!jwt);
+    elements.dot.classList.toggle('disconnected', !jwt);
+  }
+
+  // Update status text
+  if (elements.status) {
+    if (jwt) {
+      const first = jwt.substring(0, 6);
+      const last = jwt.substring(jwt.length - 4);
+      elements.status.innerHTML = `<span style="font-family: monospace">${first}...${last}</span>`;
+    } else {
+      elements.status.textContent = 'Not connected';
+    }
+  }
+
+  // Update active badge
+  if (elements.badge) {
+    elements.badge.classList.toggle('hidden', !isActive);
+  }
+}
+
 async function loadJwtSlots() {
-  const prodJwt = await KeyManager.getProductionJWT();
-  const testnetJwt = await KeyManager.getTestnetJWT();
   const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT, STORAGE_KEYS.ENVIRONMENT]);
   const endpoint = result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
   const devMode = (result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV) === 'local';
-  const useTestnetSlot = devMode && (endpoint === 'testnet' || endpoint === 'localhost');
 
-  // Update production slot
-  if (productionSlotDot) {
-    if (prodJwt) {
-      productionSlotDot.classList.add('connected');
-      productionSlotDot.classList.remove('disconnected');
-    } else {
-      productionSlotDot.classList.remove('connected');
-      productionSlotDot.classList.add('disconnected');
-    }
+  // Get the active environment ID
+  const activeEnvId = await KeyManager.getActiveEnvId();
+
+  // Update each slot
+  for (const slotId of Object.keys(slotElements)) {
+    const jwt = await KeyManager.getJWT(slotId);
+    const isActive = slotId === activeEnvId;
+    updateSlotUI(slotId, jwt, isActive);
   }
 
-  if (productionKeyStatus) {
-    if (prodJwt) {
-      const first = prodJwt.substring(0, 6);
-      const last = prodJwt.substring(prodJwt.length - 4);
-      productionKeyStatus.innerHTML = `<span style="font-family: monospace">${first}...${last}</span>`;
-    } else {
-      productionKeyStatus.textContent = 'Not connected';
-    }
-  }
-
-  // Update testnet slot
-  if (testnetSlotDot) {
-    if (testnetJwt) {
-      testnetSlotDot.classList.add('connected');
-      testnetSlotDot.classList.remove('disconnected');
-    } else {
-      testnetSlotDot.classList.remove('connected');
-      testnetSlotDot.classList.add('disconnected');
-    }
-  }
-
-  if (testnetKeyStatus) {
-    if (testnetJwt) {
-      const first = testnetJwt.substring(0, 6);
-      const last = testnetJwt.substring(testnetJwt.length - 4);
-      testnetKeyStatus.innerHTML = `<span style="font-family: monospace">${first}...${last}</span>`;
-    } else {
-      testnetKeyStatus.textContent = 'Not connected';
-    }
-  }
-
-  // Update active badges based on dev mode
-  if (productionActiveBadge) {
-    if (!useTestnetSlot) {
-      productionActiveBadge.classList.remove('hidden');
-    } else {
-      productionActiveBadge.classList.add('hidden');
-    }
-  }
-
-  if (testnetActiveBadge) {
-    if (useTestnetSlot) {
-      testnetActiveBadge.classList.remove('hidden');
-    } else {
-      testnetActiveBadge.classList.add('hidden');
-    }
-  }
-
-  updateTestnetKeyVisibility(devMode);
+  updateDevKeySlotVisibility(devMode);
 }
 
 async function updateAuthState(jwt) {
@@ -784,20 +782,26 @@ async function showJwtEdit() {
 }
 
 /**
- * Show the JWT edit form for a specific slot (production or testnet)
- * @param {string} slot - 'production' or 'testnet'
+ * Show the JWT edit form for a specific slot
+ * @param {string} slot - 'production', 'testnet', or 'localhost'
  */
 async function showJwtEditForSlot(slot) {
   currentEditSlot = slot;
   jwtEditContainer.classList.remove('hidden');
 
+  // Get environment config for this slot
+  const envConfig = KeyManager.getEnvConfig(slot);
+  const label = envConfig?.label || 'Key';
+  const appUrl = envConfig?.appUrl || 'https://app.grove.city';
+  const appDomain = appUrl.replace(/^https?:\/\//, '');
+
   // Update the label and link based on slot
   if (jwtEditSlotLabel) {
-    jwtEditSlotLabel.textContent = slot === 'testnet' ? 'Testnet Key' : 'Mainnet Key';
+    jwtEditSlotLabel.textContent = `${label} Key`;
   }
   if (jwtEditAppLink) {
-    jwtEditAppLink.href = slot === 'testnet' ? 'https://app.testnet.grove.city' : 'https://app.grove.city';
-    jwtEditAppLink.textContent = slot === 'testnet' ? 'app.testnet.grove.city' : 'app.grove.city';
+    jwtEditAppLink.href = appUrl;
+    jwtEditAppLink.textContent = appDomain;
   }
 
   // Get remove button if not already cached
@@ -806,9 +810,7 @@ async function showJwtEditForSlot(slot) {
   }
 
   // Get the JWT for the specific slot
-  const jwt = slot === 'testnet'
-    ? await KeyManager.getTestnetJWT()
-    : await KeyManager.getProductionJWT();
+  const jwt = await KeyManager.getJWT(slot);
 
   if (jwt && jwt.length > 0) {
     if (removeJwtBtn) {
@@ -844,27 +846,24 @@ async function saveJwt() {
       return;
     }
 
-    const isTestnet = environment === 'testnet';
+    // Environment is the slot ID ('production', 'testnet', or 'localhost')
+    const slotId = environment;
+    const envConfig = KeyManager.getEnvConfig(slotId);
+    const isDevEnv = envConfig?.isDevMode ?? false;
 
     // Get current JWT in that slot before saving new one
-    const currentJwt = isTestnet
-      ? await KeyManager.getTestnetJWT()
-      : await KeyManager.getProductionJWT();
+    const currentJwt = await KeyManager.getJWT(slotId);
 
     // If there's a current JWT and it's different from the new one, archive it
     if (currentJwt && currentJwt !== token) {
-      await KeyManager.archiveCurrentKey(currentJwt, isTestnet ? 'testnet' : 'production');
+      await KeyManager.archiveCurrentKey(currentJwt, slotId);
     }
 
     // Store in the appropriate slot
-    if (isTestnet) {
-      await KeyManager.setTestnetJWT(token);
-    } else {
-      await KeyManager.setProductionJWT(token);
-    }
+    await KeyManager.setJWT(slotId, token);
 
     // Auto-switch to detected environment and chain
-    const newEnv = isTestnet ? 'local' : 'prod';
+    const newEnv = isDevEnv ? 'local' : 'prod';
     await chrome.storage.local.set({
       [STORAGE_KEYS.ENDPOINT]: environment,
       [STORAGE_KEYS.CHAIN]: chain,
@@ -880,10 +879,10 @@ async function saveJwt() {
 
     // Update dev mode toggle and banner
     if (devModeToggle) {
-      devModeToggle.checked = isTestnet;
+      devModeToggle.checked = isDevEnv;
     }
     const testBanner = document.getElementById('testModeBanner');
-    if (isTestnet) {
+    if (isDevEnv) {
       document.body.classList.add('developer-mode');
       if (testBanner) {
         testBanner.classList.remove('hidden');
@@ -899,7 +898,7 @@ async function saveJwt() {
     await updateAuthState(token);
     hideJwtEdit();
 
-    const envLabel = isTestnet ? 'Testnet' : 'Mainnet';
+    const envLabel = envConfig?.label || slotId;
     showToast(`Connected to ${envLabel}`);
     await prevKeysUI.updateCount();
 
@@ -916,7 +915,7 @@ async function saveJwt() {
 }
 
 /**
- * Save JWT to the currently selected slot (production or testnet)
+ * Save JWT to the currently selected slot
  * Uses currentEditSlot to determine which slot to save to
  */
 async function saveJwtForSlot() {
@@ -931,7 +930,8 @@ async function saveJwtForSlot() {
     return saveJwt();
   }
 
-  const isTestnet = currentEditSlot === 'testnet';
+  const slotId = currentEditSlot;
+  const envConfig = KeyManager.getEnvConfig(slotId);
 
   // Validate the token works for the expected environment
   showToast('Validating key...');
@@ -942,43 +942,41 @@ async function saveJwtForSlot() {
     return;
   }
 
-  // Warn if key doesn't match the expected slot
-  const keyIsTestnet = environment === 'testnet';
-  if (keyIsTestnet !== isTestnet) {
-    const expectedEnv = isTestnet ? 'testnet' : 'mainnet';
-    const actualEnv = keyIsTestnet ? 'testnet' : 'mainnet';
-    showToast(`This is a ${actualEnv} key, but you're editing the ${expectedEnv} slot`);
+  // Determine expected environment type for the slot
+  // Production slot expects 'production', testnet/localhost slots expect 'testnet' or 'localhost'
+  const slotIsDevEnv = envConfig?.isDevMode ?? false;
+  const keyIsDevEnv = environment === 'testnet' || environment === 'localhost';
+
+  // Warn if key doesn't match the expected slot type
+  if (keyIsDevEnv !== slotIsDevEnv) {
+    const expectedType = slotIsDevEnv ? 'testnet/localhost' : 'mainnet';
+    const actualType = keyIsDevEnv ? 'testnet/localhost' : 'mainnet';
+    showToast(`This is a ${actualType} key, but you're editing the ${expectedType} slot`);
     return;
   }
 
   // Get current JWT in slot before saving new one
-  const currentJwt = isTestnet
-    ? await KeyManager.getTestnetJWT()
-    : await KeyManager.getProductionJWT();
+  const currentJwt = await KeyManager.getJWT(slotId);
 
   // Archive current JWT if different
   if (currentJwt && currentJwt !== token) {
-    await KeyManager.archiveCurrentKey(currentJwt, isTestnet ? 'testnet' : 'production');
+    await KeyManager.archiveCurrentKey(currentJwt, slotId);
   }
 
   // Store in the slot
-  if (isTestnet) {
-    await KeyManager.setTestnetJWT(token);
-  } else {
-    await KeyManager.setProductionJWT(token);
-  }
+  await KeyManager.setJWT(slotId, token);
 
   // Update the slot UI
   await loadJwtSlots();
   hideJwtEdit();
 
-  const envLabel = isTestnet ? 'Testnet' : 'Mainnet';
+  const envLabel = envConfig?.label || slotId;
   showToast(`${envLabel} key saved`);
   await prevKeysUI.updateCount();
 
   // If this slot is the active one, refresh the balance
-  const devMode = await isDevMode();
-  if ((devMode && isTestnet) || (!devMode && !isTestnet)) {
+  const activeEnvId = await KeyManager.getActiveEnvId();
+  if (slotId === activeEnvId) {
     await updateAuthState(token);
     await fetchBalance();
   }
@@ -1009,15 +1007,12 @@ async function removeJwt() {
   removeJwtBtn.textContent = 'Disconnect';
   removeJwtBtn.classList.remove('confirming');
 
-  // Determine which slot to clear - use currentEditSlot if set, otherwise use devMode
-  const devMode = await isDevMode();
-  const slotToRemove = currentEditSlot || (devMode ? 'testnet' : 'production');
-  const isTestnetSlot = slotToRemove === 'testnet';
+  // Determine which slot to clear - use currentEditSlot if set, otherwise use active env
+  const activeEnvId = await KeyManager.getActiveEnvId();
+  const slotToRemove = currentEditSlot || activeEnvId;
 
   // Get the JWT from the slot being removed
-  const jwtToRemove = isTestnetSlot
-    ? await KeyManager.getTestnetJWT()
-    : await KeyManager.getProductionJWT();
+  const jwtToRemove = await KeyManager.getJWT(slotToRemove);
 
   // Archive JWT before removing
   if (jwtToRemove) {
@@ -1025,17 +1020,13 @@ async function removeJwt() {
   }
 
   // Clear the JWT in the slot
-  if (isTestnetSlot) {
-    await KeyManager.clearTestnetJWT();
-  } else {
-    await KeyManager.clearProductionJWT();
-  }
+  await KeyManager.clearJWT(slotToRemove);
 
   // Update the slot UI
   await loadJwtSlots();
 
   // Only update auth state if we removed the active slot
-  const removedActiveSlot = (devMode && isTestnetSlot) || (!devMode && !isTestnetSlot);
+  const removedActiveSlot = slotToRemove === activeEnvId;
   if (removedActiveSlot) {
     await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
     await updateAuthState(null);
@@ -1044,7 +1035,8 @@ async function removeJwt() {
   }
 
   hideJwtEdit();
-  const envLabel = isTestnetSlot ? 'Testnet' : 'Mainnet';
+  const envConfig = KeyManager.getEnvConfig(slotToRemove);
+  const envLabel = envConfig?.label || slotToRemove;
   showToast(`${envLabel} key removed`);
   await prevKeysUI.updateCount();
 
@@ -1707,7 +1699,7 @@ async function handleDevModeToggle(e) {
     updateNetworkSelectorVisibility('testnet');
 
     // Switch to testnet JWT context
-    const testnetJwt = await KeyManager.getTestnetJWT();
+    const testnetJwt = await KeyManager.getJWT('testnet');
     await updateAuthState(testnetJwt);
     updateEarnAddressDisplay(null); // Clear address until balance is fetched
     updateEnsNameDisplay(null);
@@ -1745,7 +1737,7 @@ async function handleDevModeToggle(e) {
     updateNetworkSelectorVisibility('production');
 
     // Switch to production JWT context
-    const prodJwt = await KeyManager.getProductionJWT();
+    const prodJwt = await KeyManager.getJWT('production');
     await updateAuthState(prodJwt);
     updateEarnAddressDisplay(null); // Clear address until balance is fetched
     updateEnsNameDisplay(null);
@@ -1908,17 +1900,32 @@ function updateNetworkSelectorVisibility(endpoint) {
   });
 }
 
-function updateTestnetKeyVisibility(devModeEnabled) {
-  if (!testnetKeySlot) return;
+/**
+ * Update visibility of developer mode key slots (testnet, localhost)
+ * @param {boolean} devModeEnabled - Whether developer mode is enabled
+ */
+function updateDevKeySlotVisibility(devModeEnabled) {
+  const devSlotIds = ['testnet', 'localhost'];
 
-  if (devModeEnabled) {
-    testnetKeySlot.classList.remove('hidden');
-  } else {
-    testnetKeySlot.classList.add('hidden');
-    if (currentEditSlot === 'testnet') {
-      hideJwtEdit();
+  devSlotIds.forEach(slotId => {
+    const elements = slotElements[slotId];
+    if (!elements?.slot) return;
+
+    if (devModeEnabled) {
+      elements.slot.classList.remove('hidden');
+    } else {
+      elements.slot.classList.add('hidden');
+      // Hide edit form if editing a dev slot that's being hidden
+      if (currentEditSlot === slotId) {
+        hideJwtEdit();
+      }
     }
-  }
+  });
+}
+
+// Legacy alias for backward compatibility
+function updateTestnetKeyVisibility(devModeEnabled) {
+  updateDevKeySlotVisibility(devModeEnabled);
 }
 
 function isTestEndpoint(endpoint) {

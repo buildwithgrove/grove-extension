@@ -668,6 +668,21 @@
             <button class="btn-text" id="manageTestnetKeyBtn">Manage</button>
           </div>
 
+          <!-- Localhost Key Slot (Developer Mode only) -->
+          <div class="settings-item jwt-slot hidden" id="localhostKeySlot" data-slot="localhost">
+            <div class="jwt-slot-indicator">
+              <span class="slot-dot" id="localhostSlotDot"></span>
+            </div>
+            <div class="settings-info">
+              <div class="settings-name">
+                Localhost
+                <span class="slot-active-badge hidden" id="localhostActiveBadge">Active</span>
+              </div>
+              <div class="settings-desc" id="localhostKeyStatus">Not connected</div>
+            </div>
+            <button class="btn-text" id="manageLocalhostKeyBtn">Manage</button>
+          </div>
+
           <!-- JWT Edit Form (Hidden by default) -->
           <div class="jwt-edit-container hidden" id="jwtEditContainer">
             <div class="jwt-edit-header">
