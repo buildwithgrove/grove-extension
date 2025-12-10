@@ -92,40 +92,6 @@ class GroveAPI {
   }
 
   /**
-   * Detect which environment a JWT belongs to by probing endpoints
-   * @param {string} jwt - JWT token to test
-   * @returns {Promise<{environment: string|null, chain: string|null}>} - Detected environment ('production'/'testnet') and suggested chain, or null if invalid
-   */
-  static async detectJWTEnvironment(jwt) {
-    const endpointsToTest = [
-      { env: 'production', url: this.ENDPOINTS['production'], chain: 'base' },
-      { env: 'testnet', url: this.ENDPOINTS['testnet'], chain: 'base-sepolia' },
-    ];
-
-    for (const { env, url, chain } of endpointsToTest) {
-      try {
-        const response = await fetch(`${url}/v1/account`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${jwt}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          console.log(`[Grove Extension] JWT valid for ${env} environment`);
-          return { environment: env, chain };
-        }
-      } catch (error) {
-        console.log(`[Grove Extension] Failed to probe ${env}:`, error.message);
-      }
-    }
-
-    console.log('[Grove Extension] JWT not valid for any known environment');
-    return { environment: null, chain: null };
-  }
-
-  /**
    * Get balance for an address on the current chain
    * @param {string} address - Wallet address
    * @returns {Promise<string>} - Balance in ETH

@@ -1,123 +1,147 @@
 /**
  * Key Manager
- * Handles storage and retrieval of JWT keys with dual-slot architecture
+ * Handles storage and retrieval of JWT keys with multi-slot architecture
  *
  * Storage structure:
  * - GROVE_JWT_PRODUCTION: Active production JWT (for Base mainnet)
- * - GROVE_JWT_TESTNET: Active testnet JWT (for Base Sepolia)
+ * - GROVE_JWT_TESTNET: Active testnet JWT (for Base Sepolia via testnet API)
+ * - GROVE_JWT_LOCALHOST: Active localhost JWT (for local development)
  * - GROVE_PREV_JWTS: Archive of previous keys (for recovery)
  */
 
-const STORAGE_KEY = 'GROVE_PREV_JWTS';
-const STORAGE_KEY_PROD = 'GROVE_JWT_PRODUCTION';
-const STORAGE_KEY_TESTNET = 'GROVE_JWT_TESTNET';
+const STORAGE_KEY_PREV = 'GROVE_PREV_JWTS';
 const LEGACY_JWT_KEY = 'GROVE_API_JWT';
 const MAX_KEYS = 10;
 
+/**
+ * Environment configuration for each slot
+ */
+const ENV_CONFIG = {
+  production: {
+    label: 'Mainnet',
+    storageKey: 'GROVE_JWT_PRODUCTION',
+    appUrl: 'https://app.grove.city',
+    isDevMode: false,
+  },
+  testnet: {
+    label: 'Testnet',
+    storageKey: 'GROVE_JWT_TESTNET',
+    appUrl: 'https://app.testnet.grove.city',
+    isDevMode: true,
+  },
+  localhost: {
+    label: 'Localhost',
+    storageKey: 'GROVE_JWT_LOCALHOST',
+    appUrl: 'http://localhost:3000',
+    isDevMode: true,
+  },
+};
+
 class KeyManager {
   /**
-   * Get the production JWT
+   * Get environment config for a slot
+   * @param {string} slotId - 'production', 'testnet', or 'localhost'
+   * @returns {Object|null}
+   */
+  static getEnvConfig(slotId) {
+    return ENV_CONFIG[slotId] || null;
+  }
+
+  /**
+   * Get JWT for a specific slot
+   * @param {string} slotId - 'production', 'testnet', or 'localhost'
    * @returns {Promise<string|null>}
    */
-  static async getProductionJWT() {
-    const result = await chrome.storage.local.get([STORAGE_KEY_PROD]);
-    return result[STORAGE_KEY_PROD] || null;
+  static async getJWT(slotId) {
+    const config = ENV_CONFIG[slotId];
+    if (!config) return null;
+    const result = await chrome.storage.local.get([config.storageKey]);
+    return result[config.storageKey] || null;
   }
 
   /**
-   * Set the production JWT
+   * Set JWT for a specific slot
+   * @param {string} slotId - 'production', 'testnet', or 'localhost'
    * @param {string} jwt
    */
-  static async setProductionJWT(jwt) {
-    await chrome.storage.local.set({ [STORAGE_KEY_PROD]: jwt });
+  static async setJWT(slotId, jwt) {
+    const config = ENV_CONFIG[slotId];
+    if (!config) return;
+    await chrome.storage.local.set({ [config.storageKey]: jwt });
   }
 
   /**
-   * Get the testnet JWT
-   * @returns {Promise<string|null>}
+   * Clear JWT for a specific slot
+   * @param {string} slotId - 'production', 'testnet', or 'localhost'
    */
-  static async getTestnetJWT() {
-    const result = await chrome.storage.local.get([STORAGE_KEY_TESTNET]);
-    return result[STORAGE_KEY_TESTNET] || null;
+  static async clearJWT(slotId) {
+    const config = ENV_CONFIG[slotId];
+    if (!config) return;
+    await chrome.storage.local.remove([config.storageKey]);
   }
 
   /**
-   * Set the testnet JWT
-   * @param {string} jwt
+   * Get the active slot ID based on environment and endpoint
+   * @returns {Promise<string>} 'production', 'testnet', or 'localhost'
    */
-  static async setTestnetJWT(jwt) {
-    await chrome.storage.local.set({ [STORAGE_KEY_TESTNET]: jwt });
+  static async getActiveSlotId() {
+    const result = await chrome.storage.local.get(['groveEndpoint', 'groveEnvironment']);
+    const endpoint = result['groveEndpoint'] || 'production';
+    const env = result['groveEnvironment'] || 'prod';
+    const isDevMode = env === 'local';
+
+    if (!isDevMode) return 'production';
+    if (endpoint === 'localhost') return 'localhost';
+    if (endpoint === 'testnet') return 'testnet';
+    return 'production';
   }
 
   /**
    * Get the active JWT based on environment and endpoint
-   * @param {boolean} isDevMode - Whether developer mode is enabled (optional, preserved for backward compatibility)
    * @returns {Promise<string|null>}
    */
-  static async getActiveJWT(isDevMode = undefined) {
-    const result = await chrome.storage.local.get(['groveEndpoint', 'groveEnvironment']);
-    const endpoint = result['groveEndpoint'] || 'production';
-    const env = result['groveEnvironment'] || 'prod';
-
-    // If caller provided isDevMode, keep honoring it; otherwise derive from env
-    const devMode = typeof isDevMode === 'boolean' ? isDevMode : (env === 'local');
-    const useTestnetSlot = devMode && (endpoint === 'testnet' || endpoint === 'localhost');
-
-    return useTestnetSlot ? this.getTestnetJWT() : this.getProductionJWT();
+  static async getActiveJWT() {
+    const slotId = await this.getActiveSlotId();
+    return this.getJWT(slotId);
   }
 
   /**
-   * Clear the production JWT
-   */
-  static async clearProductionJWT() {
-    await chrome.storage.local.remove([STORAGE_KEY_PROD]);
-  }
-
-  /**
-   * Clear the testnet JWT
-   */
-  static async clearTestnetJWT() {
-    await chrome.storage.local.remove([STORAGE_KEY_TESTNET]);
-  }
-
-  /**
-   * Migrate from legacy single-JWT storage to dual-slot architecture
+   * Migrate from legacy single-JWT storage to multi-slot architecture
    * Should be called once on extension init
    */
   static async migrateFromLegacy() {
-    const result = await chrome.storage.local.get([LEGACY_JWT_KEY, 'groveEndpoint', STORAGE_KEY_PROD, STORAGE_KEY_TESTNET]);
+    const storageKeys = Object.values(ENV_CONFIG).map(c => c.storageKey);
+    const result = await chrome.storage.local.get([LEGACY_JWT_KEY, 'groveEndpoint', ...storageKeys]);
     const legacyJwt = result[LEGACY_JWT_KEY];
     const endpoint = result['groveEndpoint'];
 
     // Skip if no legacy JWT or if already migrated (has new keys)
-    if (!legacyJwt || result[STORAGE_KEY_PROD] || result[STORAGE_KEY_TESTNET]) {
+    const hasNewKeys = storageKeys.some(key => result[key]);
+    if (!legacyJwt || hasNewKeys) {
       return false;
     }
 
     // Determine where to put the legacy JWT based on endpoint
-    if (endpoint === 'testnet' || endpoint === 'localhost') {
-      await this.setTestnetJWT(legacyJwt);
-    } else {
-      await this.setProductionJWT(legacyJwt);
-    }
+    const targetSlot = (endpoint === 'localhost' || endpoint === 'testnet') ? endpoint : 'production';
+    await this.setJWT(targetSlot, legacyJwt);
 
     // Remove legacy key
     await chrome.storage.local.remove([LEGACY_JWT_KEY]);
 
-    console.log('[KeyManager] Migrated legacy JWT to new dual-slot architecture');
+    console.log('[KeyManager] Migrated legacy JWT to multi-slot architecture');
     return true;
   }
 
   /**
    * Save current JWT to previous keys before replacing it
    * @param {string} currentJwt - The current JWT to archive
-   * @param {string} environment - The environment ('production' or 'testnet')
+   * @param {string} environment - The environment ('production', 'testnet', or 'localhost')
    */
   static async archiveCurrentKey(currentJwt, environment = null) {
     if (!currentJwt) return;
 
-    const result = await chrome.storage.local.get([STORAGE_KEY]);
-    let prevJwts = result[STORAGE_KEY] || [];
+    const result = await chrome.storage.local.get([STORAGE_KEY_PREV]);
+    let prevJwts = result[STORAGE_KEY_PREV] || [];
 
     // Remove if already exists to prevent duplicates
     prevJwts = prevJwts.filter(item => item.key !== currentJwt);
@@ -134,16 +158,16 @@ class KeyManager {
       prevJwts = prevJwts.slice(0, MAX_KEYS);
     }
 
-    await chrome.storage.local.set({ [STORAGE_KEY]: prevJwts });
+    await chrome.storage.local.set({ [STORAGE_KEY_PREV]: prevJwts });
   }
 
   /**
    * Get all previous keys
-   * @returns {Promise<Array>} Array of key objects with {key, timestamp}
+   * @returns {Promise<Array>} Array of key objects with {key, timestamp, environment}
    */
   static async getPreviousKeys() {
-    const result = await chrome.storage.local.get([STORAGE_KEY]);
-    return result[STORAGE_KEY] || [];
+    const result = await chrome.storage.local.get([STORAGE_KEY_PREV]);
+    return result[STORAGE_KEY_PREV] || [];
   }
 
   /**
@@ -160,7 +184,7 @@ class KeyManager {
    * @returns {Promise<void>}
    */
   static async clearAll() {
-    await chrome.storage.local.remove(STORAGE_KEY);
+    await chrome.storage.local.remove(STORAGE_KEY_PREV);
   }
 
   /**
@@ -169,12 +193,12 @@ class KeyManager {
    * @returns {Promise<void>}
    */
   static async deleteKey(index) {
-    const result = await chrome.storage.local.get([STORAGE_KEY]);
-    let prevJwts = result[STORAGE_KEY] || [];
+    const result = await chrome.storage.local.get([STORAGE_KEY_PREV]);
+    let prevJwts = result[STORAGE_KEY_PREV] || [];
 
     if (index >= 0 && index < prevJwts.length) {
       prevJwts.splice(index, 1);
-      await chrome.storage.local.set({ [STORAGE_KEY]: prevJwts });
+      await chrome.storage.local.set({ [STORAGE_KEY_PREV]: prevJwts });
     }
   }
 
@@ -192,4 +216,5 @@ class KeyManager {
 // Export for use in other modules
 if (typeof window !== 'undefined') {
   window.KeyManager = KeyManager;
+  window.ENV_CONFIG = ENV_CONFIG;
 }
