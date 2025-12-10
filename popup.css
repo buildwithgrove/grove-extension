@@ -266,11 +266,15 @@ body {
 
 .chain-option-info {
   flex: 1;
+  min-width: 0;
 }
 
 .chain-option-name {
   font-weight: 600;
   font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chain-option-type {
@@ -285,7 +289,22 @@ body {
 }
 
 .chain-option[data-chain="base"] .chain-selected-check { /* Logic handled in JS usually, simplified here */
-  /* display: block; */ 
+  /* display: block; */
+}
+
+/* Disabled chain options (Coming Soon) */
+.chain-option.chain-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.chain-option.chain-disabled:hover {
+  background-color: transparent;
+}
+
+.chain-coming-soon {
+  color: #999;
 }
 
 /* Main Content */

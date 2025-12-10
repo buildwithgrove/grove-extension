@@ -1939,6 +1939,9 @@ function setTestModeBannerText(endpoint) {
 }
 
 async function handleChainSelection(e, silent = false) {
+  // Ignore disabled chains (e.g., Solana - Coming Soon)
+  if (e.currentTarget.classList.contains('chain-disabled')) return;
+
   const chain = e.currentTarget.dataset.chain;
   await chrome.storage.local.set({ [STORAGE_KEYS.CHAIN]: chain });
   updateChainUI(chain);
