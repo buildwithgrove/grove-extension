@@ -4,16 +4,22 @@ Chrome extension that enables cryptocurrency tipping on social platforms and any
 
 - [Installation](#installation)
 - [Development](#development)
+  - [Setup](#setup)
+  - [Local Development](#local-development)
+  - [Manifest Key](#manifest-key)
+- [Build](#build)
 - [Release](#release)
+  - [Version Bump](#version-bump)
+  - [Create Release](#create-release)
+  - [Chrome Web Store](#chrome-web-store)
+- [Make Commands](#make-commands)
 - [Features](#features)
   - [Tipping](#tipping)
   - [Extension Popup](#extension-popup)
   - [X (Twitter) Integration](#x-twitter-integration)
   - [Developer Features](#developer-features)
 - [Design System](#design-system)
-  - [Setup (After Cloning)](#setup-after-cloning)
   - [Updating Design Tokens](#updating-design-tokens)
-  - [Token Location](#token-location)
 
 ## Installation
 
@@ -22,21 +28,77 @@ Chrome extension that enables cryptocurrency tipping on social platforms and any
 
 ## Development
 
-1. Clone this repository
-2. Go to [chrome://extensions/](chrome://extensions/)
-3. Enable `Developer mode`
-4. Click `Load unpacked`
-5. Select this directory
+### Setup
+
+```bash
+# Clone with submodules
+git clone --recurse-submodules https://github.com/buildwithgrove/grove-extension.git
+
+# Or initialize submodules after cloning
+git submodule update --init
+```
+
+### Local Development
+
+1. Go to [chrome://extensions/](chrome://extensions/)
+2. Enable `Developer mode`
+3. Click `Load unpacked`
+4. Select this directory
 
 To reload after changes: click the refresh icon on the extension card or use [Extensions Reloader](https://chromewebstore.google.com/detail/extensions-reloader/fimgfedafeadlieiabdeeaodndnlbhid).
 
+### Manifest Key
+
+The `manifest.json` includes a `key` field for local development. This ensures a consistent extension ID so `externally_connectable` works with the Grove web app. The build process automatically strips this key when creating zips for the Chrome Web Store.
+
+## Build
+
+Build the extension zip for Chrome Web Store upload:
+
+```bash
+make build_zip_extension
+```
+
+This creates `build/grove-extension-vX.Y.Z.zip` with the `key` field automatically removed from the manifest.
+
 ## Release
 
-1. **Bump version**: `make build_release` — increments patch version, updates `manifest.json` and `build.mk`, prompts to commit
-2. **Build zip**: `make build_zip_extension` — creates `build/grove-extension-vX.Y.Z.zip`
-3. **Chrome Web Store**: Upload the zip at the [Chrome Web Store console](https://chrome.google.com/webstore/devconsole/21d27706-ef22-4f83-8ddc-9f6109acef7d/jheejecmpfgifgdodgipilpgfaiecndm/edit/package)
+### Version Bump
+
+```bash
+make build_release
+```
+
+This increments the patch version in both `manifest.json` and `makefiles/build.mk`, then prompts to commit and push.
+
+### Create Release
+
+```bash
+# Tag and push
+git tag -a vX.Y.Z -m "Release vX.Y.Z"
+git push origin vX.Y.Z
+
+# Create GitHub release
+gh release create vX.Y.Z --title "vX.Y.Z" --generate-notes
+```
+
+### Chrome Web Store
+
+1. Build the zip: `make build_zip_extension`
+2. Upload at the [Chrome Web Store console](https://chrome.google.com/webstore/devconsole/21d27706-ef22-4f83-8ddc-9f6109acef7d/jheejecmpfgifgdodgipilpgfaiecndm/edit/package)
 
 _Optional_: `make build_zip_upload` uploads to [grove-releases](https://github.com/buildwithgrove/grove-releases) for easy onboarding (requires `gh` CLI)
+
+## Make Commands
+
+| Command | Description |
+|---------|-------------|
+| `make help` | Show all available targets |
+| `make build_zip_extension` | Create extension zip for Chrome Web Store |
+| `make build_release` | Bump version and prepare for release |
+| `make build_zip_upload` | Upload zip to public releases repo |
+| `make clean_build` | Clean build artifacts |
+| `make debug_vars` | Print key build variables |
 
 ## Features
 
@@ -71,17 +133,7 @@ _Optional_: `make build_zip_upload` uploads to [grove-releases](https://github.c
 
 ## Design System
 
-This project uses the [Grove Design System](https://github.com/buildwithgrove/design-system) via git submodule.
-
-### Setup (After Cloning)
-
-```bash
-# Clone with submodules
-git clone --recurse-submodules https://github.com/buildwithgrove/grove-extension.git
-
-# Or initialize submodules after cloning
-git submodule update --init
-```
+This project uses the [Grove Design System](https://github.com/buildwithgrove/design-system) via git submodule. Design tokens are imported from `design-system/tokens.css` in `popup.css`.
 
 ### Updating Design Tokens
 
@@ -96,7 +148,3 @@ git add design-system
 git commit -m "chore: update design-system tokens"
 git push
 ```
-
-### Token Location
-
-Design tokens are imported from `design-system/tokens.css` in `popup.css`.

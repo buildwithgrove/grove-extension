@@ -41,8 +41,14 @@ EXCLUDE_PATTERNS := \
 .PHONY: build_zip_extension
 build_zip_extension: clean_build $(BUILD_DIR) ## Create extension zip for Chrome Web Store
 	$(call print_info_section,Building Grove Extension v$(VERSION))
+	@# Copy files to staging directory and strip the "key" field from manifest
+	$(call print_info,Preparing files for packaging...)
+	$(Q)mkdir -p $(BUILD_DIR)/staging
+	$(Q)cp -r $(INCLUDE_FILES) $(BUILD_DIR)/staging/
+	$(Q)sed -i '' '/"key":/d' $(BUILD_DIR)/staging/manifest.json
 	$(call print_info,Creating zip file: $(ZIP_FILE))
-	$(Q)zip -r $(ZIP_FILE) $(INCLUDE_FILES) -x $(EXCLUDE_PATTERNS)
+	$(Q)cd $(BUILD_DIR)/staging && zip -r ../$(EXTENSION_NAME)-v$(VERSION).zip .
+	$(Q)rm -rf $(BUILD_DIR)/staging
 	$(call print_success,Extension packaged successfully!)
 	@printf "$(CYAN)$(BOLD)📦 Output:$(RESET) $(ZIP_FILE)\n"
 	@printf "\n"
