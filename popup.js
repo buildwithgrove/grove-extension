@@ -61,19 +61,24 @@ const cancelJwtBtn = document.getElementById('cancelJwtBtn');
 const toggleJwtVisibility = document.getElementById('toggleJwtVisibility');
 let removeJwtBtn = null; // Will be set later since it might not exist initially.
 
-// JWT Slot Management (new dual-slot UI)
+// JWT Slot Management (multi-slot UI)
 const productionSlotDot = document.getElementById('productionSlotDot');
 const testnetSlotDot = document.getElementById('testnetSlotDot');
+const localhostSlotDot = document.getElementById('localhostSlotDot');
 const productionKeyStatus = document.getElementById('productionKeyStatus');
 const testnetKeyStatus = document.getElementById('testnetKeyStatus');
+const localhostKeyStatus = document.getElementById('localhostKeyStatus');
 const productionActiveBadge = document.getElementById('productionActiveBadge');
 const testnetActiveBadge = document.getElementById('testnetActiveBadge');
+const localhostActiveBadge = document.getElementById('localhostActiveBadge');
 const testnetKeySlot = document.getElementById('testnetKeySlot');
+const localhostKeySlot = document.getElementById('localhostKeySlot');
 const manageProductionKeyBtn = document.getElementById('manageProductionKeyBtn');
 const manageTestnetKeyBtn = document.getElementById('manageTestnetKeyBtn');
+const manageLocalhostKeyBtn = document.getElementById('manageLocalhostKeyBtn');
 const jwtEditSlotLabel = document.getElementById('jwtEditSlotLabel');
 const jwtEditAppLink = document.getElementById('jwtEditAppLink');
-let currentEditSlot = null; // Track which slot is being edited ('production' or 'testnet')
+let currentEditSlot = null; // Track which slot is being edited ('production', 'testnet', or 'localhost')
 
 // Previous Keys Management
 const prevKeysCount = document.getElementById('prevKeysCount');
@@ -452,6 +457,16 @@ function setupEventListeners() {
     });
   }
 
+  if (manageLocalhostKeyBtn) {
+    manageLocalhostKeyBtn.addEventListener('click', () => {
+      if (jwtEditContainer.classList.contains('hidden') || currentEditSlot !== 'localhost') {
+        showJwtEditForSlot('localhost');
+      } else {
+        hideJwtEdit();
+      }
+    });
+  }
+
   if (saveJwtBtn) saveJwtBtn.addEventListener('click', saveJwtForSlot);
   if (cancelJwtBtn) cancelJwtBtn.addEventListener('click', hideJwtEdit);
 
@@ -642,74 +657,43 @@ async function loadJWT() {
 }
 
 /**
- * Load and display both JWT slot statuses
+ * Load and display all JWT slot statuses
  */
 async function loadJwtSlots() {
   const prodJwt = await KeyManager.getProductionJWT();
   const testnetJwt = await KeyManager.getTestnetJWT();
+  const localhostJwt = await KeyManager.getLocalhostJWT();
   const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT, STORAGE_KEYS.ENVIRONMENT]);
   const endpoint = result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
   const devMode = (result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV) === 'local';
-  const useTestnetSlot = devMode && (endpoint === 'testnet' || endpoint === 'localhost');
 
-  // Update production slot
-  if (productionSlotDot) {
-    if (prodJwt) {
-      productionSlotDot.classList.add('connected');
-      productionSlotDot.classList.remove('disconnected');
-    } else {
-      productionSlotDot.classList.remove('connected');
-      productionSlotDot.classList.add('disconnected');
+  // Determine which slot is active
+  const activeSlot = !devMode ? 'production' : endpoint;
+
+  // Helper to update slot UI
+  function updateSlotUI(dot, status, badge, jwt, isActive) {
+    if (dot) {
+      dot.classList.toggle('connected', !!jwt);
+      dot.classList.toggle('disconnected', !jwt);
+    }
+    if (status) {
+      if (jwt) {
+        const first = jwt.substring(0, 6);
+        const last = jwt.substring(jwt.length - 4);
+        status.innerHTML = `<span style="font-family: monospace">${first}...${last}</span>`;
+      } else {
+        status.textContent = 'Not connected';
+      }
+    }
+    if (badge) {
+      badge.classList.toggle('hidden', !isActive);
     }
   }
 
-  if (productionKeyStatus) {
-    if (prodJwt) {
-      const first = prodJwt.substring(0, 6);
-      const last = prodJwt.substring(prodJwt.length - 4);
-      productionKeyStatus.innerHTML = `<span style="font-family: monospace">${first}...${last}</span>`;
-    } else {
-      productionKeyStatus.textContent = 'Not connected';
-    }
-  }
-
-  // Update testnet slot
-  if (testnetSlotDot) {
-    if (testnetJwt) {
-      testnetSlotDot.classList.add('connected');
-      testnetSlotDot.classList.remove('disconnected');
-    } else {
-      testnetSlotDot.classList.remove('connected');
-      testnetSlotDot.classList.add('disconnected');
-    }
-  }
-
-  if (testnetKeyStatus) {
-    if (testnetJwt) {
-      const first = testnetJwt.substring(0, 6);
-      const last = testnetJwt.substring(testnetJwt.length - 4);
-      testnetKeyStatus.innerHTML = `<span style="font-family: monospace">${first}...${last}</span>`;
-    } else {
-      testnetKeyStatus.textContent = 'Not connected';
-    }
-  }
-
-  // Update active badges based on dev mode
-  if (productionActiveBadge) {
-    if (!useTestnetSlot) {
-      productionActiveBadge.classList.remove('hidden');
-    } else {
-      productionActiveBadge.classList.add('hidden');
-    }
-  }
-
-  if (testnetActiveBadge) {
-    if (useTestnetSlot) {
-      testnetActiveBadge.classList.remove('hidden');
-    } else {
-      testnetActiveBadge.classList.add('hidden');
-    }
-  }
+  // Update each slot
+  updateSlotUI(productionSlotDot, productionKeyStatus, productionActiveBadge, prodJwt, activeSlot === 'production');
+  updateSlotUI(testnetSlotDot, testnetKeyStatus, testnetActiveBadge, testnetJwt, activeSlot === 'testnet');
+  updateSlotUI(localhostSlotDot, localhostKeyStatus, localhostActiveBadge, localhostJwt, activeSlot === 'localhost');
 
   updateTestnetKeyVisibility(devMode);
 }
@@ -784,20 +768,23 @@ async function showJwtEdit() {
 }
 
 /**
- * Show the JWT edit form for a specific slot (production or testnet)
- * @param {string} slot - 'production' or 'testnet'
+ * Show the JWT edit form for a specific slot
+ * @param {string} slot - 'production', 'testnet', or 'localhost'
  */
 async function showJwtEditForSlot(slot) {
   currentEditSlot = slot;
   jwtEditContainer.classList.remove('hidden');
 
+  // Get config for this slot
+  const config = KeyManager.getEnvConfig(slot) || { label: 'Key', appUrl: 'https://app.grove.city' };
+
   // Update the label and link based on slot
   if (jwtEditSlotLabel) {
-    jwtEditSlotLabel.textContent = slot === 'testnet' ? 'Testnet Key' : 'Mainnet Key';
+    jwtEditSlotLabel.textContent = `${config.label} Key`;
   }
   if (jwtEditAppLink) {
-    jwtEditAppLink.href = slot === 'testnet' ? 'https://app.testnet.grove.city' : 'https://app.grove.city';
-    jwtEditAppLink.textContent = slot === 'testnet' ? 'app.testnet.grove.city' : 'app.grove.city';
+    jwtEditAppLink.href = config.appUrl;
+    jwtEditAppLink.textContent = config.appUrl.replace(/^https?:\/\//, '');
   }
 
   // Get remove button if not already cached
@@ -806,9 +793,7 @@ async function showJwtEditForSlot(slot) {
   }
 
   // Get the JWT for the specific slot
-  const jwt = slot === 'testnet'
-    ? await KeyManager.getTestnetJWT()
-    : await KeyManager.getProductionJWT();
+  const jwt = await KeyManager.getJWT(slot);
 
   if (jwt && jwt.length > 0) {
     if (removeJwtBtn) {
@@ -1906,14 +1891,27 @@ function updateNetworkSelectorVisibility(endpoint) {
 }
 
 function updateTestnetKeyVisibility(devModeEnabled) {
-  if (!testnetKeySlot) return;
+  // Show/hide testnet slot
+  if (testnetKeySlot) {
+    if (devModeEnabled) {
+      testnetKeySlot.classList.remove('hidden');
+    } else {
+      testnetKeySlot.classList.add('hidden');
+      if (currentEditSlot === 'testnet') {
+        hideJwtEdit();
+      }
+    }
+  }
 
-  if (devModeEnabled) {
-    testnetKeySlot.classList.remove('hidden');
-  } else {
-    testnetKeySlot.classList.add('hidden');
-    if (currentEditSlot === 'testnet') {
-      hideJwtEdit();
+  // Show/hide localhost slot
+  if (localhostKeySlot) {
+    if (devModeEnabled) {
+      localhostKeySlot.classList.remove('hidden');
+    } else {
+      localhostKeySlot.classList.add('hidden');
+      if (currentEditSlot === 'localhost') {
+        hideJwtEdit();
+      }
     }
   }
 }
