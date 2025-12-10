@@ -1794,7 +1794,10 @@ async function loadEndpoint() {
 
 async function handleEndpointChange(e) {
   const endpoint = e.target.value;
-  await chrome.storage.local.set({ [STORAGE_KEYS.ENDPOINT]: endpoint });
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.ENDPOINT]: endpoint,
+    [STORAGE_KEYS.LAST_BALANCES]: {}, // Clear cached balances when switching endpoints
+  });
 
   const chainResult = await chrome.storage.local.get([STORAGE_KEYS.CHAIN]);
   const allowedChains = isTestEndpoint(endpoint) ? TESTNET_CHAINS : MAINNET_CHAINS;
