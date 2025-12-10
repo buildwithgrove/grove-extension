@@ -2,6 +2,7 @@
 const JWT_STORAGE = {
   PRODUCTION: 'GROVE_JWT_PRODUCTION',
   TESTNET: 'GROVE_JWT_TESTNET',
+  LOCAL: 'GROVE_JWT_LOCALHOST',
   LEGACY: 'GROVE_API_JWT'
 };
 
@@ -11,19 +12,30 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
 
   if (message.type === 'SET_JWT') {
     // Determine which slot to store the JWT in based on environment
-    const isTestnet = message.environment === 'testnet';
-    const jwtStorageKey = isTestnet ? JWT_STORAGE.TESTNET : JWT_STORAGE.PRODUCTION;
+    // Accept both 'local' and 'localhost' for local development
+    const env = message.environment === 'local' ? 'localhost' : (message.environment || 'production');
+    let jwtStorageKey;
+    if (env === 'localhost') {
+      jwtStorageKey = JWT_STORAGE.LOCAL;
+    } else if (env === 'testnet') {
+      jwtStorageKey = JWT_STORAGE.TESTNET;
+    } else {
+      jwtStorageKey = JWT_STORAGE.PRODUCTION;
+    }
+
+    // Both localhost and testnet use Base Sepolia; production uses Base mainnet
+    const isNonProduction = env === 'testnet' || env === 'localhost';
 
     const dataToStore = {
       [jwtStorageKey]: message.jwt,
-      groveEndpoint: message.environment || 'production',
-      groveChain: isTestnet ? 'base-sepolia' : 'base'
+      groveEndpoint: env,
+      groveChain: isNonProduction ? 'base-sepolia' : 'base'
     };
 
     // Auto-switch developer mode based on environment
-    if (isTestnet) {
-      dataToStore.groveEnvironment = 'local'; // Enable dev mode for testnet
-      console.log('Testnet JWT received - enabling developer mode');
+    if (isNonProduction) {
+      dataToStore.groveEnvironment = 'local'; // Enable dev mode for testnet/local
+      console.log(`${env} JWT received - enabling developer mode`);
     } else {
       dataToStore.groveEnvironment = 'prod'; // Disable dev mode for production
       console.log('Production JWT received - disabling developer mode');
@@ -33,45 +45,76 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
     dataToStore.GROVE_LAST_BALANCES = {};
 
     chrome.storage.local.set(dataToStore, () => {
-      console.log(`JWT stored in ${isTestnet ? 'testnet' : 'production'} slot`);
+      console.log(`JWT stored in ${env} slot`);
       sendResponse({
         success: true,
-        environment: message.environment || 'production',
-        devModeEnabled: isTestnet
+        environment: env,
+        devModeEnabled: isNonProduction
       });
     });
     return true; // Keep channel open for async response
   }
 
   if (message.type === 'GET_JWT') {
-    // Return JWT based on current dev mode state
-    chrome.storage.local.get(['groveEnvironment', JWT_STORAGE.PRODUCTION, JWT_STORAGE.TESTNET], (result) => {
+    // Return JWT based on requested environment or current dev mode state
+    chrome.storage.local.get(['groveEnvironment', 'groveEndpoint', JWT_STORAGE.PRODUCTION, JWT_STORAGE.TESTNET, JWT_STORAGE.LOCAL], (result) => {
       const isDevMode = result.groveEnvironment === 'local';
-      const jwt = isDevMode ? result[JWT_STORAGE.TESTNET] : result[JWT_STORAGE.PRODUCTION];
-      sendResponse({ jwt: jwt || null, isDevMode });
+      const endpoint = result.groveEndpoint || 'production';
+      // Normalize 'local' to 'localhost'
+      const reqEnv = message.environment === 'local' ? 'localhost' : message.environment;
+
+      let jwt;
+      if (reqEnv === 'localhost') {
+        jwt = result[JWT_STORAGE.LOCAL];
+      } else if (reqEnv === 'testnet') {
+        jwt = result[JWT_STORAGE.TESTNET];
+      } else if (reqEnv === 'production') {
+        jwt = result[JWT_STORAGE.PRODUCTION];
+      } else {
+        // No environment specified - use current endpoint
+        if (endpoint === 'localhost') {
+          jwt = result[JWT_STORAGE.LOCAL];
+        } else if (endpoint === 'testnet') {
+          jwt = result[JWT_STORAGE.TESTNET];
+        } else {
+          jwt = result[JWT_STORAGE.PRODUCTION];
+        }
+      }
+      sendResponse({ jwt: jwt || null, isDevMode, environment: endpoint });
     });
     return true;
   }
 
   if (message.type === 'PING') {
     // Check if there's a JWT for the requested environment (or current mode if not specified)
-    chrome.storage.local.get(['groveEnvironment', JWT_STORAGE.PRODUCTION, JWT_STORAGE.TESTNET], (result) => {
+    chrome.storage.local.get(['groveEnvironment', 'groveEndpoint', JWT_STORAGE.PRODUCTION, JWT_STORAGE.TESTNET, JWT_STORAGE.LOCAL], (result) => {
       const isDevMode = result.groveEnvironment === 'local';
+      const endpoint = result.groveEndpoint || 'production';
+      // Normalize 'local' to 'localhost'
+      const reqEnv = message.environment === 'local' ? 'localhost' : message.environment;
 
       // If environment is specified, check that specific slot
-      // Otherwise fall back to current dev mode
+      // Otherwise fall back to current endpoint
       let jwt;
-      if (message.environment === 'testnet') {
+      if (reqEnv === 'localhost') {
+        jwt = result[JWT_STORAGE.LOCAL];
+      } else if (reqEnv === 'testnet') {
         jwt = result[JWT_STORAGE.TESTNET];
-      } else if (message.environment === 'production') {
+      } else if (reqEnv === 'production') {
         jwt = result[JWT_STORAGE.PRODUCTION];
       } else {
-        // No environment specified - use current mode (backward compatible)
-        jwt = isDevMode ? result[JWT_STORAGE.TESTNET] : result[JWT_STORAGE.PRODUCTION];
+        // No environment specified - use current endpoint
+        if (endpoint === 'localhost') {
+          jwt = result[JWT_STORAGE.LOCAL];
+        } else if (endpoint === 'testnet') {
+          jwt = result[JWT_STORAGE.TESTNET];
+        } else {
+          jwt = result[JWT_STORAGE.PRODUCTION];
+        }
       }
 
       const hasKey = !!(jwt && jwt.length > 0);
-      sendResponse({ hasKey, isDevMode, environment: message.environment || (isDevMode ? 'testnet' : 'production') });
+      sendResponse({ hasKey, isDevMode, environment: reqEnv || endpoint });
     });
     return true;
   }
