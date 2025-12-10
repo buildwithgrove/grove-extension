@@ -911,24 +911,6 @@ async function saveJwtForSlot() {
     return;
   }
 
-  // Validate the token works for the expected environment
-  showToast('Validating key...');
-  const { environment } = await GroveAPI.detectJWTEnvironment(token);
-
-  if (!environment) {
-    showToast('Invalid key - not recognized on any environment');
-    return;
-  }
-
-  // Warn if key doesn't match the expected slot
-  if (environment !== currentEditSlot) {
-    const expectedLabel = slotConfig.label;
-    const actualConfig = KeyManager.getEnvConfig(environment);
-    const actualLabel = actualConfig ? actualConfig.label : environment;
-    showToast(`This is a ${actualLabel} key, but you're editing the ${expectedLabel} slot`);
-    return;
-  }
-
   // Get current JWT in slot before saving new one
   const currentJwt = await KeyManager.getJWT(currentEditSlot);
 
