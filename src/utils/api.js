@@ -194,19 +194,26 @@ class GroveAPI {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || `API request failed with status ${response.status}`);
+        return {
+          success: false,
+          error: data.message || `API request failed with status ${response.status}`,
+          status: response.status,
+          data: data
+        };
       }
 
       return {
         success: true,
-        data: data
+        data: data,
+        status: response.status
       };
 
     } catch (error) {
       console.error('[Grove Extension] Account fetch failed:', error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
+        status: null
       };
     }
   }

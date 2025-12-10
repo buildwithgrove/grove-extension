@@ -1365,8 +1365,36 @@ async function fetchBalance() {
     // Fetch account data from API
     const response = await GroveAPI.getAccount(jwt);
 
-    if (!response.success || !response.data.balances) {
+    if (!response.success || !response.data?.balances) {
       console.error('[Grove Extension] Balance fetch failed:', response.error);
+
+      // Check if this is an auth/account failure (401/403 for invalid JWT, 404 for account not found)
+      const isAuthFailure = response.status === 401 || response.status === 403 || response.status === 404;
+      if (isAuthFailure) {
+        console.log('[Grove Extension] Auth failure detected, archiving and clearing invalid JWT');
+
+        // Get the active slot to know where to clear
+        const activeSlot = await KeyManager.getActiveSlotId();
+
+        // Archive the invalid key to previous keys
+        await KeyManager.archiveCurrentKey(jwt, activeSlot);
+
+        // Clear the JWT from the active slot
+        await KeyManager.clearJWT(activeSlot);
+
+        // Clear cached data
+        await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME, STORAGE_KEYS.LAST_BALANCES]);
+
+        // Update UI to show disconnected state
+        await updateAuthState(null);
+        await loadJwtSlots();
+        await prevKeysUI.updateCount();
+        updateEarnAddressDisplay(null);
+        updateEnsNameDisplay(null);
+        balanceAmount.textContent = DEFAULT_BALANCE_DISPLAY;
+
+        showToast('API key invalid or expired. Key archived.');
+      }
       return;
     }
 
