@@ -4,7 +4,7 @@
 
 # Extension metadata
 EXTENSION_NAME := grove-extension
-VERSION := 1.0.3
+VERSION := 1.0.4
 
 # Chrome Web Store URLs
 CHROME_STORE_CONSOLE := https://chrome.google.com/webstore/devconsole/21d27706-ef22-4f83-8ddc-9f6109acef7d/jheejecmpfgifgdodgipilpgfaiecndm/edit/package
