@@ -16,27 +16,58 @@
   };
 
   /**
+   * Check if the extension context is still valid
+   * Returns false if extension was reloaded/updated while this content script is running
+   * @returns {boolean}
+   */
+  function isExtensionContextValid() {
+    try {
+      // chrome.runtime.id is undefined when extension context is invalidated
+      return !!(chrome.runtime && chrome.runtime.id);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
    * Get the active JWT based on current dev mode state
    * @returns {Promise<string|null>}
+   * @throws {Error} If extension context is invalidated
    */
   function getActiveJWT() {
-    return new Promise((resolve) => {
-      chrome.storage.local.get([JWT_KEYS.PRODUCTION, JWT_KEYS.TESTNET, JWT_KEYS.LOCALHOST, JWT_KEYS.ENVIRONMENT, JWT_KEYS.ENDPOINT], (result) => {
-        const isDevMode = result[JWT_KEYS.ENVIRONMENT] === 'local';
-        const endpoint = result[JWT_KEYS.ENDPOINT] || 'production';
+    return new Promise((resolve, reject) => {
+      // Check if extension context is valid before making API calls
+      if (!isExtensionContextValid()) {
+        reject(new Error('Extension was reloaded. Please refresh the page.'));
+        return;
+      }
 
-        let jwt;
-        if (!isDevMode) {
-          jwt = result[JWT_KEYS.PRODUCTION];
-        } else if (endpoint === 'localhost') {
-          jwt = result[JWT_KEYS.LOCALHOST];
-        } else if (endpoint === 'testnet') {
-          jwt = result[JWT_KEYS.TESTNET];
-        } else {
-          jwt = result[JWT_KEYS.PRODUCTION];
-        }
-        resolve(jwt || null);
-      });
+      try {
+        chrome.storage.local.get([JWT_KEYS.PRODUCTION, JWT_KEYS.TESTNET, JWT_KEYS.LOCALHOST, JWT_KEYS.ENVIRONMENT, JWT_KEYS.ENDPOINT], (result) => {
+          // Check for Chrome runtime errors (e.g., context invalidated during the call)
+          if (chrome.runtime.lastError) {
+            reject(new Error('Extension was reloaded. Please refresh the page.'));
+            return;
+          }
+
+          const isDevMode = result[JWT_KEYS.ENVIRONMENT] === 'local';
+          const endpoint = result[JWT_KEYS.ENDPOINT] || 'production';
+
+          let jwt;
+          if (!isDevMode) {
+            jwt = result[JWT_KEYS.PRODUCTION];
+          } else if (endpoint === 'localhost') {
+            jwt = result[JWT_KEYS.LOCALHOST];
+          } else if (endpoint === 'testnet') {
+            jwt = result[JWT_KEYS.TESTNET];
+          } else {
+            jwt = result[JWT_KEYS.PRODUCTION];
+          }
+          resolve(jwt || null);
+        });
+      } catch (e) {
+        reject(new Error('Extension was reloaded. Please refresh the page.'));
+      }
     });
   }
 
@@ -47,6 +78,8 @@
       window.dispatchEvent(new CustomEvent('grove-extension-ready', {
         detail: { version: '1.0.2', hasKey }
       }));
+    }).catch(() => {
+      // Extension context invalidated - silently ignore
     });
   }
 
@@ -318,6 +351,19 @@
     // Use passed button instance or fall back to currentButton
     const button = buttonInstance || currentButton;
 
+    // Check if extension context is valid
+    if (!isExtensionContextValid()) {
+      console.error("[Grove Extension] Extension context invalidated");
+      if (button) {
+        button.setError();
+        showInlineTipError(button.button, {
+          message: 'Extension was reloaded. Please refresh the page.',
+          variant: 'error'
+        });
+      }
+      return;
+    }
+
     // Get settings from storage
     let tipAmount = 0.10; // default
     let confirmBeforeTipping = false; // default off
@@ -330,6 +376,14 @@
       }
     } catch (error) {
       console.error("[Grove Extension] Settings load failed:", error);
+      if (button) {
+        button.setError();
+        showInlineTipError(button.button, {
+          message: 'Extension was reloaded. Please refresh the page.',
+          variant: 'error'
+        });
+      }
+      return;
     }
 
     // If confirmation disabled, send tip directly
@@ -398,7 +452,7 @@
       if (button) {
         button.setError();
         showInlineTipError(button.button, {
-          message: 'Could not read settings. Refresh and try again.',
+          message: error.message || 'Could not read settings. Refresh and try again.',
           variant: 'error'
         });
       }
@@ -1183,6 +1237,17 @@
    * @param {string} tweetUrl - The tweet URL to tip
    */
   async function handleTweetTipClick(buttonWrapper, tweetUrl) {
+    // Check if extension context is valid
+    if (!isExtensionContextValid()) {
+      console.error("[Grove Extension] Extension context invalidated");
+      buttonWrapper.setError();
+      showInlineTipError(buttonWrapper.button, {
+        message: 'Extension was reloaded. Please refresh the page.',
+        variant: 'error'
+      });
+      return;
+    }
+
     // Get settings from storage
     let tipAmount = 0.10;
     let confirmBeforeTipping = false;
@@ -1195,6 +1260,12 @@
       }
     } catch (error) {
       console.error("[Grove Extension] Settings load failed:", error);
+      buttonWrapper.setError();
+      showInlineTipError(buttonWrapper.button, {
+        message: 'Extension was reloaded. Please refresh the page.',
+        variant: 'error'
+      });
+      return;
     }
 
     // If confirmation disabled, send tip directly
@@ -1252,6 +1323,17 @@ Tip creators you love → {grove_link}`;
   async function sendTweetTip(tipAmount, buttonWrapper, tweetUrl) {
     buttonWrapper.setLoading();
 
+    // Check if extension context is valid before making API calls
+    if (!isExtensionContextValid()) {
+      console.error("[Grove Extension] Extension context invalidated");
+      buttonWrapper.setError();
+      showInlineTipError(buttonWrapper.button, {
+        message: 'Extension was reloaded. Please refresh the page.',
+        variant: 'error'
+      });
+      return;
+    }
+
     // Get JWT and settings from storage
     let jwt = '';
     let autoReplyEnabled = true;
@@ -1262,11 +1344,6 @@ Tip creators you love → {grove_link}`;
     let explorerSuffix = '';
 
     try {
-      if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
-        console.error("[Grove Extension] Extension context invalid. Please refresh the page.");
-        buttonWrapper.setError();
-        return;
-      }
 
       // Get JWT using dev mode-aware getter
       jwt = await getActiveJWT() || '';
@@ -1313,7 +1390,7 @@ Tip creators you love → {grove_link}`;
       console.error("[Grove Extension] Settings load failed:", error);
       buttonWrapper.setError();
       showInlineTipError(buttonWrapper.button, {
-        message: 'Could not read settings. Refresh and try again.',
+        message: error.message || 'Could not read settings. Refresh and try again.',
         variant: 'error'
       });
       return;
