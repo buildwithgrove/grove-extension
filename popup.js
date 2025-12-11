@@ -541,6 +541,14 @@ function setupEventListeners() {
     copyEnsNameBtn.addEventListener('click', copyEnsName);
   }
 
+  // Earn CTA Button - Navigate to Earn tab
+  const earnCtaBtn = document.getElementById('earnCtaBtn');
+  if (earnCtaBtn) {
+    earnCtaBtn.addEventListener('click', () => {
+      document.querySelector('[data-target="tab-earn"]').click();
+    });
+  }
+
   // Listen for storage changes (e.g., when webapp injects JWT via external messaging)
   chrome.storage.onChanged.addListener(async (changes, areaName) => {
     if (areaName !== 'local') return;
@@ -1243,6 +1251,7 @@ async function resetAutoReplyMessage() {
 const homeXLoginStatus = document.getElementById('homeXLoginStatus');
 const homeXLoginBtn = document.getElementById('homeXLoginBtn');
 const homeXPostConnectOptions = document.getElementById('homeXPostConnectOptions');
+const homeXSettingsTitle = document.getElementById('homeXSettingsTitle');
 
 async function loadXLoginStatus() {
   try {
@@ -1261,6 +1270,9 @@ async function loadXLoginStatus() {
         homeXLoginBtn.textContent = 'Disconnect';
         homeXLoginBtn.classList.add('btn-danger-text');
       }
+      if (homeXSettingsTitle) {
+        homeXSettingsTitle.textContent = 'Connected to X';
+      }
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.remove('hidden');
     } else {
       if (homeXLoginStatus) {
@@ -1270,6 +1282,9 @@ async function loadXLoginStatus() {
       if (homeXLoginBtn) {
         homeXLoginBtn.textContent = 'Connect';
         homeXLoginBtn.classList.remove('btn-danger-text');
+      }
+      if (homeXSettingsTitle) {
+        homeXSettingsTitle.textContent = 'Connect to X (optional)';
       }
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.add('hidden');
     }
@@ -1307,6 +1322,9 @@ async function handleXLogin() {
         homeXLoginBtn.textContent = 'Disconnect';
         homeXLoginBtn.classList.add('btn-danger-text');
         homeXLoginBtn.disabled = false;
+      }
+      if (homeXSettingsTitle) {
+        homeXSettingsTitle.textContent = 'Connected to X';
       }
       if (homeXPostConnectOptions) {
         homeXPostConnectOptions.classList.remove('hidden');

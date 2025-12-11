@@ -172,7 +172,7 @@
           <h3>Welcome to Grove</h3>
           <p>Connect your account to start tipping.</p>
           <button class="btn-primary btn-full" id="setupTokenBtn">Connect existing account</button>
-          <a class="btn-secondary btn-full" href="https://app.grove.city/" target="_blank" rel="noopener noreferrer">Create new account</a>
+          <a class="btn-accent btn-full" href="https://app.grove.city/" target="_blank" rel="noopener noreferrer">Create a new account</a>
         </div>
       </div>
 
@@ -249,7 +249,7 @@
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
             </div>
             <div class="x-settings-text">
-              <div class="x-settings-title">Connect to X (optional)</div>
+              <div class="x-settings-title" id="homeXSettingsTitle">Connect to X (optional)</div>
               <div class="x-settings-subtitle">Enable auto-like and auto-reply when you send a tip</div>
             </div>
             <svg class="x-settings-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -314,6 +314,11 @@
             </div>
           </div>
         </div>
+
+        <!-- Earn Tips CTA Card -->
+        <button class="earn-cta-card" id="earnCtaBtn">
+          <span class="earn-cta-text">Want to earn tips? Learn how →</span>
+        </button>
       </div>
     </div>
 
