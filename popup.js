@@ -2910,7 +2910,7 @@ function parseDestination(destination) {
   if (destination.endsWith('.base.eth')) {
     const name = destination.replace('.base.eth', '');
     return {
-      profileUrl: `https://www.base.org/name/${name}`,
+      profileUrl: `https://www.base.org/name/${encodeURIComponent(name)}`,
       postUrl: null,
       profileHandle: destination
     };
@@ -2919,7 +2919,7 @@ function parseDestination(destination) {
   // Check if it's a .eth name (but not .base.eth)
   if (destination.endsWith('.eth')) {
     return {
-      profileUrl: `https://app.ens.domains/${destination}`,
+      profileUrl: `https://app.ens.domains/${encodeURIComponent(destination)}`,
       postUrl: null,
       profileHandle: destination
     };

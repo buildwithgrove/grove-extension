@@ -5,9 +5,10 @@
  */
 
 class AddressParser {
-  // ENS name pattern: alphanumeric + hyphens, supports subdomains, ending in .eth
-  // Matches: vitalik.eth, foo-bar.eth, jesse.base.eth, sub.name.eth
-  static ENS_PATTERN = /[a-zA-Z0-9][-a-zA-Z0-9]*(?:\.[a-zA-Z0-9][-a-zA-Z0-9]*)*\.eth/i;
+  // ENS name pattern: supports subdomains, ending in .eth
+  // Valid characters per ENSIP-15: alphanumeric, $, _, hyphens, unicode letters, emoji
+  // Matches: vitalik.eth, $$$$$.base.eth, 🔥.eth, café.eth, jesse.base.eth
+  static ENS_PATTERN = /(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*(?:\.(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*)*\.eth/iu;
 
   // Solana address pattern commented out - Base/Base Sepolia only for now
   // Solana address pattern: base58 encoded, 32-44 chars
@@ -101,3 +102,5 @@ class AddressParser {
 if (typeof window !== 'undefined') {
   window.AddressParser = AddressParser;
 }
+
+export { AddressParser };
