@@ -39,8 +39,8 @@ EXCLUDE_PATTERNS := \
 	Makefile \
 	$(BUILD_DIR)
 
-.PHONY: build_zip_extension
-build_zip_extension: clean_build $(BUILD_DIR) ## Create extension zip for Chrome Web Store
+.PHONY: build_chrome_store_zip
+build_chrome_store_zip: clean_build $(BUILD_DIR) ## Create extension zip for Chrome Web Store
 	$(call print_info_section,Building Grove Extension v$(VERSION))
 	@# Copy files to staging directory and strip the "key" field from manifest
 	$(call print_info,Preparing files for packaging...)
@@ -70,8 +70,8 @@ clean_build: ## Clean build artifacts
 ### Release Workflow   ###
 ##########################
 
-.PHONY: build_release
-build_release: ## Bump version, prompt to commit/push, and prepare for Chrome Web Store upload
+.PHONY: build_version_bump
+build_version_bump: ## Bump version, prompt to commit/push, and prepare for Chrome Web Store upload
 	$(call print_info_section,Grove Extension Release)
 	@# Extract current version from manifest.json
 	$(eval CURRENT_VERSION := $(shell grep '"version"' manifest.json | sed 's/.*"\([0-9]*\.[0-9]*\.[0-9]*\)".*/\1/'))
@@ -110,7 +110,7 @@ build_release: ## Bump version, prompt to commit/push, and prepare for Chrome We
 	@printf "$(BOLD)=== Next Steps ===$(RESET)\n"
 	@printf "\n"
 	@printf "$(CYAN)1.$(RESET) Build the extension package:\n"
-	@printf "   $(GREEN)make build_zip_extension$(RESET)\n"
+	@printf "   $(GREEN)make build_chrome_store_zip$(RESET)\n"
 	@printf "\n"
 	@printf "$(CYAN)2.$(RESET) Upload to Chrome Web Store:\n"
 	@printf "   $(BLUE)$(CHROME_STORE_CONSOLE)$(RESET)\n"
@@ -125,8 +125,8 @@ RELEASE_TAG_LATEST := grove-extension-latest
 # Chrome Web Store public key - produces extension ID: jheejecmpfgifgdodgipilpgfaiecndm
 EXTENSION_PUBLIC_KEY := MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7nXN5llSn+XJEapNFnNEZ8kvEo1iEVFmG3dpj238FZOowzwGTMNuGBdV6F7UZxLuZUN5q4X2GZPL9K+ZHlVelpMv9wiRjNW1FuB5F2qi793NjqUXEIyi62nvK2roCLMVEeQ7hQ3+X6oO6fBxrnEMMLEquYjEDtj+BD0y4NOq65p/obb0p8T4xdPnE+s+/Vabi2hU4WQiPHDMBVL6b3OsnZPenEmsQUFI/vj8ZOC66oLb3qHNyuT58a8cqiVwpTggE/roSSM136eyn7Fioe8pez04jmidouMp+lHJ+YQCZ5s7SxJo8yqNh7vFWgP9MX1uRafpmVt4o1bJyjksF3VUXwIDAQAB
 
-.PHONY: build_zip_upload
-build_zip_upload: build_zip_extension ## Upload zip to public releases repo
+.PHONY: build_github_release_zip
+build_github_release_zip: build_chrome_store_zip ## Build and upload zip to public GitHub releases repo
 	@# Re-inject the public key into the zip for stable extension ID when side-loading
 	$(call print_info,Injecting public key for stable extension ID...)
 	$(Q)mkdir -p $(BUILD_DIR)/repack
