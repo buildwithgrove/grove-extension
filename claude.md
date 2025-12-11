@@ -203,6 +203,107 @@ git submodule update --init
 2. Push to design-system
 3. In this repo, run `git submodule update --remote` to pull latest
 
+## Tip Button Flows
+
+The extension surfaces tip buttons in different contexts, each with its own flow for determining the tip destination sent to the API.
+
+### Button Types and Tip Destinations
+
+| Button Location | Tip Destination | Reason |
+|----------------|-----------------|--------|
+| Profile page | ENS name or profile URL | Backend can resolve address from profile |
+| Hover card | Profile URL | Backend can resolve address from profile |
+| Feed tweet (display name) | Cached address (0x/ENS) | Address found client-side, passed directly |
+| Feed tweet (bio fetch) | Cached address (0x/ENS) | Address found via API, passed directly |
+| Quote tweet | Cached address (0x/ENS) | Same as feed tweet |
+
+### Flow Details
+
+#### 1. Profile Page Button
+User visits a Twitter profile page (e.g., `x.com/vitalikbuterin`).
+
+```
+Profile URL → initializeProfileButton() → extractBio() → AddressParser.resolveAddress()
+                                                                    ↓
+                                                          resolvedAddress (global)
+                                                                    ↓
+Click → handleTipClick() → sendTip() → tipDestination = ENS name or profile URL
+```
+
+- Bio is extracted from the visible profile page
+- If ENS name found, it's sent directly to API
+- Otherwise, the profile URL is sent (backend resolves from profile)
+
+#### 2. Hover Card Button
+User hovers over a username, popup card appears.
+
+```
+Hover → injectButtonIntoTwitterHoverCard() → check displayName/bio → cache address
+                                                                          ↓
+Click → handleTweetTipClick(profileUrl) → sendTweetTip() → tipDestination = profileUrl
+```
+
+- Address is cached for future use
+- Tip destination is the profile URL (backend resolves)
+
+#### 3. Feed Tweet Button (Display Name)
+Tweet in feed where author has address in their display name.
+
+```
+Tweet detected → processTweet() → checkTippableAddress(username, displayName)
+                                           ↓
+                              AddressParser.resolveAddress(displayName)
+                                           ↓
+                              setCachedAddress(username, result) → inject button
+                                                                        ↓
+Click → sendTweetTip() → getCachedAddress(username) → tipDestination = cached.address
+```
+
+- Address found in display name is cached
+- On click, cached address (0x or ENS) is sent directly to API
+
+#### 4. Feed Tweet Button (Bio Fetch)
+Tweet in feed where author has address only in their bio (not display name).
+
+```
+Tweet detected → processTweet() → checkTippableAddress() returns false
+                                           ↓
+                              queueBioFetch(username, tweetElement, ...)
+                                           ↓
+                              fetchTwitterUserBio(username) [Twitter GraphQL API]
+                                           ↓
+                              parse response → setCachedAddress() → injectPendingButtons()
+                                                                          ↓
+Click → sendTweetTip() → getCachedAddress(username) → tipDestination = cached.address
+```
+
+- Uses Twitter's `UserByScreenName` GraphQL endpoint
+- Runs in content script context with user's cookies (ct0 CSRF token)
+- Rate limited: 300ms interval, max 3 concurrent fetches
+- Results cached for 10 minutes
+- On click, cached address is sent directly to API
+
+#### 5. Quote Tweet Button
+The quoted tweet inside a quote tweet has a tippable author.
+
+Same flow as #3 or #4, but uses `extractQuotedTweetAuthor()` and injects button into the quoted tweet element.
+
+### Why Feed Tweets Pass Address Directly
+
+For profile pages and hover cards, the backend receives a profile URL and can look up the user's bio to find the address. But for feed tweets, the backend only receives a tweet URL - it doesn't know to look in the author's bio.
+
+The bio fetch feature solves this by:
+1. Client-side fetches the bio via Twitter's GraphQL API
+2. Extracts and caches the address
+3. Passes the address directly to the tip API
+
+### Key Files
+
+- `src/content/content.js` - Main orchestrator with all tip flows
+- `src/adapters/twitter.js` - Twitter-specific DOM extraction
+- `src/parsers/address.js` - Address detection (0x, ENS patterns)
+- `tests/bio-fetch.test.js` - Tests for bio fetch logic
+
 ## Adding Support for New Platforms
 
 Adapters extend `BaseAdapter` and implement these methods:
