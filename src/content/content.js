@@ -1031,12 +1031,20 @@
           // Find the quoted tweet element to inject button into
           const quotedTweetEl = currentAdapter.getQuotedTweetElement(tweetElement);
           if (quotedTweetEl && !quotedTweetEl.querySelector('.grove-tweet-tip-button')) {
-            // Build URL for the quoted tweet (look for status link in quoted area)
-            const quotedStatusLink = quotedTweetEl.querySelector('a[href*="/status/"]');
+            // Build URL for the quoted tweet
             let quotedTweetUrl = null;
+
+            // Method 1: Look for status link in quoted area
+            const quotedStatusLink = quotedTweetEl.querySelector('a[href*="/status/"]');
             if (quotedStatusLink) {
               const href = quotedStatusLink.getAttribute('href');
               quotedTweetUrl = href.startsWith('/') ? `https://x.com${href}` : href;
+            }
+
+            // Method 2: If no status link, use the author's profile URL
+            // (tipping to profile is valid when we can't get the specific tweet)
+            if (!quotedTweetUrl && quotedAuthor.profileUrl) {
+              quotedTweetUrl = quotedAuthor.profileUrl;
             }
 
             // Find placement - try multiple options
