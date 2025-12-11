@@ -276,6 +276,22 @@ class TwitterAdapter extends BaseAdapter {
       return cardWrapper;
     }
 
+    // Look for any div[role="link"] that links to another status
+    // This is the most common structure for embedded/quoted tweets
+    const linkDivs = tweetElement.querySelectorAll('div[role="link"]');
+    for (const linkDiv of linkDivs) {
+      const statusLink = linkDiv.querySelector('a[href*="/status/"]');
+      if (statusLink) {
+        // Make sure this isn't the main tweet's link (check it's not the timestamp area)
+        const hasTime = linkDiv.querySelector('time');
+        const hasAvatar = linkDiv.querySelector('img[src*="profile_images"]');
+        // Quoted tweets typically have their own user info but no main avatar
+        if (!hasTime || hasAvatar) {
+          return linkDiv;
+        }
+      }
+    }
+
     // Look for a clickable div that links to another tweet
     // This is usually a div[role="link"] containing tweet content
     const tweetTextEl = tweetElement.querySelector('[data-testid="tweetText"]');
@@ -285,15 +301,43 @@ class TwitterAdapter extends BaseAdapter {
       while (sibling) {
         // Check if this sibling contains a link to another status
         const statusLink = sibling.querySelector('a[href*="/status/"]');
-        if (statusLink && sibling.getAttribute('role') === 'link') {
+        if (statusLink) {
+          // Could be the quoted tweet container
+          if (sibling.getAttribute('role') === 'link') {
+            return sibling;
+          }
+          // Or might contain a nested link div
+          const linkDiv = sibling.querySelector('div[role="link"]');
+          if (linkDiv) {
+            return linkDiv;
+          }
+          // Or the sibling itself might be a container
           return sibling;
         }
-        // Also check for nested link divs
-        const linkDiv = sibling.querySelector('div[role="link"]');
-        if (linkDiv && linkDiv.querySelector('a[href*="/status/"]')) {
-          return linkDiv;
-        }
         sibling = sibling.nextElementSibling;
+      }
+    }
+
+    // Last resort: find any element that looks like a quoted tweet
+    // (has a status link and some text content, but isn't the action bar)
+    const allStatusLinks = tweetElement.querySelectorAll('a[href*="/status/"]');
+    for (const link of allStatusLinks) {
+      // Walk up to find a reasonable container
+      let container = link.parentElement;
+      let depth = 0;
+      while (container && container !== tweetElement && depth < 10) {
+        // Check if this looks like a quoted tweet container
+        // It should have some structure (not just the link)
+        const hasMultipleChildren = container.children.length > 1;
+        const hasBorder = container.style.border ||
+                          container.className.includes('border') ||
+                          window.getComputedStyle(container).borderWidth !== '0px';
+
+        if (hasMultipleChildren && container.getAttribute('role') === 'link') {
+          return container;
+        }
+        container = container.parentElement;
+        depth++;
       }
     }
 
