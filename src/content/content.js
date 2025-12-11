@@ -1264,7 +1264,7 @@
   }
 
   /**
-   * Fetch user bio using Twitter's GraphQL API
+   * Fetch user bio using Twitter's REST API (v1.1 style via GraphQL gateway)
    * This works because the content script runs in x.com context with user's cookies
    * @param {string} username - Twitter username
    * @returns {Promise<{displayName: string|null, bio: string|null, error?: string}>}
@@ -1278,13 +1278,11 @@
       return { displayName: null, bio: null, error: 'No CSRF token found' };
     }
 
-    // Twitter's GraphQL endpoint for user lookup
-    const variables = JSON.stringify({
+    // Use Twitter's user lookup endpoint (more stable than GraphQL)
+    const url = `https://x.com/i/api/graphql/BQ6xjFU6Mgm-WhEP3OiT9w/UserByScreenName?variables=${encodeURIComponent(JSON.stringify({
       screen_name: username,
       withSafetyModeUserFields: true
-    });
-
-    const features = JSON.stringify({
+    }))}&features=${encodeURIComponent(JSON.stringify({
       hidden_profile_subscriptions_enabled: true,
       rweb_tipjar_consumption_enabled: true,
       responsive_web_graphql_exclude_directive_enabled: true,
@@ -1297,13 +1295,9 @@
       creator_subscriptions_tweet_preview_api_enabled: true,
       responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
       responsive_web_graphql_timeline_navigation_enabled: true
-    });
-
-    const fieldToggles = JSON.stringify({
+    }))}&fieldToggles=${encodeURIComponent(JSON.stringify({
       withAuxiliaryUserLabels: false
-    });
-
-    const url = `https://x.com/i/api/graphql/${TWITTER_USER_BY_SCREEN_NAME_QUERY_ID}/UserByScreenName?variables=${encodeURIComponent(variables)}&features=${encodeURIComponent(features)}&fieldToggles=${encodeURIComponent(fieldToggles)}`;
+    }))}`;
 
     try {
       const response = await fetch(url, {
@@ -1313,12 +1307,16 @@
           'x-csrf-token': csrfToken,
           'x-twitter-active-user': 'yes',
           'x-twitter-auth-type': 'OAuth2Session',
-          'x-twitter-client-language': 'en'
+          'x-twitter-client-language': 'en',
+          'content-type': 'application/json'
         },
         credentials: 'include'
       });
 
       if (!response.ok) {
+        // Try to get error details
+        const errorText = await response.text().catch(() => '');
+        console.log(`[Grove Extension] API response for @${username}: ${response.status} - ${errorText.substring(0, 200)}`);
         throw new Error(`HTTP ${response.status}`);
       }
 
