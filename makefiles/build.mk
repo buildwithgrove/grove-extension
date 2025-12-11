@@ -70,11 +70,8 @@ clean_build: ## Clean build artifacts
 ### Release Workflow   ###
 ##########################
 
-# Set PUSH=1 to auto-commit and push after version bump
-PUSH ?= 0
-
 .PHONY: build_version_bump
-build_version_bump: ## Bump version (add PUSH=1 to commit and push)
+build_version_bump: ## Bump version, prompt to commit/push and build Chrome Store zip
 	$(call print_info_section,Grove Extension Release)
 	@# Extract current version from manifest.json
 	$(eval CURRENT_VERSION := $(shell grep '"version"' manifest.json | sed 's/.*"\([0-9]*\.[0-9]*\.[0-9]*\)".*/\1/'))
@@ -98,12 +95,23 @@ build_version_bump: ## Bump version (add PUSH=1 to commit and push)
 	@printf "$(BOLD)=== Git Status ===$(RESET)\n"
 	@git status --short
 	@printf "\n"
-	@# Commit and push if PUSH=1
-	@if [ "$(PUSH)" = "1" ]; then \
+	@# Prompt for commit
+	@printf "$(YELLOW)Commit and push version bump? [y/N] $(RESET)"; \
+	read ans; \
+	if [ "$${ans:-N}" = "y" ] || [ "$${ans:-N}" = "Y" ]; then \
 		git add manifest.json makefiles/build.mk && \
 		git commit -m "chore: bump version to $(NEW_VERSION)" && \
 		git push && \
 		printf "$(GREEN)$(CHECK) Changes committed and pushed!$(RESET)\n"; \
+	else \
+		printf "$(YELLOW)Skipping commit.$(RESET)\n"; \
+	fi
+	@printf "\n"
+	@# Prompt for Chrome Store zip build
+	@printf "$(YELLOW)Build Chrome Store zip? [y/N] $(RESET)"; \
+	read ans; \
+	if [ "$${ans:-N}" = "y" ] || [ "$${ans:-N}" = "Y" ]; then \
+		$(MAKE) build_chrome_store_zip; \
 	fi
 	
 # Release tags and asset names
