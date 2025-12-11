@@ -323,9 +323,8 @@ body {
 /* Main Content */
 .content {
   flex: 1;
-  padding: 20px;
+  padding: 12px 20px 80px;
   overflow-y: auto;
-  padding-bottom: 80px; /* Space for nav */
 }
 
 .page {
@@ -479,7 +478,7 @@ body {
   background-color: var(--color-surface);
   border-radius: var(--radius-lg);
   padding: 24px;
-  margin: 16px 16px;
+  margin: 12px 16px;
 }
 
 /* Clickable Section Card (button) */
@@ -591,7 +590,7 @@ button.section-card-btn:hover .quick-access-icon {
   display: flex;
   align-items: center;
   width: calc(100% - 32px);
-  margin: 8px 16px 16px;
+  margin: 8px 16px 12px;
   background: linear-gradient(135deg, rgba(240, 173, 78, 0.15) 0%, rgba(240, 173, 78, 0.25) 100%);
   border: 1px solid var(--color-accent);
   border-radius: var(--radius-lg);
