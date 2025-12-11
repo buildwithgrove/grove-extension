@@ -123,8 +123,8 @@ RELEASE_TAG_LATEST := grove-extension-latest
 # Chrome Web Store public key - produces extension ID: jheejecmpfgifgdodgipilpgfaiecndm
 EXTENSION_PUBLIC_KEY := MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7nXN5llSn+XJEapNFnNEZ8kvEo1iEVFmG3dpj238FZOowzwGTMNuGBdV6F7UZxLuZUN5q4X2GZPL9K+ZHlVelpMv9wiRjNW1FuB5F2qi793NjqUXEIyi62nvK2roCLMVEeQ7hQ3+X6oO6fBxrnEMMLEquYjEDtj+BD0y4NOq65p/obb0p8T4xdPnE+s+/Vabi2hU4WQiPHDMBVL6b3OsnZPenEmsQUFI/vj8ZOC66oLb3qHNyuT58a8cqiVwpTggE/roSSM136eyn7Fioe8pez04jmidouMp+lHJ+YQCZ5s7SxJo8yqNh7vFWgP9MX1uRafpmVt4o1bJyjksF3VUXwIDAQAB
 
-.PHONY: build_github_release_zip
-build_github_release_zip: build_chrome_store_zip ## Build and upload zip to public GitHub releases repo
+.PHONY: build_and_upload_github_release_zip
+build_and_upload_github_release_zip: build_chrome_store_zip ## Build and upload zip to public GitHub releases repo
 	@# Re-inject the public key into the zip for stable extension ID when side-loading
 	$(call print_info,Injecting public key for stable extension ID...)
 	$(Q)mkdir -p $(BUILD_DIR)/repack
