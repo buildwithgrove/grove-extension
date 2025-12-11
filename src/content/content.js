@@ -955,7 +955,37 @@
   }
 
   /**
+   * Check if a user has a tippable address (from cache or display name)
+   * @param {string} username - Twitter username
+   * @param {string|null} displayName - Display name to check for addresses
+   * @returns {boolean}
+   */
+  function checkTippableAddress(username, displayName) {
+    // Check cache first
+    const cached = getCachedAddress(username);
+
+    if (cached === 'no-address') return false;
+    if (cached && cached.address) return true;
+
+    // Check display name for addresses
+    if (displayName) {
+      const hasAddress = AddressParser.hasAddresses(displayName);
+      if (hasAddress) {
+        const addressResult = AddressParser.resolveAddress(displayName);
+        if (addressResult.address) {
+          setCachedAddress(username, addressResult);
+          console.log(`[Grove Extension] Tweet: Found address for @${username}: ${addressResult.address}`);
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Process a single tweet and inject tip button only if author has tippable address
+   * Also handles quote tweets - shows button for quoted author if they have a tippable address
    * @param {Element} tweetElement - The tweet article element
    */
   async function processTweet(tweetElement) {
@@ -963,52 +993,98 @@
     if (processedTweets.has(tweetElement)) return;
     processedTweets.add(tweetElement);
 
-    // Skip if button already exists
+    // Skip if button already exists on the main tweet
     if (tweetElement.querySelector('.grove-tweet-tip-button')) return;
 
-    // Extract author info
+    // Extract main author info (for RTs this is the original author, for QTs this is the quoter)
     const authorInfo = currentAdapter.extractTweetAuthor(tweetElement);
-    if (!authorInfo.username) return;
 
-    // Check cache first (includes addresses from profile pages we've visited)
-    const cached = getCachedAddress(authorInfo.username);
+    // Process main tweet author
+    if (authorInfo.username) {
+      const hasTippableAddress = checkTippableAddress(authorInfo.username, authorInfo.displayName);
 
-    // If cached as 'no-address', skip
-    if (cached === 'no-address') return;
+      if (hasTippableAddress) {
+        const tweetUrl = currentAdapter.getTweetUrl(tweetElement);
+        const dateElement = currentAdapter.getTweetDateElement(tweetElement);
 
-    let hasTippableAddress = false;
-
-    // If we have a cached positive result, use it
-    if (cached && cached.address) {
-      hasTippableAddress = true;
-    } else if (authorInfo.displayName) {
-      // Check if display name contains .eth or EVM address
-      const hasAddress = AddressParser.hasAddresses(authorInfo.displayName);
-      if (hasAddress) {
-        // Extract the address (ENS names resolved by backend)
-        const addressResult = AddressParser.resolveAddress(authorInfo.displayName);
-        if (addressResult.address) {
-          hasTippableAddress = true;
-          // Cache the positive result
-          setCachedAddress(authorInfo.username, addressResult);
-          console.log(`[Grove Extension] Tweet: Found address for @${authorInfo.username}: ${addressResult.address}`);
+        if (tweetUrl && dateElement) {
+          injectTweetTipButton(tweetElement, dateElement, tweetUrl);
         }
       }
     }
 
-    // Only show button if we found a tippable address
-    if (!hasTippableAddress) return;
+    // For quote tweets, also check the quoted tweet's author
+    if (currentAdapter.hasQuotedTweet && currentAdapter.hasQuotedTweet(tweetElement)) {
+      const quotedAuthor = currentAdapter.extractQuotedTweetAuthor(tweetElement);
 
-    // Get the tweet URL for tipping
-    const tweetUrl = currentAdapter.getTweetUrl(tweetElement);
-    if (!tweetUrl) return;
+      if (quotedAuthor && quotedAuthor.username) {
+        const quotedHasTippable = checkTippableAddress(quotedAuthor.username, quotedAuthor.displayName);
 
-    // Find the date element to place button next to
-    const dateElement = currentAdapter.getTweetDateElement(tweetElement);
-    if (!dateElement) return;
+        if (quotedHasTippable) {
+          // Find the quoted tweet element to inject button into
+          const quotedTweetEl = currentAdapter.getQuotedTweetElement(tweetElement);
+          if (quotedTweetEl && !quotedTweetEl.querySelector('.grove-tweet-tip-button')) {
+            // Build URL for the quoted tweet
+            let quotedTweetUrl = null;
 
-    // Create and inject the tip button
-    injectTweetTipButton(tweetElement, dateElement, tweetUrl);
+            // Method 1: Look for status link in quoted area
+            const quotedStatusLink = quotedTweetEl.querySelector('a[href*="/status/"]');
+            if (quotedStatusLink) {
+              const href = quotedStatusLink.getAttribute('href');
+              quotedTweetUrl = href.startsWith('/') ? `https://x.com${href}` : href;
+            }
+
+            // Method 2: If no status link, use the author's profile URL
+            // (tipping to profile is valid when we can't get the specific tweet)
+            if (!quotedTweetUrl && quotedAuthor.profileUrl) {
+              quotedTweetUrl = quotedAuthor.profileUrl;
+            }
+
+            // Find placement - try multiple options
+            // 1. Time element's parent (next to timestamp like "1h")
+            // 2. User-Name container
+            // 3. Any span containing the time text
+            // 4. First row/line of the quoted tweet
+            let placement = null;
+
+            const quotedTimeLink = quotedTweetEl.querySelector('time');
+            if (quotedTimeLink?.parentElement) {
+              placement = quotedTimeLink.parentElement;
+            }
+
+            if (!placement) {
+              const quotedNameContainer = quotedTweetEl.querySelector('[data-testid="User-Name"]');
+              if (quotedNameContainer) {
+                placement = quotedNameContainer;
+              }
+            }
+
+            // Fallback: find the row containing author info (usually first child div with text)
+            if (!placement) {
+              // Look for a container that has the username link
+              const usernameLink = quotedTweetEl.querySelector('a[href^="/"][role="link"]');
+              if (usernameLink) {
+                // Go up to find a reasonable container
+                let container = usernameLink.parentElement;
+                while (container && container !== quotedTweetEl) {
+                  if (container.parentElement === quotedTweetEl ||
+                      container.parentElement?.parentElement === quotedTweetEl) {
+                    placement = container;
+                    break;
+                  }
+                  container = container.parentElement;
+                }
+              }
+            }
+
+            // If we have a URL and a place to put the button, inject it
+            if (quotedTweetUrl && placement) {
+              injectTweetTipButton(quotedTweetEl, placement, quotedTweetUrl, true);
+            }
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -1059,17 +1135,25 @@
    * @param {Element} tweetElement - The tweet article element
    * @param {Element} dateElement - The date link element
    * @param {string} tweetUrl - The tweet URL for tipping
+   * @param {boolean} isQuotedTweet - Whether this is a button for a quoted tweet (smaller styling)
    */
-  function injectTweetTipButton(tweetElement, dateElement, tweetUrl) {
+  function injectTweetTipButton(tweetElement, dateElement, tweetUrl, isQuotedTweet = false) {
     // Detect dark mode
     const isDarkMode = detectDarkMode();
     const bgColor = isDarkMode ? '#1a1a1a' : '#ffffff';
     const bgHoverColor = isDarkMode ? '#252525' : '#f0f0f0';
     const textColor = isDarkMode ? '#ffffff' : '#1a1a1a';
 
+    // Adjust sizing for quoted tweets (smaller to fit the compact layout)
+    const buttonHeight = isQuotedTweet ? '24px' : '28px';
+    const buttonPadding = isQuotedTweet ? '0 8px' : '0 12px';
+    const fontSize = isQuotedTweet ? '11px' : '13px';
+    const emojiFontSize = isQuotedTweet ? '12px' : '14px';
+
     // Create the full tip button (matching profile button style)
     const button = document.createElement('button');
     button.className = 'grove-tweet-tip-button';
+    if (isQuotedTweet) button.classList.add('grove-quoted-tweet-tip-button');
     button.setAttribute('aria-label', 'Send a tip');
     button.setAttribute('type', 'button');
 
@@ -1077,10 +1161,10 @@
       background: ${bgColor} !important;
       border: 2px solid ${GROVE_COLORS.primary} !important;
       border-radius: 9999px !important;
-      padding: 0 12px !important;
-      height: 28px !important;
-      min-height: 28px !important;
-      max-height: 28px !important;
+      padding: ${buttonPadding} !important;
+      height: ${buttonHeight} !important;
+      min-height: ${buttonHeight} !important;
+      max-height: ${buttonHeight} !important;
       min-width: 32px !important;
       position: relative !important;
       overflow: hidden !important;
@@ -1103,7 +1187,7 @@
     textSpan.style.cssText = `
       color: ${textColor} !important;
       font-weight: 600 !important;
-      font-size: 13px !important;
+      font-size: ${fontSize} !important;
       position: relative !important;
       z-index: 2 !important;
       display: flex !important;
@@ -1114,7 +1198,7 @@
     const emojiSpan = document.createElement('span');
     emojiSpan.textContent = '🌿';
     emojiSpan.style.cssText = `
-      font-size: 14px !important;
+      font-size: ${emojiFontSize} !important;
       margin-left: 4px !important;
       position: relative !important;
       z-index: 2 !important;

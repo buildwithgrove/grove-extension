@@ -8,6 +8,7 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "jsdom": "^27.3.0",
     "vitest": "^2.1.0"
   }
 }
