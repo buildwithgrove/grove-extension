@@ -96,15 +96,15 @@ build_version_bump: ## Bump version, prompt to commit/push and build Chrome Stor
 	@git status --short
 	@printf "\n"
 	@# Prompt for commit
-	@printf "$(YELLOW)Commit and push version bump? [y/N] $(RESET)"; \
+	@printf "$(YELLOW)Commit and push version bump? [Y/n] $(RESET)"; \
 	read ans; \
-	if [ "$${ans:-N}" = "y" ] || [ "$${ans:-N}" = "Y" ]; then \
+	if [ "$${ans:-Y}" = "n" ] || [ "$${ans:-Y}" = "N" ]; then \
+		printf "$(YELLOW)Skipping commit.$(RESET)\n"; \
+	else \
 		git add manifest.json makefiles/build.mk && \
 		git commit -m "chore: bump version to $(NEW_VERSION)" && \
 		git push && \
 		printf "$(GREEN)$(CHECK) Changes committed and pushed!$(RESET)\n"; \
-	else \
-		printf "$(YELLOW)Skipping commit.$(RESET)\n"; \
 	fi
 	@printf "\n"
 	@# Prompt for Chrome Store zip build
