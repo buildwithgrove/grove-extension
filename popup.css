@@ -1278,6 +1278,16 @@ button.quick-access-item:hover .quick-access-icon {
   padding: 10px 12px;
 }
 
+.address-display.primary {
+  background: linear-gradient(135deg, rgba(56, 159, 88, 0.15) 0%, rgba(56, 159, 88, 0.05) 100%);
+  border: 1px solid var(--color-primary);
+}
+
+.address-display.primary .address-text {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
 .address-text {
   flex: 1;
   font-family: 'Monaco', 'Menlo', monospace;

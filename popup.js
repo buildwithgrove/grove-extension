@@ -1610,6 +1610,7 @@ async function resolveEnsName(address) {
  */
 function updateEnsNameDisplay(ensName) {
   const ensLinksSection = document.getElementById('ensLinksSection');
+  const earnAddressDisplay = document.getElementById('earnAddressDisplay');
 
   if (ensNameDisplay && ensNameValue) {
     if (ensName) {
@@ -1619,12 +1620,20 @@ function updateEnsNameDisplay(ensName) {
       if (ensLinksSection) {
         ensLinksSection.classList.add('hidden');
       }
+      // Address display is secondary when ENS exists
+      if (earnAddressDisplay) {
+        earnAddressDisplay.classList.remove('primary');
+      }
     } else {
       ensNameDisplay.classList.add('hidden');
       ensNameValue.textContent = '';
       // Show "Get an ENS name" links when user doesn't have one
       if (ensLinksSection) {
         ensLinksSection.classList.remove('hidden');
+      }
+      // Address display is primary when no ENS
+      if (earnAddressDisplay) {
+        earnAddressDisplay.classList.add('primary');
       }
     }
   }
