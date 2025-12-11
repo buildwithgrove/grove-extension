@@ -122,8 +122,18 @@ GIT_SHA := $(shell git rev-parse --short HEAD)
 RELEASE_TAG_VERSION := grove-extension-v$(VERSION)-$(GIT_SHA)
 RELEASE_TAG_LATEST := grove-extension-latest
 
+# Chrome Web Store public key - produces extension ID: jheejecmpfgifgdodgipilpgfaiecndm
+EXTENSION_PUBLIC_KEY := MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7nXN5llSn+XJEapNFnNEZ8kvEo1iEVFmG3dpj238FZOowzwGTMNuGBdV6F7UZxLuZUN5q4X2GZPL9K+ZHlVelpMv9wiRjNW1FuB5F2qi793NjqUXEIyi62nvK2roCLMVEeQ7hQ3+X6oO6fBxrnEMMLEquYjEDtj+BD0y4NOq65p/obb0p8T4xdPnE+s+/Vabi2hU4WQiPHDMBVL6b3OsnZPenEmsQUFI/vj8ZOC66oLb3qHNyuT58a8cqiVwpTggE/roSSM136eyn7Fioe8pez04jmidouMp+lHJ+YQCZ5s7SxJo8yqNh7vFWgP9MX1uRafpmVt4o1bJyjksF3VUXwIDAQAB
+
 .PHONY: build_zip_upload
 build_zip_upload: build_zip_extension ## Upload zip to public releases repo
+	@# Re-inject the public key into the zip for stable extension ID when side-loading
+	$(call print_info,Injecting public key for stable extension ID...)
+	$(Q)mkdir -p $(BUILD_DIR)/repack
+	$(Q)unzip -q $(ZIP_FILE) -d $(BUILD_DIR)/repack
+	$(Q)sed 's|"manifest_version": 3,|"manifest_version": 3,\n  "key": "$(EXTENSION_PUBLIC_KEY)",|' $(BUILD_DIR)/repack/manifest.json > $(BUILD_DIR)/repack/manifest.json.tmp && mv $(BUILD_DIR)/repack/manifest.json.tmp $(BUILD_DIR)/repack/manifest.json
+	$(Q)cd $(BUILD_DIR)/repack && zip -rq ../$(EXTENSION_NAME)-v$(VERSION).zip .
+	$(Q)rm -rf $(BUILD_DIR)/repack
 	$(call print_info_section,Uploading to $(RELEASES_REPO))
 	@if ! command -v gh &> /dev/null; then \
 		printf "$(RED)$(CROSS) GitHub CLI (gh) not installed. Run: brew install gh$(RESET)\n"; \
