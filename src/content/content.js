@@ -124,6 +124,9 @@
   // Twitter API configuration for bio fetching
   // Bearer token is public and used by Twitter's web client
   const TWITTER_BEARER_TOKEN = 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
+  // GraphQL query ID for UserByScreenName - Twitter rotates these, may need updating
+  // To find current ID: open x.com profile, check Network tab for UserByScreenName request
+  const TWITTER_USER_BY_SCREEN_NAME_QUERY_ID = 'G3KGOASz96M-Qu0nwmGXNg';
   let twitterCsrfToken = null;
 
   /**
@@ -1036,8 +1039,13 @@
           const tweetUrl = currentAdapter.getTweetUrl(tweetElement);
           const dateElement = currentAdapter.getTweetDateElement(tweetElement);
           if (tweetUrl && dateElement) {
+            console.log(`[Grove Extension] Queueing bio fetch for @${authorInfo.username}`);
             queueBioFetch(authorInfo.username, tweetElement, tweetUrl, dateElement, false);
+          } else {
+            console.log(`[Grove Extension] Cannot queue @${authorInfo.username}: missing tweetUrl=${!!tweetUrl} dateElement=${!!dateElement}`);
           }
+        } else {
+          console.log(`[Grove Extension] Skipping @${authorInfo.username}: cached=${cached}`);
         }
       }
     }
@@ -1205,11 +1213,21 @@
   function queueBioFetch(username, tweetElement, tweetUrl, dateElement, isQuotedTweet = false) {
     // Don't queue if already cached, in progress, or queued
     const cached = getCachedAddress(username);
-    if (cached !== null) return; // Already have result (positive or negative)
-    if (bioFetchInProgress.has(username)) return;
-
-    // Add to queue
-    bioFetchQueue.add(username);
+    if (cached !== null) {
+      console.log(`[Grove Extension] queueBioFetch: @${username} already cached`);
+      return;
+    }
+    if (bioFetchInProgress.has(username)) {
+      console.log(`[Grove Extension] queueBioFetch: @${username} already in progress`);
+      // Still add to pending tweets so button gets injected when fetch completes
+    } else if (bioFetchQueue.has(username)) {
+      console.log(`[Grove Extension] queueBioFetch: @${username} already in queue`);
+      // Still add to pending tweets
+    } else {
+      // Add to queue
+      console.log(`[Grove Extension] queueBioFetch: Adding @${username} to queue (queue size: ${bioFetchQueue.size})`);
+      bioFetchQueue.add(username);
+    }
 
     // Track the tweet element so we can inject button when bio returns
     if (!pendingTweetButtons.has(username)) {
@@ -1285,7 +1303,7 @@
       withAuxiliaryUserLabels: false
     });
 
-    const url = `https://x.com/i/api/graphql/xmU6X_CKVnQ5lSrCbXFDig/UserByScreenName?variables=${encodeURIComponent(variables)}&features=${encodeURIComponent(features)}&fieldToggles=${encodeURIComponent(fieldToggles)}`;
+    const url = `https://x.com/i/api/graphql/${TWITTER_USER_BY_SCREEN_NAME_QUERY_ID}/UserByScreenName?variables=${encodeURIComponent(variables)}&features=${encodeURIComponent(features)}&fieldToggles=${encodeURIComponent(fieldToggles)}`;
 
     try {
       const response = await fetch(url, {
