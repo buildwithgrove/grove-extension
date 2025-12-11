@@ -1290,7 +1290,7 @@ async function loadXLoginStatus() {
         homeXLoginBtn.classList.add('btn-danger-text');
       }
       if (homeXSettingsTitle) {
-        homeXSettingsTitle.textContent = 'Connected to X';
+        homeXSettingsTitle.textContent = 'Connected to 𝕏';
       }
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.remove('hidden');
     } else {
@@ -1303,7 +1303,7 @@ async function loadXLoginStatus() {
         homeXLoginBtn.classList.remove('btn-danger-text');
       }
       if (homeXSettingsTitle) {
-        homeXSettingsTitle.textContent = 'Connect to X (optional)';
+        homeXSettingsTitle.innerHTML = 'Connect to 𝕏 <span class="optional-badge">optional</span>';
       }
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.add('hidden');
     }
@@ -1343,13 +1343,13 @@ async function handleXLogin() {
         homeXLoginBtn.disabled = false;
       }
       if (homeXSettingsTitle) {
-        homeXSettingsTitle.textContent = 'Connected to X';
+        homeXSettingsTitle.textContent = 'Connected to 𝕏';
       }
       if (homeXPostConnectOptions) {
         homeXPostConnectOptions.classList.remove('hidden');
       }
 
-      showToast(isRealUsername ? `Connected as @${userInfo.username}` : 'Connected to X');
+      showToast(isRealUsername ? `Connected as @${userInfo.username}` : 'Connected to 𝕏');
     } catch (error) {
       console.error('[Grove Extension] X login failed:', error);
       if (homeXLoginBtn) {
@@ -1610,6 +1610,7 @@ async function resolveEnsName(address) {
  */
 function updateEnsNameDisplay(ensName) {
   const ensLinksSection = document.getElementById('ensLinksSection');
+  const earnAddressDisplay = document.getElementById('earnAddressDisplay');
 
   if (ensNameDisplay && ensNameValue) {
     if (ensName) {
@@ -1619,12 +1620,20 @@ function updateEnsNameDisplay(ensName) {
       if (ensLinksSection) {
         ensLinksSection.classList.add('hidden');
       }
+      // Address display is secondary when ENS exists
+      if (earnAddressDisplay) {
+        earnAddressDisplay.classList.remove('primary');
+      }
     } else {
       ensNameDisplay.classList.add('hidden');
       ensNameValue.textContent = '';
       // Show "Get an ENS name" links when user doesn't have one
       if (ensLinksSection) {
         ensLinksSection.classList.remove('hidden');
+      }
+      // Address display is primary when no ENS
+      if (earnAddressDisplay) {
+        earnAddressDisplay.classList.add('primary');
       }
     }
   }

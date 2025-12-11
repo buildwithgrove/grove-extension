@@ -216,6 +216,19 @@ body {
   color: #f97316;
 }
 
+.optional-badge {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background-color: rgba(163, 163, 163, 0.2);
+  color: var(--color-text-secondary);
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
 /* Chain Dropdown */
 .chain-dropdown {
   position: absolute;
@@ -1265,6 +1278,16 @@ button.quick-access-item:hover .quick-access-icon {
   padding: 10px 12px;
 }
 
+.address-display.primary {
+  background: linear-gradient(135deg, rgba(56, 159, 88, 0.15) 0%, rgba(56, 159, 88, 0.05) 100%);
+  border: 1px solid var(--color-primary);
+}
+
+.address-display.primary .address-text {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
 .address-text {
   flex: 1;
   font-family: 'Monaco', 'Menlo', monospace;
@@ -1394,10 +1417,10 @@ button.quick-access-item:hover .quick-access-icon {
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background-color: var(--color-surface-hover);
-  border: 1px solid var(--color-border);
+  background-color: var(--color-primary);
+  border: 1px solid var(--color-primary);
   border-radius: var(--radius-full);
-  color: var(--color-text-primary);
+  color: white;
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
@@ -1405,8 +1428,8 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 .how-to-earn-btn:hover {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
   color: white;
 }
 
