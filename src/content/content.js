@@ -112,8 +112,10 @@
   // Bio fetch queue: usernames pending background bio fetch
   const bioFetchQueue = new Set();
   const bioFetchInProgress = new Set();
-  const BIO_FETCH_INTERVAL = 800; // ms between fetches (rate limiting)
+  const BIO_FETCH_INTERVAL = 300; // ms between fetches (rate limiting)
+  const BIO_FETCH_MAX_CONCURRENT = 3; // Allow some parallelism
   let bioFetchTimer = null;
+  let bioFetchActiveCount = 0;
 
   // Track tweet elements by username for button injection after bio fetch
   // Maps username -> Set of { tweetElement, tweetUrl, dateElement, isQuotedTweet }
@@ -1220,10 +1222,8 @@
       isQuotedTweet
     });
 
-    // Start processing queue if not already running
-    if (!bioFetchTimer) {
-      bioFetchTimer = setTimeout(processBioFetchQueue, BIO_FETCH_INTERVAL);
-    }
+    // Start processing queue
+    scheduleNextBioFetch();
   }
 
   /**
@@ -1252,8 +1252,11 @@
    * @returns {Promise<{displayName: string|null, bio: string|null, error?: string}>}
    */
   async function fetchTwitterUserBio(username) {
+    console.log(`[Grove Extension] Fetching bio for @${username}...`);
+
     const csrfToken = getTwitterCsrfToken();
     if (!csrfToken) {
+      console.log(`[Grove Extension] No CSRF token found for @${username}`);
       return { displayName: null, bio: null, error: 'No CSRF token found' };
     }
 
@@ -1310,6 +1313,7 @@
       }
 
       const legacy = user.legacy || {};
+      console.log(`[Grove Extension] Got bio for @${username}: "${legacy.description?.substring(0, 100)}..."`);
       return {
         displayName: legacy.name || null,
         bio: legacy.description || null
@@ -1321,17 +1325,11 @@
   }
 
   /**
-   * Process the bio fetch queue - fetches one user at a time
+   * Process a single bio fetch
+   * @param {string} username - Twitter username to fetch
    */
-  async function processBioFetchQueue() {
-    bioFetchTimer = null;
-
-    // Get next username from queue
-    const username = bioFetchQueue.values().next().value;
-    if (!username) return;
-
-    bioFetchQueue.delete(username);
-    bioFetchInProgress.add(username);
+  async function processSingleBioFetch(username) {
+    bioFetchActiveCount++;
 
     try {
       // Fetch bio using Twitter's GraphQL API directly from content script
@@ -1373,10 +1371,46 @@
 
     // Clean up pending tweets for this user
     pendingTweetButtons.delete(username);
+    bioFetchActiveCount--;
 
     // Continue processing queue
-    if (bioFetchQueue.size > 0) {
-      bioFetchTimer = setTimeout(processBioFetchQueue, BIO_FETCH_INTERVAL);
+    scheduleNextBioFetch();
+  }
+
+  /**
+   * Schedule the next bio fetch from the queue
+   */
+  function scheduleNextBioFetch() {
+    // Don't schedule if already at max concurrent or queue is empty
+    if (bioFetchActiveCount >= BIO_FETCH_MAX_CONCURRENT) return;
+    if (bioFetchQueue.size === 0) return;
+    if (bioFetchTimer) return; // Already scheduled
+
+    bioFetchTimer = setTimeout(() => {
+      bioFetchTimer = null;
+      processBioFetchQueue();
+    }, BIO_FETCH_INTERVAL);
+  }
+
+  /**
+   * Process the bio fetch queue - fetches multiple users in parallel
+   */
+  function processBioFetchQueue() {
+    // Process up to MAX_CONCURRENT users
+    while (bioFetchActiveCount < BIO_FETCH_MAX_CONCURRENT && bioFetchQueue.size > 0) {
+      const username = bioFetchQueue.values().next().value;
+      if (!username) break;
+
+      bioFetchQueue.delete(username);
+      bioFetchInProgress.add(username);
+
+      // Start fetch (don't await - let it run in parallel)
+      processSingleBioFetch(username);
+    }
+
+    // Schedule more if queue still has items
+    if (bioFetchQueue.size > 0 && bioFetchActiveCount < BIO_FETCH_MAX_CONCURRENT) {
+      scheduleNextBioFetch();
     }
   }
 
