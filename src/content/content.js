@@ -109,6 +109,16 @@
   // Track which tweets already have buttons to avoid duplicates
   const processedTweets = new WeakSet();
 
+  // Bio fetch queue: usernames pending background bio fetch
+  const bioFetchQueue = new Set();
+  const bioFetchInProgress = new Set();
+  const BIO_FETCH_INTERVAL = 800; // ms between fetches (rate limiting)
+  let bioFetchTimer = null;
+
+  // Track tweet elements by username for button injection after bio fetch
+  // Maps username -> Set of { tweetElement, tweetUrl, dateElement, isQuotedTweet }
+  const pendingTweetButtons = new Map();
+
   /**
    * Show a small inline error/warning anchored to the tip button.
    * Delegates to TipErrorHandler.showInlineMessage() which handles positioning,
@@ -986,6 +996,7 @@
   /**
    * Process a single tweet and inject tip button only if author has tippable address
    * Also handles quote tweets - shows button for quoted author if they have a tippable address
+   * If no address found in display name, queues a background bio fetch
    * @param {Element} tweetElement - The tweet article element
    */
   async function processTweet(tweetElement) {
@@ -1009,6 +1020,17 @@
 
         if (tweetUrl && dateElement) {
           injectTweetTipButton(tweetElement, dateElement, tweetUrl);
+        }
+      } else {
+        // No address found in display name - queue background bio fetch
+        const cached = getCachedAddress(authorInfo.username);
+        if (cached === null) {
+          // Not cached yet - queue for bio fetch
+          const tweetUrl = currentAdapter.getTweetUrl(tweetElement);
+          const dateElement = currentAdapter.getTweetDateElement(tweetElement);
+          if (tweetUrl && dateElement) {
+            queueBioFetch(authorInfo.username, tweetElement, tweetUrl, dateElement, false);
+          }
         }
       }
     }
@@ -1082,6 +1104,41 @@
               injectTweetTipButton(quotedTweetEl, placement, quotedTweetUrl, true);
             }
           }
+        } else {
+          // No address found in quoted author's display name - queue background bio fetch
+          const cached = getCachedAddress(quotedAuthor.username);
+          if (cached === null) {
+            // Not cached yet - queue for bio fetch
+            const quotedTweetEl = currentAdapter.getQuotedTweetElement(tweetElement);
+            if (quotedTweetEl) {
+              let quotedTweetUrl = null;
+              const quotedStatusLink = quotedTweetEl.querySelector('a[href*="/status/"]');
+              if (quotedStatusLink) {
+                const href = quotedStatusLink.getAttribute('href');
+                quotedTweetUrl = href.startsWith('/') ? `https://x.com${href}` : href;
+              }
+              if (!quotedTweetUrl && quotedAuthor.profileUrl) {
+                quotedTweetUrl = quotedAuthor.profileUrl;
+              }
+
+              // Find placement for quoted tweet button
+              let placement = null;
+              const quotedTimeLink = quotedTweetEl.querySelector('time');
+              if (quotedTimeLink?.parentElement) {
+                placement = quotedTimeLink.parentElement;
+              }
+              if (!placement) {
+                const quotedNameContainer = quotedTweetEl.querySelector('[data-testid="User-Name"]');
+                if (quotedNameContainer) {
+                  placement = quotedNameContainer;
+                }
+              }
+
+              if (quotedTweetUrl && placement) {
+                queueBioFetch(quotedAuthor.username, tweetElement, quotedTweetUrl, placement, true);
+              }
+            }
+          }
         }
       }
     }
@@ -1128,6 +1185,128 @@
       data,
       timestamp: Date.now()
     });
+  }
+
+  /**
+   * Queue a username for background bio fetch
+   * @param {string} username - Twitter username
+   * @param {Element} tweetElement - The tweet element to inject button into
+   * @param {string} tweetUrl - The tweet URL
+   * @param {Element} dateElement - The date element for button placement
+   * @param {boolean} isQuotedTweet - Whether this is a quoted tweet
+   */
+  function queueBioFetch(username, tweetElement, tweetUrl, dateElement, isQuotedTweet = false) {
+    // Don't queue if already cached, in progress, or queued
+    const cached = getCachedAddress(username);
+    if (cached !== null) return; // Already have result (positive or negative)
+    if (bioFetchInProgress.has(username)) return;
+
+    // Add to queue
+    bioFetchQueue.add(username);
+
+    // Track the tweet element so we can inject button when bio returns
+    if (!pendingTweetButtons.has(username)) {
+      pendingTweetButtons.set(username, new Set());
+    }
+    pendingTweetButtons.get(username).add({
+      tweetElement,
+      tweetUrl,
+      dateElement,
+      isQuotedTweet
+    });
+
+    // Start processing queue if not already running
+    if (!bioFetchTimer) {
+      bioFetchTimer = setTimeout(processBioFetchQueue, BIO_FETCH_INTERVAL);
+    }
+  }
+
+  /**
+   * Process the bio fetch queue - fetches one user at a time
+   */
+  async function processBioFetchQueue() {
+    bioFetchTimer = null;
+
+    // Get next username from queue
+    const username = bioFetchQueue.values().next().value;
+    if (!username) return;
+
+    bioFetchQueue.delete(username);
+    bioFetchInProgress.add(username);
+
+    try {
+      // Send message to background script to fetch bio
+      const response = await chrome.runtime.sendMessage({
+        type: 'FETCH_BIO',
+        username
+      });
+
+      bioFetchInProgress.delete(username);
+
+      if (response && !response.error) {
+        const { displayName, bio } = response;
+        const combinedText = [displayName, bio].filter(Boolean).join(' ');
+
+        if (combinedText && AddressParser.hasAddresses(combinedText)) {
+          const addressResult = AddressParser.resolveAddress(combinedText);
+          if (addressResult.address) {
+            // Cache the positive result
+            setCachedAddress(username, addressResult);
+            console.log(`[Grove Extension] Bio fetch: Found address for @${username}: ${addressResult.address}`);
+
+            // Inject buttons for all pending tweets from this user
+            injectPendingButtons(username);
+          } else {
+            // No valid address found
+            setCachedAddress(username, 'no-address');
+          }
+        } else {
+          // No address in bio/display name
+          setCachedAddress(username, 'no-address');
+        }
+      } else {
+        // Fetch failed - cache negative result to avoid retrying
+        console.log(`[Grove Extension] Bio fetch failed for @${username}: ${response?.error || 'unknown error'}`);
+        setCachedAddress(username, 'no-address');
+      }
+    } catch (error) {
+      bioFetchInProgress.delete(username);
+      console.error(`[Grove Extension] Bio fetch error for @${username}:`, error);
+      // Don't cache on error - allow retry later
+    }
+
+    // Clean up pending tweets for this user
+    pendingTweetButtons.delete(username);
+
+    // Continue processing queue
+    if (bioFetchQueue.size > 0) {
+      bioFetchTimer = setTimeout(processBioFetchQueue, BIO_FETCH_INTERVAL);
+    }
+  }
+
+  /**
+   * Inject buttons for all pending tweets from a user after bio fetch
+   * @param {string} username - Twitter username
+   */
+  function injectPendingButtons(username) {
+    const pending = pendingTweetButtons.get(username);
+    if (!pending) return;
+
+    for (const { tweetElement, tweetUrl, dateElement, isQuotedTweet } of pending) {
+      // Check if element is still in DOM and doesn't already have a button
+      if (!document.contains(tweetElement)) continue;
+      if (tweetElement.querySelector('.grove-tweet-tip-button')) continue;
+
+      if (isQuotedTweet) {
+        // For quoted tweets, find the quoted element
+        const quotedTweetEl = currentAdapter.getQuotedTweetElement(tweetElement);
+        if (quotedTweetEl && !quotedTweetEl.querySelector('.grove-tweet-tip-button')) {
+          injectTweetTipButton(quotedTweetEl, dateElement, tweetUrl, true);
+        }
+      } else {
+        injectTweetTipButton(tweetElement, dateElement, tweetUrl, false);
+      }
+    }
   }
 
   /**
