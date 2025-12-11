@@ -1805,14 +1805,16 @@ Tip creators you love → {grove_link}`;
       return;
     }
 
-    // Determine tip destination: check if user has cached ENS address
+    // Determine tip destination: use cached address if available (from bio fetch)
+    // This is important because the backend won't know to look in the user's bio
     let tipDestination = tweetUrl;
     const username = extractUsernameFromUrl(tweetUrl);
     if (username) {
       const cached = getCachedAddress(username);
-      if (cached && cached.type === 'ens' && cached.address) {
-        tipDestination = cached.address; // e.g., "vitalik.eth"
-        console.log(`[Grove Extension] Tipping to ENS name: ${tipDestination} (from @${username})`);
+      if (cached && cached.address) {
+        // Use the cached address directly (ENS name or 0x address)
+        tipDestination = cached.address;
+        console.log(`[Grove Extension] Tipping to ${cached.type} address: ${tipDestination} (from @${username})`);
       }
     }
 
