@@ -106,16 +106,7 @@ build_version_bump: ## Bump version, prompt to commit/push, and prepare for Chro
 	else \
 		printf "$(YELLOW)Skipping commit. Remember to commit manually.$(RESET)\n"; \
 	fi
-	@printf "\n"
-	@printf "$(BOLD)=== Next Steps ===$(RESET)\n"
-	@printf "\n"
-	@printf "$(CYAN)1.$(RESET) Build the extension package:\n"
-	@printf "   $(GREEN)make build_chrome_store_zip$(RESET)\n"
-	@printf "\n"
-	@printf "$(CYAN)2.$(RESET) Upload to Chrome Web Store:\n"
-	@printf "   $(BLUE)$(CHROME_STORE_CONSOLE)$(RESET)\n"
-	@printf "\n"
-
+	
 # Release tags and asset names
 RELEASE_ASSET := $(BUILD_DIR)/grove-extension.zip
 GIT_SHA := $(shell git rev-parse --short HEAD)
