@@ -1014,18 +1014,11 @@
     }
 
     // For quote tweets, also check the quoted tweet's author
-    const hasQT = currentAdapter.hasQuotedTweet && currentAdapter.hasQuotedTweet(tweetElement);
-    console.log('[Grove Extension] Checking for quote tweet:', hasQT, 'element:', tweetElement);
-
-    if (hasQT) {
+    if (currentAdapter.hasQuotedTweet && currentAdapter.hasQuotedTweet(tweetElement)) {
       const quotedAuthor = currentAdapter.extractQuotedTweetAuthor(tweetElement);
-
-      console.log('[Grove Extension] Quote tweet detected, author:', quotedAuthor);
 
       if (quotedAuthor && quotedAuthor.username) {
         const quotedHasTippable = checkTippableAddress(quotedAuthor.username, quotedAuthor.displayName);
-
-        console.log('[Grove Extension] Quoted author tippable:', quotedHasTippable, 'displayName:', quotedAuthor.displayName);
 
         if (quotedHasTippable) {
           // Find the quoted tweet element to inject button into
@@ -1083,8 +1076,6 @@
                 }
               }
             }
-
-            console.log('[Grove Extension] Quoted tweet placement:', placement, 'url:', quotedTweetUrl);
 
             // If we have a URL and a place to put the button, inject it
             if (quotedTweetUrl && placement) {

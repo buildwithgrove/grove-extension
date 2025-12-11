@@ -264,8 +264,6 @@ class TwitterAdapter extends BaseAdapter {
       }
     }
 
-    console.log('[Grove Extension] extractQuotedTweetAuthor:', { username, displayName, profileUrl });
-
     if (!username) return null;
 
     return { username, displayName, profileUrl };
