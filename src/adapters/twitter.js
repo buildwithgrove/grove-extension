@@ -264,7 +264,7 @@ class TwitterAdapter extends BaseAdapter {
    */
   getQuotedTweetElement(tweetElement) {
     // Try multiple selectors for quoted tweet containers
-    // X/Twitter may use different structures
+    // X/Twitter uses different structures for quoted tweets
 
     // Standard quoted tweet with data-testid
     let quoted = tweetElement.querySelector('[data-testid="quoteTweet"]');
@@ -276,68 +276,73 @@ class TwitterAdapter extends BaseAdapter {
       return cardWrapper;
     }
 
+    // Look for a second Tweet-User-Avatar (the first is the main tweet author)
+    // Quoted tweets have their own avatar section
+    const allAvatars = tweetElement.querySelectorAll('[data-testid="Tweet-User-Avatar"]');
+    if (allAvatars.length > 1) {
+      // The second avatar belongs to the quoted tweet
+      // Walk up to find its container
+      let container = allAvatars[1].parentElement;
+      while (container && container !== tweetElement) {
+        // Look for a container that has User-Name as well
+        if (container.querySelector('[data-testid="User-Name"]') &&
+            container.querySelector('[data-testid="Tweet-User-Avatar"]')) {
+          return container;
+        }
+        container = container.parentElement;
+      }
+    }
+
+    // Look for UserAvatar-Container that's not the main author
+    // The main tweet's avatar container has the main author's username
+    const mainAuthorAvatar = tweetElement.querySelector('[data-testid="Tweet-User-Avatar"]');
+    const allUserAvatarContainers = tweetElement.querySelectorAll('[data-testid^="UserAvatar-Container-"]');
+
+    if (allUserAvatarContainers.length > 1 && mainAuthorAvatar) {
+      // Find which avatar container is NOT a descendant of the main avatar area
+      for (const avatarContainer of allUserAvatarContainers) {
+        if (!mainAuthorAvatar.contains(avatarContainer)) {
+          // This is a quoted tweet's avatar - walk up to find container
+          let container = avatarContainer.parentElement;
+          let depth = 0;
+          while (container && container !== tweetElement && depth < 15) {
+            // A good container should have both avatar and user-name
+            const hasUserName = container.querySelector('[data-testid="User-Name"]');
+            const hasAvatar = container.querySelector('[data-testid^="UserAvatar-Container-"]');
+            if (hasUserName && hasAvatar) {
+              return container;
+            }
+            container = container.parentElement;
+            depth++;
+          }
+        }
+      }
+    }
+
     // Look for any div[role="link"] that links to another status
-    // This is the most common structure for embedded/quoted tweets
     const linkDivs = tweetElement.querySelectorAll('div[role="link"]');
     for (const linkDiv of linkDivs) {
       const statusLink = linkDiv.querySelector('a[href*="/status/"]');
       if (statusLink) {
-        // Make sure this isn't the main tweet's link (check it's not the timestamp area)
-        const hasTime = linkDiv.querySelector('time');
-        const hasAvatar = linkDiv.querySelector('img[src*="profile_images"]');
-        // Quoted tweets typically have their own user info but no main avatar
-        if (!hasTime || hasAvatar) {
+        const hasAvatar = linkDiv.querySelector('[data-testid^="UserAvatar-Container-"]');
+        if (hasAvatar) {
           return linkDiv;
         }
       }
     }
 
-    // Look for a clickable div that links to another tweet
-    // This is usually a div[role="link"] containing tweet content
+    // Look for sibling elements after tweet text that contain user info
     const tweetTextEl = tweetElement.querySelector('[data-testid="tweetText"]');
     if (tweetTextEl) {
-      // Find sibling or following element that's a quoted tweet
       let sibling = tweetTextEl.parentElement?.nextElementSibling;
       while (sibling) {
-        // Check if this sibling contains a link to another status
-        const statusLink = sibling.querySelector('a[href*="/status/"]');
-        if (statusLink) {
-          // Could be the quoted tweet container
-          if (sibling.getAttribute('role') === 'link') {
-            return sibling;
-          }
-          // Or might contain a nested link div
-          const linkDiv = sibling.querySelector('div[role="link"]');
-          if (linkDiv) {
-            return linkDiv;
-          }
-          // Or the sibling itself might be a container
+        // Check if this sibling contains avatar/user info (quoted tweet signature)
+        const hasAvatar = sibling.querySelector('[data-testid^="UserAvatar-Container-"]');
+        const hasUserName = sibling.querySelector('[data-testid="User-Name"]');
+        if (hasAvatar || hasUserName) {
           return sibling;
         }
         sibling = sibling.nextElementSibling;
-      }
-    }
-
-    // Last resort: find any element that looks like a quoted tweet
-    // (has a status link and some text content, but isn't the action bar)
-    const allStatusLinks = tweetElement.querySelectorAll('a[href*="/status/"]');
-    for (const link of allStatusLinks) {
-      // Walk up to find a reasonable container
-      let container = link.parentElement;
-      let depth = 0;
-      while (container && container !== tweetElement && depth < 10) {
-        // Check if this looks like a quoted tweet container
-        // It should have some structure (not just the link)
-        const hasMultipleChildren = container.children.length > 1;
-        const hasBorder = container.style.border ||
-                          container.className.includes('border') ||
-                          window.getComputedStyle(container).borderWidth !== '0px';
-
-        if (hasMultipleChildren && container.getAttribute('role') === 'link') {
-          return container;
-        }
-        container = container.parentElement;
-        depth++;
       }
     }
 
