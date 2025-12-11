@@ -109,6 +109,26 @@
   // Track which tweets already have buttons to avoid duplicates
   const processedTweets = new WeakSet();
 
+  // Bio fetch queue: usernames pending background bio fetch
+  const bioFetchQueue = new Set();
+  const bioFetchInProgress = new Set();
+  const BIO_FETCH_INTERVAL = 300; // ms between fetches (rate limiting)
+  const BIO_FETCH_MAX_CONCURRENT = 3; // Allow some parallelism
+  let bioFetchTimer = null;
+  let bioFetchActiveCount = 0;
+
+  // Track tweet elements by username for button injection after bio fetch
+  // Maps username -> Set of { tweetElement, tweetUrl, dateElement, isQuotedTweet }
+  const pendingTweetButtons = new Map();
+
+  // Twitter API configuration for bio fetching
+  // Bearer token is public and used by Twitter's web client
+  const TWITTER_BEARER_TOKEN = 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
+  // GraphQL query ID for UserByScreenName - Twitter rotates these, may need updating
+  // To find current ID: open x.com profile, check Network tab for UserByScreenName request
+  const TWITTER_USER_BY_SCREEN_NAME_QUERY_ID = 'G3KGOASz96M-Qu0nwmGXNg';
+  let twitterCsrfToken = null;
+
   /**
    * Show a small inline error/warning anchored to the tip button.
    * Delegates to TipErrorHandler.showInlineMessage() which handles positioning,
@@ -986,6 +1006,7 @@
   /**
    * Process a single tweet and inject tip button only if author has tippable address
    * Also handles quote tweets - shows button for quoted author if they have a tippable address
+   * If no address found in display name, queues a background bio fetch
    * @param {Element} tweetElement - The tweet article element
    */
   async function processTweet(tweetElement) {
@@ -1009,6 +1030,22 @@
 
         if (tweetUrl && dateElement) {
           injectTweetTipButton(tweetElement, dateElement, tweetUrl);
+        }
+      } else {
+        // No address found in display name - queue background bio fetch
+        const cached = getCachedAddress(authorInfo.username);
+        if (cached === null) {
+          // Not cached yet - queue for bio fetch
+          const tweetUrl = currentAdapter.getTweetUrl(tweetElement);
+          const dateElement = currentAdapter.getTweetDateElement(tweetElement);
+          if (tweetUrl && dateElement) {
+            console.log(`[Grove Extension] Queueing bio fetch for @${authorInfo.username}`);
+            queueBioFetch(authorInfo.username, tweetElement, tweetUrl, dateElement, false);
+          } else {
+            console.log(`[Grove Extension] Cannot queue @${authorInfo.username}: missing tweetUrl=${!!tweetUrl} dateElement=${!!dateElement}`);
+          }
+        } else {
+          console.log(`[Grove Extension] Skipping @${authorInfo.username}: cached=${cached}`);
         }
       }
     }
@@ -1082,6 +1119,41 @@
               injectTweetTipButton(quotedTweetEl, placement, quotedTweetUrl, true);
             }
           }
+        } else {
+          // No address found in quoted author's display name - queue background bio fetch
+          const cached = getCachedAddress(quotedAuthor.username);
+          if (cached === null) {
+            // Not cached yet - queue for bio fetch
+            const quotedTweetEl = currentAdapter.getQuotedTweetElement(tweetElement);
+            if (quotedTweetEl) {
+              let quotedTweetUrl = null;
+              const quotedStatusLink = quotedTweetEl.querySelector('a[href*="/status/"]');
+              if (quotedStatusLink) {
+                const href = quotedStatusLink.getAttribute('href');
+                quotedTweetUrl = href.startsWith('/') ? `https://x.com${href}` : href;
+              }
+              if (!quotedTweetUrl && quotedAuthor.profileUrl) {
+                quotedTweetUrl = quotedAuthor.profileUrl;
+              }
+
+              // Find placement for quoted tweet button
+              let placement = null;
+              const quotedTimeLink = quotedTweetEl.querySelector('time');
+              if (quotedTimeLink?.parentElement) {
+                placement = quotedTimeLink.parentElement;
+              }
+              if (!placement) {
+                const quotedNameContainer = quotedTweetEl.querySelector('[data-testid="User-Name"]');
+                if (quotedNameContainer) {
+                  placement = quotedNameContainer;
+                }
+              }
+
+              if (quotedTweetUrl && placement) {
+                queueBioFetch(quotedAuthor.username, tweetElement, quotedTweetUrl, placement, true);
+              }
+            }
+          }
         }
       }
     }
@@ -1128,6 +1200,259 @@
       data,
       timestamp: Date.now()
     });
+  }
+
+  /**
+   * Queue a username for background bio fetch
+   * @param {string} username - Twitter username
+   * @param {Element} tweetElement - The tweet element to inject button into
+   * @param {string} tweetUrl - The tweet URL
+   * @param {Element} dateElement - The date element for button placement
+   * @param {boolean} isQuotedTweet - Whether this is a quoted tweet
+   */
+  function queueBioFetch(username, tweetElement, tweetUrl, dateElement, isQuotedTweet = false) {
+    // Don't queue if already cached, in progress, or queued
+    const cached = getCachedAddress(username);
+    if (cached !== null) {
+      console.log(`[Grove Extension] queueBioFetch: @${username} already cached`);
+      return;
+    }
+    if (bioFetchInProgress.has(username)) {
+      console.log(`[Grove Extension] queueBioFetch: @${username} already in progress`);
+      // Still add to pending tweets so button gets injected when fetch completes
+    } else if (bioFetchQueue.has(username)) {
+      console.log(`[Grove Extension] queueBioFetch: @${username} already in queue`);
+      // Still add to pending tweets
+    } else {
+      // Add to queue
+      console.log(`[Grove Extension] queueBioFetch: Adding @${username} to queue (queue size: ${bioFetchQueue.size})`);
+      bioFetchQueue.add(username);
+    }
+
+    // Track the tweet element so we can inject button when bio returns
+    if (!pendingTweetButtons.has(username)) {
+      pendingTweetButtons.set(username, new Set());
+    }
+    pendingTweetButtons.get(username).add({
+      tweetElement,
+      tweetUrl,
+      dateElement,
+      isQuotedTweet
+    });
+
+    // Start processing queue
+    scheduleNextBioFetch();
+  }
+
+  /**
+   * Get Twitter CSRF token from cookies
+   * @returns {string|null}
+   */
+  function getTwitterCsrfToken() {
+    if (twitterCsrfToken) return twitterCsrfToken;
+
+    // Extract ct0 cookie (CSRF token used by Twitter)
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'ct0') {
+        twitterCsrfToken = value;
+        return value;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Fetch user bio using Twitter's REST API (v1.1 style via GraphQL gateway)
+   * This works because the content script runs in x.com context with user's cookies
+   * @param {string} username - Twitter username
+   * @returns {Promise<{displayName: string|null, bio: string|null, error?: string}>}
+   */
+  async function fetchTwitterUserBio(username) {
+    console.log(`[Grove Extension] Fetching bio for @${username}...`);
+
+    const csrfToken = getTwitterCsrfToken();
+    if (!csrfToken) {
+      console.log(`[Grove Extension] No CSRF token found for @${username}`);
+      return { displayName: null, bio: null, error: 'No CSRF token found' };
+    }
+
+    // Use Twitter's user lookup endpoint (more stable than GraphQL)
+    const url = `https://x.com/i/api/graphql/BQ6xjFU6Mgm-WhEP3OiT9w/UserByScreenName?variables=${encodeURIComponent(JSON.stringify({
+      screen_name: username,
+      withSafetyModeUserFields: true
+    }))}&features=${encodeURIComponent(JSON.stringify({
+      hidden_profile_subscriptions_enabled: true,
+      rweb_tipjar_consumption_enabled: true,
+      responsive_web_graphql_exclude_directive_enabled: true,
+      verified_phone_label_enabled: false,
+      subscriptions_verification_info_is_identity_verified_enabled: true,
+      subscriptions_verification_info_verified_since_enabled: true,
+      highlights_tweets_tab_ui_enabled: true,
+      responsive_web_twitter_article_notes_tab_enabled: true,
+      subscriptions_feature_can_gift_premium: true,
+      creator_subscriptions_tweet_preview_api_enabled: true,
+      responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
+      responsive_web_graphql_timeline_navigation_enabled: true
+    }))}&fieldToggles=${encodeURIComponent(JSON.stringify({
+      withAuxiliaryUserLabels: false
+    }))}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'authorization': `Bearer ${decodeURIComponent(TWITTER_BEARER_TOKEN)}`,
+          'x-csrf-token': csrfToken,
+          'x-twitter-active-user': 'yes',
+          'x-twitter-auth-type': 'OAuth2Session',
+          'x-twitter-client-language': 'en',
+          'content-type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        // Try to get error details
+        const errorText = await response.text().catch(() => '');
+        console.log(`[Grove Extension] API response for @${username}: ${response.status} - ${errorText.substring(0, 200)}`);
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Extract user data from GraphQL response
+      const user = data?.data?.user?.result;
+      if (!user || user.__typename === 'UserUnavailable') {
+        return { displayName: null, bio: null, error: 'User not found' };
+      }
+
+      const legacy = user.legacy || {};
+      console.log(`[Grove Extension] Got bio for @${username}: "${legacy.description?.substring(0, 100)}..."`);
+      return {
+        displayName: legacy.name || null,
+        bio: legacy.description || null
+      };
+    } catch (error) {
+      console.error(`[Grove Extension] Twitter API error for @${username}:`, error);
+      return { displayName: null, bio: null, error: error.message };
+    }
+  }
+
+  /**
+   * Process a single bio fetch
+   * @param {string} username - Twitter username to fetch
+   */
+  async function processSingleBioFetch(username) {
+    bioFetchActiveCount++;
+
+    try {
+      // Fetch bio using Twitter's GraphQL API directly from content script
+      const response = await fetchTwitterUserBio(username);
+
+      bioFetchInProgress.delete(username);
+
+      if (response && !response.error) {
+        const { displayName, bio } = response;
+        const combinedText = [displayName, bio].filter(Boolean).join(' ');
+
+        if (combinedText && AddressParser.hasAddresses(combinedText)) {
+          const addressResult = AddressParser.resolveAddress(combinedText);
+          if (addressResult.address) {
+            // Cache the positive result
+            setCachedAddress(username, addressResult);
+            console.log(`[Grove Extension] Bio fetch: Found address for @${username}: ${addressResult.address}`);
+
+            // Inject buttons for all pending tweets from this user
+            injectPendingButtons(username);
+          } else {
+            // No valid address found
+            setCachedAddress(username, 'no-address');
+          }
+        } else {
+          // No address in bio/display name
+          setCachedAddress(username, 'no-address');
+        }
+      } else {
+        // Fetch failed - cache negative result to avoid retrying
+        console.log(`[Grove Extension] Bio fetch failed for @${username}: ${response?.error || 'unknown error'}`);
+        setCachedAddress(username, 'no-address');
+      }
+    } catch (error) {
+      bioFetchInProgress.delete(username);
+      console.error(`[Grove Extension] Bio fetch error for @${username}:`, error);
+      // Don't cache on error - allow retry later
+    }
+
+    // Clean up pending tweets for this user
+    pendingTweetButtons.delete(username);
+    bioFetchActiveCount--;
+
+    // Continue processing queue
+    scheduleNextBioFetch();
+  }
+
+  /**
+   * Schedule the next bio fetch from the queue
+   */
+  function scheduleNextBioFetch() {
+    // Don't schedule if already at max concurrent or queue is empty
+    if (bioFetchActiveCount >= BIO_FETCH_MAX_CONCURRENT) return;
+    if (bioFetchQueue.size === 0) return;
+    if (bioFetchTimer) return; // Already scheduled
+
+    bioFetchTimer = setTimeout(() => {
+      bioFetchTimer = null;
+      processBioFetchQueue();
+    }, BIO_FETCH_INTERVAL);
+  }
+
+  /**
+   * Process the bio fetch queue - fetches multiple users in parallel
+   */
+  function processBioFetchQueue() {
+    // Process up to MAX_CONCURRENT users
+    while (bioFetchActiveCount < BIO_FETCH_MAX_CONCURRENT && bioFetchQueue.size > 0) {
+      const username = bioFetchQueue.values().next().value;
+      if (!username) break;
+
+      bioFetchQueue.delete(username);
+      bioFetchInProgress.add(username);
+
+      // Start fetch (don't await - let it run in parallel)
+      processSingleBioFetch(username);
+    }
+
+    // Schedule more if queue still has items
+    if (bioFetchQueue.size > 0 && bioFetchActiveCount < BIO_FETCH_MAX_CONCURRENT) {
+      scheduleNextBioFetch();
+    }
+  }
+
+  /**
+   * Inject buttons for all pending tweets from a user after bio fetch
+   * @param {string} username - Twitter username
+   */
+  function injectPendingButtons(username) {
+    const pending = pendingTweetButtons.get(username);
+    if (!pending) return;
+
+    for (const { tweetElement, tweetUrl, dateElement, isQuotedTweet } of pending) {
+      // Check if element is still in DOM and doesn't already have a button
+      if (!document.contains(tweetElement)) continue;
+      if (tweetElement.querySelector('.grove-tweet-tip-button')) continue;
+
+      if (isQuotedTweet) {
+        // For quoted tweets, find the quoted element
+        const quotedTweetEl = currentAdapter.getQuotedTweetElement(tweetElement);
+        if (quotedTweetEl && !quotedTweetEl.querySelector('.grove-tweet-tip-button')) {
+          injectTweetTipButton(quotedTweetEl, dateElement, tweetUrl, true);
+        }
+      } else {
+        injectTweetTipButton(tweetElement, dateElement, tweetUrl, false);
+      }
+    }
   }
 
   /**
@@ -1480,14 +1805,16 @@ Tip creators you love → {grove_link}`;
       return;
     }
 
-    // Determine tip destination: check if user has cached ENS address
+    // Determine tip destination: use cached address if available (from bio fetch)
+    // This is important because the backend won't know to look in the user's bio
     let tipDestination = tweetUrl;
     const username = extractUsernameFromUrl(tweetUrl);
     if (username) {
       const cached = getCachedAddress(username);
-      if (cached && cached.type === 'ens' && cached.address) {
-        tipDestination = cached.address; // e.g., "vitalik.eth"
-        console.log(`[Grove Extension] Tipping to ENS name: ${tipDestination} (from @${username})`);
+      if (cached && cached.address) {
+        // Use the cached address directly (ENS name or 0x address)
+        tipDestination = cached.address;
+        console.log(`[Grove Extension] Tipping to ${cached.type} address: ${tipDestination} (from @${username})`);
       }
     }
 

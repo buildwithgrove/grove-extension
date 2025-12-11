@@ -111,6 +111,19 @@ _Optional_: `make build_zip_upload` uploads to [grove-releases](https://github.c
 - **Like on tip** - Automatically like tweets when you tip them (requires X connection)
 - **Auto-reply** - Post a customizable reply when you tip a tweet
 
+#### How Tip Buttons Appear on X/Twitter
+
+Tip buttons are shown when a user has a tippable address (0x or ENS) in their profile:
+
+| Location | How Address is Found |
+|----------|---------------------|
+| **Profile page** | Extracted from visible bio on the page |
+| **Hover card** | Extracted from popup card's display name/bio |
+| **Feed tweets** | Display name checked first; if no address, bio is fetched via Twitter's API |
+| **Quote tweets** | Same as feed tweets, for the quoted author |
+
+For feed tweets, the extension fetches user bios in the background using Twitter's GraphQL API, enabling tip buttons for users who only have addresses in their bio (not their display name).
+
 ### Extension Popup
 
 - **Balance display** - View your USDC tipping balance
