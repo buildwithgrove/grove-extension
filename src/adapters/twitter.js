@@ -182,47 +182,62 @@ class TwitterAdapter extends BaseAdapter {
     let displayName = null;
     let profileUrl = null;
 
-    // Try to find User-Name container first (most reliable)
+    // Method 1: Extract username from UserAvatar-Container-{username} data-testid
+    const avatarContainer = quotedTweet.querySelector('[data-testid^="UserAvatar-Container-"]');
+    if (avatarContainer) {
+      const testId = avatarContainer.getAttribute('data-testid');
+      // Extract username from "UserAvatar-Container-jessepollak"
+      const match = testId.match(/^UserAvatar-Container-(.+)$/);
+      if (match) {
+        username = match[1];
+        profileUrl = `https://x.com/${username}`;
+      }
+    }
+
+    // Method 2: Try to find User-Name container for display name
     const userNameContainer = quotedTweet.querySelector('[data-testid="User-Name"]');
     if (userNameContainer) {
-      const nameLink = userNameContainer.querySelector('a[href^="/"][role="link"]');
-      if (nameLink) {
-        const nameSpan = nameLink.querySelector('span span') || nameLink.querySelector('span');
-        if (nameSpan) {
-          displayName = nameSpan.textContent;
+      // The display name is in nested spans, find the innermost one with actual text
+      const spans = userNameContainer.querySelectorAll('span');
+      for (const span of spans) {
+        const text = span.textContent?.trim();
+        // Skip @username spans and empty spans
+        if (text && !text.startsWith('@') && text.length > 0 && text.length < 100) {
+          // Check if this is likely a display name (not just punctuation)
+          if (!/^[·•\s]+$/.test(text)) {
+            displayName = text;
+            break;
+          }
         }
+      }
 
-        const href = nameLink.getAttribute('href');
-        if (href && /^\/[a-zA-Z0-9_]+$/.test(href)) {
-          username = href.slice(1);
-          profileUrl = `https://x.com${href}`;
+      // Also try to get username from links if we don't have it yet
+      if (!username) {
+        const nameLink = userNameContainer.querySelector('a[href^="/"][role="link"]');
+        if (nameLink) {
+          const href = nameLink.getAttribute('href');
+          if (href && /^\/[a-zA-Z0-9_]+$/.test(href)) {
+            username = href.slice(1);
+            profileUrl = `https://x.com${href}`;
+          }
         }
       }
     }
 
-    // Fallback: look for profile links in the quoted tweet
+    // Method 3: Look for @username text
     if (!username) {
-      const links = quotedTweet.querySelectorAll('a[href^="/"][role="link"]');
-      for (const link of links) {
-        const href = link.getAttribute('href');
-        // Match username pattern but exclude status links
-        if (href && /^\/[a-zA-Z0-9_]+$/.test(href) && !href.includes('/status/')) {
-          username = href.slice(1);
-          profileUrl = `https://x.com${href}`;
-
-          // Try to get display name from this link
-          if (!displayName) {
-            const span = link.querySelector('span');
-            if (span) {
-              displayName = span.textContent;
-            }
-          }
+      const spans = quotedTweet.querySelectorAll('span');
+      for (const span of spans) {
+        const text = span.textContent?.trim();
+        if (text && text.startsWith('@')) {
+          username = text.slice(1); // Remove @
+          profileUrl = `https://x.com/${username}`;
           break;
         }
       }
     }
 
-    // Another fallback: extract username from status link
+    // Method 4: Extract username from any status link
     if (!username) {
       const statusLink = quotedTweet.querySelector('a[href*="/status/"]');
       if (statusLink) {
@@ -235,15 +250,12 @@ class TwitterAdapter extends BaseAdapter {
       }
     }
 
-    // Try to find display name from any text that looks like it contains .eth or address
+    // Method 5: Find display name from spans with .eth or address patterns
     if (!displayName && quotedTweet) {
-      // Look for spans that might contain the display name
       const spans = quotedTweet.querySelectorAll('span');
       for (const span of spans) {
-        const text = span.textContent;
-        // Check if this span has an address-like pattern
+        const text = span.textContent?.trim();
         if (text && (text.includes('.eth') || /0x[a-fA-F0-9]{40}/.test(text))) {
-          // Make sure it's not too long (display names are usually short)
           if (text.length < 100) {
             displayName = text;
             break;
@@ -251,6 +263,8 @@ class TwitterAdapter extends BaseAdapter {
         }
       }
     }
+
+    console.log('[Grove Extension] extractQuotedTweetAuthor:', { username, displayName, profileUrl });
 
     if (!username) return null;
 
