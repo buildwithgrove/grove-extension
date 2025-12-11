@@ -60,28 +60,116 @@ class TwitterAdapter extends BaseAdapter {
   }
 
   /**
+   * Check if a tweet is a retweet
+   * @param {Element} tweetElement - The tweet article element
+   * @returns {boolean}
+   */
+  isRetweet(tweetElement) {
+    // Retweets have a "retweeted" indicator with data-testid="socialContext"
+    // The social context contains text like "Username retweeted"
+    const socialContext = tweetElement.querySelector('[data-testid="socialContext"]');
+    if (socialContext) {
+      const text = socialContext.textContent?.toLowerCase() || '';
+      // Check for retweet indicators in various languages
+      if (text.includes('retweet') || text.includes('reposted')) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Check if a tweet contains a quoted tweet
+   * @param {Element} tweetElement - The tweet article element
+   * @returns {boolean}
+   */
+  hasQuotedTweet(tweetElement) {
+    // Quote tweets have a nested tweet card with data-testid="card.wrapper"
+    // or an inner article/blockquote-like element
+    // The quoted tweet is usually in a div with role="link" containing another user's info
+    const quotedTweet = tweetElement.querySelector('[data-testid="quoteTweet"]') ||
+                        tweetElement.querySelector('div[role="link"][tabindex="0"] > div > div > div > div > div > a[href*="/status/"]');
+    return !!quotedTweet;
+  }
+
+  /**
    * Extract author info from a tweet element
+   * For retweets: returns null (skip - we don't want to tip the retweeter for someone else's content)
+   * For quote tweets: returns the quoter's info (the person adding commentary)
+   * For regular tweets: returns the author's info
    * @param {Element} tweetElement - The tweet article element
    * @returns {{username: string|null, displayName: string|null, profileUrl: string|null}}
    */
   extractTweetAuthor(tweetElement) {
-    // Find the user name link in the tweet
-    const userNameLink = tweetElement.querySelector('a[href^="/"][role="link"] div[dir="ltr"] > span');
-    const displayName = userNameLink ? userNameLink.textContent : null;
+    // Skip pure retweets - they show someone else's content without original commentary
+    // The original tweet will appear in the feed separately
+    if (this.isRetweet(tweetElement)) {
+      return { username: null, displayName: null, profileUrl: null };
+    }
 
-    // Find the @username link
-    const usernameLinks = tweetElement.querySelectorAll('a[href^="/"][role="link"]');
+    // For quote tweets and regular tweets, we want the top-level author
+    // This is the person who wrote the tweet (or the commentary on a QT)
+
+    // Find the main tweet content area (excludes quoted tweet)
+    // The author info is in the first user-info section before any quoted content
+
+    // First, try to find the author section using the avatar link
+    // The avatar is always the tweet author (not the quoted tweet author)
+    const avatarLink = tweetElement.querySelector('div[data-testid="Tweet-User-Avatar"] a[href^="/"]');
     let username = null;
     let profileUrl = null;
 
-    for (const link of usernameLinks) {
-      const href = link.getAttribute('href');
-      // Match /@username or /username pattern (not /status, /hashtag, etc.)
+    if (avatarLink) {
+      const href = avatarLink.getAttribute('href');
       if (href && /^\/[a-zA-Z0-9_]+$/.test(href)) {
-        username = href.slice(1); // Remove leading /
+        username = href.slice(1);
         profileUrl = `https://x.com${href}`;
-        break;
       }
+    }
+
+    // Find display name - need to be careful to get the tweet author's name
+    // not the quoted tweet author's name
+    let displayName = null;
+
+    // The display name is near the avatar, in the User-Name section
+    const userNameContainer = tweetElement.querySelector('[data-testid="User-Name"]');
+    if (userNameContainer) {
+      // Get the first link which should be the display name
+      const nameLink = userNameContainer.querySelector('a[href^="/"][role="link"]');
+      if (nameLink) {
+        // The display name is in a span inside
+        const nameSpan = nameLink.querySelector('span span') || nameLink.querySelector('span');
+        if (nameSpan) {
+          displayName = nameSpan.textContent;
+        }
+
+        // Also verify/get username from this link if we didn't get it from avatar
+        if (!username) {
+          const href = nameLink.getAttribute('href');
+          if (href && /^\/[a-zA-Z0-9_]+$/.test(href)) {
+            username = href.slice(1);
+            profileUrl = `https://x.com${href}`;
+          }
+        }
+      }
+    }
+
+    // Fallback: original method if the above didn't work
+    if (!username) {
+      const usernameLinks = tweetElement.querySelectorAll('a[href^="/"][role="link"]');
+      for (const link of usernameLinks) {
+        const href = link.getAttribute('href');
+        if (href && /^\/[a-zA-Z0-9_]+$/.test(href)) {
+          username = href.slice(1);
+          profileUrl = `https://x.com${href}`;
+          break;
+        }
+      }
+    }
+
+    if (!displayName) {
+      const userNameLink = tweetElement.querySelector('a[href^="/"][role="link"] div[dir="ltr"] > span');
+      displayName = userNameLink ? userNameLink.textContent : null;
     }
 
     return { username, displayName, profileUrl };
