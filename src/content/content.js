@@ -119,6 +119,11 @@
   // Maps username -> Set of { tweetElement, tweetUrl, dateElement, isQuotedTweet }
   const pendingTweetButtons = new Map();
 
+  // Twitter API configuration for bio fetching
+  // Bearer token is public and used by Twitter's web client
+  const TWITTER_BEARER_TOKEN = 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
+  let twitterCsrfToken = null;
+
   /**
    * Show a small inline error/warning anchored to the tip button.
    * Delegates to TipErrorHandler.showInlineMessage() which handles positioning,
@@ -1222,6 +1227,100 @@
   }
 
   /**
+   * Get Twitter CSRF token from cookies
+   * @returns {string|null}
+   */
+  function getTwitterCsrfToken() {
+    if (twitterCsrfToken) return twitterCsrfToken;
+
+    // Extract ct0 cookie (CSRF token used by Twitter)
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'ct0') {
+        twitterCsrfToken = value;
+        return value;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Fetch user bio using Twitter's GraphQL API
+   * This works because the content script runs in x.com context with user's cookies
+   * @param {string} username - Twitter username
+   * @returns {Promise<{displayName: string|null, bio: string|null, error?: string}>}
+   */
+  async function fetchTwitterUserBio(username) {
+    const csrfToken = getTwitterCsrfToken();
+    if (!csrfToken) {
+      return { displayName: null, bio: null, error: 'No CSRF token found' };
+    }
+
+    // Twitter's GraphQL endpoint for user lookup
+    const variables = JSON.stringify({
+      screen_name: username,
+      withSafetyModeUserFields: true
+    });
+
+    const features = JSON.stringify({
+      hidden_profile_subscriptions_enabled: true,
+      rweb_tipjar_consumption_enabled: true,
+      responsive_web_graphql_exclude_directive_enabled: true,
+      verified_phone_label_enabled: false,
+      subscriptions_verification_info_is_identity_verified_enabled: true,
+      subscriptions_verification_info_verified_since_enabled: true,
+      highlights_tweets_tab_ui_enabled: true,
+      responsive_web_twitter_article_notes_tab_enabled: true,
+      subscriptions_feature_can_gift_premium: true,
+      creator_subscriptions_tweet_preview_api_enabled: true,
+      responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
+      responsive_web_graphql_timeline_navigation_enabled: true
+    });
+
+    const fieldToggles = JSON.stringify({
+      withAuxiliaryUserLabels: false
+    });
+
+    const url = `https://x.com/i/api/graphql/xmU6X_CKVnQ5lSrCbXFDig/UserByScreenName?variables=${encodeURIComponent(variables)}&features=${encodeURIComponent(features)}&fieldToggles=${encodeURIComponent(fieldToggles)}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'authorization': `Bearer ${decodeURIComponent(TWITTER_BEARER_TOKEN)}`,
+          'x-csrf-token': csrfToken,
+          'x-twitter-active-user': 'yes',
+          'x-twitter-auth-type': 'OAuth2Session',
+          'x-twitter-client-language': 'en'
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Extract user data from GraphQL response
+      const user = data?.data?.user?.result;
+      if (!user || user.__typename === 'UserUnavailable') {
+        return { displayName: null, bio: null, error: 'User not found' };
+      }
+
+      const legacy = user.legacy || {};
+      return {
+        displayName: legacy.name || null,
+        bio: legacy.description || null
+      };
+    } catch (error) {
+      console.error(`[Grove Extension] Twitter API error for @${username}:`, error);
+      return { displayName: null, bio: null, error: error.message };
+    }
+  }
+
+  /**
    * Process the bio fetch queue - fetches one user at a time
    */
   async function processBioFetchQueue() {
@@ -1235,11 +1334,8 @@
     bioFetchInProgress.add(username);
 
     try {
-      // Send message to background script to fetch bio
-      const response = await chrome.runtime.sendMessage({
-        type: 'FETCH_BIO',
-        username
-      });
+      // Fetch bio using Twitter's GraphQL API directly from content script
+      const response = await fetchTwitterUserBio(username);
 
       bioFetchInProgress.delete(username);
 
