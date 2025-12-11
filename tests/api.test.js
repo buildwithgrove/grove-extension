@@ -1,217 +1,33 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setupChromeMock, resetChromeMock } from './mocks/chrome.js';
 import { setupFetchMock, createRpcResponse, createRpcError } from './mocks/fetch.js';
+import { loadBrowserScript } from './helpers/load-script.js';
 
 let GroveAPI;
 let mockChrome;
 let mockFetch;
+let context;
 
 beforeEach(() => {
   mockChrome = setupChromeMock();
   mockFetch = setupFetchMock();
 
-  // Create GroveAPI class for testing
-  class TestGroveAPI {
-    static ENDPOINTS = {
-      'production': 'https://api.grove.city',
-      'testnet': 'https://api.testnet.grove.city',
-      'localhost': 'http://localhost:8000',
-    };
+  // Create context with mocks
+  context = {
+    window: {},
+    console: console,
+    chrome: mockChrome,
+    fetch: mockFetch.fetch,
+    URL: URL,
+    URLSearchParams: URLSearchParams,
+    BigInt: BigInt, // Needed for balance calculation
+  };
+  context.window = context;
 
-    static DEFAULT_TIP_AMOUNT = 0.05;
+  // Load script
+  loadBrowserScript('src/utils/api.js', context);
 
-    static CHAIN_RPC_ENDPOINTS = {
-      'base': {
-        name: 'Base',
-        chainId: 8453,
-        rpcUrl: 'https://mainnet.base.org',
-        explorerUrl: 'https://basescan.org'
-      },
-      'base-sepolia': {
-        name: 'Base Sepolia',
-        chainId: 84532,
-        rpcUrl: 'https://sepolia.base.org',
-        explorerUrl: 'https://sepolia.basescan.org'
-      },
-    };
-
-    static async getBaseURL() {
-      try {
-        const result = await chrome.storage.local.get(['groveEndpoint', 'groveEnvironment']);
-        const env = result.groveEnvironment || 'prod';
-        const storedEndpoint = result.groveEndpoint || 'production';
-        const endpoint = env === 'local' ? storedEndpoint : 'production';
-        return this.ENDPOINTS[endpoint] || this.ENDPOINTS['production'];
-      } catch (error) {
-        return this.ENDPOINTS['production'];
-      }
-    }
-
-    static async getChainId() {
-      try {
-        const result = await chrome.storage.local.get(['groveChain']);
-        return result.groveChain || 'base';
-      } catch (error) {
-        return 'base';
-      }
-    }
-
-    static async getChainConfig() {
-      const chain = await this.getChainId();
-      return this.CHAIN_RPC_ENDPOINTS[chain] || this.CHAIN_RPC_ENDPOINTS['base'];
-    }
-
-    static async getRpcUrl() {
-      const config = await this.getChainConfig();
-      return config.rpcUrl;
-    }
-
-    static async getBalance(address) {
-      const rpcUrl = await this.getRpcUrl();
-      const response = await fetch(rpcUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          method: 'eth_getBalance',
-          params: [address, 'latest'],
-          id: 1
-        })
-      });
-
-      const data = await response.json();
-      if (data.error) {
-        throw new Error(data.error.message || 'RPC request failed');
-      }
-
-      const balanceWei = BigInt(data.result);
-      const balanceEth = Number(balanceWei) / 1e18;
-      return balanceEth.toFixed(6);
-    }
-
-    static buildTipDomainFromURL(url) {
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        return url;
-      }
-
-      try {
-        const urlObj = new URL(url);
-        const domain = urlObj.hostname.replace(/^www\./, '');
-        const path = urlObj.pathname.replace(/\/$/, '');
-        return `${domain}${path}`;
-      } catch (error) {
-        return url;
-      }
-    }
-
-    static async getAccount(groveApiJwt) {
-      const baseURL = await this.getBaseURL();
-      const apiUrl = `${baseURL}/v1/account`;
-
-      try {
-        const response = await fetch(apiUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${groveApiJwt}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          return {
-            success: false,
-            error: data.message || `API request failed with status ${response.status}`,
-            status: response.status,
-            data: data
-          };
-        }
-
-        return { success: true, data: data, status: response.status };
-      } catch (error) {
-        return { success: false, error: error.message, status: null };
-      }
-    }
-
-    static async sendTip(pageUrl, tipAmount = this.DEFAULT_TIP_AMOUNT, groveApiJwt = '', context = null) {
-      const baseURL = await this.getBaseURL();
-      const network = await this.getChainId();
-      const tipDomain = this.buildTipDomainFromURL(pageUrl);
-      const apiUrl = `${baseURL}/v1/tip`;
-
-      const body = {
-        destination: tipDomain,
-        amount: String(tipAmount),
-        network: network
-      };
-
-      if (context) {
-        body.context = context;
-      }
-
-      try {
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${groveApiJwt}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(body)
-        });
-
-        let data = null;
-        try {
-          data = await response.json();
-        } catch (parseError) {
-          // Ignore parse errors
-        }
-
-        if (!response.ok) {
-          const message = data?.detail?.error || data?.message || `API request failed with status ${response.status}`;
-          return { success: false, error: message, status: response.status, data };
-        }
-
-        return { success: true, data: data, status: response.status };
-      } catch (error) {
-        return { success: false, error: error.message, status: null };
-      }
-    }
-
-    static async getTopTippers(period = 'week', limit = 10) {
-      const baseURL = await this.getBaseURL();
-      const window = { 'day': '24h', 'week': '7d', 'month': '30d', 'all': 'all' }[period] || '7d';
-      const apiUrl = `${baseURL}/v1/leaderboard/tippers?window=${window}&limit=${limit}`;
-
-      try {
-        const response = await fetch(apiUrl, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
-        });
-
-        if (!response.ok) {
-          throw new Error(`API request failed with status ${response.status}`);
-        }
-
-        const data = await response.json();
-        return {
-          success: true,
-          data: {
-            token: data.token || 'USDC',
-            entries: (data.entries || []).map(entry => ({
-              address: entry.address,
-              totalUSD: parseFloat(entry.total_amount_usd) || 0,
-              tipCount: entry.tip_count || 0,
-            }))
-          }
-        };
-      } catch (error) {
-        return { success: false, error: error.message };
-      }
-    }
-  }
-
-  GroveAPI = TestGroveAPI;
+  GroveAPI = context.GroveAPI;
 });
 
 afterEach(() => {

@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setupChromeMock, resetChromeMock } from './mocks/chrome.js';
 import { setupFetchMock } from './mocks/fetch.js';
+import { loadBrowserScript } from './helpers/load-script.js';
 
 let XAuth;
 let mockChrome;
 let mockFetch;
+let context;
 
 const STORAGE_KEYS = {
   ACCESS_TOKEN: 'GROVE_X_ACCESS_TOKEN',
@@ -17,7 +19,7 @@ beforeEach(() => {
   mockChrome = setupChromeMock();
   mockFetch = setupFetchMock();
 
-  // Mock crypto API - use Object.defineProperty to override the getter
+  // Mock crypto API
   const mockCrypto = {
     getRandomValues: vi.fn((array) => {
       for (let i = 0; i < array.length; i++) {
@@ -32,258 +34,32 @@ beforeEach(() => {
       })
     }
   };
-  Object.defineProperty(global, 'crypto', {
-    value: mockCrypto,
-    writable: true,
-    configurable: true
-  });
 
-  // Mock btoa
-  global.btoa = (str) => Buffer.from(str, 'binary').toString('base64');
-
-  // Mock TextEncoder
-  global.TextEncoder = class {
-    encode(str) {
-      return new Uint8Array(Buffer.from(str));
-    }
+  // Create context
+  context = {
+    window: {},
+    console: console,
+    chrome: mockChrome,
+    fetch: mockFetch.fetch,
+    crypto: mockCrypto,
+    btoa: (str) => Buffer.from(str, 'binary').toString('base64'),
+    TextEncoder: TextEncoder,
+    URL: URL,
+    URLSearchParams: URLSearchParams,
+    Uint8Array: Uint8Array,
+    Array: Array,
   };
+  context.window = context;
 
-  // Create XAuth class for testing
-  class TestXAuth {
-    static CLIENT_ID = 'test-client-id';
-    static get REDIRECT_URI() {
-      return `https://${chrome.runtime.id}.chromiumapp.org/callback`;
-    }
-    static SCOPES = ['tweet.read', 'tweet.write', 'users.read', 'like.write', 'offline.access'];
-    static STORAGE_KEYS = STORAGE_KEYS;
+  // Load script
+  loadBrowserScript('src/auth/xAuth.js', context);
 
-    static generateCodeVerifier() {
-      const array = new Uint8Array(32);
-      crypto.getRandomValues(array);
-      return btoa(String.fromCharCode(...array))
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-    }
-
-    static async generateCodeChallenge(verifier) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(verifier);
-      const hash = await crypto.subtle.digest('SHA-256', data);
-      return btoa(String.fromCharCode(...new Uint8Array(hash)))
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-    }
-
-    static generateState() {
-      const array = new Uint8Array(16);
-      crypto.getRandomValues(array);
-      return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
-    }
-
-    static async exchangeCodeForTokens(code, codeVerifier) {
-      const tokenUrl = 'https://api.twitter.com/2/oauth2/token';
-      const params = new URLSearchParams();
-      params.set('grant_type', 'authorization_code');
-      params.set('code', code);
-      params.set('redirect_uri', this.REDIRECT_URI);
-      params.set('client_id', this.CLIENT_ID);
-      params.set('code_verifier', codeVerifier);
-
-      const response = await fetch(tokenUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params.toString(),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Token exchange failed: ${errorText}`);
-      }
-
-      return response.json();
-    }
-
-    static async refreshAccessToken() {
-      const result = await chrome.storage.local.get([this.STORAGE_KEYS.REFRESH_TOKEN]);
-      const refreshToken = result[this.STORAGE_KEYS.REFRESH_TOKEN];
-
-      if (!refreshToken) {
-        throw new Error('No refresh token available');
-      }
-
-      const tokenUrl = 'https://api.twitter.com/2/oauth2/token';
-      const params = new URLSearchParams();
-      params.set('grant_type', 'refresh_token');
-      params.set('refresh_token', refreshToken);
-      params.set('client_id', this.CLIENT_ID);
-
-      const response = await fetch(tokenUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params.toString(),
-      });
-
-      if (!response.ok) {
-        await this.logout();
-        throw new Error('Session expired - please login again');
-      }
-
-      const tokens = await response.json();
-      const userResult = await chrome.storage.local.get([this.STORAGE_KEYS.USER_INFO]);
-      await this.storeTokens(tokens, userResult[this.STORAGE_KEYS.USER_INFO]);
-
-      return tokens.access_token;
-    }
-
-    static async getAccessToken() {
-      const result = await chrome.storage.local.get([
-        this.STORAGE_KEYS.ACCESS_TOKEN,
-        this.STORAGE_KEYS.TOKEN_EXPIRY,
-      ]);
-
-      const accessToken = result[this.STORAGE_KEYS.ACCESS_TOKEN];
-      const expiry = result[this.STORAGE_KEYS.TOKEN_EXPIRY];
-
-      if (!accessToken) {
-        return null;
-      }
-
-      if (expiry && Date.now() > expiry - 5 * 60 * 1000) {
-        try {
-          return await this.refreshAccessToken();
-        } catch (error) {
-          return null;
-        }
-      }
-
-      return accessToken;
-    }
-
-    static async getUserInfo(accessToken) {
-      const response = await fetch('https://api.twitter.com/2/users/me', {
-        headers: { 'Authorization': `Bearer ${accessToken}` },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to get user info: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      return data.data;
-    }
-
-    static async storeTokens(tokens, userInfo) {
-      const expiry = Date.now() + (tokens.expires_in * 1000);
-
-      await chrome.storage.local.set({
-        [this.STORAGE_KEYS.ACCESS_TOKEN]: tokens.access_token,
-        [this.STORAGE_KEYS.REFRESH_TOKEN]: tokens.refresh_token,
-        [this.STORAGE_KEYS.USER_INFO]: userInfo,
-        [this.STORAGE_KEYS.TOKEN_EXPIRY]: expiry,
-      });
-    }
-
-    static async getStoredUserInfo() {
-      const result = await chrome.storage.local.get([this.STORAGE_KEYS.USER_INFO]);
-      return result[this.STORAGE_KEYS.USER_INFO] || null;
-    }
-
-    static async isLoggedIn() {
-      const token = await this.getAccessToken();
-      return !!token;
-    }
-
-    static async logout() {
-      await chrome.storage.local.remove([
-        this.STORAGE_KEYS.ACCESS_TOKEN,
-        this.STORAGE_KEYS.REFRESH_TOKEN,
-        this.STORAGE_KEYS.USER_INFO,
-        this.STORAGE_KEYS.TOKEN_EXPIRY,
-      ]);
-    }
-
-    static async postReply(tweetId, text) {
-      const accessToken = await this.getAccessToken();
-      if (!accessToken) {
-        throw new Error('Not logged in to X');
-      }
-
-      const response = await fetch('https://api.twitter.com/2/tweets', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text: text,
-          reply: { in_reply_to_tweet_id: tweetId },
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || error.title || 'Failed to post reply');
-      }
-
-      return response.json();
-    }
-
-    static async likeTweet(tweetId) {
-      const accessToken = await this.getAccessToken();
-      if (!accessToken) {
-        throw new Error('Not logged in to X');
-      }
-
-      let userInfo = await this.getStoredUserInfo();
-      if (!userInfo || !userInfo.id || userInfo.id === 'unknown') {
-        throw new Error('User ID not available - try reconnecting X account');
-      }
-
-      const response = await fetch(`https://api.twitter.com/2/users/${userInfo.id}/likes`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ tweet_id: tweetId }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || error.title || 'Failed to like tweet');
-      }
-
-      return response.json();
-    }
-
-    static extractTweetId(url) {
-      try {
-        const urlObj = new URL(url);
-        const pathParts = urlObj.pathname.split('/');
-        const statusIndex = pathParts.indexOf('status');
-
-        if (statusIndex !== -1 && pathParts[statusIndex + 1]) {
-          return pathParts[statusIndex + 1];
-        }
-        return null;
-      } catch {
-        return null;
-      }
-    }
-  }
-
-  XAuth = TestXAuth;
+  XAuth = context.XAuth;
 });
 
 afterEach(() => {
   resetChromeMock(mockChrome);
   mockFetch.reset();
-  delete global.crypto;
-  delete global.btoa;
-  delete global.TextEncoder;
 });
 
 describe('XAuth', () => {

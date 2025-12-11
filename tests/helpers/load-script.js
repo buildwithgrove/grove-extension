@@ -5,23 +5,37 @@
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
-import { createContext, runInContext } from 'vm';
+import { createContext, runInContext, isContext } from 'vm';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-export function loadBrowserScript(relativePath) {
+export function loadBrowserScript(relativePath, existingContext = null) {
   const fullPath = resolve(__dirname, '../../', relativePath);
   const code = readFileSync(fullPath, 'utf-8');
 
-  // Create a browser-like context
-  const context = {
+  // Create or use existing browser-like context
+  const context = existingContext || {
     window: {},
     console,
+    // Add other globals that might be needed
+    setTimeout,
+    clearTimeout,
+    setInterval,
+    clearInterval,
+    URL,
+    URLSearchParams,
   };
-  context.window = context; // window === global in browser
+  
+  if (!context.window) {
+    context.window = context;
+  }
 
-  createContext(context);
+  // Ensure context is contextified
+  if (!isContext(context)) {
+    createContext(context);
+  }
+
   runInContext(code, context);
 
   return context.window;
