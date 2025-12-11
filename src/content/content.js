@@ -1014,7 +1014,10 @@
     }
 
     // For quote tweets, also check the quoted tweet's author
-    if (currentAdapter.hasQuotedTweet && currentAdapter.hasQuotedTweet(tweetElement)) {
+    const hasQT = currentAdapter.hasQuotedTweet && currentAdapter.hasQuotedTweet(tweetElement);
+    console.log('[Grove Extension] Checking for quote tweet:', hasQT, 'element:', tweetElement);
+
+    if (hasQT) {
       const quotedAuthor = currentAdapter.extractQuotedTweetAuthor(tweetElement);
 
       console.log('[Grove Extension] Quote tweet detected, author:', quotedAuthor);
