@@ -18,6 +18,7 @@ ZIP_FILE := $(BUILD_DIR)/$(EXTENSION_NAME)-v$(VERSION).zip
 # Files to include in extension
 INCLUDE_FILES := \
 	manifest.json \
+	background.js \
 	popup.html \
 	popup.css \
 	popup.js \
@@ -45,7 +46,8 @@ build_zip_extension: clean_build $(BUILD_DIR) ## Create extension zip for Chrome
 	$(call print_info,Preparing files for packaging...)
 	$(Q)mkdir -p $(BUILD_DIR)/staging
 	$(Q)cp -r $(INCLUDE_FILES) $(BUILD_DIR)/staging/
-	$(Q)sed -i '' '/"key":/d' $(BUILD_DIR)/staging/manifest.json
+	@# Use cross-platform sed: create temp file, then move (works on both Linux and macOS)
+	$(Q)sed '/"key":/d' $(BUILD_DIR)/staging/manifest.json > $(BUILD_DIR)/staging/manifest.json.tmp && mv $(BUILD_DIR)/staging/manifest.json.tmp $(BUILD_DIR)/staging/manifest.json
 	$(call print_info,Creating zip file: $(ZIP_FILE))
 	$(Q)cd $(BUILD_DIR)/staging && zip -r ../$(EXTENSION_NAME)-v$(VERSION).zip .
 	$(Q)rm -rf $(BUILD_DIR)/staging
@@ -81,12 +83,12 @@ build_release: ## Bump version, prompt to commit/push, and prepare for Chrome We
 	@printf "$(CYAN)Current version:$(RESET) $(CURRENT_VERSION)\n"
 	@printf "$(GREEN)New version:$(RESET) $(NEW_VERSION)\n"
 	@printf "\n"
-	@# Update version in manifest.json
+	@# Update version in manifest.json (cross-platform sed)
 	$(call print_info,Updating manifest.json...)
-	@sed -i '' 's/"version": "$(CURRENT_VERSION)"/"version": "$(NEW_VERSION)"/' manifest.json
-	@# Update version in build.mk
+	@sed 's/"version": "$(CURRENT_VERSION)"/"version": "$(NEW_VERSION)"/' manifest.json > manifest.json.tmp && mv manifest.json.tmp manifest.json
+	@# Update version in build.mk (cross-platform sed)
 	$(call print_info,Updating build.mk...)
-	@sed -i '' 's/^VERSION := [0-9]*\.[0-9]*\.[0-9]*/VERSION := $(NEW_VERSION)/' makefiles/build.mk
+	@sed 's/^VERSION := [0-9]*\.[0-9]*\.[0-9]*/VERSION := $(NEW_VERSION)/' makefiles/build.mk > makefiles/build.mk.tmp && mv makefiles/build.mk.tmp makefiles/build.mk
 	$(call print_success,Version bumped to $(NEW_VERSION))
 	@printf "\n"
 	@# Show git status
