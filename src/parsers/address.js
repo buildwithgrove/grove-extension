@@ -102,5 +102,3 @@ class AddressParser {
 if (typeof window !== 'undefined') {
   window.AddressParser = AddressParser;
 }
-
-export { AddressParser };

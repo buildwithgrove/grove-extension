@@ -67,5 +67,3 @@ function parseDestination(destination) {
 if (typeof window !== 'undefined') {
   window.parseDestination = parseDestination;
 }
-
-export { parseDestination };

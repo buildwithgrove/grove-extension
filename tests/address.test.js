@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { AddressParser } from '../src/parsers/address.js';
+import { loadBrowserScript } from './helpers/load-script.js';
+
+const { AddressParser } = loadBrowserScript('src/parsers/address.js');
 
 describe('AddressParser', () => {
   describe('ENS_PATTERN', () => {

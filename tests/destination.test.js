@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { parseDestination } from '../src/parsers/destination.js';
+import { loadBrowserScript } from './helpers/load-script.js';
+
+const { parseDestination } = loadBrowserScript('src/parsers/destination.js');
 
 describe('parseDestination', () => {
   describe('null/empty input', () => {
