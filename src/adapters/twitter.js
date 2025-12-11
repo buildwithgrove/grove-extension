@@ -84,11 +84,11 @@ class TwitterAdapter extends BaseAdapter {
    * @returns {boolean}
    */
   hasQuotedTweet(tweetElement) {
-    // Quote tweets have a nested tweet card with data-testid="card.wrapper"
-    // or an inner article/blockquote-like element
-    // The quoted tweet is usually in a div with role="link" containing another user's info
-    const quotedTweet = tweetElement.querySelector('[data-testid="quoteTweet"]') ||
-                        tweetElement.querySelector('div[role="link"][tabindex="0"] > div > div > div > div > div > a[href*="/status/"]');
+    // Quote tweets can have various structures - try multiple selectors
+    // data-testid="quoteTweet" - standard quote tweet container
+    // [data-testid="card.wrapper"] with a status link - embedded tweet card
+    // role="link" div containing another tweet's status link
+    const quotedTweet = this.getQuotedTweetElement(tweetElement);
     return !!quotedTweet;
   }
 
@@ -174,17 +174,16 @@ class TwitterAdapter extends BaseAdapter {
    * @returns {{username: string|null, displayName: string|null, profileUrl: string|null}|null}
    */
   extractQuotedTweetAuthor(tweetElement) {
-    // Find the quoted tweet container
-    const quotedTweet = tweetElement.querySelector('[data-testid="quoteTweet"]');
+    // Find the quoted tweet container using our robust getter
+    const quotedTweet = this.getQuotedTweetElement(tweetElement);
     if (!quotedTweet) return null;
 
-    // Look for user info within the quoted tweet
-    // The quoted tweet has its own User-Name section
-    const userNameContainer = quotedTweet.querySelector('[data-testid="User-Name"]');
     let username = null;
     let displayName = null;
     let profileUrl = null;
 
+    // Try to find User-Name container first (most reliable)
+    const userNameContainer = quotedTweet.querySelector('[data-testid="User-Name"]');
     if (userNameContainer) {
       const nameLink = userNameContainer.querySelector('a[href^="/"][role="link"]');
       if (nameLink) {
@@ -201,15 +200,54 @@ class TwitterAdapter extends BaseAdapter {
       }
     }
 
-    // Fallback: look for any profile link in the quoted tweet
+    // Fallback: look for profile links in the quoted tweet
     if (!username) {
       const links = quotedTweet.querySelectorAll('a[href^="/"][role="link"]');
       for (const link of links) {
         const href = link.getAttribute('href');
-        if (href && /^\/[a-zA-Z0-9_]+$/.test(href)) {
+        // Match username pattern but exclude status links
+        if (href && /^\/[a-zA-Z0-9_]+$/.test(href) && !href.includes('/status/')) {
           username = href.slice(1);
           profileUrl = `https://x.com${href}`;
+
+          // Try to get display name from this link
+          if (!displayName) {
+            const span = link.querySelector('span');
+            if (span) {
+              displayName = span.textContent;
+            }
+          }
           break;
+        }
+      }
+    }
+
+    // Another fallback: extract username from status link
+    if (!username) {
+      const statusLink = quotedTweet.querySelector('a[href*="/status/"]');
+      if (statusLink) {
+        const href = statusLink.getAttribute('href');
+        const match = href.match(/\/([a-zA-Z0-9_]+)\/status\//);
+        if (match) {
+          username = match[1];
+          profileUrl = `https://x.com/${username}`;
+        }
+      }
+    }
+
+    // Try to find display name from any text that looks like it contains .eth or address
+    if (!displayName && quotedTweet) {
+      // Look for spans that might contain the display name
+      const spans = quotedTweet.querySelectorAll('span');
+      for (const span of spans) {
+        const text = span.textContent;
+        // Check if this span has an address-like pattern
+        if (text && (text.includes('.eth') || /0x[a-fA-F0-9]{40}/.test(text))) {
+          // Make sure it's not too long (display names are usually short)
+          if (text.length < 100) {
+            displayName = text;
+            break;
+          }
         }
       }
     }
@@ -225,7 +263,41 @@ class TwitterAdapter extends BaseAdapter {
    * @returns {Element|null}
    */
   getQuotedTweetElement(tweetElement) {
-    return tweetElement.querySelector('[data-testid="quoteTweet"]');
+    // Try multiple selectors for quoted tweet containers
+    // X/Twitter may use different structures
+
+    // Standard quoted tweet with data-testid
+    let quoted = tweetElement.querySelector('[data-testid="quoteTweet"]');
+    if (quoted) return quoted;
+
+    // Card wrapper that contains a status link (embedded tweet)
+    const cardWrapper = tweetElement.querySelector('[data-testid="card.wrapper"]');
+    if (cardWrapper && cardWrapper.querySelector('a[href*="/status/"]')) {
+      return cardWrapper;
+    }
+
+    // Look for a clickable div that links to another tweet
+    // This is usually a div[role="link"] containing tweet content
+    const tweetTextEl = tweetElement.querySelector('[data-testid="tweetText"]');
+    if (tweetTextEl) {
+      // Find sibling or following element that's a quoted tweet
+      let sibling = tweetTextEl.parentElement?.nextElementSibling;
+      while (sibling) {
+        // Check if this sibling contains a link to another status
+        const statusLink = sibling.querySelector('a[href*="/status/"]');
+        if (statusLink && sibling.getAttribute('role') === 'link') {
+          return sibling;
+        }
+        // Also check for nested link divs
+        const linkDiv = sibling.querySelector('div[role="link"]');
+        if (linkDiv && linkDiv.querySelector('a[href*="/status/"]')) {
+          return linkDiv;
+        }
+        sibling = sibling.nextElementSibling;
+      }
+    }
+
+    return null;
   }
 
   /**

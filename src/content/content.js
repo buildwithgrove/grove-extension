@@ -1017,18 +1017,17 @@
     if (currentAdapter.hasQuotedTweet && currentAdapter.hasQuotedTweet(tweetElement)) {
       const quotedAuthor = currentAdapter.extractQuotedTweetAuthor(tweetElement);
 
+      console.log('[Grove Extension] Quote tweet detected, author:', quotedAuthor);
+
       if (quotedAuthor && quotedAuthor.username) {
         const quotedHasTippable = checkTippableAddress(quotedAuthor.username, quotedAuthor.displayName);
+
+        console.log('[Grove Extension] Quoted author tippable:', quotedHasTippable, 'displayName:', quotedAuthor.displayName);
 
         if (quotedHasTippable) {
           // Find the quoted tweet element to inject button into
           const quotedTweetEl = currentAdapter.getQuotedTweetElement(tweetElement);
           if (quotedTweetEl && !quotedTweetEl.querySelector('.grove-tweet-tip-button')) {
-            // For quoted tweets, we need to find an appropriate place for the button
-            // Look for a timestamp or username in the quoted tweet
-            const quotedTimeLink = quotedTweetEl.querySelector('time');
-            const quotedNameContainer = quotedTweetEl.querySelector('[data-testid="User-Name"]');
-
             // Build URL for the quoted tweet (look for status link in quoted area)
             const quotedStatusLink = quotedTweetEl.querySelector('a[href*="/status/"]');
             let quotedTweetUrl = null;
@@ -1037,12 +1036,48 @@
               quotedTweetUrl = href.startsWith('/') ? `https://x.com${href}` : href;
             }
 
-            // If we have a URL and a place to put the button, inject it
-            if (quotedTweetUrl && (quotedTimeLink || quotedNameContainer)) {
-              const placement = quotedTimeLink?.parentElement || quotedNameContainer;
-              if (placement) {
-                injectTweetTipButton(quotedTweetEl, placement, quotedTweetUrl, true);
+            // Find placement - try multiple options
+            // 1. Time element's parent (next to timestamp like "1h")
+            // 2. User-Name container
+            // 3. Any span containing the time text
+            // 4. First row/line of the quoted tweet
+            let placement = null;
+
+            const quotedTimeLink = quotedTweetEl.querySelector('time');
+            if (quotedTimeLink?.parentElement) {
+              placement = quotedTimeLink.parentElement;
+            }
+
+            if (!placement) {
+              const quotedNameContainer = quotedTweetEl.querySelector('[data-testid="User-Name"]');
+              if (quotedNameContainer) {
+                placement = quotedNameContainer;
               }
+            }
+
+            // Fallback: find the row containing author info (usually first child div with text)
+            if (!placement) {
+              // Look for a container that has the username link
+              const usernameLink = quotedTweetEl.querySelector('a[href^="/"][role="link"]');
+              if (usernameLink) {
+                // Go up to find a reasonable container
+                let container = usernameLink.parentElement;
+                while (container && container !== quotedTweetEl) {
+                  if (container.parentElement === quotedTweetEl ||
+                      container.parentElement?.parentElement === quotedTweetEl) {
+                    placement = container;
+                    break;
+                  }
+                  container = container.parentElement;
+                }
+              }
+            }
+
+            console.log('[Grove Extension] Quoted tweet placement:', placement, 'url:', quotedTweetUrl);
+
+            // If we have a URL and a place to put the button, inject it
+            if (quotedTweetUrl && placement) {
+              injectTweetTipButton(quotedTweetEl, placement, quotedTweetUrl, true);
             }
           }
         }
