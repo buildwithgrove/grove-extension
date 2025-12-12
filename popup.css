@@ -1016,6 +1016,12 @@ button.section-card-btn:hover .quick-access-icon {
   color: var(--color-text-primary);
 }
 
+.x-connect-desc {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 0 0 12px 0;
+}
+
 .x-connect-features {
   list-style: none;
   padding: 0;
@@ -2005,36 +2011,32 @@ button.quick-access-item:hover .quick-access-icon {
   font-weight: 600;
 }
 
-/* Nav icon wrapper for indicator positioning */
+/* Nav badge indicator (iOS style) */
 .nav-icon-wrapper {
   position: relative;
   display: inline-flex;
 }
 
-/* Pulsing indicator dot */
-.nav-indicator {
+.nav-badge-dot {
   position: absolute;
-  top: -2px;
-  right: -4px;
-  width: 8px;
-  height: 8px;
+  top: -3px;
+  right: -6px;
+  width: 10px;
+  height: 10px;
   background: var(--color-accent);
   border-radius: 50%;
-  animation: pulse-indicator 2s ease-in-out infinite;
+  border: 2px solid var(--color-bg);
+  animation: badge-pulse 2s ease-in-out infinite;
 }
 
-.nav-indicator.hidden {
-  display: none;
-}
-
-@keyframes pulse-indicator {
+@keyframes badge-pulse {
   0%, 100% {
-    opacity: 1;
     transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(240, 173, 78, 0.4);
   }
   50% {
-    opacity: 0.6;
-    transform: scale(1.2);
+    transform: scale(1.1);
+    box-shadow: 0 0 0 4px rgba(240, 173, 78, 0);
   }
 }
 
