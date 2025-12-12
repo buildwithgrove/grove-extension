@@ -28,7 +28,7 @@ const tipAmountEdit = document.getElementById('tipAmountEdit');
 const tipAmountInput = document.getElementById('tipAmountInput');
 const saveTipAmount = document.getElementById('saveTipAmount');
 const cancelTipAmount = document.getElementById('cancelTipAmount');
-const editTipBtn = document.getElementById('editTipAmount');
+const defaultTipCard = document.getElementById('defaultTipCard');
 const confirmTipToggle = document.getElementById('confirmTipToggle');
 
 // Tip amount (Settings)
@@ -96,6 +96,10 @@ const ensNameDisplay = document.getElementById('ensNameDisplay');
 const ensNameValue = document.getElementById('ensNameValue');
 const copyEnsNameBtn = document.getElementById('copyEnsNameBtn');
 
+// Tip Intro Modal
+const tipButtonIntroModal = document.getElementById('tipButtonIntroModal');
+const tipIntroGotItBtn = document.getElementById('tipIntroGotItBtn');
+
 // Initialize Previous Keys UI
 let prevKeysUI = null;
 
@@ -119,6 +123,7 @@ const STORAGE_KEYS = {
   CLIENT_ADDRESS: 'GROVE_CLIENT_ADDRESS',
   ENS_NAME: 'GROVE_ENS_NAME',
   EARN_CTA_DISMISSED: 'GROVE_EARN_CTA_DISMISSED',
+  TIP_INTRO_SEEN: 'GROVE_TIP_INTRO_SEEN',
 };
 
 /**
@@ -354,11 +359,24 @@ function setupEventListeners() {
     }
   });
 
-  // Tip Amount (Home)
-  editTipBtn.addEventListener('click', showTipEdit);
+  // Tip Amount (Home) - entire card is clickable
+  defaultTipCard.addEventListener('click', showTipEdit);
   cancelTipAmount.addEventListener('click', hideTipEdit);
   saveTipAmount.addEventListener('click', saveTip);
   confirmTipToggle.addEventListener('change', handleConfirmTipToggle);
+
+  // Tip Intro Modal
+  if (tipIntroGotItBtn) {
+    tipIntroGotItBtn.addEventListener('click', hideTipIntroModal);
+  }
+  // Also close modal when clicking overlay
+  if (tipButtonIntroModal) {
+    tipButtonIntroModal.addEventListener('click', (e) => {
+      if (e.target === tipButtonIntroModal) {
+        hideTipIntroModal();
+      }
+    });
+  }
 
   // Tip Amount (Settings) - synced with Home
   if (settingsEditTipBtn) {
@@ -723,6 +741,9 @@ async function updateAuthState(jwt) {
     onboardingState.classList.add('hidden');
     connectedState.classList.remove('hidden');
 
+    // Show tip button intro modal if first time
+    checkAndShowTipIntroModal();
+
     // Get environment from storage to show in status
     const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
     const endpoint = result[STORAGE_KEYS.ENDPOINT] || 'production';
@@ -1082,17 +1103,18 @@ function updateTipUI(amount) {
 }
 
 function showTipEdit() {
-  // Hide the default tip card in the grid
-  const defaultTipCard = document.getElementById('defaultTipCard');
+  // Hide the default tip card
   if (defaultTipCard) {
     defaultTipCard.classList.add('hidden');
   }
   tipAmountEdit.classList.remove('hidden');
+  // Focus the input for quick editing
+  tipAmountInput.focus();
+  tipAmountInput.select();
 }
 
 function hideTipEdit() {
-  // Show the default tip card in the grid
-  const defaultTipCard = document.getElementById('defaultTipCard');
+  // Show the default tip card
   if (defaultTipCard) {
     defaultTipCard.classList.remove('hidden');
   }
@@ -1304,7 +1326,7 @@ async function loadXLoginStatus() {
         homeXLoginBtn.classList.remove('btn-danger-text');
       }
       if (homeXSettingsTitle) {
-        homeXSettingsTitle.innerHTML = 'Connect to 𝕏 <span class="optional-badge">optional</span>';
+        homeXSettingsTitle.textContent = 'Connect to 𝕏';
       }
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.add('hidden');
     }
@@ -3110,6 +3132,31 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+/**
+ * Tip Button Intro Modal
+ * Shows once when user first connects their account
+ */
+async function checkAndShowTipIntroModal() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.TIP_INTRO_SEEN]);
+  if (!result[STORAGE_KEYS.TIP_INTRO_SEEN]) {
+    showTipIntroModal();
+  }
+}
+
+function showTipIntroModal() {
+  if (tipButtonIntroModal) {
+    tipButtonIntroModal.classList.remove('hidden');
+  }
+}
+
+async function hideTipIntroModal() {
+  if (tipButtonIntroModal) {
+    tipButtonIntroModal.classList.add('hidden');
+  }
+  // Mark as seen
+  await chrome.storage.local.set({ [STORAGE_KEYS.TIP_INTRO_SEEN]: true });
 }
 
 /**
