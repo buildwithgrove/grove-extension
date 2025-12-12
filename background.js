@@ -6,6 +6,19 @@ const JWT_STORAGE = {
   LEGACY: 'GROVE_API_JWT'
 };
 
+// Listen for internal messages from popup/content scripts
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // X (Twitter) OAuth Login
+  if (message.type === 'X_LOGIN') {
+    handleXLogin().then(result => {
+      sendResponse(result);
+    }).catch(error => {
+      sendResponse({ success: false, error: error.message });
+    });
+    return true; // Keep channel open for async response
+  }
+});
+
 // Listen for messages from external web pages (e.g., localhost, testnet, production)
 chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
   console.log('Received external message from:', sender.origin);
@@ -158,16 +171,6 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       }
     });
     return true;
-  }
-
-  // X (Twitter) OAuth Login
-  if (message.type === 'X_LOGIN') {
-    handleXLogin().then(result => {
-      sendResponse(result);
-    }).catch(error => {
-      sendResponse({ success: false, error: error.message });
-    });
-    return true; // Keep channel open for async response
   }
 
   sendResponse({ error: 'Unknown message type' });

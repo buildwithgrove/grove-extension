@@ -1412,7 +1412,11 @@ async function handleXLogin() {
         homeXLoginBtn.textContent = 'Connect';
         homeXLoginBtn.disabled = false;
       }
-      showToast('Login failed: ' + error.message);
+      // Truncate long error messages to prevent UI overflow
+      const errorMsg = error.message?.length > 50
+        ? error.message.substring(0, 50) + '...'
+        : error.message;
+      showToast('Login failed: ' + errorMsg);
     }
   }
 }
