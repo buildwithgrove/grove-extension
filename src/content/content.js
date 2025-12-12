@@ -127,6 +127,7 @@
   let navigationObserver = null;
   let tweetObserver = null;
   let tipPopover = null;
+  let firstTipModal = null;
   let resolvedAddress = null; // Stores address info (0x address or ENS name)
 
   // Address cache: maps username -> { address, type, original, timestamp }
@@ -415,12 +416,14 @@
     // Get settings from storage
     let tipAmount = 0.10; // default
     let confirmBeforeTipping = false; // default off
+    let hasTipped = false; // whether user has tipped before
 
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        const result = await chrome.storage.local.get(['GROVE_TIP_AMOUNT', 'GROVE_CONFIRM_TIP']);
+        const result = await chrome.storage.local.get(['GROVE_TIP_AMOUNT', 'GROVE_CONFIRM_TIP', 'GROVE_HAS_TIPPED']);
         tipAmount = result.GROVE_TIP_AMOUNT || 0.10;
         confirmBeforeTipping = result.GROVE_CONFIRM_TIP || false;
+        hasTipped = result.GROVE_HAS_TIPPED || false;
       }
     } catch (error) {
       console.error("[Grove Extension] Settings load failed:", error);
@@ -434,16 +437,47 @@
       return;
     }
 
-    // If confirmation disabled, send tip directly
-    if (!confirmBeforeTipping) {
-      sendTip(tipAmount, button);
-      return;
-    }
-
     // Get the button element for positioning
     const buttonElement = button?.button;
     if (!buttonElement) {
       console.error("[Grove Extension] No button element found");
+      return;
+    }
+
+    // If this is the user's first tip, show the first tip modal
+    if (!hasTipped) {
+      if (!firstTipModal) {
+        firstTipModal = new FirstTipModal();
+      }
+
+      firstTipModal.show(
+        buttonElement,
+        tipAmount,
+        confirmBeforeTipping,
+        async ({ amount, confirmBeforeTipping: newConfirmSetting }) => {
+          // Save preferences and mark as having tipped
+          try {
+            await chrome.storage.local.set({
+              'GROVE_TIP_AMOUNT': amount,
+              'GROVE_CONFIRM_TIP': newConfirmSetting,
+              'GROVE_HAS_TIPPED': true
+            });
+          } catch (e) {
+            console.error("[Grove Extension] Failed to save first tip preferences:", e);
+          }
+          // Send the tip
+          sendTip(amount, button);
+        },
+        () => {
+          console.log("[Grove Extension] First tip cancelled");
+        }
+      );
+      return;
+    }
+
+    // If confirmation disabled, send tip directly
+    if (!confirmBeforeTipping) {
+      sendTip(tipAmount, button);
       return;
     }
 
@@ -1704,12 +1738,14 @@
     // Get settings from storage
     let tipAmount = 0.10;
     let confirmBeforeTipping = false;
+    let hasTipped = false;
 
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        const result = await chrome.storage.local.get(['GROVE_TIP_AMOUNT', 'GROVE_CONFIRM_TIP']);
+        const result = await chrome.storage.local.get(['GROVE_TIP_AMOUNT', 'GROVE_CONFIRM_TIP', 'GROVE_HAS_TIPPED']);
         tipAmount = result.GROVE_TIP_AMOUNT || 0.10;
         confirmBeforeTipping = result.GROVE_CONFIRM_TIP || false;
+        hasTipped = result.GROVE_HAS_TIPPED || false;
       }
     } catch (error) {
       console.error("[Grove Extension] Settings load failed:", error);
@@ -1718,6 +1754,37 @@
         message: 'Extension was reloaded. Please refresh the page.',
         variant: 'error'
       });
+      return;
+    }
+
+    // If this is the user's first tip, show the first tip modal
+    if (!hasTipped) {
+      if (!firstTipModal) {
+        firstTipModal = new FirstTipModal();
+      }
+
+      firstTipModal.show(
+        buttonWrapper.button,
+        tipAmount,
+        confirmBeforeTipping,
+        async ({ amount, confirmBeforeTipping: newConfirmSetting }) => {
+          // Save preferences and mark as having tipped
+          try {
+            await chrome.storage.local.set({
+              'GROVE_TIP_AMOUNT': amount,
+              'GROVE_CONFIRM_TIP': newConfirmSetting,
+              'GROVE_HAS_TIPPED': true
+            });
+          } catch (e) {
+            console.error("[Grove Extension] Failed to save first tip preferences:", e);
+          }
+          // Send the tip
+          sendTweetTip(amount, buttonWrapper, tweetUrl);
+        },
+        () => {
+          console.log("[Grove Extension] First tip cancelled");
+        }
+      );
       return;
     }
 
@@ -1989,6 +2056,10 @@ Tip creators you love → {grove_link}`;
     if (tipPopover) {
       tipPopover.hide();
       tipPopover = null;
+    }
+    if (firstTipModal) {
+      firstTipModal.hide();
+      firstTipModal = null;
     }
     currentAdapter = null;
     resolvedAddress = null;
