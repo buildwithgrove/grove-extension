@@ -986,11 +986,6 @@ button.section-card-btn:hover .quick-access-icon {
   flex-shrink: 0;
 }
 
-.home-settings-card-icon.earn-icon {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-}
-
 /* Sheen effect for cards that need attention */
 .home-settings-card.sheen-card {
   position: relative;
@@ -1954,6 +1949,40 @@ button.quick-access-item:hover .quick-access-icon {
 .nav-label {
   font-size: 9px;
   font-weight: 600;
+}
+
+/* Earn tab shimmer effect */
+.nav-item-earn:not(.active) .earn-icon-animated {
+  stroke: url(#earn-gradient);
+}
+
+.nav-item-earn:not(.active) .nav-label {
+  background: linear-gradient(
+    90deg,
+    var(--color-text-secondary) 0%,
+    var(--color-text-secondary) 40%,
+    var(--color-primary) 50%,
+    var(--color-text-secondary) 60%,
+    var(--color-text-secondary) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: earn-shimmer 3s ease-in-out infinite;
+}
+
+.nav-item-earn.active .earn-icon-animated {
+  stroke: var(--color-primary);
+}
+
+@keyframes earn-shimmer {
+  0%, 100% {
+    background-position: 100% 0;
+  }
+  50% {
+    background-position: 0% 0;
+  }
 }
 
 /* Utils */

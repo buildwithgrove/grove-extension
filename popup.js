@@ -560,14 +560,6 @@ function setupEventListeners() {
     copyEnsNameBtn.addEventListener('click', copyEnsName);
   }
 
-  // Earn Card - Navigate to Earn tab
-  const earnCtaBtn = document.getElementById('earnCtaBtn');
-  if (earnCtaBtn) {
-    earnCtaBtn.addEventListener('click', () => {
-      document.querySelector('[data-target="tab-earn"]').click();
-    });
-  }
-
   // Listen for storage changes (e.g., when webapp injects JWT via external messaging)
   chrome.storage.onChanged.addListener(async (changes, areaName) => {
     if (areaName !== 'local') return;
