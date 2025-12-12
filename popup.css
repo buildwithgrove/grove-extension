@@ -1288,6 +1288,42 @@ button.quick-access-item:hover .quick-access-icon {
   margin-left: 2px;
 }
 
+.placeholder-hint {
+  font-size: 11px;
+  color: var(--color-accent);
+  line-height: 1.5;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background: rgba(240, 173, 78, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(240, 173, 78, 0.3);
+}
+
+.placeholder-hint-title {
+  margin-bottom: 6px;
+  color: var(--color-text-primary);
+}
+
+.placeholder-hint-vars {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.placeholder-hint-vars strong {
+  color: var(--color-accent);
+  margin-right: 2px;
+}
+
+.placeholder-hint code {
+  background: rgba(240, 173, 78, 0.15);
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 10px;
+}
+
 .feature-list {
   display: flex;
   flex-direction: column;
