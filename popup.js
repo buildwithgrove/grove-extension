@@ -89,12 +89,9 @@ const prevKeysContainer = document.getElementById('prevKeysContainer');
 const prevKeysList = document.getElementById('prevKeysList');
 const closePrevKeysBtn = document.getElementById('closePrevKeysBtn');
 
-// Earn Tab - Address Display
+// Earn Tab - Address Display (unified - shows ENS/basename or 0x address)
 const earnAddressText = document.getElementById('earnAddressText');
 const copyEarnAddressBtn = document.getElementById('copyEarnAddressBtn');
-const ensNameDisplay = document.getElementById('ensNameDisplay');
-const ensNameValue = document.getElementById('ensNameValue');
-const copyEnsNameBtn = document.getElementById('copyEnsNameBtn');
 
 // Tip Intro Modal
 const tipButtonIntroModal = document.getElementById('tipButtonIntroModal');
@@ -283,12 +280,12 @@ async function init() {
   // Resolve ENS name in the background (don't await to avoid blocking UI)
   loadAndResolveEnsName();
 
-  // Check if earn tab badge should be hidden
+  // Show earn tab badge only if user hasn't visited earn tab yet
   const earnTabSeen = await chrome.storage.local.get([STORAGE_KEYS.EARN_TAB_SEEN]);
-  if (earnTabSeen[STORAGE_KEYS.EARN_TAB_SEEN]) {
+  if (!earnTabSeen[STORAGE_KEYS.EARN_TAB_SEEN]) {
     const earnBadge = document.querySelector('.nav-badge-dot');
     if (earnBadge) {
-      earnBadge.classList.add('hidden');
+      earnBadge.classList.remove('hidden');
     }
   }
 
@@ -560,14 +557,9 @@ function setupEventListeners() {
     btn.addEventListener('click', () => showToast('Coming Soon'));
   });
 
-  // Earn Tab - Copy Address Button
+  // Earn Tab - Copy Address Button (copies ENS name if available, otherwise 0x address)
   if (copyEarnAddressBtn) {
     copyEarnAddressBtn.addEventListener('click', copyEarnAddress);
-  }
-
-  // Earn Tab - Copy ENS Name Button
-  if (copyEnsNameBtn) {
-    copyEnsNameBtn.addEventListener('click', copyEnsName);
   }
 
   // Listen for storage changes (e.g., when webapp injects JWT via external messaging)
@@ -1491,20 +1483,35 @@ async function fetchBalance() {
 }
 
 /**
- * Earn Tab - Address Display
+ * Earn Tab - Unified Address Display
+ * Shows ENS name or base name if available, otherwise shows 0x address
  */
-function updateEarnAddressDisplay(address) {
-  if (earnAddressText && address) {
-    earnAddressText.textContent = address;
+function updateEarnAddressDisplay(displayValue, hasEnsName = false) {
+  const ensLinksSection = document.getElementById('ensLinksSection');
+
+  if (earnAddressText && displayValue) {
+    earnAddressText.textContent = displayValue;
     earnAddressText.classList.remove('placeholder');
     if (copyEarnAddressBtn) {
       copyEarnAddressBtn.disabled = false;
+    }
+    // Hide "Get an ENS name" links when user has one
+    if (ensLinksSection) {
+      if (hasEnsName) {
+        ensLinksSection.classList.add('hidden');
+      } else {
+        ensLinksSection.classList.remove('hidden');
+      }
     }
   } else if (earnAddressText) {
     earnAddressText.textContent = 'Connect to see address';
     earnAddressText.classList.add('placeholder');
     if (copyEarnAddressBtn) {
       copyEarnAddressBtn.disabled = true;
+    }
+    // Show "Get an ENS name" links when not connected
+    if (ensLinksSection) {
+      ensLinksSection.classList.remove('hidden');
     }
   }
 }
@@ -1513,18 +1520,32 @@ async function loadClientAddress() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
   const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
   const ensName = result[STORAGE_KEYS.ENS_NAME];
-  updateEarnAddressDisplay(address);
-  updateEnsNameDisplay(ensName);
+
+  // Show ENS/base name if available, otherwise show truncated 0x address
+  if (ensName) {
+    updateEarnAddressDisplay(ensName, true);
+  } else if (address) {
+    // Truncate address for display: 0x1234...abcd
+    const truncated = `${address.slice(0, 6)}...${address.slice(-4)}`;
+    updateEarnAddressDisplay(truncated, false);
+  } else {
+    updateEarnAddressDisplay(null, false);
+  }
 }
 
 async function copyEarnAddress() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
+  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
   const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
+  const ensName = result[STORAGE_KEYS.ENS_NAME];
 
-  if (address) {
+  // Copy ENS name if available, otherwise copy 0x address
+  const valueToCopy = ensName || address;
+  const toastMessage = ensName ? 'Address copied!' : 'Address copied!';
+
+  if (valueToCopy) {
     try {
-      await navigator.clipboard.writeText(address);
-      showToast('Address copied!');
+      await navigator.clipboard.writeText(valueToCopy);
+      showToast(toastMessage);
 
       // Visual feedback
       if (copyEarnAddressBtn) {
@@ -1535,29 +1556,6 @@ async function copyEarnAddress() {
       }
     } catch (err) {
       console.error('[Grove Extension] Copy failed:', err);
-      showToast('Failed to copy');
-    }
-  }
-}
-
-async function copyEnsName() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.ENS_NAME]);
-  const ensName = result[STORAGE_KEYS.ENS_NAME];
-
-  if (ensName) {
-    try {
-      await navigator.clipboard.writeText(ensName);
-      showToast('ENS name copied!');
-
-      // Visual feedback
-      if (copyEnsNameBtn) {
-        copyEnsNameBtn.classList.add('copied');
-        setTimeout(() => {
-          copyEnsNameBtn.classList.remove('copied');
-        }, 2000);
-      }
-    } catch (err) {
-      console.error('[Grove Extension] Copy ENS name failed:', err);
       showToast('Failed to copy');
     }
   }
@@ -1621,37 +1619,12 @@ async function resolveEnsName(address) {
 
 
 /**
- * Update ENS name display in the UI
+ * Update unified address display in the UI when ENS name changes
+ * This is called after ENS resolution completes
  */
-function updateEnsNameDisplay(ensName) {
-  const ensLinksSection = document.getElementById('ensLinksSection');
-  const earnAddressDisplay = document.getElementById('earnAddressDisplay');
-
-  if (ensNameDisplay && ensNameValue) {
-    if (ensName) {
-      ensNameValue.textContent = ensName;
-      ensNameDisplay.classList.remove('hidden');
-      // Hide "Get an ENS name" links when user has one
-      if (ensLinksSection) {
-        ensLinksSection.classList.add('hidden');
-      }
-      // Address display is secondary when ENS exists
-      if (earnAddressDisplay) {
-        earnAddressDisplay.classList.remove('primary');
-      }
-    } else {
-      ensNameDisplay.classList.add('hidden');
-      ensNameValue.textContent = '';
-      // Show "Get an ENS name" links when user doesn't have one
-      if (ensLinksSection) {
-        ensLinksSection.classList.remove('hidden');
-      }
-      // Address display is primary when no ENS
-      if (earnAddressDisplay) {
-        earnAddressDisplay.classList.add('primary');
-      }
-    }
-  }
+async function updateEnsNameDisplay(ensName) {
+  // Re-load and display the address (will show ENS if available)
+  await loadClientAddress();
 }
 
 /**

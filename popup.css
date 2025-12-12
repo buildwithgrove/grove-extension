@@ -339,7 +339,12 @@ body {
 .page-title {
   font-size: 20px;
   font-weight: 700;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+}
+
+/* Earn page specific spacing */
+#tab-earn .page-title {
+  margin-bottom: 16px;
 }
 
 /* Card Layout Components */
@@ -440,7 +445,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-width: 100px;
+  width: 100px;
   padding: 10px 20px;
   background-color: var(--color-surface-hover);
   color: var(--color-text-primary);
@@ -1282,19 +1287,19 @@ button.quick-access-item:hover .quick-access-icon {
 /* Your Address Section (Earn Tab) */
 .your-address-section {
   margin: 0 16px 12px;
-  padding: 14px;
+  padding: 16px;
 }
 
 .your-address-section .section-header h3 {
   font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   text-align: center;
 }
 
 .address-display-container {
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 
 .address-display {
@@ -1368,26 +1373,29 @@ button.quick-access-item:hover .quick-access-icon {
 .ens-links {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-top: 12px;
+  justify-content: center;
+  gap: 6px;
+  padding-top: 10px;
   border-top: 1px solid var(--color-border);
-  white-space: nowrap;
+  flex-wrap: nowrap;
 }
 
 .ens-label {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
 .ens-link {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--color-primary);
   text-decoration: none;
-  padding: 4px 10px;
+  padding: 3px 8px;
   background-color: var(--color-primary-light);
   border-radius: var(--radius-full);
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .ens-link:hover {
@@ -1396,7 +1404,7 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 .ens-separator {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--color-text-tertiary);
 }
 
@@ -1423,34 +1431,84 @@ button.quick-access-item:hover .quick-access-icon {
 /* How to Earn Section */
 .how-to-earn-section {
   margin: 0 16px 16px;
-  padding: 14px;
-  text-align: center;
+  padding: 18px;
+  text-align: left;
 }
 
 .how-to-earn-title {
   font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);
-  margin: 0 0 8px 0;
+  margin: 0 0 16px 0;
+  text-align: center;
 }
 
-.how-to-earn-text {
+.how-to-earn-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.earn-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.earn-step-number {
+  width: 22px;
+  height: 22px;
+  background: var(--color-primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.earn-step-content {
+  flex: 1;
+  padding-top: 2px;
+}
+
+.earn-step-title {
   font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.earn-step-desc {
+  font-size: 12px;
   color: var(--color-text-secondary);
   line-height: 1.4;
-  margin: 0 0 12px 0;
+}
+
+.earn-example {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 11px;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  padding: 1px 6px;
+  border-radius: 4px;
 }
 
 .how-to-earn-btn {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 10px 16px;
+  width: 100%;
+  padding: 12px 16px;
   background-color: var(--color-primary);
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-full);
   color: white;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   text-decoration: none;
   transition: all 0.2s;
@@ -1460,6 +1518,11 @@ button.quick-access-item:hover .quick-access-icon {
   background-color: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
   color: white;
+}
+
+.x-logo-text {
+  font-size: 1.2em;
+  font-weight: 700;
 }
 
 /* Step Cards (Get Tips) */

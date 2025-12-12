@@ -477,25 +477,14 @@
     <div class="page" id="tab-earn">
       <h2 class="page-title">Earn Tips</h2>
 
-      <!-- Your Address Section -->
+      <!-- Your Address Section (unified - shows ENS/basename or address) -->
       <div class="section-card your-address-section">
         <div class="section-header">
           <h3>Your Tipping Address</h3>
         </div>
 
-        <!-- ENS Name Display (if available) -->
-        <div class="ens-name-display hidden" id="ensNameDisplay">
-          <span class="ens-name-value" id="ensNameValue"></span>
-          <button class="copy-address-btn" id="copyEnsNameBtn" title="Copy ENS name">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-          </button>
-        </div>
-
         <div class="address-display-container">
-          <div class="address-display" id="earnAddressDisplay">
+          <div class="address-display primary" id="earnAddressDisplay">
             <span class="address-text" id="earnAddressText">Connect to see address</span>
             <button class="copy-address-btn" id="copyEarnAddressBtn" title="Copy address" disabled>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -508,7 +497,7 @@
 
         <!-- Get ENS links (hidden when ENS name exists) -->
         <div class="ens-links" id="ensLinksSection">
-          <span class="ens-label">Get an ENS name:</span>
+          <span class="ens-label">Get a name:</span>
           <a href="https://app.ens.domains" target="_blank" class="ens-link">.eth</a>
           <span class="ens-separator">or</span>
           <a href="https://www.base.org/names" target="_blank" class="ens-link">.base.eth</a>
@@ -517,16 +506,31 @@
 
       <!-- How to Earn Section -->
       <div class="section-card how-to-earn-section">
-        <h3 class="how-to-earn-title">How to Earn</h3>
-        <p class="how-to-earn-text">
-          Add your address to your 𝕏 name or bio.<br>
-          Others can then tip your posts.
-        </p>
+        <h3 class="how-to-earn-title">How to Earn Tips</h3>
+        <div class="how-to-earn-steps">
+          <div class="earn-step">
+            <div class="earn-step-number">1</div>
+            <div class="earn-step-content">
+              <div class="earn-step-title">Copy your address above</div>
+            </div>
+          </div>
+          <div class="earn-step">
+            <div class="earn-step-number">2</div>
+            <div class="earn-step-content">
+              <div class="earn-step-title">Add it to your 𝕏 profile</div>
+              <div class="earn-step-desc">Put it in your display name or bio</div>
+            </div>
+          </div>
+          <div class="earn-step">
+            <div class="earn-step-number">3</div>
+            <div class="earn-step-content">
+              <div class="earn-step-title">Get tipped by others</div>
+              <div class="earn-step-desc">People with the Grove extension can tip your posts</div>
+            </div>
+          </div>
+        </div>
         <a href="https://x.com/settings/profile" target="_blank" class="how-to-earn-btn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-          </svg>
-          Edit Profile
+          Edit Profile on <span class="x-logo-text">𝕏</span>
         </a>
       </div>
     </div>
@@ -976,7 +980,7 @@
           <line x1="12" y1="2" x2="12" y2="22"></line>
           <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
         </svg>
-        <span class="nav-badge-dot"></span>
+        <span class="nav-badge-dot hidden"></span>
       </div>
       <span class="nav-label">Earn</span>
     </button>
