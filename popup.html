@@ -201,24 +201,23 @@
 
 
 
-        <!-- Default Tip Card (matches X settings card style) -->
-        <button class="home-settings-card" id="defaultTipCard">
-          <div class="home-settings-card-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="1" x2="12" y2="23"></line>
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-            </svg>
+        <!-- Default Tip Card (matches balance card style) -->
+        <button class="section-card section-card-btn" id="defaultTipCard">
+          <div class="card-row">
+            <div class="card-content">
+              <div class="card-label">Default Tip</div>
+              <div class="amount-display" id="tipAmountDisplay">
+                <span class="currency-symbol">$</span>
+                <span class="amount-value">0.10</span>
+              </div>
+            </div>
+            <div class="card-action-btn">
+              <span>Edit</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
           </div>
-          <div class="home-settings-card-text">
-            <div class="home-settings-card-title">Default Tip</div>
-            <div class="home-settings-card-subtitle">Amount sent when you tap the tip button</div>
-          </div>
-          <div class="home-settings-card-value" id="tipAmountDisplay">
-            <span class="currency-symbol">$</span><span class="amount-value">0.10</span>
-          </div>
-          <svg class="home-settings-card-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
         </button>
 
         <!-- Default Tip Edit Form (shown when editing) -->

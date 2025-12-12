@@ -947,7 +947,7 @@ button.section-card-btn:hover .quick-access-icon {
   filter: saturate(1.5);
 }
 
-/* Home Settings Cards (unified style for Default Tip, X Connection, Earn) */
+/* Home Settings Cards (X Connection, Earn) */
 .home-settings-card {
   display: flex;
   align-items: center;
@@ -1000,20 +1000,6 @@ button.section-card-btn:hover .quick-access-icon {
   font-size: 12px;
   color: var(--color-text-secondary);
   margin-top: 2px;
-}
-
-.home-settings-card-value {
-  display: flex;
-  align-items: baseline;
-  gap: 1px;
-  margin-right: 4px;
-}
-
-.home-settings-card-value .currency-symbol,
-.home-settings-card-value .amount-value {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--color-primary);
 }
 
 .home-settings-card-chevron {
