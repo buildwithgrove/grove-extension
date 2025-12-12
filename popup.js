@@ -29,6 +29,7 @@ const tipAmountInput = document.getElementById('tipAmountInput');
 const saveTipAmount = document.getElementById('saveTipAmount');
 const cancelTipAmount = document.getElementById('cancelTipAmount');
 const defaultTipCard = document.getElementById('defaultTipCard');
+const editDefaultTipBtn = document.getElementById('editDefaultTipBtn');
 const confirmTipToggle = document.getElementById('confirmTipToggle');
 
 // Tip amount (Settings)
@@ -388,8 +389,8 @@ function setupEventListeners() {
     }
   });
 
-  // Tip Amount (Home) - entire card is clickable
-  defaultTipCard.addEventListener('click', showTipEdit);
+  // Tip Amount (Home) - Edit button triggers edit mode
+  editDefaultTipBtn.addEventListener('click', showTipEdit);
   cancelTipAmount.addEventListener('click', hideTipEdit);
   saveTipAmount.addEventListener('click', saveTip);
   confirmTipToggle.addEventListener('change', handleConfirmTipToggle);

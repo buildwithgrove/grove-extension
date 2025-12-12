@@ -202,7 +202,7 @@
 
 
         <!-- Default Tip Card (matches balance card style) -->
-        <button class="section-card section-card-btn" id="defaultTipCard">
+        <div class="section-card" id="defaultTipCard">
           <div class="card-row">
             <div class="card-content">
               <div class="card-label">Default Tip</div>
@@ -211,15 +211,15 @@
                 <span class="amount-value">0.10</span>
               </div>
             </div>
-            <div class="card-action-btn primary">
+            <button class="card-action-btn primary" id="editDefaultTipBtn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
                 <path d="m15 5 4 4"></path>
               </svg>
               <span>Edit</span>
-            </div>
+            </button>
           </div>
-        </button>
+        </div>
 
         <!-- Default Tip Edit Form (shown when editing) -->
         <div class="section-card hidden" id="tipAmountEdit">
