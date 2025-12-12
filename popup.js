@@ -1278,6 +1278,7 @@ const homeXLoginStatus = document.getElementById('homeXLoginStatus');
 const homeXLoginBtn = document.getElementById('homeXLoginBtn');
 const homeXPostConnectOptions = document.getElementById('homeXPostConnectOptions');
 const homeXSettingsTitle = document.getElementById('homeXSettingsTitle');
+const homeXConnectHint = document.getElementById('homeXConnectHint');
 
 async function loadXLoginStatus() {
   try {
@@ -1299,6 +1300,7 @@ async function loadXLoginStatus() {
       if (homeXSettingsTitle) {
         homeXSettingsTitle.textContent = 'Connected to 𝕏';
       }
+      if (homeXConnectHint) homeXConnectHint.classList.add('hidden');
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.remove('hidden');
     } else {
       if (homeXLoginStatus) {
@@ -1312,6 +1314,7 @@ async function loadXLoginStatus() {
       if (homeXSettingsTitle) {
         homeXSettingsTitle.textContent = 'Connect to 𝕏';
       }
+      if (homeXConnectHint) homeXConnectHint.classList.remove('hidden');
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.add('hidden');
     }
   } catch (error) {
@@ -1351,6 +1354,9 @@ async function handleXLogin() {
       }
       if (homeXSettingsTitle) {
         homeXSettingsTitle.textContent = 'Connected to 𝕏';
+      }
+      if (homeXConnectHint) {
+        homeXConnectHint.classList.add('hidden');
       }
       if (homeXPostConnectOptions) {
         homeXPostConnectOptions.classList.remove('hidden');
