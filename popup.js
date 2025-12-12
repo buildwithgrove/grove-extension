@@ -721,6 +721,11 @@ async function handleNavigation(e) {
     // Stop live polling when leaving leaderboard tab
     stopLivePolling();
   }
+
+  // Reset settings view to main menu when navigating to settings tab
+  if (targetId === 'tab-settings') {
+    showSettingsView('main');
+  }
 }
 
 /**
