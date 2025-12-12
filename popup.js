@@ -406,9 +406,14 @@ function setupEventListeners() {
       // Open X settings panel
       const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
       const homeTwitterSettingsPanel = document.getElementById('homeTwitterSettingsPanel');
+      const homeXLoginBtn = document.getElementById('homeXLoginBtn');
       if (homeTwitterSettingsBtn && homeTwitterSettingsPanel) {
         homeTwitterSettingsBtn.classList.add('hidden');
         homeTwitterSettingsPanel.classList.remove('hidden');
+        // Trigger the connect button after a brief delay for panel to render
+        if (homeXLoginBtn) {
+          setTimeout(() => homeXLoginBtn.click(), 100);
+        }
       }
     });
   }
