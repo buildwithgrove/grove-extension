@@ -123,6 +123,7 @@ const STORAGE_KEYS = {
   CLIENT_ADDRESS: 'GROVE_CLIENT_ADDRESS',
   ENS_NAME: 'GROVE_ENS_NAME',
   TIP_INTRO_SEEN: 'GROVE_TIP_INTRO_SEEN',
+  EARN_TAB_SEEN: 'GROVE_EARN_TAB_SEEN',
 };
 
 /**
@@ -281,6 +282,15 @@ async function init() {
 
   // Resolve ENS name in the background (don't await to avoid blocking UI)
   loadAndResolveEnsName();
+
+  // Check if earn tab badge should be hidden
+  const earnTabSeen = await chrome.storage.local.get([STORAGE_KEYS.EARN_TAB_SEEN]);
+  if (earnTabSeen[STORAGE_KEYS.EARN_TAB_SEEN]) {
+    const earnBadge = document.querySelector('.nav-badge-dot');
+    if (earnBadge) {
+      earnBadge.classList.add('hidden');
+    }
+  }
 
   // Refresh data when popup regains focus
   document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -639,6 +649,15 @@ async function handleNavigation(e) {
   // Load history when navigating to history tab
   if (targetId === 'tab-history') {
     loadHistory();
+  }
+
+  // Hide earn badge when navigating to earn tab
+  if (targetId === 'tab-earn') {
+    const earnBadge = document.querySelector('.nav-badge-dot');
+    if (earnBadge) {
+      earnBadge.classList.add('hidden');
+    }
+    chrome.storage.local.set({ [STORAGE_KEYS.EARN_TAB_SEEN]: true });
   }
 
   // Load leaderboard data when navigating to leaderboard

@@ -2019,24 +2019,30 @@ button.quick-access-item:hover .quick-access-icon {
 
 .nav-badge-dot {
   position: absolute;
-  top: -3px;
-  right: -6px;
-  width: 10px;
-  height: 10px;
+  top: -5px;
+  right: -8px;
+  width: 12px;
+  height: 12px;
   background: var(--color-accent);
   border-radius: 50%;
-  border: 2px solid var(--color-bg);
-  animation: badge-pulse 2s ease-in-out infinite;
+  border: 2px solid var(--color-accent);
+  animation: badge-breathe 1.2s ease-in-out infinite;
 }
 
-@keyframes badge-pulse {
+.nav-badge-dot.hidden {
+  display: none;
+}
+
+@keyframes badge-breathe {
   0%, 100% {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(240, 173, 78, 0.4);
   }
   50% {
-    transform: scale(1.1);
-    box-shadow: 0 0 0 4px rgba(240, 173, 78, 0);
+    background: transparent;
+    border-color: var(--color-accent);
+    transform: scale(1.15);
   }
 }
 
