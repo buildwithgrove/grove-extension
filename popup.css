@@ -445,7 +445,6 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  width: 100px;
   padding: 10px 20px;
   background-color: var(--color-surface-hover);
   color: var(--color-text-primary);
@@ -457,6 +456,18 @@ body {
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+}
+
+#topUpBtn {
+  min-width: 110px;
+}
+
+#topUpBtn svg {
+  flex-shrink: 0;
+}
+
+#editDefaultTipBtn {
+  min-width: 110px;
 }
 
 .card-action-btn:hover {
@@ -499,6 +510,7 @@ button.section-card-btn {
   cursor: pointer;
   transition: background-color 0.15s ease;
   text-align: left;
+  font-family: inherit;
 }
 
 button.section-card-btn:hover {
@@ -2120,28 +2132,23 @@ button.quick-access-item:hover .quick-access-icon {
   position: absolute;
   top: -5px;
   right: -8px;
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   background: var(--color-accent);
   border-radius: 50%;
-  border: 2px solid var(--color-accent);
-  animation: badge-breathe 1.2s ease-in-out infinite;
+  animation: badge-glow 1.5s ease-in-out infinite;
 }
 
 .nav-badge-dot.hidden {
   display: none;
 }
 
-@keyframes badge-breathe {
+@keyframes badge-glow {
   0%, 100% {
-    background: var(--color-accent);
-    border-color: var(--color-accent);
-    transform: scale(1);
+    box-shadow: 0 0 4px 2px rgba(240, 173, 78, 0.4);
   }
   50% {
-    background: transparent;
-    border-color: var(--color-accent);
-    transform: scale(1.15);
+    box-shadow: 0 0 8px 4px rgba(240, 173, 78, 0.7);
   }
 }
 
@@ -3042,10 +3049,6 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 /* Tip Intro Modal */
-.tip-intro-modal {
-  text-align: center;
-}
-
 .tip-intro-header h3 {
   font-size: 20px;
   font-weight: 700;
@@ -3111,6 +3114,156 @@ button.quick-access-item:hover .quick-access-icon {
   background: var(--color-primary-light);
   padding: 2px 8px;
   border-radius: 4px;
+}
+
+/* Tip Intro Modal Pages */
+.tip-intro-modal {
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.tip-intro-page {
+  display: none;
+}
+
+.tip-intro-page.active {
+  display: block;
+  animation: tipIntroFadeIn 0.3s ease;
+}
+
+@keyframes tipIntroFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Next button with bouncing chevron */
+.tip-intro-next-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tip-intro-next-btn .bounce-chevron {
+  animation: bounceRight 1s ease-in-out infinite;
+}
+
+@keyframes bounceRight {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+}
+
+/* Page 2: Connect to X */
+.tip-intro-x-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: var(--color-text-primary);
+}
+
+.tip-intro-features {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0 0;
+  text-align: left;
+}
+
+.tip-intro-features li {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  padding: 6px 0;
+  padding-left: 24px;
+  position: relative;
+}
+
+.tip-intro-features li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Side-by-side buttons */
+.tip-intro-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.tip-intro-buttons .btn-primary,
+.tip-intro-buttons .btn-secondary {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tip-intro-buttons .btn-primary {
+  background-color: var(--color-primary);
+  border: none;
+  color: white;
+}
+
+.tip-intro-buttons .btn-primary:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.tip-intro-buttons .btn-secondary {
+  background-color: var(--color-accent);
+  border: none;
+  color: #1a1a1a;
+}
+
+.tip-intro-buttons .btn-secondary:hover {
+  background-color: var(--grove-accent-orange-hover);
+}
+
+/* Page Indicators */
+.tip-intro-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.tip-intro-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.tip-intro-dot.active {
+  background: var(--color-primary);
+}
+
+.tip-intro-dot:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 /* Settings Tip Value Display */
