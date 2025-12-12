@@ -2,22 +2,6 @@
 <html lang="en">
 
 <head>
-  <!-- SVG gradient definitions for animated icons -->
-  <svg width="0" height="0" style="position: absolute;">
-    <defs>
-      <linearGradient id="earn-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stop-color="#a3a3a3">
-          <animate attributeName="stop-color" values="#a3a3a3;#f0ad4e;#a3a3a3" dur="3s" repeatCount="indefinite"/>
-        </stop>
-        <stop offset="50%" stop-color="#f0ad4e">
-          <animate attributeName="stop-color" values="#f0ad4e;#a3a3a3;#f0ad4e" dur="3s" repeatCount="indefinite"/>
-        </stop>
-        <stop offset="100%" stop-color="#a3a3a3">
-          <animate attributeName="stop-color" values="#a3a3a3;#f0ad4e;#a3a3a3" dur="3s" repeatCount="indefinite"/>
-        </stop>
-      </linearGradient>
-    </defs>
-  </svg>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Grove Extension</title>
@@ -984,12 +968,15 @@
       </svg>
       <span class="nav-label">Leaderboard</span>
     </button>
-    <button class="nav-item nav-item-earn" data-target="tab-earn">
-      <svg class="nav-icon earn-icon-animated" width="20" height="20" viewBox="0 0 24 24" fill="none"
-        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="12" y1="2" x2="12" y2="22"></line>
-        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-      </svg>
+    <button class="nav-item" data-target="tab-earn">
+      <div class="nav-icon-wrapper">
+        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="2" x2="12" y2="22"></line>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+        <span class="nav-indicator" id="earnIndicator"></span>
+      </div>
       <span class="nav-label">Earn</span>
     </button>
     <button class="nav-item" data-target="tab-settings">

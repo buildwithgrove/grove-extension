@@ -2005,41 +2005,36 @@ button.quick-access-item:hover .quick-access-icon {
   font-weight: 600;
 }
 
-/* Earn tab shimmer effect */
-.nav-item-earn:not(.active) .earn-icon-animated {
-  stroke: url(#earn-gradient);
+/* Nav icon wrapper for indicator positioning */
+.nav-icon-wrapper {
+  position: relative;
+  display: inline-flex;
 }
 
-.nav-item-earn:not(.active) .nav-label {
-  background: linear-gradient(
-    90deg,
-    var(--color-text-secondary) 0%,
-    var(--color-text-secondary) 40%,
-    var(--color-accent) 50%,
-    var(--color-text-secondary) 60%,
-    var(--color-text-secondary) 100%
-  );
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: earn-shimmer 3s ease-in-out infinite;
+/* Pulsing indicator dot */
+.nav-indicator {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  width: 8px;
+  height: 8px;
+  background: var(--color-accent);
+  border-radius: 50%;
+  animation: pulse-indicator 2s ease-in-out infinite;
 }
 
-.nav-item-earn.active .earn-icon-animated {
-  stroke: var(--color-accent);
+.nav-indicator.hidden {
+  display: none;
 }
 
-.nav-item-earn.active .nav-label {
-  color: var(--color-accent);
-}
-
-@keyframes earn-shimmer {
+@keyframes pulse-indicator {
   0%, 100% {
-    background-position: 100% 0;
+    opacity: 1;
+    transform: scale(1);
   }
   50% {
-    background-position: 0% 0;
+    opacity: 0.6;
+    transform: scale(1.2);
   }
 }
 
