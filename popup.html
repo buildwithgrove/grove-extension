@@ -201,21 +201,24 @@
 
 
 
-        <!-- Default Tip Card (full width, tappable) -->
-        <button class="default-tip-card" id="defaultTipCard">
-          <div class="default-tip-content">
-            <div class="default-tip-label">Default Tip</div>
-            <div class="default-tip-amount" id="tipAmountDisplay">
-              <span class="currency-symbol">$</span>
-              <span class="amount-value">0.10</span>
-            </div>
-          </div>
-          <div class="default-tip-edit">
-            <span>Edit</span>
+        <!-- Default Tip Card (matches X settings card style) -->
+        <button class="home-settings-card" id="defaultTipCard">
+          <div class="home-settings-card-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="9 18 15 12 9 6"></polyline>
+              <line x1="12" y1="1" x2="12" y2="23"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
             </svg>
           </div>
+          <div class="home-settings-card-text">
+            <div class="home-settings-card-title">Default Tip</div>
+            <div class="home-settings-card-subtitle">Amount sent when you tap the tip button</div>
+          </div>
+          <div class="home-settings-card-value" id="tipAmountDisplay">
+            <span class="currency-symbol">$</span><span class="amount-value">0.10</span>
+          </div>
+          <svg class="home-settings-card-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
         </button>
 
         <!-- Default Tip Edit Form (shown when editing) -->
@@ -238,19 +241,17 @@
         </div>
 
         <!-- X (Twitter) Settings Card -->
-        <button class="x-settings-card" id="homeTwitterSettingsBtn">
-          <div class="x-settings-header">
-            <div class="x-settings-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            </div>
-            <div class="x-settings-text">
-              <div class="x-settings-title" id="homeXSettingsTitle">Connected to 𝕏</div>
-              <div class="x-settings-subtitle">Enable auto-like and auto-reply when you send a tip</div>
-            </div>
-            <svg class="x-settings-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
+        <button class="home-settings-card" id="homeTwitterSettingsBtn">
+          <div class="home-settings-card-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
           </div>
+          <div class="home-settings-card-text">
+            <div class="home-settings-card-title" id="homeXSettingsTitle">Connect to 𝕏</div>
+            <div class="home-settings-card-subtitle">Auto-like and auto-reply when you tip</div>
+          </div>
+          <svg class="home-settings-card-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
         </button>
 
         <!-- X (Twitter) Settings Panel (hidden by default, shown on drill-down) -->
@@ -310,18 +311,22 @@
           </div>
         </div>
 
-        <!-- Earn Tips CTA Card -->
-        <div class="earn-cta-card" id="earnCtaCard">
-          <button class="earn-cta-btn" id="earnCtaBtn">
-            <span class="earn-cta-text">Want to earn tips? Learn how →</span>
-          </button>
-          <button class="earn-cta-close" id="earnCtaClose" title="Dismiss">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-              <line x1="2" y1="2" x2="10" y2="10"></line>
-              <line x1="10" y1="2" x2="2" y2="10"></line>
+        <!-- Earn Tips Card -->
+        <button class="home-settings-card" id="earnCtaBtn">
+          <div class="home-settings-card-icon earn-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="2" x2="12" y2="22"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
             </svg>
-          </button>
-        </div>
+          </div>
+          <div class="home-settings-card-text">
+            <div class="home-settings-card-title">Earn Tips</div>
+            <div class="home-settings-card-subtitle">Get paid for your posts on 𝕏</div>
+          </div>
+          <svg class="home-settings-card-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
       </div>
     </div>
 

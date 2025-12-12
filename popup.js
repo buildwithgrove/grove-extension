@@ -122,7 +122,6 @@ const STORAGE_KEYS = {
   LAST_BALANCES: 'GROVE_LAST_BALANCES',
   CLIENT_ADDRESS: 'GROVE_CLIENT_ADDRESS',
   ENS_NAME: 'GROVE_ENS_NAME',
-  EARN_CTA_DISMISSED: 'GROVE_EARN_CTA_DISMISSED',
   TIP_INTRO_SEEN: 'GROVE_TIP_INTRO_SEEN',
 };
 
@@ -561,29 +560,11 @@ function setupEventListeners() {
     copyEnsNameBtn.addEventListener('click', copyEnsName);
   }
 
-  // Earn CTA Card - Navigate to Earn tab or dismiss
-  const earnCtaCard = document.getElementById('earnCtaCard');
+  // Earn Card - Navigate to Earn tab
   const earnCtaBtn = document.getElementById('earnCtaBtn');
-  const earnCtaClose = document.getElementById('earnCtaClose');
-
-  // Check if CTA was dismissed and hide if so
-  chrome.storage.local.get([STORAGE_KEYS.EARN_CTA_DISMISSED], (result) => {
-    if (result[STORAGE_KEYS.EARN_CTA_DISMISSED] && earnCtaCard) {
-      earnCtaCard.classList.add('hidden');
-    }
-  });
-
   if (earnCtaBtn) {
     earnCtaBtn.addEventListener('click', () => {
       document.querySelector('[data-target="tab-earn"]').click();
-    });
-  }
-
-  if (earnCtaClose && earnCtaCard) {
-    earnCtaClose.addEventListener('click', (e) => {
-      e.stopPropagation();
-      earnCtaCard.classList.add('hidden');
-      chrome.storage.local.set({ [STORAGE_KEYS.EARN_CTA_DISMISSED]: true });
     });
   }
 
