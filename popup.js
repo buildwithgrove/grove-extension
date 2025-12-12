@@ -2135,15 +2135,8 @@ function setupLeaderboardSwitcher() {
   leaderboardSwitcherBtns = document.querySelectorAll('.switcher-btn');
   leaderboardViews = document.querySelectorAll('.leaderboard-view');
 
-  // Hide period selector and stats initially (Live is default view)
-  const periodSelector = document.querySelector('.period-selector');
-  const statsSection = document.getElementById('leaderboard-stats');
-  if (periodSelector) {
-    periodSelector.classList.add('hidden');
-  }
-  if (statsSection) {
-    statsSection.classList.add('hidden');
-  }
+  // Filters container (period selector + stats) - collapsed by default for Live view
+  const filtersContainer = document.getElementById('leaderboard-filters');
 
   // Period selector
   periodBtns.forEach(btn => {
@@ -2177,13 +2170,10 @@ function setupLeaderboardSwitcher() {
         leaderboardViews.forEach(v => v.classList.remove('active'));
         document.getElementById(`${view}-view`).classList.add('active');
 
-        // Show/hide period selector and stats (not relevant for Live view)
+        // Show/hide filters container with slide animation
         const isLive = view === 'live';
-        if (periodSelector) {
-          periodSelector.classList.toggle('hidden', isLive);
-        }
-        if (statsSection) {
-          statsSection.classList.toggle('hidden', isLive);
+        if (filtersContainer) {
+          filtersContainer.classList.toggle('expanded', !isLive);
         }
 
         // Load data for the selected view
