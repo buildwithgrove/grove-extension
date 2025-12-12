@@ -986,6 +986,60 @@ button.section-card-btn:hover .quick-access-icon {
   flex-shrink: 0;
 }
 
+/* X Connect Card */
+.x-connect-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.x-connect-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.x-connect-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-primary);
+}
+
+.x-connect-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.x-connect-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.x-connect-features li {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  padding-left: 20px;
+  position: relative;
+}
+
+.x-connect-features li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
 /* Sheen effect for cards that need attention */
 .home-settings-card.sheen-card {
   position: relative;
@@ -1961,7 +2015,7 @@ button.quick-access-item:hover .quick-access-icon {
     90deg,
     var(--color-text-secondary) 0%,
     var(--color-text-secondary) 40%,
-    var(--color-primary) 50%,
+    var(--color-accent) 50%,
     var(--color-text-secondary) 60%,
     var(--color-text-secondary) 100%
   );
@@ -1973,7 +2027,11 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 .nav-item-earn.active .earn-icon-animated {
-  stroke: var(--color-primary);
+  stroke: var(--color-accent);
+}
+
+.nav-item-earn.active .nav-label {
+  color: var(--color-accent);
 }
 
 @keyframes earn-shimmer {

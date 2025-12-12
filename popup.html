@@ -7,13 +7,13 @@
     <defs>
       <linearGradient id="earn-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
         <stop offset="0%" stop-color="#a3a3a3">
-          <animate attributeName="stop-color" values="#a3a3a3;#389f58;#a3a3a3" dur="3s" repeatCount="indefinite"/>
+          <animate attributeName="stop-color" values="#a3a3a3;#f0ad4e;#a3a3a3" dur="3s" repeatCount="indefinite"/>
         </stop>
-        <stop offset="50%" stop-color="#389f58">
-          <animate attributeName="stop-color" values="#389f58;#a3a3a3;#389f58" dur="3s" repeatCount="indefinite"/>
+        <stop offset="50%" stop-color="#f0ad4e">
+          <animate attributeName="stop-color" values="#f0ad4e;#a3a3a3;#f0ad4e" dur="3s" repeatCount="indefinite"/>
         </stop>
         <stop offset="100%" stop-color="#a3a3a3">
-          <animate attributeName="stop-color" values="#a3a3a3;#389f58;#a3a3a3" dur="3s" repeatCount="indefinite"/>
+          <animate attributeName="stop-color" values="#a3a3a3;#f0ad4e;#a3a3a3" dur="3s" repeatCount="indefinite"/>
         </stop>
       </linearGradient>
     </defs>
@@ -257,17 +257,17 @@
         </div>
 
         <!-- X (Twitter) Settings Card -->
-        <button class="home-settings-card sheen-card" id="homeTwitterSettingsBtn">
-          <div class="home-settings-card-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        <button class="section-card section-card-btn x-connect-card sheen-card" id="homeTwitterSettingsBtn">
+          <div class="x-connect-header">
+            <div class="x-connect-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </div>
+            <div class="x-connect-title" id="homeXSettingsTitle">Connect to 𝕏</div>
           </div>
-          <div class="home-settings-card-text">
-            <div class="home-settings-card-title" id="homeXSettingsTitle">Connect to 𝕏</div>
-            <div class="home-settings-card-subtitle">Auto-like and auto-reply when you tip</div>
-          </div>
-          <svg class="home-settings-card-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
+          <ul class="x-connect-features">
+            <li>Auto-like posts when you tip</li>
+            <li>Reply with a personalized message</li>
+          </ul>
         </button>
 
         <!-- X (Twitter) Settings Panel (hidden by default, shown on drill-down) -->
