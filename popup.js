@@ -96,6 +96,12 @@ const copyEarnAddressBtn = document.getElementById('copyEarnAddressBtn');
 // Tip Intro Modal
 const tipButtonIntroModal = document.getElementById('tipButtonIntroModal');
 const tipIntroGotItBtn = document.getElementById('tipIntroGotItBtn');
+const tipIntroNextBtn = document.getElementById('tipIntroNextBtn');
+const tipIntroConnectBtn = document.getElementById('tipIntroConnectBtn');
+const tipIntroSkipBtn = document.getElementById('tipIntroSkipBtn');
+const tipIntroPage1 = document.getElementById('tipIntroPage1');
+const tipIntroPage2 = document.getElementById('tipIntroPage2');
+const tipIntroDots = document.querySelectorAll('.tip-intro-dot');
 
 // Initialize Previous Keys UI
 let prevKeysUI = null;
@@ -289,6 +295,23 @@ async function init() {
     }
   }
 
+  // Check if we should open to X settings (from first tip modal)
+  chrome.runtime.sendMessage({ type: 'CHECK_OPEN_TO_X_SETTINGS' }, (response) => {
+    if (response?.shouldOpen) {
+      // Navigate to home tab first
+      const homeTab = document.querySelector('[data-target="tab-home"]');
+      if (homeTab) homeTab.click();
+
+      // Open X settings panel
+      const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
+      const homeTwitterSettingsPanel = document.getElementById('homeTwitterSettingsPanel');
+      if (homeTwitterSettingsBtn && homeTwitterSettingsPanel) {
+        homeTwitterSettingsBtn.classList.add('hidden');
+        homeTwitterSettingsPanel.classList.remove('hidden');
+      }
+    }
+  });
+
   // Refresh data when popup regains focus
   document.addEventListener('visibilitychange', handleVisibilityChange);
 }
@@ -371,10 +394,34 @@ function setupEventListeners() {
   saveTipAmount.addEventListener('click', saveTip);
   confirmTipToggle.addEventListener('change', handleConfirmTipToggle);
 
-  // Tip Intro Modal
-  if (tipIntroGotItBtn) {
-    tipIntroGotItBtn.addEventListener('click', hideTipIntroModal);
+  // Tip Intro Modal - Page Navigation
+  if (tipIntroNextBtn) {
+    tipIntroNextBtn.addEventListener('click', () => {
+      goToTipIntroPage(2);
+    });
   }
+  if (tipIntroConnectBtn) {
+    tipIntroConnectBtn.addEventListener('click', () => {
+      hideTipIntroModal();
+      // Open X settings panel
+      const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
+      const homeTwitterSettingsPanel = document.getElementById('homeTwitterSettingsPanel');
+      if (homeTwitterSettingsBtn && homeTwitterSettingsPanel) {
+        homeTwitterSettingsBtn.classList.add('hidden');
+        homeTwitterSettingsPanel.classList.remove('hidden');
+      }
+    });
+  }
+  if (tipIntroSkipBtn) {
+    tipIntroSkipBtn.addEventListener('click', hideTipIntroModal);
+  }
+  // Page indicator dots
+  tipIntroDots.forEach(dot => {
+    dot.addEventListener('click', () => {
+      const page = parseInt(dot.dataset.page);
+      goToTipIntroPage(page);
+    });
+  });
   // Also close modal when clicking overlay
   if (tipButtonIntroModal) {
     tipButtonIntroModal.addEventListener('click', (e) => {
@@ -3119,6 +3166,8 @@ async function checkAndShowTipIntroModal() {
 function showTipIntroModal() {
   if (tipButtonIntroModal) {
     tipButtonIntroModal.classList.remove('hidden');
+    // Reset to page 1
+    goToTipIntroPage(1);
   }
 }
 
@@ -3128,6 +3177,29 @@ async function hideTipIntroModal() {
   }
   // Mark as seen
   await chrome.storage.local.set({ [STORAGE_KEYS.TIP_INTRO_SEEN]: true });
+  // Reset to page 1 for next time
+  goToTipIntroPage(1);
+}
+
+function goToTipIntroPage(pageNum) {
+  // Update pages
+  if (tipIntroPage1 && tipIntroPage2) {
+    if (pageNum === 1) {
+      tipIntroPage1.classList.add('active');
+      tipIntroPage2.classList.remove('active');
+    } else {
+      tipIntroPage1.classList.remove('active');
+      tipIntroPage2.classList.add('active');
+    }
+  }
+  // Update dots
+  tipIntroDots.forEach(dot => {
+    if (parseInt(dot.dataset.page) === pageNum) {
+      dot.classList.add('active');
+    } else {
+      dot.classList.remove('active');
+    }
+  });
 }
 
 /**

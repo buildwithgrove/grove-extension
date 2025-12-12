@@ -3042,10 +3042,6 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 /* Tip Intro Modal */
-.tip-intro-modal {
-  text-align: center;
-}
-
 .tip-intro-header h3 {
   font-size: 20px;
   font-weight: 700;
@@ -3111,6 +3107,146 @@ button.quick-access-item:hover .quick-access-icon {
   background: var(--color-primary-light);
   padding: 2px 8px;
   border-radius: 4px;
+}
+
+/* Tip Intro Modal Pages */
+.tip-intro-modal {
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.tip-intro-page {
+  display: none;
+}
+
+.tip-intro-page.active {
+  display: block;
+  animation: tipIntroFadeIn 0.3s ease;
+}
+
+@keyframes tipIntroFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Next button with bouncing chevron */
+.tip-intro-next-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tip-intro-next-btn .bounce-chevron {
+  animation: bounceRight 1s ease-in-out infinite;
+}
+
+@keyframes bounceRight {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+}
+
+/* Page 2: Connect to X */
+.tip-intro-x-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: var(--color-text-primary);
+}
+
+.tip-intro-features {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0 0;
+  text-align: left;
+}
+
+.tip-intro-features li {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  padding: 6px 0;
+  padding-left: 24px;
+  position: relative;
+}
+
+.tip-intro-features li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Side-by-side buttons */
+.tip-intro-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.tip-intro-buttons .btn-primary,
+.tip-intro-buttons .btn-outline-orange {
+  flex: 1;
+  padding: 10px 16px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-outline-orange {
+  background: transparent;
+  border: 2px solid var(--color-accent);
+  border-radius: 8px;
+  color: var(--color-accent);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-outline-orange:hover {
+  background: rgba(240, 173, 78, 0.1);
+}
+
+/* Page Indicators */
+.tip-intro-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.tip-intro-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.tip-intro-dot.active {
+  background: var(--color-primary);
+}
+
+.tip-intro-dot:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 /* Settings Tip Value Display */

@@ -1005,25 +1005,61 @@
   <!-- Tip Button Intro Modal -->
   <div class="modal-overlay hidden" id="tipButtonIntroModal">
     <div class="modal-content tip-intro-modal">
-      <div class="tip-intro-header">
-        <h3>You're all set!</h3>
-      </div>
-      <div class="tip-intro-body">
-        <p class="tip-intro-line">Look for this button next to posts on <svg class="tip-intro-x-logo" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></p>
-        <div class="tip-intro-button-demo">
-          <div class="demo-tip-button">
-            <span>Tip</span>
-            <span class="tip-emoji">🌿</span>
-          </div>
+      <!-- Page 1: You're all set -->
+      <div class="tip-intro-page active" id="tipIntroPage1">
+        <div class="tip-intro-header">
+          <h3>You're all set!</h3>
         </div>
-        <p class="tip-intro-subtext">From people with one of these in their display name or bio:</p>
-        <ul class="tip-intro-list">
-          <li><span class="tip-intro-example">vitalik.eth</span></li>
-          <li><span class="tip-intro-example">jesse.base.eth</span></li>
-          <li><span class="tip-intro-example">0x1234...abcd</span></li>
-        </ul>
+        <div class="tip-intro-body">
+          <p class="tip-intro-line">Look for this button next to posts on <svg class="tip-intro-x-logo" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></p>
+          <div class="tip-intro-button-demo">
+            <div class="demo-tip-button">
+              <span>Tip</span>
+              <span class="tip-emoji">🌿</span>
+            </div>
+          </div>
+          <p class="tip-intro-subtext">From people with one of these in their display name or bio:</p>
+          <ul class="tip-intro-list">
+            <li><span class="tip-intro-example">vitalik.eth</span></li>
+            <li><span class="tip-intro-example">jesse.base.eth</span></li>
+            <li><span class="tip-intro-example">0x1234...abcd</span></li>
+          </ul>
+        </div>
+        <button class="btn-primary btn-full tip-intro-next-btn" id="tipIntroNextBtn">
+          <span>Next</span>
+          <svg class="bounce-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
       </div>
-      <button class="btn-primary btn-full" id="tipIntroGotItBtn">Start tipping!</button>
+
+      <!-- Page 2: Connect to X -->
+      <div class="tip-intro-page" id="tipIntroPage2">
+        <div class="tip-intro-header">
+          <h3>Connect to <svg class="tip-intro-x-logo" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></h3>
+        </div>
+        <div class="tip-intro-body">
+          <div class="tip-intro-x-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </div>
+          <p class="tip-intro-line">Let creators know you appreciate their content when you send them a tip!</p>
+          <ul class="tip-intro-features">
+            <li>Auto-like posts you tip</li>
+            <li>Send a custom reply message</li>
+          </ul>
+        </div>
+        <div class="tip-intro-buttons">
+          <button class="btn-primary" id="tipIntroConnectBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            <span>Connect</span>
+          </button>
+          <button class="btn-outline-orange" id="tipIntroSkipBtn">Maybe Later</button>
+        </div>
+      </div>
+
+      <!-- Page Indicators -->
+      <div class="tip-intro-indicators">
+        <div class="tip-intro-dot active" data-page="1"></div>
+        <div class="tip-intro-dot" data-page="2"></div>
+      </div>
     </div>
   </div>
 
