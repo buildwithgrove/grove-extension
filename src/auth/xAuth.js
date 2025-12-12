@@ -53,87 +53,28 @@ class XAuth {
 
   /**
    * Start OAuth 2.0 login flow
+   * Delegates to background script to ensure the flow completes even if popup closes
    * @returns {Promise<Object>} - User info on success
    */
   static async login() {
-    const codeVerifier = this.generateCodeVerifier();
-    const codeChallenge = await this.generateCodeChallenge(codeVerifier);
-    const state = this.generateState();
-
-    // Build authorization URL
-    const authUrl = new URL('https://twitter.com/i/oauth2/authorize');
-    authUrl.searchParams.set('response_type', 'code');
-    authUrl.searchParams.set('client_id', this.CLIENT_ID);
-    authUrl.searchParams.set('redirect_uri', this.REDIRECT_URI);
-    authUrl.searchParams.set('scope', this.SCOPES.join(' '));
-    authUrl.searchParams.set('state', state);
-    authUrl.searchParams.set('code_challenge', codeChallenge);
-    authUrl.searchParams.set('code_challenge_method', 'S256');
-
     return new Promise((resolve, reject) => {
-      chrome.identity.launchWebAuthFlow(
-        {
-          url: authUrl.toString(),
-          interactive: true,
-        },
-        async (redirectUrl) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-            return;
-          }
-
-          if (!redirectUrl) {
-            reject(new Error('No redirect URL received'));
-            return;
-          }
-
-          try {
-            const url = new URL(redirectUrl);
-            const code = url.searchParams.get('code');
-            const returnedState = url.searchParams.get('state');
-            const error = url.searchParams.get('error');
-
-            if (error) {
-              reject(new Error(`OAuth error: ${error}`));
-              return;
-            }
-
-            if (returnedState !== state) {
-              reject(new Error('State mismatch - possible CSRF attack'));
-              return;
-            }
-
-            if (!code) {
-              reject(new Error('No authorization code received'));
-              return;
-            }
-
-            // Exchange code for tokens
-            const tokens = await this.exchangeCodeForTokens(code, codeVerifier);
-            console.log('[Grove X Auth] Token response:', {
-              hasAccessToken: !!tokens.access_token,
-              tokenType: tokens.token_type,
-              scope: tokens.scope,
-              expiresIn: tokens.expires_in
-            });
-
-            // Try to get user info (optional - might fail on free tier)
-            let userInfo = { id: 'unknown', username: 'Connected' };
-            try {
-              userInfo = await this.getUserInfo(tokens.access_token);
-            } catch (userInfoError) {
-              console.warn('[Grove X Auth] Could not fetch user info (this is OK for free tier):', userInfoError.message);
-            }
-
-            // Store tokens and user info
-            await this.storeTokens(tokens, userInfo);
-
-            resolve(userInfo);
-          } catch (err) {
-            reject(err);
-          }
+      chrome.runtime.sendMessage({ type: 'X_LOGIN' }, (response) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
         }
-      );
+
+        if (!response) {
+          reject(new Error('No response from background script'));
+          return;
+        }
+
+        if (response.success) {
+          resolve(response.userInfo);
+        } else {
+          reject(new Error(response.error || 'Login failed'));
+        }
+      });
     });
   }
 
