@@ -1398,28 +1398,13 @@ async function handleXLogin() {
 
       const userInfo = await XAuth.login();
 
-      const isRealUsername = userInfo.username && userInfo.username !== 'Connected';
-      const displayName = isRealUsername ? `@${userInfo.username}` : 'Connected';
-
-      if (homeXLoginStatus) {
-        homeXLoginStatus.textContent = displayName;
-        homeXLoginStatus.style.color = 'var(--color-primary)';
-      }
+      // Re-enable button and refresh UI from stored state
       if (homeXLoginBtn) {
-        homeXLoginBtn.textContent = 'Disconnect';
-        homeXLoginBtn.classList.add('btn-danger-text');
         homeXLoginBtn.disabled = false;
       }
-      if (homeXSettingsTitle) {
-        homeXSettingsTitle.textContent = 'Connected to 𝕏';
-      }
-      if (homeXConnectHint) {
-        homeXConnectHint.classList.add('hidden');
-      }
-      if (homeXPostConnectOptions) {
-        homeXPostConnectOptions.classList.remove('hidden');
-      }
+      await loadXLoginStatus();
 
+      const isRealUsername = userInfo.username && userInfo.username !== 'Connected';
       showToast(isRealUsername ? `Connected as @${userInfo.username}` : 'Connected to 𝕏');
     } catch (error) {
       console.error('[Grove Extension] X login failed:', error);
