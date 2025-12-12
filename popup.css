@@ -2430,19 +2430,23 @@ button.quick-access-item:hover .quick-access-icon {
 .leaderboard-filters .stat-card {
   opacity: 0;
   transform: translateY(-10px) scale(0.9);
-  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Snappy collapse - no spring */
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Reverse stagger on collapse (right to left) */
-.leaderboard-filters .stat-card:nth-child(1) { transition-delay: 0.09s; }
-.leaderboard-filters .stat-card:nth-child(2) { transition-delay: 0.06s; }
-.leaderboard-filters .stat-card:nth-child(3) { transition-delay: 0.03s; }
+.leaderboard-filters .stat-card:nth-child(1) { transition-delay: 0.06s; }
+.leaderboard-filters .stat-card:nth-child(2) { transition-delay: 0.04s; }
+.leaderboard-filters .stat-card:nth-child(3) { transition-delay: 0.02s; }
 .leaderboard-filters .stat-card:nth-child(4) { transition-delay: 0s; }
 
 .leaderboard-filters.expanded .stat-card {
   opacity: 1;
   transform: translateY(0) scale(1);
+  /* Spring bounce on expand */
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .leaderboard-filters.expanded .stat-card:nth-child(1) { transition-delay: 0.12s; }
