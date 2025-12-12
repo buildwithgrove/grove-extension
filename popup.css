@@ -2377,6 +2377,51 @@ button.quick-access-item:hover .quick-access-icon {
   color: var(--color-text-primary);
 }
 
+/* Leaderboard Filters Container (Period Selector + Stats) */
+.leaderboard-filters {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease;
+}
+
+.leaderboard-filters.expanded {
+  grid-template-rows: 1fr;
+}
+
+.leaderboard-filters-inner {
+  overflow: hidden;
+}
+
+.leaderboard-filters .period-selector {
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition-delay: 0s;
+  margin-bottom: 0;
+}
+
+.leaderboard-filters.expanded .period-selector {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.1s;
+  margin-bottom: 12px;
+}
+
+.leaderboard-filters .leaderboard-stats {
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition-delay: 0s;
+  margin-bottom: 0;
+}
+
+.leaderboard-filters.expanded .leaderboard-stats {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.15s;
+  margin-bottom: 12px;
+}
+
 /* Leaderboard Views */
 .leaderboard-view {
   display: none;
@@ -2402,14 +2447,6 @@ button.quick-access-item:hover .quick-access-icon {
 .period-selector {
   display: flex;
   gap: 6px;
-  transition: opacity 0.15s ease;
-}
-
-.period-selector.hidden {
-  opacity: 0;
-  pointer-events: none;
-  height: 0;
-  margin: 0;
 }
 
 .period-btn {
@@ -2442,16 +2479,6 @@ button.quick-access-item:hover .quick-access-icon {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
-  margin-bottom: 12px;
-  transition: opacity 0.15s ease, max-height 0.15s ease;
-}
-
-.leaderboard-stats.hidden {
-  opacity: 0;
-  max-height: 0;
-  margin: 0;
-  overflow: hidden;
-  pointer-events: none;
 }
 
 .stat-card {

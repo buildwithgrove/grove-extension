@@ -389,42 +389,46 @@
 
     <!-- Leaderboard Page -->
     <div class="page" id="tab-leaderboard">
-      <!-- Header with Title and Period Selector -->
+      <!-- Header with Title -->
       <div class="leaderboard-header">
         <h2 class="page-title">Leaderboard</h2>
-        <div class="period-selector" id="period-selector">
-          <button class="period-btn active" data-period="day">24h</button>
-          <button class="period-btn" data-period="week">7d</button>
-          <button class="period-btn" data-period="month">30d</button>
-          <button class="period-btn" data-period="all">Lifetime</button>
-        </div>
       </div>
 
-      <!-- Stats Cards -->
-      <div class="leaderboard-stats" id="leaderboard-stats">
-        <div class="stat-card">
-          <div class="stat-value" id="stat-deposits">$0</div>
-          <div class="stat-label">Deposits</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="stat-tips">$0</div>
-          <div class="stat-label">Tips</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="stat-tippers">0</div>
-          <div class="stat-label">Tippers</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="stat-recipients">0</div>
-          <div class="stat-label">Earners</div>
-        </div>
-      </div>
-
-      <!-- Switcher -->
+      <!-- Switcher (first row) -->
       <div class="leaderboard-switcher">
         <button class="switcher-btn active" data-view="live">Live</button>
         <button class="switcher-btn" data-view="tippers">Tippers</button>
         <button class="switcher-btn" data-view="earners">Earners</button>
+      </div>
+
+      <!-- Collapsible section: Period Selector + Stats (slides in for tippers/earners) -->
+      <div class="leaderboard-filters" id="leaderboard-filters">
+        <div class="leaderboard-filters-inner">
+          <div class="period-selector" id="period-selector">
+            <button class="period-btn active" data-period="day">24h</button>
+            <button class="period-btn" data-period="week">7d</button>
+            <button class="period-btn" data-period="month">30d</button>
+            <button class="period-btn" data-period="all">Lifetime</button>
+          </div>
+          <div class="leaderboard-stats" id="leaderboard-stats">
+            <div class="stat-card">
+              <div class="stat-value" id="stat-deposits">$0</div>
+              <div class="stat-label">Deposits</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="stat-tips">$0</div>
+              <div class="stat-label">Tips</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="stat-tippers">0</div>
+              <div class="stat-label">Tippers</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="stat-recipients">0</div>
+              <div class="stat-label">Earners</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Live Tips View -->
