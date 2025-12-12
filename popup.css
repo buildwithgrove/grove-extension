@@ -991,6 +991,30 @@ button.section-card-btn:hover .quick-access-icon {
   color: var(--color-primary);
 }
 
+/* Sheen effect for cards that need attention */
+.home-settings-card.sheen-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.home-settings-card.sheen-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(56, 159, 88, 0.15),
+    transparent
+  );
+  transform: translateX(-200%);
+  animation: sheen-slide 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
 .home-settings-card-text {
   flex: 1;
   min-width: 0;
