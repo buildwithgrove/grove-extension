@@ -28,7 +28,7 @@ const tipAmountEdit = document.getElementById('tipAmountEdit');
 const tipAmountInput = document.getElementById('tipAmountInput');
 const saveTipAmount = document.getElementById('saveTipAmount');
 const cancelTipAmount = document.getElementById('cancelTipAmount');
-const editTipBtn = document.getElementById('editTipAmount');
+const defaultTipCard = document.getElementById('defaultTipCard');
 const confirmTipToggle = document.getElementById('confirmTipToggle');
 
 // Tip amount (Settings)
@@ -89,12 +89,13 @@ const prevKeysContainer = document.getElementById('prevKeysContainer');
 const prevKeysList = document.getElementById('prevKeysList');
 const closePrevKeysBtn = document.getElementById('closePrevKeysBtn');
 
-// Earn Tab - Address Display
+// Earn Tab - Address Display (unified - shows ENS/basename or 0x address)
 const earnAddressText = document.getElementById('earnAddressText');
 const copyEarnAddressBtn = document.getElementById('copyEarnAddressBtn');
-const ensNameDisplay = document.getElementById('ensNameDisplay');
-const ensNameValue = document.getElementById('ensNameValue');
-const copyEnsNameBtn = document.getElementById('copyEnsNameBtn');
+
+// Tip Intro Modal
+const tipButtonIntroModal = document.getElementById('tipButtonIntroModal');
+const tipIntroGotItBtn = document.getElementById('tipIntroGotItBtn');
 
 // Initialize Previous Keys UI
 let prevKeysUI = null;
@@ -118,7 +119,8 @@ const STORAGE_KEYS = {
   LAST_BALANCES: 'GROVE_LAST_BALANCES',
   CLIENT_ADDRESS: 'GROVE_CLIENT_ADDRESS',
   ENS_NAME: 'GROVE_ENS_NAME',
-  EARN_CTA_DISMISSED: 'GROVE_EARN_CTA_DISMISSED',
+  TIP_INTRO_SEEN: 'GROVE_TIP_INTRO_SEEN',
+  EARN_TAB_SEEN: 'GROVE_EARN_TAB_SEEN',
 };
 
 /**
@@ -278,6 +280,15 @@ async function init() {
   // Resolve ENS name in the background (don't await to avoid blocking UI)
   loadAndResolveEnsName();
 
+  // Show earn tab badge only if user hasn't visited earn tab yet
+  const earnTabSeen = await chrome.storage.local.get([STORAGE_KEYS.EARN_TAB_SEEN]);
+  if (!earnTabSeen[STORAGE_KEYS.EARN_TAB_SEEN]) {
+    const earnBadge = document.querySelector('.nav-badge-dot');
+    if (earnBadge) {
+      earnBadge.classList.remove('hidden');
+    }
+  }
+
   // Refresh data when popup regains focus
   document.addEventListener('visibilitychange', handleVisibilityChange);
 }
@@ -354,11 +365,24 @@ function setupEventListeners() {
     }
   });
 
-  // Tip Amount (Home)
-  editTipBtn.addEventListener('click', showTipEdit);
+  // Tip Amount (Home) - entire card is clickable
+  defaultTipCard.addEventListener('click', showTipEdit);
   cancelTipAmount.addEventListener('click', hideTipEdit);
   saveTipAmount.addEventListener('click', saveTip);
   confirmTipToggle.addEventListener('change', handleConfirmTipToggle);
+
+  // Tip Intro Modal
+  if (tipIntroGotItBtn) {
+    tipIntroGotItBtn.addEventListener('click', hideTipIntroModal);
+  }
+  // Also close modal when clicking overlay
+  if (tipButtonIntroModal) {
+    tipButtonIntroModal.addEventListener('click', (e) => {
+      if (e.target === tipButtonIntroModal) {
+        hideTipIntroModal();
+      }
+    });
+  }
 
   // Tip Amount (Settings) - synced with Home
   if (settingsEditTipBtn) {
@@ -533,40 +557,9 @@ function setupEventListeners() {
     btn.addEventListener('click', () => showToast('Coming Soon'));
   });
 
-  // Earn Tab - Copy Address Button
+  // Earn Tab - Copy Address Button (copies ENS name if available, otherwise 0x address)
   if (copyEarnAddressBtn) {
     copyEarnAddressBtn.addEventListener('click', copyEarnAddress);
-  }
-
-  // Earn Tab - Copy ENS Name Button
-  if (copyEnsNameBtn) {
-    copyEnsNameBtn.addEventListener('click', copyEnsName);
-  }
-
-  // Earn CTA Card - Navigate to Earn tab or dismiss
-  const earnCtaCard = document.getElementById('earnCtaCard');
-  const earnCtaBtn = document.getElementById('earnCtaBtn');
-  const earnCtaClose = document.getElementById('earnCtaClose');
-
-  // Check if CTA was dismissed and hide if so
-  chrome.storage.local.get([STORAGE_KEYS.EARN_CTA_DISMISSED], (result) => {
-    if (result[STORAGE_KEYS.EARN_CTA_DISMISSED] && earnCtaCard) {
-      earnCtaCard.classList.add('hidden');
-    }
-  });
-
-  if (earnCtaBtn) {
-    earnCtaBtn.addEventListener('click', () => {
-      document.querySelector('[data-target="tab-earn"]').click();
-    });
-  }
-
-  if (earnCtaClose && earnCtaCard) {
-    earnCtaClose.addEventListener('click', (e) => {
-      e.stopPropagation();
-      earnCtaCard.classList.add('hidden');
-      chrome.storage.local.set({ [STORAGE_KEYS.EARN_CTA_DISMISSED]: true });
-    });
   }
 
   // Listen for storage changes (e.g., when webapp injects JWT via external messaging)
@@ -650,6 +643,15 @@ async function handleNavigation(e) {
     loadHistory();
   }
 
+  // Hide earn badge when navigating to earn tab
+  if (targetId === 'tab-earn') {
+    const earnBadge = document.querySelector('.nav-badge-dot');
+    if (earnBadge) {
+      earnBadge.classList.add('hidden');
+    }
+    chrome.storage.local.set({ [STORAGE_KEYS.EARN_TAB_SEEN]: true });
+  }
+
   // Load leaderboard data when navigating to leaderboard
   if (targetId === 'tab-leaderboard') {
     if (currentLeaderboardView === 'tippers') {
@@ -722,6 +724,9 @@ async function updateAuthState(jwt) {
     // Connected
     onboardingState.classList.add('hidden');
     connectedState.classList.remove('hidden');
+
+    // Show tip button intro modal if first time
+    checkAndShowTipIntroModal();
 
     // Get environment from storage to show in status
     const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
@@ -1082,17 +1087,18 @@ function updateTipUI(amount) {
 }
 
 function showTipEdit() {
-  // Hide the default tip card in the grid
-  const defaultTipCard = document.getElementById('defaultTipCard');
+  // Hide the default tip card
   if (defaultTipCard) {
     defaultTipCard.classList.add('hidden');
   }
   tipAmountEdit.classList.remove('hidden');
+  // Focus the input for quick editing
+  tipAmountInput.focus();
+  tipAmountInput.select();
 }
 
 function hideTipEdit() {
-  // Show the default tip card in the grid
-  const defaultTipCard = document.getElementById('defaultTipCard');
+  // Show the default tip card
   if (defaultTipCard) {
     defaultTipCard.classList.remove('hidden');
   }
@@ -1304,7 +1310,7 @@ async function loadXLoginStatus() {
         homeXLoginBtn.classList.remove('btn-danger-text');
       }
       if (homeXSettingsTitle) {
-        homeXSettingsTitle.innerHTML = 'Connect to 𝕏 <span class="optional-badge">optional</span>';
+        homeXSettingsTitle.textContent = 'Connect to 𝕏';
       }
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.add('hidden');
     }
@@ -1477,20 +1483,35 @@ async function fetchBalance() {
 }
 
 /**
- * Earn Tab - Address Display
+ * Earn Tab - Unified Address Display
+ * Shows ENS name or base name if available, otherwise shows 0x address
  */
-function updateEarnAddressDisplay(address) {
-  if (earnAddressText && address) {
-    earnAddressText.textContent = address;
+function updateEarnAddressDisplay(displayValue, hasEnsName = false) {
+  const ensLinksSection = document.getElementById('ensLinksSection');
+
+  if (earnAddressText && displayValue) {
+    earnAddressText.textContent = displayValue;
     earnAddressText.classList.remove('placeholder');
     if (copyEarnAddressBtn) {
       copyEarnAddressBtn.disabled = false;
+    }
+    // Hide "Get an ENS name" links when user has one
+    if (ensLinksSection) {
+      if (hasEnsName) {
+        ensLinksSection.classList.add('hidden');
+      } else {
+        ensLinksSection.classList.remove('hidden');
+      }
     }
   } else if (earnAddressText) {
     earnAddressText.textContent = 'Connect to see address';
     earnAddressText.classList.add('placeholder');
     if (copyEarnAddressBtn) {
       copyEarnAddressBtn.disabled = true;
+    }
+    // Show "Get an ENS name" links when not connected
+    if (ensLinksSection) {
+      ensLinksSection.classList.remove('hidden');
     }
   }
 }
@@ -1499,18 +1520,32 @@ async function loadClientAddress() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
   const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
   const ensName = result[STORAGE_KEYS.ENS_NAME];
-  updateEarnAddressDisplay(address);
-  updateEnsNameDisplay(ensName);
+
+  // Show ENS/base name if available, otherwise show truncated 0x address
+  if (ensName) {
+    updateEarnAddressDisplay(ensName, true);
+  } else if (address) {
+    // Truncate address for display: 0x1234...abcd
+    const truncated = `${address.slice(0, 6)}...${address.slice(-4)}`;
+    updateEarnAddressDisplay(truncated, false);
+  } else {
+    updateEarnAddressDisplay(null, false);
+  }
 }
 
 async function copyEarnAddress() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
+  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
   const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
+  const ensName = result[STORAGE_KEYS.ENS_NAME];
 
-  if (address) {
+  // Copy ENS name if available, otherwise copy 0x address
+  const valueToCopy = ensName || address;
+  const toastMessage = ensName ? 'Address copied!' : 'Address copied!';
+
+  if (valueToCopy) {
     try {
-      await navigator.clipboard.writeText(address);
-      showToast('Address copied!');
+      await navigator.clipboard.writeText(valueToCopy);
+      showToast(toastMessage);
 
       // Visual feedback
       if (copyEarnAddressBtn) {
@@ -1521,29 +1556,6 @@ async function copyEarnAddress() {
       }
     } catch (err) {
       console.error('[Grove Extension] Copy failed:', err);
-      showToast('Failed to copy');
-    }
-  }
-}
-
-async function copyEnsName() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.ENS_NAME]);
-  const ensName = result[STORAGE_KEYS.ENS_NAME];
-
-  if (ensName) {
-    try {
-      await navigator.clipboard.writeText(ensName);
-      showToast('ENS name copied!');
-
-      // Visual feedback
-      if (copyEnsNameBtn) {
-        copyEnsNameBtn.classList.add('copied');
-        setTimeout(() => {
-          copyEnsNameBtn.classList.remove('copied');
-        }, 2000);
-      }
-    } catch (err) {
-      console.error('[Grove Extension] Copy ENS name failed:', err);
       showToast('Failed to copy');
     }
   }
@@ -1607,37 +1619,12 @@ async function resolveEnsName(address) {
 
 
 /**
- * Update ENS name display in the UI
+ * Update unified address display in the UI when ENS name changes
+ * This is called after ENS resolution completes
  */
-function updateEnsNameDisplay(ensName) {
-  const ensLinksSection = document.getElementById('ensLinksSection');
-  const earnAddressDisplay = document.getElementById('earnAddressDisplay');
-
-  if (ensNameDisplay && ensNameValue) {
-    if (ensName) {
-      ensNameValue.textContent = ensName;
-      ensNameDisplay.classList.remove('hidden');
-      // Hide "Get an ENS name" links when user has one
-      if (ensLinksSection) {
-        ensLinksSection.classList.add('hidden');
-      }
-      // Address display is secondary when ENS exists
-      if (earnAddressDisplay) {
-        earnAddressDisplay.classList.remove('primary');
-      }
-    } else {
-      ensNameDisplay.classList.add('hidden');
-      ensNameValue.textContent = '';
-      // Show "Get an ENS name" links when user doesn't have one
-      if (ensLinksSection) {
-        ensLinksSection.classList.remove('hidden');
-      }
-      // Address display is primary when no ENS
-      if (earnAddressDisplay) {
-        earnAddressDisplay.classList.add('primary');
-      }
-    }
-  }
+async function updateEnsNameDisplay(ensName) {
+  // Re-load and display the address (will show ENS if available)
+  await loadClientAddress();
 }
 
 /**
@@ -3110,6 +3097,31 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+/**
+ * Tip Button Intro Modal
+ * Shows once when user first connects their account
+ */
+async function checkAndShowTipIntroModal() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.TIP_INTRO_SEEN]);
+  if (!result[STORAGE_KEYS.TIP_INTRO_SEEN]) {
+    showTipIntroModal();
+  }
+}
+
+function showTipIntroModal() {
+  if (tipButtonIntroModal) {
+    tipButtonIntroModal.classList.remove('hidden');
+  }
+}
+
+async function hideTipIntroModal() {
+  if (tipButtonIntroModal) {
+    tipButtonIntroModal.classList.add('hidden');
+  }
+  // Mark as seen
+  await chrome.storage.local.set({ [STORAGE_KEYS.TIP_INTRO_SEEN]: true });
 }
 
 /**

@@ -201,27 +201,25 @@
 
 
 
-        <!-- Default Tip & Tip Button Grid -->
-        <div class="quick-access-grid">
-          <!-- Default Tip -->
-          <div class="quick-access-item" id="defaultTipCard">
-            <div class="card-label">Default Tip</div>
-            <div class="amount-display" id="tipAmountDisplay">
-              <span class="currency-symbol">$</span>
-              <span class="amount-value">0.10</span>
+        <!-- Default Tip Card (matches balance card style) -->
+        <button class="section-card section-card-btn" id="defaultTipCard">
+          <div class="card-row">
+            <div class="card-content">
+              <div class="card-label">Default Tip</div>
+              <div class="amount-display" id="tipAmountDisplay">
+                <span class="currency-symbol">$</span>
+                <span class="amount-value">0.10</span>
+              </div>
             </div>
-            <button class="btn-text btn-sm" id="editTipAmount">Edit</button>
-          </div>
-          <!-- Tip Button Demo -->
-          <div class="quick-access-item">
-            <div class="card-label">Tip Button</div>
-            <div class="demo-tip-button">
-              <span>Tip</span>
-              <span class="tip-emoji">🌿</span>
+            <div class="card-action-btn primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                <path d="m15 5 4 4"></path>
+              </svg>
+              <span>Edit</span>
             </div>
-            <span class="quick-access-label">Look for this on <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle; margin-left: 2px;"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></span>
           </div>
-        </div>
+        </button>
 
         <!-- Default Tip Edit Form (shown when editing) -->
         <div class="section-card hidden" id="tipAmountEdit">
@@ -243,19 +241,18 @@
         </div>
 
         <!-- X (Twitter) Settings Card -->
-        <button class="x-settings-card" id="homeTwitterSettingsBtn">
-          <div class="x-settings-header">
-            <div class="x-settings-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        <button class="section-card section-card-btn x-connect-card sheen-card" id="homeTwitterSettingsBtn">
+          <div class="x-connect-header">
+            <div class="x-connect-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
             </div>
-            <div class="x-settings-text">
-              <div class="x-settings-title" id="homeXSettingsTitle">Connect to 𝕏 <span class="optional-badge">optional</span></div>
-              <div class="x-settings-subtitle">Enable auto-like and auto-reply when you send a tip</div>
-            </div>
-            <svg class="x-settings-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
+            <div class="x-connect-title" id="homeXSettingsTitle">Connect to 𝕏</div>
           </div>
+          <p class="x-connect-desc">Let creators know you appreciate their content when you send a tip</p>
+          <ul class="x-connect-features">
+            <li>Auto-like posts you tip</li>
+            <li>Auto-reply with a custom message</li>
+          </ul>
         </button>
 
         <!-- X (Twitter) Settings Panel (hidden by default, shown on drill-down) -->
@@ -315,18 +312,6 @@
           </div>
         </div>
 
-        <!-- Earn Tips CTA Card -->
-        <div class="earn-cta-card" id="earnCtaCard">
-          <button class="earn-cta-btn" id="earnCtaBtn">
-            <span class="earn-cta-text">Want to earn tips? Learn how →</span>
-          </button>
-          <button class="earn-cta-close" id="earnCtaClose" title="Dismiss">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-              <line x1="2" y1="2" x2="10" y2="10"></line>
-              <line x1="10" y1="2" x2="2" y2="10"></line>
-            </svg>
-          </button>
-        </div>
       </div>
     </div>
 
@@ -492,25 +477,14 @@
     <div class="page" id="tab-earn">
       <h2 class="page-title">Earn Tips</h2>
 
-      <!-- Your Address Section -->
+      <!-- Your Address Section (unified - shows ENS/basename or address) -->
       <div class="section-card your-address-section">
         <div class="section-header">
           <h3>Your Tipping Address</h3>
         </div>
 
-        <!-- ENS Name Display (if available) -->
-        <div class="ens-name-display hidden" id="ensNameDisplay">
-          <span class="ens-name-value" id="ensNameValue"></span>
-          <button class="copy-address-btn" id="copyEnsNameBtn" title="Copy ENS name">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-          </button>
-        </div>
-
         <div class="address-display-container">
-          <div class="address-display" id="earnAddressDisplay">
+          <div class="address-display primary" id="earnAddressDisplay">
             <span class="address-text" id="earnAddressText">Connect to see address</span>
             <button class="copy-address-btn" id="copyEarnAddressBtn" title="Copy address" disabled>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -523,7 +497,7 @@
 
         <!-- Get ENS links (hidden when ENS name exists) -->
         <div class="ens-links" id="ensLinksSection">
-          <span class="ens-label">Get an ENS name:</span>
+          <span class="ens-label">Get a name:</span>
           <a href="https://app.ens.domains" target="_blank" class="ens-link">.eth</a>
           <span class="ens-separator">or</span>
           <a href="https://www.base.org/names" target="_blank" class="ens-link">.base.eth</a>
@@ -532,16 +506,31 @@
 
       <!-- How to Earn Section -->
       <div class="section-card how-to-earn-section">
-        <h3 class="how-to-earn-title">How to Earn</h3>
-        <p class="how-to-earn-text">
-          Add your address to your 𝕏 name or bio.<br>
-          Others can then tip your posts.
-        </p>
+        <h3 class="how-to-earn-title">How to Earn Tips</h3>
+        <div class="how-to-earn-steps">
+          <div class="earn-step">
+            <div class="earn-step-number">1</div>
+            <div class="earn-step-content">
+              <div class="earn-step-title">Copy your address above</div>
+            </div>
+          </div>
+          <div class="earn-step">
+            <div class="earn-step-number">2</div>
+            <div class="earn-step-content">
+              <div class="earn-step-title">Add it to your 𝕏 profile</div>
+              <div class="earn-step-desc">Put it in your display name or bio</div>
+            </div>
+          </div>
+          <div class="earn-step">
+            <div class="earn-step-number">3</div>
+            <div class="earn-step-content">
+              <div class="earn-step-title">Get tipped by others</div>
+              <div class="earn-step-desc">People with the Grove extension can tip your posts</div>
+            </div>
+          </div>
+        </div>
         <a href="https://x.com/settings/profile" target="_blank" class="how-to-earn-btn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-          </svg>
-          Edit Profile
+          Edit Profile on <span class="x-logo-text">𝕏</span>
         </a>
       </div>
     </div>
@@ -984,12 +973,15 @@
       </svg>
       <span class="nav-label">Leaderboard</span>
     </button>
-    <button class="nav-item" data-target="tab-earn">
-      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="12" y1="2" x2="12" y2="22"></line>
-        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-      </svg>
+    <button class="nav-item nav-item-with-badge" data-target="tab-earn">
+      <div class="nav-icon-wrapper">
+        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="2" x2="12" y2="22"></line>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+        <span class="nav-badge-dot hidden"></span>
+      </div>
       <span class="nav-label">Earn</span>
     </button>
     <button class="nav-item" data-target="tab-settings">
@@ -1003,6 +995,31 @@
       <span class="nav-label">Settings</span>
     </button>
   </nav>
+
+  <!-- Tip Button Intro Modal -->
+  <div class="modal-overlay hidden" id="tipButtonIntroModal">
+    <div class="modal-content tip-intro-modal">
+      <div class="tip-intro-header">
+        <h3>You're all set!</h3>
+      </div>
+      <div class="tip-intro-body">
+        <p class="tip-intro-line">Look for this button next to posts on <svg class="tip-intro-x-logo" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></p>
+        <div class="tip-intro-button-demo">
+          <div class="demo-tip-button">
+            <span>Tip</span>
+            <span class="tip-emoji">🌿</span>
+          </div>
+        </div>
+        <p class="tip-intro-subtext">From people with one of these in their display name or bio:</p>
+        <ul class="tip-intro-list">
+          <li><span class="tip-intro-example">vitalik.eth</span></li>
+          <li><span class="tip-intro-example">jesse.base.eth</span></li>
+          <li><span class="tip-intro-example">0x1234...abcd</span></li>
+        </ul>
+      </div>
+      <button class="btn-primary btn-full" id="tipIntroGotItBtn">Start tipping!</button>
+    </div>
+  </div>
 
   <script src="popup.js"></script>
 </body>
