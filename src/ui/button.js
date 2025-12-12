@@ -197,6 +197,10 @@ class TipButton {
     this.sheenOverlay = sheenOverlay;
     this.originalSheenBackground = sheenOverlay.style.background;
 
+    // Store reference to text span for loading state
+    this.textSpan = textSpan;
+    this.emojiSpan = emojiSpan;
+
     // Add keyframe animation to document if not already added
     if (!document.querySelector('#grove-sheen-animation')) {
       const style = document.createElement('style');
@@ -205,6 +209,19 @@ class TipButton {
         @keyframes grove-sheen-slide {
           0% { transform: translateX(-200%); }
           100% { transform: translateX(200%); }
+        }
+        @keyframes grove-ellipsis {
+          0% { content: '.'; }
+          33% { content: '..'; }
+          66% { content: '...'; }
+          100% { content: '.'; }
+        }
+        .grove-ellipsis::after {
+          content: '.';
+          animation: grove-ellipsis 1.2s infinite steps(1);
+          display: inline-block;
+          width: 1em;
+          text-align: left;
         }
       `;
       document.head.appendChild(style);
@@ -671,8 +688,9 @@ class TipButton {
 
   /**
    * Set button to loading state
+   * @param {number} [amount] - Optional tip amount to display
    */
-  setLoading() {
+  setLoading(amount) {
     if (!this.button) return;
 
     // Clear any pending reset timeout
@@ -686,6 +704,21 @@ class TipButton {
     this.originalBoxShadow = this.button.style.boxShadow;
 
     this.button.disabled = true;
+
+    // Update button text to show sending state with animated ellipsis
+    const textElement = this.textSpan || this.button.querySelector('span');
+    if (textElement) {
+      // Remove emoji span if present
+      const emojiSpan = textElement.querySelector('span');
+      if (emojiSpan) {
+        emojiSpan.remove();
+      }
+      // Create the sending text with ellipsis animation
+      const formattedAmount = formatTipAmount(amount);
+      const sendingText = formattedAmount ? `Sending $${formattedAmount}` : 'Sending';
+      textElement.textContent = sendingText;
+      textElement.classList.add('grove-ellipsis');
+    }
 
     // Use JS interval to cycle border colors with !important to override inline styles
     const colors = [
@@ -838,6 +871,12 @@ class TipButton {
     this.button.disabled = false;
     this.button.style.cursor = 'pointer';
 
+
+    // Remove ellipsis class from text element
+    const ellipsisElement = this.textSpan || this.button.querySelector('span');
+    if (ellipsisElement) {
+      ellipsisElement.classList.remove('grove-ellipsis');
+    }
 
     // Restore original text for all platforms to "Tip 🌿"
     let textElement;

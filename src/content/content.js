@@ -30,6 +30,34 @@
   }
 
   /**
+   * Ensure the ellipsis animation styles are loaded in the document
+   * This is needed for the "Sending $X..." loading state
+   */
+  function ensureEllipsisAnimationStyles() {
+    if (document.querySelector('#grove-ellipsis-animation')) {
+      return; // Already added
+    }
+    const style = document.createElement('style');
+    style.id = 'grove-ellipsis-animation';
+    style.textContent = `
+      @keyframes grove-ellipsis {
+        0% { content: '.'; }
+        33% { content: '..'; }
+        66% { content: '...'; }
+        100% { content: '.'; }
+      }
+      .grove-ellipsis::after {
+        content: '.';
+        animation: grove-ellipsis 1.2s infinite steps(1);
+        display: inline-block;
+        width: 1em;
+        text-align: left;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  /**
    * Get the active JWT based on current dev mode state
    * @returns {Promise<string|null>}
    * @throws {Error} If extension context is invalidated
@@ -445,9 +473,9 @@
    * @param {TipButton} button - The button instance for state updates
    */
   async function sendTip(tipAmount, button) {
-    // Show loading animation
+    // Show loading animation with amount
     if (button) {
-      button.setLoading();
+      button.setLoading(tipAmount);
     }
 
     // Get JWT from storage (uses dev mode-aware getter)
@@ -854,9 +882,15 @@
         button: button,
         textSpan: textSpan,
         emojiSpan: emojiSpan,
-        setLoading: () => {
+        setLoading: (amount) => {
+          ensureEllipsisAnimationStyles();
           button.disabled = true;
           button.style.pointerEvents = 'none';
+          // Update button text to show sending state
+          const formattedAmount = formatTipAmount(amount);
+          const sendingText = formattedAmount ? `Sending $${formattedAmount}` : 'Sending';
+          textSpan.textContent = sendingText;
+          textSpan.classList.add('grove-ellipsis');
           const colors = [
             { border: '#389f58', shadow: '0 0 12px #389f58' },
             { border: '#4fb76d', shadow: '0 0 12px #4fb76d' },
@@ -878,6 +912,7 @@
           button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
           button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
           sheenOverlay.style.background = defaultSheenBackground;
+          textSpan.classList.remove('grove-ellipsis');
           textSpan.textContent = 'Sent! ✓';
           button.classList.add('animate__animated', 'animate__bounceIn');
           setTimeout(() => {
@@ -893,6 +928,7 @@
           button.style.setProperty('border', `2px solid ${GROVE_COLORS.error || '#ef4444'}`, 'important');
           button.style.setProperty('box-shadow', `0 0 12px ${GROVE_COLORS.errorShadow || 'rgba(239, 68, 68, 0.55)'}`, 'important');
           sheenOverlay.style.background = 'linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.35), transparent)';
+          textSpan.classList.remove('grove-ellipsis');
           textSpan.textContent = 'Failed ✗';
           button.classList.add('animate__animated', 'animate__shakeX');
           setTimeout(() => {
@@ -1574,9 +1610,15 @@
         button: button,
         textSpan: textSpan,
         emojiSpan: emojiSpan,
-        setLoading: () => {
+        setLoading: (amount) => {
+          ensureEllipsisAnimationStyles();
           button.disabled = true;
           button.style.pointerEvents = 'none';
+          // Update button text to show sending state
+          const formattedAmount = formatTipAmount(amount);
+          const sendingText = formattedAmount ? `Sending $${formattedAmount}` : 'Sending';
+          textSpan.textContent = sendingText;
+          textSpan.classList.add('grove-ellipsis');
           // Color cycling animation
           const colors = [
             { border: '#389f58', shadow: '0 0 12px #389f58' },
@@ -1601,6 +1643,7 @@
           button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
           button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
           sheenOverlay.style.background = defaultSheenBackground;
+          textSpan.classList.remove('grove-ellipsis');
           textSpan.textContent = 'Sent! ✓';
           button.classList.add('animate__animated', 'animate__bounceIn');
           setTimeout(() => {
@@ -1618,6 +1661,7 @@
           button.style.setProperty('border', `2px solid ${GROVE_COLORS.error || '#ef4444'}`, 'important');
           button.style.setProperty('box-shadow', `0 0 12px ${GROVE_COLORS.errorShadow || 'rgba(239, 68, 68, 0.55)'}`, 'important');
           sheenOverlay.style.background = 'linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.35), transparent)';
+          textSpan.classList.remove('grove-ellipsis');
           textSpan.textContent = 'Failed ✗';
           button.classList.add('animate__animated', 'animate__shakeX');
           setTimeout(() => {
@@ -1730,7 +1774,7 @@ Tip creators you love → {grove_link}`;
    * @param {string} tweetUrl - The tweet URL to tip
    */
   async function sendTweetTip(tipAmount, buttonWrapper, tweetUrl) {
-    buttonWrapper.setLoading();
+    buttonWrapper.setLoading(tipAmount);
 
     // Check if extension context is valid before making API calls
     if (!isExtensionContextValid()) {
