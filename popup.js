@@ -2173,19 +2173,7 @@ function setupLeaderboardSwitcher() {
         // Show/hide filters container with slide animation
         const isLive = view === 'live';
         if (filtersContainer) {
-          if (isLive) {
-            // Collapsing: add collapsing class for dip animation, then remove expanded
-            filtersContainer.classList.add('collapsing');
-            filtersContainer.classList.remove('expanded');
-            // Remove collapsing class after animation completes
-            setTimeout(() => {
-              filtersContainer.classList.remove('collapsing');
-            }, 450);
-          } else {
-            // Expanding
-            filtersContainer.classList.remove('collapsing');
-            filtersContainer.classList.add('expanded');
-          }
+          filtersContainer.classList.toggle('expanded', !isLive);
         }
 
         // Load data for the selected view
