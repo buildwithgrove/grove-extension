@@ -63,62 +63,8 @@ afterEach(() => {
 });
 
 describe('XAuth', () => {
-  describe('generateCodeVerifier', () => {
-    it('should generate a base64url encoded string', () => {
-      const verifier = XAuth.generateCodeVerifier();
-      expect(verifier).toBeDefined();
-      expect(verifier.length).toBeGreaterThan(0);
-      // Should not contain +, /, or =
-      expect(verifier).not.toMatch(/[+/=]/);
-    });
-  });
-
-  describe('generateCodeChallenge', () => {
-    it('should generate a code challenge from verifier', async () => {
-      const verifier = 'test-verifier';
-      const challenge = await XAuth.generateCodeChallenge(verifier);
-      expect(challenge).toBeDefined();
-      expect(challenge.length).toBeGreaterThan(0);
-      // Should not contain +, /, or =
-      expect(challenge).not.toMatch(/[+/=]/);
-    });
-  });
-
-  describe('generateState', () => {
-    it('should generate a hex string', () => {
-      const state = XAuth.generateState();
-      expect(state).toBeDefined();
-      expect(state).toMatch(/^[0-9a-f]+$/);
-      expect(state.length).toBe(32); // 16 bytes = 32 hex chars
-    });
-  });
-
-  describe('exchangeCodeForTokens', () => {
-    it('should exchange code for tokens successfully', async () => {
-      const tokens = {
-        access_token: 'access-123',
-        refresh_token: 'refresh-456',
-        expires_in: 7200,
-        scope: 'tweet.read tweet.write'
-      };
-      mockFetch.mockResponse('POST', 'https://api.twitter.com/2/oauth2/token', tokens);
-
-      const result = await XAuth.exchangeCodeForTokens('auth-code', 'verifier');
-
-      expect(result.access_token).toBe('access-123');
-      expect(result.refresh_token).toBe('refresh-456');
-    });
-
-    it('should throw error on token exchange failure', async () => {
-      mockFetch.mockResponse('POST', 'https://api.twitter.com/2/oauth2/token',
-        'Invalid code',
-        { status: 400 }
-      );
-
-      await expect(XAuth.exchangeCodeForTokens('bad-code', 'verifier'))
-        .rejects.toThrow('Token exchange failed');
-    });
-  });
+  // Note: PKCE functions (generateCodeVerifier, generateCodeChallenge, generateState)
+  // and exchangeCodeForTokens have been moved to background.js to survive popup closure
 
   describe('refreshAccessToken', () => {
     it('should refresh token successfully', async () => {
