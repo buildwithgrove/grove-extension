@@ -438,7 +438,9 @@ body {
 .card-action-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  min-width: 100px;
   padding: 10px 20px;
   background-color: var(--color-surface-hover);
   color: var(--color-text-primary);
