@@ -116,8 +116,7 @@ build_chrome_store_zip: _prompt_version_bump _build_extension_zip ## Create exte
 
 # Release tags and asset names
 RELEASE_ASSET := $(BUILD_DIR)/grove-extension.zip
-RELEASE_TAG_VERSION := grove-extension-v$(VERSION_FULL)
-RELEASE_TAG_LATEST := grove-extension-latest
+RELEASE_TAG := grove-extension-v$(VERSION_FULL)
 
 # Chrome Web Store public key - produces extension ID: jheejecmpfgifgdodgipilpgfaiecndm
 EXTENSION_PUBLIC_KEY := MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7nXN5llSn+XJEapNFnNEZ8kvEo1iEVFmG3dpj238FZOowzwGTMNuGBdV6F7UZxLuZUN5q4X2GZPL9K+ZHlVelpMv9wiRjNW1FuB5F2qi793NjqUXEIyi62nvK2roCLMVEeQ7hQ3+X6oO6fBxrnEMMLEquYjEDtj+BD0y4NOq65p/obb0p8T4xdPnE+s+/Vabi2hU4WQiPHDMBVL6b3OsnZPenEmsQUFI/vj8ZOC66oLb3qHNyuT58a8cqiVwpTggE/roSSM136eyn7Fioe8pez04jmidouMp+lHJ+YQCZ5s7SxJo8yqNh7vFWgP9MX1uRafpmVt4o1bJyjksF3VUXwIDAQAB
@@ -137,23 +136,16 @@ build_and_upload_github_release_zip: _build_extension_zip ## Build and upload zi
 		exit 1; \
 	fi
 	@cp $(ZIP_FILE) $(RELEASE_ASSET)
-	$(call print_info,Creating versioned release $(RELEASE_TAG_VERSION)...)
-	@gh release create $(RELEASE_TAG_VERSION) $(RELEASE_ASSET) \
+	$(call print_info,Creating release $(RELEASE_TAG)...)
+	@gh release create $(RELEASE_TAG) $(RELEASE_ASSET) \
 		--repo $(RELEASES_REPO) \
 		--title "Grove Extension v$(VERSION_FULL)" \
-		--notes "Grove Extension v$(VERSION_FULL)" && \
-		printf "$(GREEN)$(BOLD)$(CHECK) Versioned release created!$(RESET)\n" || \
-		{ printf "$(RED)$(WARN) Versioned release already exists, skipping...$(RESET)\n"; }
-	$(call print_info,Updating latest release...)
-	@gh release delete $(RELEASE_TAG_LATEST) --repo $(RELEASES_REPO) --yes 2>/dev/null || true
-	@gh release create $(RELEASE_TAG_LATEST) $(RELEASE_ASSET) \
-		--repo $(RELEASES_REPO) \
-		--title "Grove Extension v$(VERSION_FULL) (Latest)" \
-		--notes "Grove Extension v$(VERSION_FULL) - Latest release" && \
-		printf "$(GREEN)$(BOLD)$(CHECK) Latest release updated!$(RESET)\n" || \
-		{ printf "$(RED)$(CROSS) Failed to create latest release.$(RESET)\n"; exit 1; }
+		--notes "Grove Extension v$(VERSION_FULL)" \
+		--latest && \
+		printf "$(GREEN)$(BOLD)$(CHECK) Release created!$(RESET)\n" || \
+		{ printf "$(RED)$(WARN) Release already exists, skipping...$(RESET)\n"; }
 	@printf "\n"
 	@printf "$(GREEN)$(BOLD)🔗 Download URLs:$(RESET)\n"
-	@printf "   Latest:    $(CYAN)https://github.com/$(RELEASES_REPO)/releases/download/$(RELEASE_TAG_LATEST)/grove-extension.zip$(RESET)\n"
-	@printf "   Versioned: $(CYAN)https://github.com/$(RELEASES_REPO)/releases/download/$(RELEASE_TAG_VERSION)/grove-extension.zip$(RESET)\n"
+	@printf "   Latest:    $(CYAN)https://github.com/$(RELEASES_REPO)/releases/latest/download/grove-extension.zip$(RESET)\n"
+	@printf "   Versioned: $(CYAN)https://github.com/$(RELEASES_REPO)/releases/download/$(RELEASE_TAG)/grove-extension.zip$(RESET)\n"
 	@printf "\n"
