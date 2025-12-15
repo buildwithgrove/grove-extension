@@ -2,28 +2,13 @@
 ### Development  ###
 ####################
 
-.PHONY: _dev_urls
-_dev_urls:
-	$(Q)printf "$(CYAN)$(INFO) Vite dev server: http://localhost:5173/popup.html$(RESET)\n"
-	$(Q)printf "$(CYAN)$(INFO) Options page:    http://localhost:5173/options.html$(RESET)\n"
+.PHONY: dev_clean
+dev_clean: ## Clean build artifacts
+	$(call print_warning,Removing build artifacts)
+	$(Q)rm -rf $(BUILD_DIR)
+	$(call print_success,Build directory cleaned)
 
-.PHONY: dev_start
-dev_start: ## Start Vite development server
-	@$(MAKE) _dev_urls
-	$(call print_info_section,Starting Vite development server)
-	$(Q)$(NPM) run dev
-
-.PHONY: dev_preview
-dev_preview: ## Preview production build
-	$(call print_info_section,Previewing production build)
-	$(Q)$(NPM) run preview
-
-.PHONY: dev_lint
-dev_lint: ## Run ESLint
-	$(call print_info_section,Running ESLint)
-	$(Q)$(NPM) run lint
-	$(call print_success,Linting complete)
-
-.PHONY: dev_test
-dev_test: ## Run tests (placeholder)
-	$(call print_warning,Tests not yet implemented)
+.PHONY: dev_debug_vars
+dev_debug_vars: ## Print key variables
+	$(call print_info_section,Debug variables)
+	$(Q)printf "ROOT_DIR=%s\nBUILD_DIR=%s\nDIST_DIR=%s\nTMP_DIR=%s\n" "$(ROOT_DIR)" "$(BUILD_DIR)" "$(DIST_DIR)" "$(TMP_DIR)"
