@@ -45,9 +45,9 @@ EXCLUDE_PATTERNS := \
 .PHONY: _build_extension_zip
 _build_extension_zip: dev_clean $(BUILD_DIR)
 	@printf "\n"
-	@printf "$(GREEN)$(BOLD)╔════════════════════════════════════════════════════════╗$(RESET)\n"
-	@printf "$(GREEN)$(BOLD)║  🌳 Building Grove Extension v$(VERSION_FULL)            ║$(RESET)\n"
-	@printf "$(GREEN)$(BOLD)╚════════════════════════════════════════════════════════╝$(RESET)\n"
+	@printf "$(YELLOW)$(BOLD)╔════════════════════════════════════════════════════════╗$(RESET)\n"
+	@printf "$(YELLOW)$(BOLD)║  🌳 Building Grove Extension v$(VERSION_FULL)            ║$(RESET)\n"
+	@printf "$(YELLOW)$(BOLD)╚════════════════════════════════════════════════════════╝$(RESET)\n"
 	@printf "\n"
 	@# Copy files to staging directory and strip the "key" field from manifest
 	$(call print_info,Preparing files for packaging...)
@@ -148,4 +148,5 @@ build_and_upload_github_release_zip: _build_extension_zip ## Build and upload zi
 	@printf "$(GREEN)$(BOLD)🔗 Download URLs:$(RESET)\n"
 	@printf "   Latest:    $(CYAN)https://github.com/$(RELEASES_REPO)/releases/latest/download/grove-extension.zip$(RESET)\n"
 	@printf "   Versioned: $(CYAN)https://github.com/$(RELEASES_REPO)/releases/download/$(RELEASE_TAG)/grove-extension.zip$(RESET)\n"
+	@printf "   Releases:  $(CYAN)https://github.com/$(RELEASES_REPO)/releases$(RESET)\n"
 	@printf "\n"
