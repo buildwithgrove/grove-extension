@@ -3,16 +3,18 @@
 Chrome extension that enables cryptocurrency tipping on social platforms and any website.
 
 - [Installation](#installation)
+  - [Chrome Web Store](#chrome-web-store)
+  - [Beta Side-loading](#beta-side-loading)
 - [Development](#development)
   - [Setup](#setup)
   - [Local Development](#local-development)
   - [Manifest Key](#manifest-key)
 - [Build \& Release](#build--release)
-  - [Chrome Web Store](#chrome-web-store)
-  - [GitHub Release](#github-release)
-- [Make Commands](#make-commands)
+  - [Chrome Web Store](#chrome-web-store-1)
+  - [Beta Side Loading (i.e. GitHub Release)](#beta-side-loading-ie-github-release)
 - [Features](#features)
   - [Tipping](#tipping)
+  - [How Tip Buttons Appear on X/Twitter](#how-tip-buttons-appear-on-xtwitter)
   - [Extension Popup](#extension-popup)
   - [X (Twitter) Integration](#x-twitter-integration)
   - [Developer Features](#developer-features)
@@ -21,8 +23,14 @@ Chrome extension that enables cryptocurrency tipping on social platforms and any
 
 ## Installation
 
+### Chrome Web Store
+
 1. Install from the [Chrome Web Store](https://chrome.google.com/webstore/detail/grove-tip-extension/jheejecmpfgifgdodgipilpgfaiecndm)
 2. Click the extension icon and connect your account at [app.grove.city](https://app.grove.city)
+
+### Beta Side-loading
+
+1. Follow the instructions at [Grove Release](https://github.com/buildwithgrove/grove-releases).
 
 ## Development
 
@@ -58,28 +66,19 @@ make build_chrome_store_zip
 ```
 
 This will:
+
 1. Prompt to bump the version (updates `manifest.json` and `makefiles/build.mk`)
 2. Optionally commit and push the version bump
 3. Create `build/grove-extension-vX.Y.Z-<sha>.zip` with the `key` field removed
 4. Display upload instructions for the [Chrome Web Store console](https://chrome.google.com/webstore/devconsole/21d27706-ef22-4f83-8ddc-9f6109acef7d/jheejecmpfgifgdodgipilpgfaiecndm/edit/package)
 
-### GitHub Release
+### Beta Side Loading (i.e. GitHub Release)
 
 ```bash
 make build_and_upload_github_release_zip
 ```
 
 This builds the zip and uploads it to [grove-releases](https://github.com/buildwithgrove/grove-releases) for easy onboarding. The zip includes the public key for stable extension ID when side-loading. Requires `gh` CLI.
-
-## Make Commands
-
-| Command | Description |
-|---------|-------------|
-| `make help` | Show all available targets |
-| `make build_chrome_store_zip` | Bump version, build zip for Chrome Web Store |
-| `make build_and_upload_github_release_zip` | Build and upload to GitHub releases |
-| `make dev_clean` | Clean build artifacts |
-| `make dev_debug_vars` | Print key build variables |
 
 ## Features
 
@@ -92,16 +91,16 @@ This builds the zip and uploads it to [grove-releases](https://github.com/buildw
 - **Like on tip** - Automatically like tweets when you tip them (requires X connection)
 - **Auto-reply** - Post a customizable reply when you tip a tweet
 
-#### How Tip Buttons Appear on X/Twitter
+### How Tip Buttons Appear on X/Twitter
 
 Tip buttons are shown when a user has a tippable address (0x or ENS) in their profile:
 
-| Location | How Address is Found |
-|----------|---------------------|
-| **Profile page** | Extracted from visible bio on the page |
-| **Hover card** | Extracted from popup card's display name/bio |
-| **Feed tweets** | Display name checked first; if no address, bio is fetched via Twitter's API |
-| **Quote tweets** | Same as feed tweets, for the quoted author |
+| Location         | How Address is Found                                                        |
+| ---------------- | --------------------------------------------------------------------------- |
+| **Profile page** | Extracted from visible bio on the page                                      |
+| **Hover card**   | Extracted from popup card's display name/bio                                |
+| **Feed tweets**  | Display name checked first; if no address, bio is fetched via Twitter's API |
+| **Quote tweets** | Same as feed tweets, for the quoted author                                  |
 
 For feed tweets, the extension fetches user bios in the background using Twitter's GraphQL API, enabling tip buttons for users who only have addresses in their bio (not their display name).
 
