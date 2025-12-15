@@ -17,6 +17,10 @@ else
 	Q := @
 endif
 
+# Common tools
+
+NPM := npm
+
 # Timestamp & common dirs
 
 TIMESTAMP := $(shell date '+%Y-%m-%d %H:%M:%S')
