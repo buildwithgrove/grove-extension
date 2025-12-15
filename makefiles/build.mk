@@ -45,9 +45,9 @@ EXCLUDE_PATTERNS := \
 .PHONY: _build_extension_zip
 _build_extension_zip: dev_clean $(BUILD_DIR)
 	@printf "\n"
-	@printf "$(YELLOW)$(BOLD)╔════════════════════════════════════════════════════════╗$(RESET)\n"
-	@printf "$(YELLOW)$(BOLD)║  🌳 Building Grove Extension v$(VERSION_FULL)            ║$(RESET)\n"
-	@printf "$(YELLOW)$(BOLD)╚════════════════════════════════════════════════════════╝$(RESET)\n"
+	@printf '%b\n' "\033[1;33m╔════════════════════════════════════════════════════════╗\033[0m"
+	@printf '%b\n' "\033[1;33m║  🌳 Building Grove Extension v$(VERSION_FULL)            ║\033[0m"
+	@printf '%b\n' "\033[1;33m╚════════════════════════════════════════════════════════╝\033[0m"
 	@printf "\n"
 	@# Copy files to staging directory and strip the "key" field from manifest
 	$(call print_info,Preparing files for packaging...)
