@@ -7,11 +7,9 @@ Chrome extension that enables cryptocurrency tipping on social platforms and any
   - [Setup](#setup)
   - [Local Development](#local-development)
   - [Manifest Key](#manifest-key)
-- [Build](#build)
-- [Release](#release)
-  - [Version Bump](#version-bump)
-  - [Create Release](#create-release)
+- [Build \& Release](#build--release)
   - [Chrome Web Store](#chrome-web-store)
+  - [GitHub Release](#github-release)
 - [Make Commands](#make-commands)
 - [Features](#features)
   - [Tipping](#tipping)
@@ -51,54 +49,37 @@ To reload after changes: click the refresh icon on the extension card or use [Ex
 
 The `manifest.json` includes a `key` field for local development. This ensures a consistent extension ID so `externally_connectable` works with the Grove web app. The build process automatically strips this key when creating zips for the Chrome Web Store.
 
-## Build
-
-Build the extension zip for Chrome Web Store upload:
-
-```bash
-make build_zip_extension
-```
-
-This creates `build/grove-extension-vX.Y.Z.zip` with the `key` field automatically removed from the manifest.
-
-## Release
-
-### Version Bump
-
-```bash
-make build_release
-```
-
-This increments the patch version in both `manifest.json` and `makefiles/build.mk`, then prompts to commit and push.
-
-### Create Release
-
-```bash
-# Tag and push
-git tag -a vX.Y.Z -m "Release vX.Y.Z"
-git push origin vX.Y.Z
-
-# Create GitHub release
-gh release create vX.Y.Z --title "vX.Y.Z" --generate-notes
-```
+## Build & Release
 
 ### Chrome Web Store
 
-1. Build the zip: `make build_zip_extension`
-2. Upload at the [Chrome Web Store console](https://chrome.google.com/webstore/devconsole/21d27706-ef22-4f83-8ddc-9f6109acef7d/jheejecmpfgifgdodgipilpgfaiecndm/edit/package)
+```bash
+make build_chrome_store_zip
+```
 
-_Optional_: `make build_zip_upload` uploads to [grove-releases](https://github.com/buildwithgrove/grove-releases) for easy onboarding (requires `gh` CLI)
+This will:
+1. Prompt to bump the version (updates `manifest.json` and `makefiles/build.mk`)
+2. Optionally commit and push the version bump
+3. Create `build/grove-extension-vX.Y.Z-<sha>.zip` with the `key` field removed
+4. Display upload instructions for the [Chrome Web Store console](https://chrome.google.com/webstore/devconsole/21d27706-ef22-4f83-8ddc-9f6109acef7d/jheejecmpfgifgdodgipilpgfaiecndm/edit/package)
+
+### GitHub Release
+
+```bash
+make build_and_upload_github_release_zip
+```
+
+This builds the zip and uploads it to [grove-releases](https://github.com/buildwithgrove/grove-releases) for easy onboarding. The zip includes the public key for stable extension ID when side-loading. Requires `gh` CLI.
 
 ## Make Commands
 
 | Command | Description |
 |---------|-------------|
 | `make help` | Show all available targets |
-| `make build_zip_extension` | Create extension zip for Chrome Web Store |
-| `make build_release` | Bump version and prepare for release |
-| `make build_zip_upload` | Upload zip to public releases repo |
-| `make clean_build` | Clean build artifacts |
-| `make debug_vars` | Print key build variables |
+| `make build_chrome_store_zip` | Bump version, build zip for Chrome Web Store |
+| `make build_and_upload_github_release_zip` | Build and upload to GitHub releases |
+| `make dev_clean` | Clean build artifacts |
+| `make dev_debug_vars` | Print key build variables |
 
 ## Features
 
