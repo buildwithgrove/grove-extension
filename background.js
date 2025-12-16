@@ -1,3 +1,6 @@
+// Import update checker
+importScripts('src/utils/updateChecker.js');
+
 // JWT Storage Keys (must match keyManager.js)
 const JWT_STORAGE = {
   PRODUCTION: 'GROVE_JWT_PRODUCTION',
@@ -6,8 +9,18 @@ const JWT_STORAGE = {
   LEGACY: 'GROVE_API_JWT'
 };
 
+// Update check alarm name
+const UPDATE_CHECK_ALARM = 'grove-update-check';
+
 // Listen for internal messages from popup/content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Clear update badge when user dismisses update notification
+  if (message.type === 'CLEAR_UPDATE_BADGE') {
+    chrome.action.setBadgeText({ text: '' });
+    sendResponse({ success: true });
+    return true;
+  }
+
   // X (Twitter) OAuth Login
   if (message.type === 'X_LOGIN') {
     handleXLogin().then(result => {
@@ -358,3 +371,67 @@ async function storeXTokens(tokens, userInfo) {
     [X_AUTH_CONFIG.STORAGE_KEYS.TOKEN_EXPIRY]: expiry,
   });
 }
+
+// ============================================================================
+// Update Checker - Background Check with Badge Notification
+// ============================================================================
+
+/**
+ * Check for updates and update badge accordingly
+ */
+async function checkForUpdatesBackground() {
+  if (typeof UpdateChecker === 'undefined') {
+    console.warn('[Grove Background] UpdateChecker not available');
+    return;
+  }
+
+  try {
+    const result = await UpdateChecker.checkForUpdate();
+
+    if (result.available) {
+      // Show badge to indicate update available
+      await chrome.action.setBadgeText({ text: '1' });
+      await chrome.action.setBadgeBackgroundColor({ color: '#389f58' });
+      console.log(`[Grove Background] Update available: v${result.version}`);
+    } else {
+      // Clear badge if no update
+      await chrome.action.setBadgeText({ text: '' });
+    }
+  } catch (error) {
+    console.error('[Grove Background] Error checking for updates:', error);
+  }
+}
+
+/**
+ * Set up periodic update check alarm
+ */
+async function setupUpdateCheckAlarm() {
+  // Create alarm to check every 4 hours
+  await chrome.alarms.create(UPDATE_CHECK_ALARM, {
+    periodInMinutes: 240, // 4 hours
+  });
+
+  // Also check immediately on startup
+  checkForUpdatesBackground();
+}
+
+// Listen for alarm events
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === UPDATE_CHECK_ALARM) {
+    checkForUpdatesBackground();
+  }
+});
+
+// Set up alarm on extension install/update
+chrome.runtime.onInstalled.addListener(() => {
+  setupUpdateCheckAlarm();
+});
+
+// Set up alarm on service worker startup (in case it was terminated)
+chrome.runtime.onStartup.addListener(() => {
+  setupUpdateCheckAlarm();
+});
+
+// Also run setup immediately when service worker loads
+// This handles the case where service worker restarts
+setupUpdateCheckAlarm();
