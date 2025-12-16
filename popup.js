@@ -1416,33 +1416,9 @@ async function loadXLoginStatus() {
     const isLoggedIn = await XAuth.isLoggedIn();
 
     if (isLoggedIn) {
-      let userInfo = await XAuth.getStoredUserInfo();
-
-      // If username is missing or fallback, try to fetch it fresh
-      if (!userInfo?.username || userInfo.username === 'Connected') {
-        try {
-          const accessToken = await XAuth.getAccessToken();
-          if (accessToken) {
-            const freshUserInfo = await XAuth.getUserInfo(accessToken);
-            if (freshUserInfo?.username) {
-              userInfo = freshUserInfo;
-              // Update stored user info
-              await chrome.storage.local.set({
-                [XAuth.STORAGE_KEYS.USER_INFO]: freshUserInfo
-              });
-            }
-          }
-        } catch (fetchError) {
-          console.warn('[Grove Extension] Could not fetch X user info:', fetchError.message);
-        }
-      }
-
-      const isRealUsername = userInfo?.username && userInfo.username !== 'Connected';
-      const displayName = isRealUsername ? `@${userInfo.username}` : 'Connected';
-
       if (homeXLoginStatus) {
-        homeXLoginStatus.textContent = displayName;
-        homeXLoginStatus.style.color = 'var(--color-primary)';
+        homeXLoginStatus.textContent = 'Connected';
+        homeXLoginStatus.style.color = 'var(--color-text-primary)';
       }
       if (homeXLoginBtn) {
         homeXLoginBtn.textContent = 'Disconnect';
@@ -1489,7 +1465,7 @@ async function handleXLogin() {
         homeXLoginBtn.disabled = true;
       }
 
-      const userInfo = await XAuth.login();
+      await XAuth.login();
 
       // Re-enable button and refresh UI from stored state
       if (homeXLoginBtn) {
@@ -1497,8 +1473,7 @@ async function handleXLogin() {
       }
       await loadXLoginStatus();
 
-      const isRealUsername = userInfo.username && userInfo.username !== 'Connected';
-      showToast(isRealUsername ? `Connected as @${userInfo.username}` : 'Connected to 𝕏');
+      showToast('Connected to 𝕏');
     } catch (error) {
       console.error('[Grove Extension] X login failed:', error);
       if (homeXLoginBtn) {
