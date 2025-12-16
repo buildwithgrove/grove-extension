@@ -54,6 +54,31 @@ const UpdateChecker = (() => {
   }
 
   /**
+   * Extract base version from release tag
+   * "grove-extension-v1.0.6" → "1.0.6"
+   * "grove-extension-v1.0.6.1" → "1.0.6"
+   * @param {string} tag - Release tag name
+   * @returns {string} - Base semver version (major.minor.patch)
+   */
+  function parseBaseVersion(tag) {
+    // Extract version: grove-extension-v1.0.6 or grove-extension-v1.0.6.1
+    const match = tag.match(/grove-extension-v(\d+\.\d+\.\d+)/);
+    return match ? match[1] : '';
+  }
+
+  /**
+   * Check if manifest version matches the release's base version
+   * This prevents false update notifications for dev installs
+   * @param {string} releaseTag - The release tag to check
+   * @returns {boolean} - True if versions match
+   */
+  function manifestMatchesRelease(releaseTag) {
+    const manifestVersion = getCurrentVersion();
+    const releaseBaseVersion = parseBaseVersion(releaseTag);
+    return manifestVersion === releaseBaseVersion;
+  }
+
+  /**
    * Fetch the latest release from GitHub
    * @returns {Promise<{tag: string, displayVersion: string, downloadUrl: string, releaseUrl: string, releaseName: string} | null>}
    */
@@ -139,7 +164,7 @@ const UpdateChecker = (() => {
       const cachedTag = storage[STORAGE_KEYS.LATEST_TAG];
 
       if (cachedTag) {
-        const isNew = cachedTag !== installedTag;
+        const isNew = cachedTag !== installedTag && !manifestMatchesRelease(cachedTag);
         const isDismissed = cachedTag === dismissedTag;
 
         return {
@@ -166,7 +191,7 @@ const UpdateChecker = (() => {
       [STORAGE_KEYS.DOWNLOAD_URL]: release.downloadUrl,
     });
 
-    const isNew = release.tag !== installedTag;
+    const isNew = release.tag !== installedTag && !manifestMatchesRelease(release.tag);
     const isDismissed = release.tag === dismissedTag;
 
     return {
