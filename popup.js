@@ -563,10 +563,16 @@ function setupEventListeners() {
     });
   }
 
-  // Home X login button - call the same handler
+  // Home X login button
   const homeXLoginBtnEl = document.getElementById('homeXLoginBtn');
   if (homeXLoginBtnEl) {
     homeXLoginBtnEl.addEventListener('click', handleXLogin);
+  }
+
+  // Home X disconnect button
+  const homeXDisconnectBtnEl = document.getElementById('homeXDisconnectBtn');
+  if (homeXDisconnectBtnEl) {
+    homeXDisconnectBtnEl.addEventListener('click', handleXDisconnect);
   }
 
   // Legacy manage button (kept for compatibility but hidden)
@@ -1405,77 +1411,64 @@ async function resetAutoReplyMessage() {
  */
 
 // Home screen X elements
-const homeXLoginStatus = document.getElementById('homeXLoginStatus');
+const homeXConnectGroup = document.getElementById('homeXConnectGroup');
 const homeXLoginBtn = document.getElementById('homeXLoginBtn');
+const homeXDisconnectBtn = document.getElementById('homeXDisconnectBtn');
 const homeXPostConnectOptions = document.getElementById('homeXPostConnectOptions');
 const homeXSettingsTitle = document.getElementById('homeXSettingsTitle');
-const homeXConnectHint = document.getElementById('homeXConnectHint');
 
 async function loadXLoginStatus() {
   try {
     const isLoggedIn = await XAuth.isLoggedIn();
 
     if (isLoggedIn) {
-      if (homeXLoginStatus) homeXLoginStatus.textContent = 'Connected';
-      if (homeXLoginBtn) {
-        homeXLoginBtn.textContent = 'Disconnect';
-        homeXLoginBtn.classList.add('btn-danger-text');
-      }
-      if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Connected to 𝕏';
-      if (homeXConnectHint) homeXConnectHint.classList.add('hidden');
+      if (homeXConnectGroup) homeXConnectGroup.classList.add('hidden');
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.remove('hidden');
+      if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Connected to 𝕏';
     } else {
-      if (homeXLoginStatus) homeXLoginStatus.textContent = 'Not connected';
-      if (homeXLoginBtn) {
-        homeXLoginBtn.textContent = 'Connect';
-        homeXLoginBtn.classList.remove('btn-danger-text');
-      }
-      if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Connect to 𝕏';
-      if (homeXConnectHint) homeXConnectHint.classList.remove('hidden');
+      if (homeXConnectGroup) homeXConnectGroup.classList.remove('hidden');
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.add('hidden');
+      if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Connect to 𝕏';
     }
   } catch (error) {
     console.error('[Grove Extension] X login status check failed:', error);
   }
 }
 
+async function handleXDisconnect() {
+  await XAuth.logout();
+  await loadXLoginStatus();
+  showToast('Disconnected from 𝕏');
+}
+
 async function handleXLogin() {
-  const isLoggedIn = await XAuth.isLoggedIn();
-
-  if (isLoggedIn) {
-    // Logout
-    await XAuth.logout();
-    await loadXLoginStatus();
-    showToast('Disconnected from X');
-  } else {
-    // Login
-    try {
-      if (homeXLoginBtn) {
-        homeXLoginBtn.textContent = 'Connecting...';
-        homeXLoginBtn.disabled = true;
-      }
-
-      await XAuth.login();
-
-      // Re-enable button and refresh UI from stored state
-      if (homeXLoginBtn) {
-        homeXLoginBtn.disabled = false;
-      }
-      await loadXLoginStatus();
-
-      showToast('Connected to 𝕏');
-    } catch (error) {
-      console.error('[Grove Extension] X login failed:', error);
-      if (homeXLoginBtn) {
-        homeXLoginBtn.textContent = 'Connect';
-        homeXLoginBtn.disabled = false;
-      }
-      // Truncate long error messages to prevent UI overflow
-      const errorMsg = error.message?.length > 50
-        ? error.message.substring(0, 50) + '...'
-        : error.message;
-      showToast('Login failed: ' + errorMsg);
+  try {
+    if (homeXLoginBtn) {
+      homeXLoginBtn.textContent = 'Connecting...';
+      homeXLoginBtn.disabled = true;
     }
+
+    await XAuth.login();
+
+    // Re-enable button and refresh UI from stored state
+    if (homeXLoginBtn) {
+      homeXLoginBtn.textContent = 'Connect';
+      homeXLoginBtn.disabled = false;
+    }
+    await loadXLoginStatus();
+
+    showToast('Connected to 𝕏');
+  } catch (error) {
+    console.error('[Grove Extension] X login failed:', error);
+    if (homeXLoginBtn) {
+      homeXLoginBtn.textContent = 'Connect';
+      homeXLoginBtn.disabled = false;
+    }
+    // Truncate long error messages to prevent UI overflow
+    const errorMsg = error.message?.length > 50
+      ? error.message.substring(0, 50) + '...'
+      : error.message;
+    showToast('Login failed: ' + errorMsg);
   }
 }
 
