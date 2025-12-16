@@ -142,7 +142,7 @@ build_and_upload_github_release_zip: build_chrome_store_zip ## Build and upload 
 	@gh release create $(RELEASE_TAG_VERSION) $(RELEASE_ASSET) \
 		--repo $(RELEASES_REPO) \
 		--title "Grove Extension v$(VERSION)-$(GIT_SHA)" \
-		--notes "Grove Extension v$(VERSION)-$(GIT_SHA)" && \
+		--notes "## Grove Extension v$(VERSION)-$(GIT_SHA)$$(printf '\n\n')### New Installation$$(printf '\n')1. Download the zip file below$$(printf '\n')2. Unzip to a folder$$(printf '\n')3. Go to \`chrome://extensions\`$$(printf '\n')4. Enable \"Developer mode\"$$(printf '\n')5. Click \"Load unpacked\" and select the unzipped folder$$(printf '\n\n')### Updating$$(printf '\n')1. Download the zip file below$$(printf '\n')2. Unzip (replace your existing folder or use a new one)$$(printf '\n')3. Go to \`chrome://extensions\`$$(printf '\n')4. Click the refresh icon on the Grove extension card" && \
 		printf "$(GREEN)$(CHECK) Versioned release created!$(RESET)\n" || \
 		{ printf "$(YELLOW)$(WARN) Versioned release already exists, skipping...$(RESET)\n"; }
 	$(call print_info,Updating latest release...)
@@ -150,7 +150,7 @@ build_and_upload_github_release_zip: build_chrome_store_zip ## Build and upload 
 	@gh release create $(RELEASE_TAG_LATEST) $(RELEASE_ASSET) \
 		--repo $(RELEASES_REPO) \
 		--title "Grove Extension v$(VERSION)-$(GIT_SHA) (Latest)" \
-		--notes "Grove Extension v$(VERSION)-$(GIT_SHA) - Latest release" && \
+		--notes "## Grove Extension v$(VERSION)-$(GIT_SHA)$$(printf '\n\n')### New Installation$$(printf '\n')1. Download the zip file below$$(printf '\n')2. Unzip to a folder$$(printf '\n')3. Go to \`chrome://extensions\`$$(printf '\n')4. Enable \"Developer mode\"$$(printf '\n')5. Click \"Load unpacked\" and select the unzipped folder$$(printf '\n\n')### Updating$$(printf '\n')1. Download the zip file below$$(printf '\n')2. Unzip (replace your existing folder or use a new one)$$(printf '\n')3. Go to \`chrome://extensions\`$$(printf '\n')4. Click the refresh icon on the Grove extension card" && \
 		printf "$(GREEN)$(CHECK) Latest release updated!$(RESET)\n" || \
 		{ printf "$(RED)$(CROSS) Failed to create latest release.$(RESET)\n"; exit 1; }
 	@printf "\n$(CYAN)$(BOLD)🔗 Download URLs:$(RESET)\n"
