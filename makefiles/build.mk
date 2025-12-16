@@ -4,7 +4,7 @@
 
 # Extension metadata
 EXTENSION_NAME := grove-extension
-VERSION := "version": "1.0.7
+VERSION := 1.0.7
 GIT_SHA := $(shell git rev-parse --short HEAD)
 VERSION_FULL := $(VERSION)-$(GIT_SHA)
 
@@ -78,7 +78,7 @@ _prompt_version_bump:
 # Perform the actual version bump
 .PHONY: _do_version_bump
 _do_version_bump:
-	@CURRENT_VERSION=$$(grep '"version"' manifest.json | sed 's/.*"\([0-9]*\.[0-9]*\.[0-9]*\)".*/\1/'); \
+	@CURRENT_VERSION=$$(grep '"version"' manifest.json | sed 's/.*"\([0-9]*\.[0-9]*\.[0-9]*\(\.[0-9]*\)\?\)".*/\1/'); \
 	MAJOR=$$(echo $$CURRENT_VERSION | cut -d. -f1); \
 	MINOR=$$(echo $$CURRENT_VERSION | cut -d. -f2); \
 	PATCH=$$(echo $$CURRENT_VERSION | cut -d. -f3); \
@@ -87,7 +87,7 @@ _do_version_bump:
 	printf "$(CYAN)Current version:$(RESET) $$CURRENT_VERSION\n"; \
 	printf "$(GREEN)New version:$(RESET) $$NEW_VERSION\n"; \
 	sed "s/\"version\": \"$$CURRENT_VERSION\"/\"version\": \"$$NEW_VERSION\"/" manifest.json > manifest.json.tmp && mv manifest.json.tmp manifest.json; \
-	sed "s/^VERSION := [0-9]*\.[0-9]*\.[0-9]*/VERSION := $$NEW_VERSION/" makefiles/build.mk > makefiles/build.mk.tmp && mv makefiles/build.mk.tmp makefiles/build.mk; \
+	sed "s/^VERSION := [0-9]*\.[0-9]*\.[0-9]*\(\.[0-9]*\)\{0,1\}/VERSION := $$NEW_VERSION/" makefiles/build.mk > makefiles/build.mk.tmp && mv makefiles/build.mk.tmp makefiles/build.mk; \
 	printf "$(GREEN)$(CHECK) Version bumped to $$NEW_VERSION$(RESET)\n"; \
 	printf "\n"; \
 	printf "$(YELLOW)Commit and push version bump? [Y/n] $(RESET)"; \
