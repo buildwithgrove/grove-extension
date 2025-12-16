@@ -2,7 +2,15 @@
  * Tip Error Handling Utilities
  *
  * Normalizes backend error responses into user-friendly messages with:
- * - Error type classification (auth, balance, rate limit, network)
+ * - Error type classification:
+ *   - auth: expired/invalid JWT tokens (401/403)
+ *   - insufficient_balance: not enough funds
+ *   - rate_limited: too many requests (429)
+ *   - network: connection/fetch failures
+ *   - address_not_found: couldn't resolve tip destination (ENS, Twitter user, etc.)
+ *   - validation: amount limits, invalid format, unsupported token/network
+ *   - transfer_failed: backend/provider errors (500s)
+ *   - unknown: fallback for unrecognized errors
  * - Visual variant (error vs warning) for UI styling
  * - Inline bubble display anchored to tip buttons
  *
@@ -14,6 +22,9 @@
     AUTH: 'auth',
     RATE_LIMITED: 'rate_limited',
     NETWORK: 'network',
+    ADDRESS_NOT_FOUND: 'address_not_found',
+    VALIDATION: 'validation',
+    TRANSFER_FAILED: 'transfer_failed',
     UNKNOWN: 'unknown'
   };
 
@@ -22,6 +33,9 @@
     [TIP_ERROR_TYPES.RATE_LIMITED]: 'warning',
     [TIP_ERROR_TYPES.AUTH]: 'error',
     [TIP_ERROR_TYPES.NETWORK]: 'error',
+    [TIP_ERROR_TYPES.ADDRESS_NOT_FOUND]: 'warning',
+    [TIP_ERROR_TYPES.VALIDATION]: 'warning',
+    [TIP_ERROR_TYPES.TRANSFER_FAILED]: 'error',
     [TIP_ERROR_TYPES.UNKNOWN]: 'error'
   };
 
@@ -71,6 +85,62 @@
           userMessage: userMsg,
           detail: detail || {},
           variant: DEFAULT_VARIANTS[TIP_ERROR_TYPES.RATE_LIMITED]
+        };
+      }
+
+      // Check for ADDRESS_NOT_FOUND errors (404 with specific error codes or messages)
+      const errorCode = detail?.error_code || '';
+      if (status === 404 || errorCode === 'ADDRESS_NOT_FOUND' ||
+          this._includes(normalizedMessage, 'address not found') ||
+          this._includes(normalizedMessage, 'failed to resolve')) {
+        const userMsg = this._formatAddressNotFound(normalizedMessage, detail);
+        return {
+          type: TIP_ERROR_TYPES.ADDRESS_NOT_FOUND,
+          status,
+          message: userMsg,
+          userMessage: userMsg,
+          detail: detail || {},
+          variant: DEFAULT_VARIANTS[TIP_ERROR_TYPES.ADDRESS_NOT_FOUND]
+        };
+      }
+
+      // Check for validation errors (amount limits, format issues)
+      if (this._includes(normalizedMessage, 'minimum') ||
+          this._includes(normalizedMessage, 'maximum') ||
+          this._includes(normalizedMessage, 'invalid amount') ||
+          this._includes(normalizedMessage, 'too small after fees') ||
+          this._includes(normalizedMessage, 'decimal places') ||
+          this._includes(normalizedMessage, 'not supported')) {
+        const userMsg = this._formatValidationError(normalizedMessage, detail);
+        return {
+          type: TIP_ERROR_TYPES.VALIDATION,
+          status,
+          message: userMsg,
+          userMessage: userMsg,
+          detail: detail || {},
+          variant: DEFAULT_VARIANTS[TIP_ERROR_TYPES.VALIDATION]
+        };
+      }
+
+      // Check for transfer/provider errors (500s, settlement failures)
+      if (status === 500 ||
+          this._includes(normalizedMessage, 'settlement failed') ||
+          this._includes(normalizedMessage, 'transfer failed') ||
+          this._includes(normalizedMessage, 'provider') ||
+          this._includes(normalizedMessage, 'funding wallet') ||
+          errorCode === 'TRANSFER_FAILED' ||
+          errorCode === 'INSUFFICIENT_GAS_IN_FUNDING_WALLET' ||
+          errorCode === 'INSUFFICIENT_TOKEN_BALANCE' ||
+          errorCode === 'WALLET_NOT_FOUND' ||
+          errorCode === 'PROVIDER_API_ERROR') {
+        const userMsg = 'There was an issue processing your tip. Please try again in a moment.';
+        return {
+          type: TIP_ERROR_TYPES.TRANSFER_FAILED,
+          status,
+          message: userMsg,
+          userMessage: userMsg,
+          detail: detail || {},
+          variant: DEFAULT_VARIANTS[TIP_ERROR_TYPES.TRANSFER_FAILED]
         };
       }
 
@@ -263,6 +333,110 @@
       }
 
       return `Not enough ${token} on ${this._titleCase(network)} to send this tip. Add funds or try again.`;
+    }
+
+    /**
+     * Format address not found error into a user-friendly message.
+     * Handles various sub-types: ENS resolution, Twitter user, no published address, etc.
+     *
+     * @param {string} normalizedMessage - Lowercase error message
+     * @param {Object} detail - Error detail object from API response
+     * @returns {string} - Formatted error message
+     */
+    static _formatAddressNotFound(normalizedMessage, detail = {}) {
+      // Twitter user not found
+      if (this._includes(normalizedMessage, 'twitter user not found') ||
+          detail?.error_code === 'TWITTER_USER_NOT_FOUND') {
+        return 'This Twitter user could not be found. Check the username and try again.';
+      }
+
+      // Twitter API issues
+      if (this._includes(normalizedMessage, 'twitter api') ||
+          detail?.error_code === 'TWITTER_API_CREDITS_EXHAUSTED' ||
+          detail?.error_code === 'TWITTER_API_UNAVAILABLE') {
+        return 'Twitter lookup is temporarily unavailable. Please try again later.';
+      }
+
+      // ENS resolution failed
+      if (this._includes(normalizedMessage, 'ens')) {
+        return 'Could not resolve this ENS name. Verify it exists and has an address set.';
+      }
+
+      // Address incompatible with network
+      if (this._includes(normalizedMessage, 'incompatible with network')) {
+        return 'This address is not compatible with the selected network. Try switching networks.';
+      }
+
+      // Adapter not implemented (Reddit, GitHub, etc.)
+      if (this._includes(normalizedMessage, 'not yet implemented')) {
+        return 'Tipping on this platform is not yet supported.';
+      }
+
+      // Generic: no address found
+      // Use suggestion from API if available
+      if (detail?.suggestion) {
+        return detail.suggestion;
+      }
+
+      return 'Could not find a tippable address for this user. They may need to add one to their profile.';
+    }
+
+    /**
+     * Format validation error into a user-friendly message.
+     * Handles amount limits, format issues, unsupported tokens/networks.
+     *
+     * @param {string} normalizedMessage - Lowercase error message
+     * @param {Object} detail - Error detail object from API response
+     * @returns {string} - Formatted error message
+     */
+    static _formatValidationError(normalizedMessage, detail = {}) {
+      // Below minimum
+      if (this._includes(normalizedMessage, 'below minimum')) {
+        // Try to extract the minimum amount from the message
+        const minMatch = normalizedMessage.match(/minimum[:\s]+\$?([\d.]+)/);
+        if (minMatch) {
+          return `Tip amount is too small. Minimum is $${minMatch[1]}.`;
+        }
+        return 'Tip amount is below the minimum. Please increase the amount.';
+      }
+
+      // Exceeds maximum
+      if (this._includes(normalizedMessage, 'exceeds maximum')) {
+        const maxMatch = normalizedMessage.match(/maximum[:\s]+\$?([\d.]+)/);
+        if (maxMatch) {
+          return `Tip amount is too large. Maximum is $${maxMatch[1]}.`;
+        }
+        return 'Tip amount exceeds the maximum. Please reduce the amount.';
+      }
+
+      // Too small after fees
+      if (this._includes(normalizedMessage, 'too small after fees')) {
+        return 'Tip amount is too small after fees. Please increase the amount.';
+      }
+
+      // Invalid amount format
+      if (this._includes(normalizedMessage, 'invalid amount')) {
+        return 'Invalid tip amount. Please enter a valid number.';
+      }
+
+      // Decimal places
+      if (this._includes(normalizedMessage, 'decimal places')) {
+        return 'Too many decimal places. USDC supports up to 6 decimals.';
+      }
+
+      // Unsupported token or network
+      if (this._includes(normalizedMessage, 'not supported')) {
+        if (this._includes(normalizedMessage, 'token')) {
+          return 'This token is not supported on the selected network.';
+        }
+        if (this._includes(normalizedMessage, 'currency')) {
+          return 'This currency is not supported.';
+        }
+        return 'This configuration is not supported. Please check your settings.';
+      }
+
+      // Generic validation error
+      return 'Invalid tip configuration. Please check the amount and try again.';
     }
 
     static _formatAmount(value) {
