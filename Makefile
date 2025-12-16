@@ -8,27 +8,22 @@
 HELP_PATTERNS := \
 	'^help:' \
 	'^build_.*:' \
-	'^clean_.*:' \
-	'^debug_vars:'
+	'^dev_.*:'
 
 .PHONY: help
 help: ## Show all available targets with descriptions
 	@printf "\n"
 	@printf "$(BOLD)$(CYAN)📦 Grove Extension - Makefile Targets$(RESET)\n"
+	@printf "$(YELLOW)Usage:$(RESET) make <target>\n"
 	@printf "\n"
 	@printf "$(BOLD)=== 📋 Information & Discovery ===$(RESET)\n"
-	@grep -h -E '^(help|help-unclassified):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-30s$(RESET) %s\n", $$1, $$2}'
+	@grep -h -E '^(help|help-unclassified):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-42s$(RESET) %s\n", $$1, $$2}'
 	@printf "\n"
 	@printf "$(BOLD)=== 🏗️  Build & Package ===$(RESET)\n"
-	@grep -h -E '^build_.*:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-30s$(RESET) %s\n", $$1, $$2}' | sort -u
+	@grep -h -E '^build_.*:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-42s$(RESET) %s\n", $$1, $$2}' | sort -u
 	@printf "\n"
-	@printf "$(BOLD)=== 🧹 Cleaning ===$(RESET)\n"
-	@grep -h -E '^clean_.*:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-30s$(RESET) %s\n", $$1, $$2}' | sort -u
-	@printf "\n"
-	@printf "$(BOLD)=== 🔧 Debugging ===$(RESET)\n"
-	@grep -h -E '^debug_.*:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-30s$(RESET) %s\n", $$1, $$2}' | sort -u
-	@printf "\n"
-	@printf "$(YELLOW)Usage:$(RESET) make <target>\n"
+	@printf "$(BOLD)=== 🔧 Development ===$(RESET)\n"
+	@grep -h -E '^dev_.*:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-42s$(RESET) %s\n", $$1, $$2}' | sort -u
 	@printf "\n"
 
 .PHONY: help-unclassified
@@ -55,6 +50,7 @@ help-unclassified: ## Show all unclassified targets
 include ./makefiles/colors.mk
 include ./makefiles/common.mk
 include ./makefiles/build.mk
+include ./makefiles/dev.mk
 
 ############################
 ### Legacy Target Aliases ##
@@ -66,7 +62,7 @@ include ./makefiles/build.mk
 zip_extension: build_chrome_store_zip ## (Legacy) Create extension zip
 
 .PHONY: clean
-clean: clean_build ## (Legacy) Clean build artifacts
+clean: dev_clean ## (Legacy) Clean build artifacts
 
 ###############################
 ###  Global Error Handling  ###
@@ -74,10 +70,10 @@ clean: clean_build ## (Legacy) Clean build artifacts
 
 # Catch-all for undefined targets - MUST be at END after all includes
 %:
-	@echo ""
-	@echo "$(RED)❌ Error: Unknown target '$(BOLD)$@$(RESET)$(RED)'$(RESET)"
-	@echo ""
-	@echo "$(YELLOW)💡 Available targets:$(RESET)"
-	@echo "   Run $(CYAN)make help$(RESET) to see all available targets"
-	@echo ""
+	@printf "\n"
+	@printf "$(RED)❌ Error: Unknown target '$(BOLD)$@$(RESET)$(RED)'$(RESET)\n"
+	@printf "\n"
+	@printf "$(YELLOW)💡 Available targets:$(RESET)\n"
+	@printf "   Run $(CYAN)make help$(RESET) to see all available targets\n"
+	@printf "\n"
 	@exit 1

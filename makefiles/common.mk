@@ -17,6 +17,10 @@ else
 	Q := @
 endif
 
+# Common tools
+
+NPM := npm
+
 # Timestamp & common dirs
 
 TIMESTAMP := $(shell date '+%Y-%m-%d %H:%M:%S')
@@ -47,8 +51,3 @@ endef
 .PHONY: prompt_confirm
 prompt_confirm: ## Prompt before continuing
 	@printf "$(YELLOW)Continue? [y/N] $(RESET)"; read ans; [ $${ans:-N} = y ]
-
-.PHONY: debug_vars
-debug_vars: ## Print key variables
-	$(call print_info_section,Debug variables)
-	$(Q)printf "ROOT_DIR=%s\nBUILD_DIR=%s\nDIST_DIR=%s\nTMP_DIR=%s\n" "$(ROOT_DIR)" "$(BUILD_DIR)" "$(DIST_DIR)" "$(TMP_DIR)"
