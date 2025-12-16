@@ -1416,31 +1416,21 @@ async function loadXLoginStatus() {
     const isLoggedIn = await XAuth.isLoggedIn();
 
     if (isLoggedIn) {
-      if (homeXLoginStatus) {
-        homeXLoginStatus.textContent = 'Connected';
-        homeXLoginStatus.style.color = 'var(--color-text-primary)';
-      }
+      if (homeXLoginStatus) homeXLoginStatus.textContent = 'Connected';
       if (homeXLoginBtn) {
         homeXLoginBtn.textContent = 'Disconnect';
         homeXLoginBtn.classList.add('btn-danger-text');
       }
-      if (homeXSettingsTitle) {
-        homeXSettingsTitle.textContent = 'Connected to 𝕏';
-      }
+      if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Connected to 𝕏';
       if (homeXConnectHint) homeXConnectHint.classList.add('hidden');
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.remove('hidden');
     } else {
-      if (homeXLoginStatus) {
-        homeXLoginStatus.textContent = 'Not connected';
-        homeXLoginStatus.style.color = 'var(--color-text-secondary)';
-      }
+      if (homeXLoginStatus) homeXLoginStatus.textContent = 'Not connected';
       if (homeXLoginBtn) {
         homeXLoginBtn.textContent = 'Connect';
         homeXLoginBtn.classList.remove('btn-danger-text');
       }
-      if (homeXSettingsTitle) {
-        homeXSettingsTitle.textContent = 'Connect to 𝕏';
-      }
+      if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Connect to 𝕏';
       if (homeXConnectHint) homeXConnectHint.classList.remove('hidden');
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.add('hidden');
     }
