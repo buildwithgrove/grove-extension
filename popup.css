@@ -868,17 +868,18 @@ button.section-card-btn:hover .quick-access-icon {
 
 /* Success text button (for connect actions) */
 .btn-success-text {
-  background: transparent;
+  background: var(--color-primary);
   border: none;
-  color: var(--color-primary);
-  font-size: 13px;
-  font-weight: 500;
+  border-radius: 6px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 6px 12px;
 }
 
 .btn-success-text:hover {
-  opacity: 0.8;
+  background: var(--color-primary-hover);
 }
 
 /* Danger text button (for disconnect actions) */
