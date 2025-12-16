@@ -203,10 +203,13 @@ _grove_release_internal: _build_extension_zip
 	printf "$(YELLOW)║$(RESET)  $(BOLD)Local Git Tag:$(RESET)   $$LOCAL_TAG\n"; \
 	printf "$(YELLOW)%s$(RESET)\n" "╚════════════════════════════════════════════════════════╝"; \
 	printf "\n"; \
-	printf "$(CYAN)ℹ️  Injecting public key for stable extension ID...$(RESET)\n"; \
+	printf "$(CYAN)ℹ️  Updating manifest version to $$RELEASE_VERSION...$(RESET)\n"; \
+	sed -i.bak "s/\"version\": \"[^\"]*\"/\"version\": \"$$RELEASE_VERSION\"/" manifest.json && rm -f manifest.json.bak; \
+	git add manifest.json && git commit -m "chore: bump manifest version to $$RELEASE_VERSION" && git push; \
+	printf "$(CYAN)ℹ️  Rebuilding zip with updated version...$(RESET)\n"; \
 	mkdir -p $(BUILD_DIR)/repack; \
-	unzip -q $(ZIP_FILE) -d $(BUILD_DIR)/repack; \
-	sed 's|"manifest_version": 3,|"manifest_version": 3,\n  "key": "$(EXTENSION_PUBLIC_KEY)",|' $(BUILD_DIR)/repack/manifest.json > $(BUILD_DIR)/repack/manifest.json.tmp && mv $(BUILD_DIR)/repack/manifest.json.tmp $(BUILD_DIR)/repack/manifest.json; \
+	cp -r $(INCLUDE_FILES) $(BUILD_DIR)/repack/; \
+	sed 's|"version": "[^"]*"|"version": "'$$RELEASE_VERSION'"|; s|"manifest_version": 3,|"manifest_version": 3,\n  "key": "$(EXTENSION_PUBLIC_KEY)",|' $(BUILD_DIR)/repack/manifest.json > $(BUILD_DIR)/repack/manifest.json.tmp && mv $(BUILD_DIR)/repack/manifest.json.tmp $(BUILD_DIR)/repack/manifest.json; \
 	cd $(BUILD_DIR)/repack && zip -rq ../grove-extension-v$$RELEASE_VERSION.zip .; \
 	rm -rf $(BUILD_DIR)/repack; \
 	cp $(BUILD_DIR)/grove-extension-v$$RELEASE_VERSION.zip $(RELEASE_ASSET); \

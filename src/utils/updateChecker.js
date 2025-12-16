@@ -54,28 +54,28 @@ const UpdateChecker = (() => {
   }
 
   /**
-   * Extract base version from release tag
+   * Extract full version from release tag
    * "grove-extension-v1.0.6" → "1.0.6"
-   * "grove-extension-v1.0.6.1" → "1.0.6"
+   * "grove-extension-v1.0.6.1" → "1.0.6.1"
    * @param {string} tag - Release tag name
-   * @returns {string} - Base semver version (major.minor.patch)
+   * @returns {string} - Full version string
    */
-  function parseBaseVersion(tag) {
+  function parseReleaseVersion(tag) {
     // Extract version: grove-extension-v1.0.6 or grove-extension-v1.0.6.1
-    const match = tag.match(/grove-extension-v(\d+\.\d+\.\d+)/);
+    const match = tag.match(/grove-extension-v([\d.]+)/);
     return match ? match[1] : '';
   }
 
   /**
-   * Check if manifest version matches the release's base version
+   * Check if manifest version matches the release version
    * This prevents false update notifications for dev installs
    * @param {string} releaseTag - The release tag to check
    * @returns {boolean} - True if versions match
    */
   function manifestMatchesRelease(releaseTag) {
     const manifestVersion = getCurrentVersion();
-    const releaseBaseVersion = parseBaseVersion(releaseTag);
-    return manifestVersion === releaseBaseVersion;
+    const releaseVersion = parseReleaseVersion(releaseTag);
+    return manifestVersion === releaseVersion;
   }
 
   /**
