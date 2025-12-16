@@ -418,33 +418,35 @@
         <h2 class="page-title">Leaderboard</h2>
       </div>
 
-      <!-- Tipping Pool Card -->
-      <div class="pool-section">
-        <div class="pool-card">
-          <div class="pool-header">
-            <span class="pool-title">Tipping Pool</span>
-            <span class="pool-badge">Lifetime</span>
+      <!-- Stats Grid with Hero Card -->
+      <div class="stats-grid" id="stats-grid">
+        <!-- Hero Card: Available to Earn -->
+        <div class="stat-card stat-card-hero">
+          <div class="stat-label">
+            Available to Earn
+            <span class="stat-badge">Lifetime</span>
           </div>
-          <div class="pool-content" id="pool-content">
-            <div class="pool-hero">
-              <span class="pool-hero-value loading" id="pool-available">$—</span>
-              <span class="pool-hero-label">Available to Earn</span>
-            </div>
-            <div class="pool-bar-container">
-              <div class="pool-bar">
-                <div class="pool-bar-fill" id="pool-bar-fill"></div>
-              </div>
-              <div class="pool-bar-labels">
-                <span id="pool-tipped">$0 tipped</span>
-                <span id="pool-funded">$0 funded</span>
-              </div>
-            </div>
-            <div class="pool-meta">
-              <span id="pool-tip-count">0 tips sent</span>
-              <span class="pool-meta-dot"></span>
-              <span id="pool-distributed">0% distributed</span>
-            </div>
+          <div class="stat-value-hero loading" id="pool-available">$—</div>
+          <div class="stat-bar">
+            <div class="stat-bar-fill" id="pool-bar-fill"></div>
           </div>
+          <div class="stat-bar-labels">
+            <span id="pool-tipped">$0 earned</span>
+            <span id="pool-funded">$0 deposited</span>
+          </div>
+        </div>
+        <!-- Stats Row -->
+        <div class="stat-card">
+          <div class="stat-value" id="pool-tip-count">0</div>
+          <div class="stat-label">Tips Sent</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-tippers">0</div>
+          <div class="stat-label">Tippers</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-recipients">0</div>
+          <div class="stat-label">Earners</div>
         </div>
       </div>
 
@@ -455,7 +457,7 @@
         <button class="switcher-btn" data-view="earners">Earners</button>
       </div>
 
-      <!-- Collapsible section: Period Selector + Stats (slides in for tippers/earners) -->
+      <!-- Collapsible section: Period Selector (slides in for tippers/earners) -->
       <div class="leaderboard-filters" id="leaderboard-filters">
         <div class="leaderboard-filters-inner">
           <div class="period-selector" id="period-selector">
@@ -463,24 +465,6 @@
             <button class="period-btn" data-period="week">7d</button>
             <button class="period-btn" data-period="month">30d</button>
             <button class="period-btn" data-period="all">Lifetime</button>
-          </div>
-          <div class="leaderboard-stats" id="leaderboard-stats">
-            <div class="stat-card">
-              <div class="stat-value" id="stat-deposits">$0</div>
-              <div class="stat-label">Deposits</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value" id="stat-tips">$0</div>
-              <div class="stat-label">Tips</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value" id="stat-tippers">0</div>
-              <div class="stat-label">Tippers</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value" id="stat-recipients">0</div>
-              <div class="stat-label">Earners</div>
-            </div>
           </div>
         </div>
       </div>

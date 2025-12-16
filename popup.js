@@ -783,10 +783,8 @@ async function handleNavigation(e) {
   if (targetId === 'tab-leaderboard') {
     loadPoolStats();
     if (currentLeaderboardView === 'tippers') {
-      loadLeaderboardStats();
       loadTopTippers();
     } else if (currentLeaderboardView === 'earners') {
-      loadLeaderboardStats();
       loadTopEarners();
     } else if (currentLeaderboardView === 'live') {
       loadLiveTips();
@@ -2222,8 +2220,7 @@ function setupLeaderboardSwitcher() {
       periodBtns.forEach(b => b.classList.remove('active'));
       e.target.classList.add('active');
 
-      // Reload stats and current leaderboard view
-      loadLeaderboardStats();
+      // Reload current leaderboard view with new period
       if (currentLeaderboardView === 'tippers') {
         loadTopTippers();
       } else if (currentLeaderboardView === 'earners') {
@@ -2253,11 +2250,9 @@ function setupLeaderboardSwitcher() {
 
         // Load data for the selected view
         if (view === 'tippers') {
-          loadLeaderboardStats();
           loadTopTippers();
           stopLivePolling();
         } else if (view === 'earners') {
-          loadLeaderboardStats();
           loadTopEarners();
           stopLivePolling();
         } else if (view === 'live') {
@@ -2426,9 +2421,10 @@ function formatPoolUSD(value) {
  */
 async function loadPoolStats() {
   try {
-    const [fundsRes, tipsRes] = await Promise.all([
+    const [fundsRes, tipsRes, statsRes] = await Promise.all([
       GroveAPI.getFundsTotal(),
-      GroveAPI.getTipsTotal()
+      GroveAPI.getTipsTotal(),
+      GroveAPI.getLeaderboardStats('all')
     ]);
 
     if (!fundsRes.success || !tipsRes.success) {
@@ -2442,7 +2438,7 @@ async function loadPoolStats() {
     const tipCount = tipsRes.data.totalTipCount;
     const percentage = totalFunded > 0 ? Math.round((totalTipped / totalFunded) * 100) : 0;
 
-    // Update DOM
+    // Update DOM - Hero card
     const availableEl = document.getElementById('pool-available');
     if (availableEl) {
       availableEl.textContent = formatPoolUSD(available);
@@ -2450,19 +2446,26 @@ async function loadPoolStats() {
     }
 
     const tippedEl = document.getElementById('pool-tipped');
-    if (tippedEl) tippedEl.textContent = `${formatPoolUSD(totalTipped)} tipped`;
+    if (tippedEl) tippedEl.textContent = `${formatPoolUSD(totalTipped)} earned`;
 
     const fundedEl = document.getElementById('pool-funded');
-    if (fundedEl) fundedEl.textContent = `${formatPoolUSD(totalFunded)} funded`;
+    if (fundedEl) fundedEl.textContent = `${formatPoolUSD(totalFunded)} deposited`;
 
     const barFillEl = document.getElementById('pool-bar-fill');
     if (barFillEl) barFillEl.style.width = `${Math.min(percentage, 100)}%`;
 
+    // Update DOM - Stats cards
     const tipCountEl = document.getElementById('pool-tip-count');
-    if (tipCountEl) tipCountEl.textContent = `${tipCount.toLocaleString()} tips sent`;
+    if (tipCountEl) tipCountEl.textContent = tipCount.toLocaleString();
 
-    const distributedEl = document.getElementById('pool-distributed');
-    if (distributedEl) distributedEl.textContent = `${percentage}% distributed`;
+    // Update tippers and earners counts
+    if (statsRes.success) {
+      const tippersEl = document.getElementById('stat-tippers');
+      if (tippersEl) tippersEl.textContent = formatStatCount(statsRes.data.tippers);
+
+      const recipientsEl = document.getElementById('stat-recipients');
+      if (recipientsEl) recipientsEl.textContent = formatStatCount(statsRes.data.recipients);
+    }
   } catch (error) {
     console.error('[Grove Extension] Pool stats error:', error);
   }
