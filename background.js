@@ -406,9 +406,9 @@ async function checkForUpdatesBackground() {
  * Set up periodic update check alarm
  */
 async function setupUpdateCheckAlarm() {
-  // Create alarm to check every 4 hours
+  // Create alarm to check every hour
   await chrome.alarms.create(UPDATE_CHECK_ALARM, {
-    periodInMinutes: 240, // 4 hours
+    periodInMinutes: 60, // 1 hour
   });
 
   // Also check immediately on startup

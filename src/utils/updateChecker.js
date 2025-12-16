@@ -13,7 +13,7 @@ const UpdateChecker = (() => {
   // Configuration
   const GITHUB_RELEASES_API = 'https://api.github.com/repos/buildwithgrove/grove-releases/releases/latest';
   const RELEASES_PAGE_URL = 'https://github.com/buildwithgrove/grove-releases/releases/latest';
-  const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000; // Check every 4 hours
+  const CHECK_INTERVAL_MS = 60 * 60 * 1000; // Check every hour
   const STORAGE_KEYS = {
     LAST_CHECK: 'GROVE_UPDATE_LAST_CHECK',
     LATEST_TAG: 'GROVE_UPDATE_LATEST_TAG',
