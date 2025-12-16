@@ -1424,11 +1424,11 @@ async function loadXLoginStatus() {
     if (isLoggedIn) {
       if (homeXConnectGroup) homeXConnectGroup.classList.add('hidden');
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.remove('hidden');
-      if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Connected to 𝕏';
+      if (homeXDisconnectBtn) homeXDisconnectBtn.classList.remove('hidden');
     } else {
       if (homeXConnectGroup) homeXConnectGroup.classList.remove('hidden');
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.add('hidden');
-      if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Connect to 𝕏';
+      if (homeXDisconnectBtn) homeXDisconnectBtn.classList.add('hidden');
     }
   } catch (error) {
     console.error('[Grove Extension] X login status check failed:', error);
