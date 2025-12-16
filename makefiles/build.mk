@@ -4,7 +4,7 @@
 
 # Extension metadata
 EXTENSION_NAME := grove-extension
-VERSION := 1.0.5
+VERSION := 1.0.6
 GIT_SHA := $(shell git rev-parse --short HEAD)
 VERSION_FULL := $(VERSION)-$(GIT_SHA)
 
