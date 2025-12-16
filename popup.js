@@ -1416,7 +1416,27 @@ async function loadXLoginStatus() {
     const isLoggedIn = await XAuth.isLoggedIn();
 
     if (isLoggedIn) {
-      const userInfo = await XAuth.getStoredUserInfo();
+      let userInfo = await XAuth.getStoredUserInfo();
+
+      // If username is missing or fallback, try to fetch it fresh
+      if (!userInfo?.username || userInfo.username === 'Connected') {
+        try {
+          const accessToken = await XAuth.getAccessToken();
+          if (accessToken) {
+            const freshUserInfo = await XAuth.getUserInfo(accessToken);
+            if (freshUserInfo?.username) {
+              userInfo = freshUserInfo;
+              // Update stored user info
+              await chrome.storage.local.set({
+                [XAuth.STORAGE_KEYS.USER_INFO]: freshUserInfo
+              });
+            }
+          }
+        } catch (fetchError) {
+          console.warn('[Grove Extension] Could not fetch X user info:', fetchError.message);
+        }
+      }
+
       const isRealUsername = userInfo?.username && userInfo.username !== 'Connected';
       const displayName = isRealUsername ? `@${userInfo.username}` : 'Connected';
 
