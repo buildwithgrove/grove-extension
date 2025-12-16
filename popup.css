@@ -868,11 +868,16 @@ button.section-card-btn:hover .quick-access-icon {
 
 /* Danger text button (for disconnect actions) */
 .btn-danger-text {
-  color: var(--color-danger) !important;
+  background: transparent;
+  border: none;
+  color: var(--color-danger);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 8px;
 }
 
 .btn-danger-text:hover {
-  color: var(--color-danger) !important;
   opacity: 0.8;
 }
 
