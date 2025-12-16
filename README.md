@@ -39,7 +39,7 @@ For early access to new features, install the beta version from GitHub:
 4. Enable "Developer mode"
 5. Click "Load unpacked" and select the unzipped folder
 
-**Auto-updates:** Beta installs automatically check for new releases every 4 hours. When an update is available, a red badge appears on the extension icon and a banner shows in the popup.
+**Auto-updates:** Beta installs automatically check for new releases every hour. When an update is available, a red badge appears on the extension icon and a banner shows in the popup.
 
 ### Updating the Beta Extension
 
@@ -98,7 +98,17 @@ This will:
 make build_and_upload_github_release_zip
 ```
 
-This builds the zip and uploads it to [grove-releases](https://github.com/buildwithgrove/grove-releases) for easy onboarding. The zip includes the public key for stable extension ID when side-loading. Requires `gh` CLI.
+This will:
+
+1. Check existing releases and calculate the next version
+2. Prompt to choose between:
+   - **Patch release** - Auto-increments patch (e.g., `1.0.6` → `1.0.6.1` → `1.0.6.2`)
+   - **New version** - Bumps the base version (e.g., `1.0.6` → `1.0.7`)
+3. Build the zip with the public key for stable extension ID
+4. Create a git tag (e.g., `v1.0.6`) in this repo
+5. Upload to [grove-releases](https://github.com/buildwithgrove/grove-releases)
+
+Requires `gh` CLI (`brew install gh`).
 
 ## Features
 
