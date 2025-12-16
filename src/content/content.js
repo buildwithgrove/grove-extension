@@ -117,9 +117,6 @@
   // Re-emit after delay to catch late-mounting React apps
   setTimeout(emitReadyEvent, 500);
 
-  // Configuration
-  const ADVERTISING_MODE = true; // Set to true for more prominent button animation
-
   // State
   let currentButton = null;
   let currentAdapter = null;
@@ -328,44 +325,37 @@
       // Extract bio to check for addresses
       const bio = currentAdapter.extractBio();
 
-      // YouTube support commented out - X only for now
-      // if (currentAdapter.getPlatformName() !== 'youtube') {
-      if (true) {
-        if (!bio) {
-          console.log("[Grove Extension] No bio found - not showing button");
-          return;
+      if (!bio) {
+        console.log("[Grove Extension] No bio found - not showing button");
+        return;
+      }
+
+      console.log("[Grove Extension] Bio extracted");
+
+      // Check if bio contains tippable address
+      const hasAddress = AddressParser.hasAddresses(bio);
+      if (!hasAddress) {
+        console.log("[Grove Extension] No tippable address found in bio - not showing button");
+        return;
+      }
+
+      // Extract address (ENS names are resolved by the backend)
+      const result = AddressParser.resolveAddress(bio);
+      if (!result.address) {
+        console.log("[Grove Extension] Could not extract address - not showing button");
+        return;
+      }
+
+      resolvedAddress = result;
+      console.log(`[Grove Extension] ✅ Address detected: ${result.address} (type: ${result.type})`)
+
+      // Cache the address by username for tweet tip buttons
+      if (currentAdapter.getPlatformName() === 'twitter') {
+        const username = extractUsernameFromUrl(window.location.href);
+        if (username) {
+          setCachedAddress(username, result);
+          console.log(`[Grove Extension] Cached address for @${username}`);
         }
-
-        console.log("[Grove Extension] Bio extracted");
-
-        // Check if bio contains tippable address
-        const hasAddress = AddressParser.hasAddresses(bio);
-        if (!hasAddress) {
-          console.log("[Grove Extension] No tippable address found in bio - not showing button");
-          return;
-        }
-
-        // Extract address (ENS names are resolved by the backend)
-        const result = AddressParser.resolveAddress(bio);
-        if (!result.address) {
-          console.log("[Grove Extension] Could not extract address - not showing button");
-          return;
-        }
-
-        resolvedAddress = result;
-        console.log(`[Grove Extension] ✅ Address detected: ${result.address} (type: ${result.type})`)
-
-        // Cache the address by username for tweet tip buttons
-        if (currentAdapter.getPlatformName() === 'twitter') {
-          const username = extractUsernameFromUrl(window.location.href);
-          if (username) {
-            setCachedAddress(username, result);
-            console.log(`[Grove Extension] Cached address for @${username}`);
-          }
-        }
-      // YouTube support commented out - X only for now
-      // } else {
-      //   console.log("[Grove Extension] YouTube detected - skipping address validation");
       }
 
       // Get button placement location
@@ -380,11 +370,7 @@
       currentButton = new TipButton(handleTipClick, platformName);
 
       const button = currentButton.create();
-
-      // Apply advertising mode class if enabled
-      if (ADVERTISING_MODE) {
-        button.classList.add("grove-ad-mode");
-      }
+      button.classList.add("grove-ad-mode");
 
       currentButton.inject(placement);
     } catch (error) {
