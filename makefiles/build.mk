@@ -180,7 +180,7 @@ build_and_upload_github_release_zip: ## Build and upload zip to public GitHub re
 .PHONY: _grove_release_internal
 _grove_release_internal: _build_extension_zip
 	@# Calculate next patch version by checking existing releases
-	$(call print_info,Checking existing releases for v$(VERSION)...)
+	@printf "$(CYAN)ℹ️  Checking existing releases for v$(VERSION)...$(RESET)\n"
 	@EXISTING_TAGS=$$(gh release list --repo $(RELEASES_REPO) --json tagName -q '.[].tagName' 2>/dev/null | grep -E "^grove-extension-v$(VERSION)(\.([0-9]+))?$$" || true); \
 	if [ -z "$$EXISTING_TAGS" ]; then \
 		RELEASE_VERSION="$(VERSION)"; \
@@ -195,21 +195,30 @@ _grove_release_internal: _build_extension_zip
 		printf "$(DIM)Found existing releases, next version: $$RELEASE_VERSION$(RESET)\n"; \
 	fi; \
 	RELEASE_TAG="grove-extension-v$$RELEASE_VERSION"; \
+	LOCAL_TAG="v$$RELEASE_VERSION"; \
 	printf "\n"; \
 	printf "$(YELLOW)%s$(RESET)\n" "╔════════════════════════════════════════════════════════╗"; \
 	printf "$(YELLOW)║$(RESET)  $(BOLD)Release Version:$(RESET) $$RELEASE_VERSION\n"; \
 	printf "$(YELLOW)║$(RESET)  $(BOLD)Release Tag:$(RESET)     $$RELEASE_TAG\n"; \
+	printf "$(YELLOW)║$(RESET)  $(BOLD)Local Git Tag:$(RESET)   $$LOCAL_TAG\n"; \
 	printf "$(YELLOW)%s$(RESET)\n" "╚════════════════════════════════════════════════════════╝"; \
 	printf "\n"; \
-	$(call print_info,Injecting public key for stable extension ID...); \
+	printf "$(CYAN)ℹ️  Injecting public key for stable extension ID...$(RESET)\n"; \
 	mkdir -p $(BUILD_DIR)/repack; \
 	unzip -q $(ZIP_FILE) -d $(BUILD_DIR)/repack; \
 	sed 's|"manifest_version": 3,|"manifest_version": 3,\n  "key": "$(EXTENSION_PUBLIC_KEY)",|' $(BUILD_DIR)/repack/manifest.json > $(BUILD_DIR)/repack/manifest.json.tmp && mv $(BUILD_DIR)/repack/manifest.json.tmp $(BUILD_DIR)/repack/manifest.json; \
 	cd $(BUILD_DIR)/repack && zip -rq ../grove-extension-v$$RELEASE_VERSION.zip .; \
 	rm -rf $(BUILD_DIR)/repack; \
 	cp $(BUILD_DIR)/grove-extension-v$$RELEASE_VERSION.zip $(RELEASE_ASSET); \
-	$(call print_info_section,Uploading to $(RELEASES_REPO)); \
-	$(call print_info,Creating release $$RELEASE_TAG...); \
+	printf "\n"; \
+	printf "$(CYAN)ℹ️  Creating local git tag $$LOCAL_TAG...$(RESET)\n"; \
+	git tag -a $$LOCAL_TAG -m "Release $$RELEASE_VERSION" 2>/dev/null && \
+		git push origin $$LOCAL_TAG && \
+		printf "$(GREEN)$(CHECK) Tag $$LOCAL_TAG created and pushed$(RESET)\n" || \
+		printf "$(YELLOW)$(WARN) Tag $$LOCAL_TAG already exists, skipping$(RESET)\n"; \
+	printf "\n"; \
+	printf "$(YELLOW)$(BOLD)━━━ Uploading to $(RELEASES_REPO) ━━━$(RESET)\n"; \
+	printf "$(CYAN)ℹ️  Creating release $$RELEASE_TAG...$(RESET)\n"; \
 	NOTES=$$(echo "$$RELEASE_NOTES" | sed "s/VERSION_PLACEHOLDER/$$RELEASE_VERSION/g"); \
 	gh release create $$RELEASE_TAG $(RELEASE_ASSET) \
 		--repo $(RELEASES_REPO) \
