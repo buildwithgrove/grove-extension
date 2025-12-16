@@ -781,6 +781,7 @@ async function handleNavigation(e) {
 
   // Load leaderboard data when navigating to leaderboard
   if (targetId === 'tab-leaderboard') {
+    loadPoolStats();
     if (currentLeaderboardView === 'tippers') {
       loadLeaderboardStats();
       loadTopTippers();
@@ -2409,6 +2410,65 @@ async function loadTopEarners() {
 }
 
 /**
+ * Format USD for pool display (compact: $1.5K, $2.3M)
+ */
+function formatPoolUSD(value) {
+  if (value >= 1000000) {
+    return `$${(value / 1000000).toFixed(1)}M`;
+  } else if (value >= 1000) {
+    return `$${(value / 1000).toFixed(1)}K`;
+  }
+  return `$${value.toFixed(2)}`;
+}
+
+/**
+ * Load Pool Stats (lifetime totals)
+ */
+async function loadPoolStats() {
+  try {
+    const [fundsRes, tipsRes] = await Promise.all([
+      GroveAPI.getFundsTotal(),
+      GroveAPI.getTipsTotal()
+    ]);
+
+    if (!fundsRes.success || !tipsRes.success) {
+      console.error('[Grove Extension] Failed to load pool stats');
+      return;
+    }
+
+    const totalFunded = fundsRes.data.totalUSD;
+    const totalTipped = tipsRes.data.totalUSD;
+    const available = totalFunded - totalTipped;
+    const tipCount = tipsRes.data.totalTipCount;
+    const percentage = totalFunded > 0 ? Math.round((totalTipped / totalFunded) * 100) : 0;
+
+    // Update DOM
+    const availableEl = document.getElementById('pool-available');
+    if (availableEl) {
+      availableEl.textContent = formatPoolUSD(available);
+      availableEl.classList.remove('loading');
+    }
+
+    const tippedEl = document.getElementById('pool-tipped');
+    if (tippedEl) tippedEl.textContent = `${formatPoolUSD(totalTipped)} tipped`;
+
+    const fundedEl = document.getElementById('pool-funded');
+    if (fundedEl) fundedEl.textContent = `${formatPoolUSD(totalFunded)} funded`;
+
+    const barFillEl = document.getElementById('pool-bar-fill');
+    if (barFillEl) barFillEl.style.width = `${Math.min(percentage, 100)}%`;
+
+    const tipCountEl = document.getElementById('pool-tip-count');
+    if (tipCountEl) tipCountEl.textContent = `${tipCount.toLocaleString()} tips sent`;
+
+    const distributedEl = document.getElementById('pool-distributed');
+    if (distributedEl) distributedEl.textContent = `${percentage}% distributed`;
+  } catch (error) {
+    console.error('[Grove Extension] Pool stats error:', error);
+  }
+}
+
+/**
  * Load Live Tips
  */
 async function loadLiveTips(isRefresh = false) {
@@ -2531,6 +2591,7 @@ function stopLivePolling() {
  * Refresh current leaderboard view
  */
 function refreshLeaderboard() {
+  loadPoolStats();
   if (currentLeaderboardView === 'live') {
     loadLiveTips();
   } else if (currentLeaderboardView === 'tippers') {
