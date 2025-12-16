@@ -121,6 +121,25 @@ RELEASE_TAG := grove-extension-v$(VERSION_FULL)
 # Chrome Web Store public key - produces extension ID: jheejecmpfgifgdodgipilpgfaiecndm
 EXTENSION_PUBLIC_KEY := MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7nXN5llSn+XJEapNFnNEZ8kvEo1iEVFmG3dpj238FZOowzwGTMNuGBdV6F7UZxLuZUN5q4X2GZPL9K+ZHlVelpMv9wiRjNW1FuB5F2qi793NjqUXEIyi62nvK2roCLMVEeQ7hQ3+X6oO6fBxrnEMMLEquYjEDtj+BD0y4NOq65p/obb0p8T4xdPnE+s+/Vabi2hU4WQiPHDMBVL6b3OsnZPenEmsQUFI/vj8ZOC66oLb3qHNyuT58a8cqiVwpTggE/roSSM136eyn7Fioe8pez04jmidouMp+lHJ+YQCZ5s7SxJo8yqNh7vFWgP9MX1uRafpmVt4o1bJyjksF3VUXwIDAQAB
 
+# Release notes template
+define RELEASE_NOTES
+## Grove Extension v$(VERSION_FULL)
+
+### New Installation
+1. Download the zip file below
+2. Unzip to a folder
+3. Go to `chrome://extensions`
+4. Enable "Developer mode"
+5. Click "Load unpacked" and select the unzipped folder
+
+### Updating
+1. Download the zip file below
+2. Unzip (replace your existing folder or use a new one)
+3. Go to `chrome://extensions`
+4. Click the refresh icon on the Grove extension card
+endef
+export RELEASE_NOTES
+
 .PHONY: build_and_upload_github_release_zip
 build_and_upload_github_release_zip: _build_extension_zip ## Build and upload zip to public GitHub releases repo
 	@# Re-inject the public key into the zip for stable extension ID when side-loading
@@ -140,7 +159,7 @@ build_and_upload_github_release_zip: _build_extension_zip ## Build and upload zi
 	@gh release create $(RELEASE_TAG) $(RELEASE_ASSET) \
 		--repo $(RELEASES_REPO) \
 		--title "Grove Extension v$(VERSION_FULL)" \
-		--notes "Grove Extension v$(VERSION_FULL)" \
+		--notes "$$RELEASE_NOTES" \
 		--latest && \
 		printf "$(GREEN)$(BOLD)$(CHECK) Release created!$(RESET)\n" || \
 		{ printf "$(RED)$(WARN) Release already exists, skipping...$(RESET)\n"; }

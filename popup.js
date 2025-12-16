@@ -273,6 +273,7 @@ async function init() {
   await prevKeysUI.updateCount();
   await loadClientAddress();
   loadExtensionVersion();
+  checkForUpdates();
   setupEventListeners();
 
   // Ensure chain dropdown options match current endpoint on init
@@ -348,6 +349,79 @@ function loadExtensionVersion() {
     const manifest = chrome.runtime.getManifest();
     versionElement.textContent = manifest.version;
   }
+}
+
+/**
+ * Check for extension updates and show banner if available
+ */
+async function checkForUpdates() {
+  if (typeof UpdateChecker === 'undefined') {
+    console.warn('[Grove] UpdateChecker not loaded');
+    return;
+  }
+
+  try {
+    const result = await UpdateChecker.checkForUpdate();
+
+    if (result.available) {
+      showUpdateBanner(result.tag, result.displayVersion, result.downloadUrl);
+    }
+  } catch (error) {
+    console.error('[Grove] Error checking for updates:', error);
+  }
+}
+
+/**
+ * Show the update available banner
+ * @param {string} tag - Full release tag (e.g., "grove-extension-v1.0.5-abc123")
+ * @param {string} displayVersion - Display version (e.g., "v1.0.5-abc123")
+ * @param {string} downloadUrl - URL to download the update
+ */
+function showUpdateBanner(tag, displayVersion, downloadUrl) {
+  const banner = document.getElementById('updateBanner');
+  const versionText = document.getElementById('updateVersionText');
+  const downloadBtn = document.getElementById('updateDownloadBtn');
+  const dismissBtn = document.getElementById('updateDismissBtn');
+
+  if (!banner || !versionText || !downloadBtn) return;
+
+  versionText.textContent = displayVersion;
+  downloadBtn.href = downloadUrl;
+
+  // Mark as installed when user clicks download
+  downloadBtn.onclick = () => {
+    UpdateChecker.setInstalledTag(tag);
+  };
+
+  // Show the banner
+  banner.classList.remove('hidden');
+  // Use setTimeout to trigger CSS transition
+  setTimeout(() => {
+    banner.classList.add('visible');
+  }, 10);
+
+  // Set up dismiss handler
+  if (dismissBtn) {
+    dismissBtn.onclick = async () => {
+      await UpdateChecker.dismissUpdate(tag);
+      hideUpdateBanner();
+      // Clear the badge in background
+      chrome.runtime.sendMessage({ type: 'CLEAR_UPDATE_BADGE' });
+    };
+  }
+}
+
+/**
+ * Hide the update banner
+ */
+function hideUpdateBanner() {
+  const banner = document.getElementById('updateBanner');
+  if (!banner) return;
+
+  banner.classList.remove('visible');
+  setTimeout(() => {
+    banner.classList.add('hidden');
+  }, 300); // Match CSS transition duration
 }
 
 /**

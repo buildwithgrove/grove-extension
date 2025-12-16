@@ -5,6 +5,7 @@ Chrome extension that enables cryptocurrency tipping on social platforms and any
 - [Installation](#installation)
   - [Chrome Web Store](#chrome-web-store)
   - [Beta Side-loading](#beta-side-loading)
+  - [Updating the Beta Extension](#updating-the-beta-extension)
 - [Development](#development)
   - [Setup](#setup)
   - [Local Development](#local-development)
@@ -30,7 +31,26 @@ Chrome extension that enables cryptocurrency tipping on social platforms and any
 
 ### Beta Side-loading
 
-1. Follow the instructions at [Grove Release](https://github.com/buildwithgrove/grove-releases).
+For early access to new features, install the beta version from GitHub:
+
+1. Download the latest zip from [grove-releases](https://github.com/buildwithgrove/grove-releases/releases/latest)
+2. Unzip to a folder
+3. Go to `chrome://extensions`
+4. Enable "Developer mode"
+5. Click "Load unpacked" and select the unzipped folder
+
+**Auto-updates:** Beta installs automatically check for new releases every 4 hours. When an update is available, a red badge appears on the extension icon and a banner shows in the popup.
+
+### Updating the Beta Extension
+
+When you see the update notification:
+
+1. Download the new zip from the link in the banner (or [grove-releases](https://github.com/buildwithgrove/grove-releases/releases/latest))
+2. Unzip to a folder (can replace the old folder or use a new one)
+3. Go to `chrome://extensions`
+4. Click the refresh icon on the Grove extension card, OR remove and re-add via "Load unpacked"
+
+Note: Chrome Web Store installs are auto-updated by Chrome and won't see beta release notifications.
 
 ## Development
 

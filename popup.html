@@ -13,6 +13,7 @@
   <script src="src/config/networks.js"></script>
   <script src="src/utils/api.js"></script>
   <script src="src/utils/balance.js"></script>
+  <script src="src/utils/updateChecker.js"></script>
   <script src="src/storage/keyManager.js"></script>
   <script src="src/ui/prevKeysUI.js"></script>
   <script src="src/auth/xAuth.js"></script>
@@ -158,6 +159,29 @@
     <span id="testModeBannerText">Developer Mode is Active</span>
     <span class="banner-chevron" aria-hidden="true">›</span>
   </button>
+
+  <!-- Update Available Banner -->
+  <div class="update-banner hidden" id="updateBanner">
+    <div class="update-banner-content">
+      <div class="update-banner-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+      </div>
+      <span class="update-banner-text">Update available: <strong id="updateVersionText">v1.0.0</strong></span>
+    </div>
+    <div class="update-banner-actions">
+      <a href="#" id="updateDownloadBtn" class="update-btn-download" target="_blank" rel="noopener noreferrer">Download</a>
+      <button class="update-btn-dismiss" id="updateDismissBtn" aria-label="Dismiss update notification">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
 
   <!-- Main Content Area -->
   <main class="content" id="mainContent">
