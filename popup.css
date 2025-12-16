@@ -866,6 +866,21 @@ button.section-card-btn:hover .quick-access-icon {
   to { opacity: 0.7; }
 }
 
+/* Success text button (for connect actions) */
+.btn-success-text {
+  background: transparent;
+  border: none;
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.btn-success-text:hover {
+  opacity: 0.8;
+}
+
 /* Danger text button (for disconnect actions) */
 .btn-danger-text {
   background: transparent;

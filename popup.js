@@ -1424,10 +1424,12 @@ async function loadXLoginStatus() {
     if (isLoggedIn) {
       if (homeXConnectGroup) homeXConnectGroup.classList.add('hidden');
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.remove('hidden');
+      if (homeXLoginBtn) homeXLoginBtn.classList.add('hidden');
       if (homeXDisconnectBtn) homeXDisconnectBtn.classList.remove('hidden');
     } else {
       if (homeXConnectGroup) homeXConnectGroup.classList.remove('hidden');
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.add('hidden');
+      if (homeXLoginBtn) homeXLoginBtn.classList.remove('hidden');
       if (homeXDisconnectBtn) homeXDisconnectBtn.classList.add('hidden');
     }
   } catch (error) {
