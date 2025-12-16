@@ -114,16 +114,15 @@ build_chrome_store_zip: _prompt_version_bump _build_extension_zip ## Create exte
 ### Release Workflow   ###
 ##########################
 
-# Release tags and asset names
+# Release tags and asset names (RELEASE_TAG is computed dynamically in the target)
 RELEASE_ASSET := $(BUILD_DIR)/grove-extension.zip
-RELEASE_TAG := grove-extension-v$(VERSION_FULL)
 
 # Chrome Web Store public key - produces extension ID: jheejecmpfgifgdodgipilpgfaiecndm
 EXTENSION_PUBLIC_KEY := MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7nXN5llSn+XJEapNFnNEZ8kvEo1iEVFmG3dpj238FZOowzwGTMNuGBdV6F7UZxLuZUN5q4X2GZPL9K+ZHlVelpMv9wiRjNW1FuB5F2qi793NjqUXEIyi62nvK2roCLMVEeQ7hQ3+X6oO6fBxrnEMMLEquYjEDtj+BD0y4NOq65p/obb0p8T4xdPnE+s+/Vabi2hU4WQiPHDMBVL6b3OsnZPenEmsQUFI/vj8ZOC66oLb3qHNyuT58a8cqiVwpTggE/roSSM136eyn7Fioe8pez04jmidouMp+lHJ+YQCZ5s7SxJo8yqNh7vFWgP9MX1uRafpmVt4o1bJyjksF3VUXwIDAQAB
 
-# Release notes template
+# Release notes template (VERSION_PLACEHOLDER replaced at runtime)
 define RELEASE_NOTES
-## Grove Extension v$(VERSION_FULL)
+## Grove Extension vVERSION_PLACEHOLDER
 
 ### New Installation
 1. Download the zip file below
@@ -141,31 +140,87 @@ endef
 export RELEASE_NOTES
 
 .PHONY: build_and_upload_github_release_zip
-build_and_upload_github_release_zip: _build_extension_zip ## Build and upload zip to public GitHub releases repo
-	@# Re-inject the public key into the zip for stable extension ID when side-loading
-	$(call print_info,Injecting public key for stable extension ID...)
-	$(Q)mkdir -p $(BUILD_DIR)/repack
-	$(Q)unzip -q $(ZIP_FILE) -d $(BUILD_DIR)/repack
-	$(Q)sed 's|"manifest_version": 3,|"manifest_version": 3,\n  "key": "$(EXTENSION_PUBLIC_KEY)",|' $(BUILD_DIR)/repack/manifest.json > $(BUILD_DIR)/repack/manifest.json.tmp && mv $(BUILD_DIR)/repack/manifest.json.tmp $(BUILD_DIR)/repack/manifest.json
-	$(Q)cd $(BUILD_DIR)/repack && zip -rq ../$(EXTENSION_NAME)-v$(VERSION_FULL).zip .
-	$(Q)rm -rf $(BUILD_DIR)/repack
-	$(call print_info_section,Uploading to $(RELEASES_REPO))
+build_and_upload_github_release_zip: ## Build and upload zip to public GitHub releases repo
 	@if ! command -v gh &> /dev/null; then \
 		printf "$(RED)$(CROSS) GitHub CLI (gh) not installed. Run: brew install gh$(RESET)\n"; \
 		exit 1; \
 	fi
-	@cp $(ZIP_FILE) $(RELEASE_ASSET)
-	$(call print_info,Creating release $(RELEASE_TAG)...)
-	@gh release create $(RELEASE_TAG) $(RELEASE_ASSET) \
+	@# Calculate next patch version and next bump version for display
+	@EXISTING_TAGS=$$(gh release list --repo $(RELEASES_REPO) --json tagName -q '.[].tagName' 2>/dev/null | grep -E "^grove-extension-v$(VERSION)(\.([0-9]+))?$$" || true); \
+	if [ -z "$$EXISTING_TAGS" ]; then \
+		NEXT_PATCH="$(VERSION)"; \
+	else \
+		MAX_PATCH=$$(echo "$$EXISTING_TAGS" | sed -n 's/grove-extension-v$(VERSION)\.//p' | sort -n | tail -1); \
+		if [ -z "$$MAX_PATCH" ]; then \
+			NEXT_PATCH="$(VERSION).1"; \
+		else \
+			NEXT_PATCH="$(VERSION).$$((MAX_PATCH + 1))"; \
+		fi; \
+	fi; \
+	MAJOR=$$(echo $(VERSION) | cut -d. -f1); \
+	MINOR=$$(echo $(VERSION) | cut -d. -f2); \
+	PATCH=$$(echo $(VERSION) | cut -d. -f3); \
+	NEXT_VERSION="$$MAJOR.$$MINOR.$$((PATCH + 1))"; \
+	printf "\n"; \
+	printf "$(BOLD)Current VERSION:$(RESET) $(VERSION)\n"; \
+	printf "\n"; \
+	printf "$(YELLOW)Release type:$(RESET)\n"; \
+	printf "  $(CYAN)[p]$(RESET) Patch release: $(VERSION) → $$NEXT_PATCH\n"; \
+	printf "  $(CYAN)[n]$(RESET) New version:   $(VERSION) → $$NEXT_VERSION\n"; \
+	printf "\n"; \
+	printf "$(YELLOW)Choose [P/n]: $(RESET)"; \
+	read release_type; \
+	if [ "$${release_type:-P}" = "n" ] || [ "$${release_type:-P}" = "N" ]; then \
+		$(MAKE) _do_version_bump; \
+		$(MAKE) _grove_release_internal; \
+	else \
+		$(MAKE) _grove_release_internal; \
+	fi
+
+.PHONY: _grove_release_internal
+_grove_release_internal: _build_extension_zip
+	@# Calculate next patch version by checking existing releases
+	$(call print_info,Checking existing releases for v$(VERSION)...)
+	@EXISTING_TAGS=$$(gh release list --repo $(RELEASES_REPO) --json tagName -q '.[].tagName' 2>/dev/null | grep -E "^grove-extension-v$(VERSION)(\.([0-9]+))?$$" || true); \
+	if [ -z "$$EXISTING_TAGS" ]; then \
+		RELEASE_VERSION="$(VERSION)"; \
+		printf "$(DIM)No existing releases for v$(VERSION), using $(VERSION)$(RESET)\n"; \
+	else \
+		MAX_PATCH=$$(echo "$$EXISTING_TAGS" | sed -n 's/grove-extension-v$(VERSION)\.//p' | sort -n | tail -1); \
+		if [ -z "$$MAX_PATCH" ]; then \
+			RELEASE_VERSION="$(VERSION).1"; \
+		else \
+			RELEASE_VERSION="$(VERSION).$$((MAX_PATCH + 1))"; \
+		fi; \
+		printf "$(DIM)Found existing releases, next version: $$RELEASE_VERSION$(RESET)\n"; \
+	fi; \
+	RELEASE_TAG="grove-extension-v$$RELEASE_VERSION"; \
+	printf "\n"; \
+	printf "$(YELLOW)%s$(RESET)\n" "╔════════════════════════════════════════════════════════╗"; \
+	printf "$(YELLOW)║$(RESET)  $(BOLD)Release Version:$(RESET) $$RELEASE_VERSION\n"; \
+	printf "$(YELLOW)║$(RESET)  $(BOLD)Release Tag:$(RESET)     $$RELEASE_TAG\n"; \
+	printf "$(YELLOW)%s$(RESET)\n" "╚════════════════════════════════════════════════════════╝"; \
+	printf "\n"; \
+	$(call print_info,Injecting public key for stable extension ID...); \
+	mkdir -p $(BUILD_DIR)/repack; \
+	unzip -q $(ZIP_FILE) -d $(BUILD_DIR)/repack; \
+	sed 's|"manifest_version": 3,|"manifest_version": 3,\n  "key": "$(EXTENSION_PUBLIC_KEY)",|' $(BUILD_DIR)/repack/manifest.json > $(BUILD_DIR)/repack/manifest.json.tmp && mv $(BUILD_DIR)/repack/manifest.json.tmp $(BUILD_DIR)/repack/manifest.json; \
+	cd $(BUILD_DIR)/repack && zip -rq ../grove-extension-v$$RELEASE_VERSION.zip .; \
+	rm -rf $(BUILD_DIR)/repack; \
+	cp $(BUILD_DIR)/grove-extension-v$$RELEASE_VERSION.zip $(RELEASE_ASSET); \
+	$(call print_info_section,Uploading to $(RELEASES_REPO)); \
+	$(call print_info,Creating release $$RELEASE_TAG...); \
+	NOTES=$$(echo "$$RELEASE_NOTES" | sed "s/VERSION_PLACEHOLDER/$$RELEASE_VERSION/g"); \
+	gh release create $$RELEASE_TAG $(RELEASE_ASSET) \
 		--repo $(RELEASES_REPO) \
-		--title "Grove Extension v$(VERSION_FULL)" \
-		--notes "$$RELEASE_NOTES" \
+		--title "Grove Extension v$$RELEASE_VERSION" \
+		--notes "$$NOTES" \
 		--latest && \
 		printf "$(GREEN)$(BOLD)$(CHECK) Release created!$(RESET)\n" || \
-		{ printf "$(RED)$(WARN) Release already exists, skipping...$(RESET)\n"; }
-	@printf "\n"
-	@printf "$(GREEN)$(BOLD)🔗 Download URLs:$(RESET)\n"
-	@printf "   Latest:    $(CYAN)https://github.com/$(RELEASES_REPO)/releases/latest/download/grove-extension.zip$(RESET)\n"
-	@printf "   Versioned: $(CYAN)https://github.com/$(RELEASES_REPO)/releases/download/$(RELEASE_TAG)/grove-extension.zip$(RESET)\n"
-	@printf "   Releases:  $(CYAN)https://github.com/$(RELEASES_REPO)/releases$(RESET)\n"
-	@printf "\n"
+		{ printf "$(RED)$(CROSS) Failed to create release$(RESET)\n"; exit 1; }; \
+	printf "\n"; \
+	printf "$(GREEN)$(BOLD)🔗 Download URLs:$(RESET)\n"; \
+	printf "   Latest:    $(CYAN)https://github.com/$(RELEASES_REPO)/releases/latest/download/grove-extension.zip$(RESET)\n"; \
+	printf "   Versioned: $(CYAN)https://github.com/$(RELEASES_REPO)/releases/download/$$RELEASE_TAG/grove-extension.zip$(RESET)\n"; \
+	printf "   Releases:  $(CYAN)https://github.com/$(RELEASES_REPO)/releases$(RESET)\n"; \
+	printf "\n"
