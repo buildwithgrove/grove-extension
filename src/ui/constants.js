@@ -16,11 +16,6 @@ var GROVE_COLORS = {
   warningShadow: 'rgba(245, 158, 11, 0.45)',
 };
 
-var GROVE_GRADIENTS = {
-  background: 'linear-gradient(135deg, rgba(56, 159, 88, 0.25) 0%, rgba(56, 159, 88, 0.18) 100%)',
-  backgroundHover: 'linear-gradient(135deg, rgba(56, 159, 88, 0.35) 0%, rgba(56, 159, 88, 0.25) 100%)',
-};
-
 /**
  * Format tip amount for display
  * - Shows at least 2 decimal places for amounts >= $0.01

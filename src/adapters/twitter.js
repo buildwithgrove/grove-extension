@@ -43,15 +43,6 @@ class TwitterAdapter extends BaseAdapter {
   }
 
   /**
-   * Check if we're on a page that could show tweets (timeline, profile, search, etc.)
-   * @returns {boolean}
-   */
-  detectTweetPage() {
-    const hostname = window.location.hostname;
-    return hostname.includes('twitter.com') || hostname.includes('x.com');
-  }
-
-  /**
    * Find all tweet articles on the page
    * @returns {NodeList}
    */
@@ -359,16 +350,6 @@ class TwitterAdapter extends BaseAdapter {
     }
 
     return null;
-  }
-
-  /**
-   * Get the action bar element from a tweet (where like, retweet, reply buttons are)
-   * @param {Element} tweetElement - The tweet article element
-   * @returns {Element|null}
-   */
-  getTweetActionBar(tweetElement) {
-    // The action bar has role="group" and contains the interaction buttons
-    return tweetElement.querySelector('[role="group"]');
   }
 
   /**
