@@ -221,12 +221,21 @@
         bubble.classList.remove('grove-tip-inline-message--visible');
         window.setTimeout(() => bubble.remove(), 120);
         this._activeBubble = null;
+        // Clean up scroll listener
+        if (this._scrollHandler) {
+          window.removeEventListener('scroll', this._scrollHandler, true);
+          this._scrollHandler = null;
+        }
       };
 
       closeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         dismissBubble();
       });
+
+      // Dismiss on scroll
+      this._scrollHandler = () => dismissBubble();
+      window.addEventListener('scroll', this._scrollHandler, true);
 
       this._activeBubble = bubble;
     }
@@ -271,6 +280,10 @@
      * Called on visibility change and before showing a new bubble.
      */
     static _clearActiveBubble() {
+      if (this._scrollHandler) {
+        window.removeEventListener('scroll', this._scrollHandler, true);
+        this._scrollHandler = null;
+      }
       if (this._activeBubble) {
         try {
           this._activeBubble.remove();
