@@ -29,12 +29,12 @@
   };
 
   const DEFAULT_VARIANTS = {
-    [TIP_ERROR_TYPES.INSUFFICIENT_BALANCE]: 'warning',
-    [TIP_ERROR_TYPES.RATE_LIMITED]: 'warning',
+    [TIP_ERROR_TYPES.INSUFFICIENT_BALANCE]: 'error',
+    [TIP_ERROR_TYPES.RATE_LIMITED]: 'error',
     [TIP_ERROR_TYPES.AUTH]: 'error',
     [TIP_ERROR_TYPES.NETWORK]: 'error',
-    [TIP_ERROR_TYPES.ADDRESS_NOT_FOUND]: 'warning',
-    [TIP_ERROR_TYPES.VALIDATION]: 'warning',
+    [TIP_ERROR_TYPES.ADDRESS_NOT_FOUND]: 'error',
+    [TIP_ERROR_TYPES.VALIDATION]: 'error',
     [TIP_ERROR_TYPES.TRANSFER_FAILED]: 'error',
     [TIP_ERROR_TYPES.UNKNOWN]: 'error'
   };
@@ -169,12 +169,12 @@
 
     /**
      * Show an inline message near the target element
+     * Message stays visible until user dismisses it with the X button
      * @param {HTMLElement} targetEl - Element to anchor the message to
      * @param {string} message - Message to display
-     * @param {string} variant - 'error' | 'warning'
-     * @param {number} durationMs - Time before auto-hide
+     * @param {string} variant - 'error' (all errors use red)
      */
-    static showInlineMessage(targetEl, message, variant = 'error', durationMs = 2000) {
+    static showInlineMessage(targetEl, message, variant = 'error') {
       if (!targetEl || !message) return;
 
       // Remove previous bubble if present
@@ -183,7 +183,20 @@
       const bubble = document.createElement('div');
       bubble.className = 'grove-tip-inline-message';
       bubble.dataset.variant = variant;
-      this._setBubbleText(bubble, message);
+
+      // Create close button
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'grove-tip-inline-message__close';
+      closeBtn.setAttribute('type', 'button');
+      closeBtn.setAttribute('aria-label', 'Dismiss');
+      closeBtn.textContent = '\u00D7'; // × symbol
+
+      // Create text container
+      const textContainer = document.createElement('div');
+      this._setBubbleText(textContainer, message);
+
+      bubble.appendChild(textContainer);
+      bubble.appendChild(closeBtn);
 
       // Position offscreen initially for measurement
       bubble.style.top = '0px';
@@ -203,19 +216,19 @@
       // Fade in
       requestAnimationFrame(() => bubble.classList.add('grove-tip-inline-message--visible'));
 
-      const timeoutId = window.setTimeout(() => {
+      // Close button handler
+      const dismissBubble = () => {
         bubble.classList.remove('grove-tip-inline-message--visible');
-        window.setTimeout(() => bubble.remove(), 200);
-      }, durationMs);
-
-      bubble.addEventListener('click', () => {
-        bubble.classList.remove('grove-tip-inline-message--visible');
-        window.clearTimeout(timeoutId);
         window.setTimeout(() => bubble.remove(), 120);
+        this._activeBubble = null;
+      };
+
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dismissBubble();
       });
 
       this._activeBubble = bubble;
-      this._activeTimeoutId = timeoutId;
     }
 
     /**
@@ -254,14 +267,10 @@
     }
 
     /**
-     * Clear the active bubble and cancel its timeout.
+     * Clear the active bubble.
      * Called on visibility change and before showing a new bubble.
      */
     static _clearActiveBubble() {
-      if (this._activeTimeoutId) {
-        window.clearTimeout(this._activeTimeoutId);
-        this._activeTimeoutId = null;
-      }
       if (this._activeBubble) {
         try {
           this._activeBubble.remove();

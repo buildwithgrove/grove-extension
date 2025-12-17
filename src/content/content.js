@@ -527,11 +527,11 @@
       return;
     }
 
-    // Determine tip destination: use ENS name directly if available, otherwise page URL
+    // Determine tip destination: use resolved address if available (ENS or raw 0x), otherwise page URL
     let tipDestination = window.location.href;
-    if (resolvedAddress && resolvedAddress.type === 'ens') {
-      tipDestination = resolvedAddress.address; // e.g., "vitalik.eth"
-      console.log(`[Grove Extension] Tipping to ENS name: ${tipDestination}`);
+    if (resolvedAddress && resolvedAddress.address) {
+      tipDestination = resolvedAddress.address; // e.g., "vitalik.eth" or "0x..."
+      console.log(`[Grove Extension] Tipping to ${resolvedAddress.type} address: ${tipDestination}`);
     }
 
     // Build context metadata for the tip
