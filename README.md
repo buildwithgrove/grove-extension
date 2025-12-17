@@ -140,7 +140,7 @@ For feed tweets, the extension fetches user bios in the background using Twitter
 - **Chain selector** - Switch between Base (mainnet) and Base Sepolia (testnet)
 - **Earn tab** - View your tipping address and ENS name
 - **Settings** - Configure default tip amount, X integration, and developer options
-- **Secret key management** - Store and switch between multiple accounts
+- **Tipping key management** - Store and switch between multiple accounts
 
 ### X (Twitter) Integration
 

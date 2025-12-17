@@ -509,7 +509,7 @@
         if (button) {
           button.setError();
           showInlineTipError(button.button, {
-            message: 'Missing secret key in the extension settings.',
+            message: 'Missing tipping key in the extension settings.',
             variant: 'error'
           });
         }
@@ -1894,7 +1894,7 @@ Tip creators you love → {grove_link}`;
         console.error("[Grove Extension] No API key configured. Try refreshing the page if you just reloaded the extension.");
         buttonWrapper.setError();
         showInlineTipError(buttonWrapper.button, {
-          message: 'Missing secret key in the extension settings.',
+          message: 'Missing tipping key in the extension settings.',
           variant: 'error'
         });
         return;
