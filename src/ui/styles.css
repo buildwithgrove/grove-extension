@@ -272,7 +272,7 @@
 
 .grove-tip-inline-message {
   position: fixed;
-  padding: 10px 14px;
+  padding: 10px 32px 10px 14px;
   background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
   color: #ffffff;
   border: 1px solid #ef4444;
@@ -293,9 +293,30 @@
   transform: translateY(0);
 }
 
-.grove-tip-inline-message[data-variant="warning"] {
-  border-color: #fbbf24;
-  color: #fffbeb;
+.grove-tip-inline-message__close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  background: transparent;
+  border: none;
+  color: #a3a3a3;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.grove-tip-inline-message__close:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .grove-tip-button:disabled {

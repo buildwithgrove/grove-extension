@@ -527,11 +527,11 @@
       return;
     }
 
-    // Determine tip destination: use ENS name directly if available, otherwise page URL
+    // Determine tip destination: use resolved address if available (ENS or raw 0x), otherwise page URL
     let tipDestination = window.location.href;
-    if (resolvedAddress && resolvedAddress.type === 'ens') {
-      tipDestination = resolvedAddress.address; // e.g., "vitalik.eth"
-      console.log(`[Grove Extension] Tipping to ENS name: ${tipDestination}`);
+    if (resolvedAddress && resolvedAddress.address) {
+      tipDestination = resolvedAddress.address; // e.g., "vitalik.eth" or "0x..."
+      console.log(`[Grove Extension] Tipping to ${resolvedAddress.type} address: ${tipDestination}`);
     }
 
     // Build context metadata for the tip
@@ -563,9 +563,14 @@
     // Send tip via API with JWT, amount, and context
     const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt, context);
 
-    const parsedError = (!response.success && typeof TipErrorHandler !== 'undefined')
-      ? TipErrorHandler.parse(response)
-      : null;
+    let parsedError = null;
+    if (!response.success && typeof TipErrorHandler !== 'undefined') {
+      try {
+        parsedError = TipErrorHandler.parse(response);
+      } catch (e) {
+        console.error("[Grove Extension] Error parsing tip error:", e);
+      }
+    }
 
     // Handle response with animations
     if (response.success) {
@@ -573,10 +578,12 @@
         button.setSuccess();
       }
     } else {
-      console.error("[Grove Extension] Tip failed:", response.error);
+      console.error("[Grove Extension] Tip failed:", response.error, response.data);
       if (button) {
         button.setError();
-        showInlineTipError(button.button, parsedError || response.error || 'Tip failed. Please try again.');
+        // Ensure we always have a message to show
+        const errorMessage = parsedError?.userMessage || parsedError?.message || response.error || 'Tip failed. Please try again.';
+        showInlineTipError(button.button, errorMessage);
       }
     }
   }
@@ -1942,9 +1949,15 @@ Tip creators you love → {grove_link}`;
 
     // Send tip via API with context
     const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt, context);
-    const parsedError = (!response.success && typeof TipErrorHandler !== 'undefined')
-      ? TipErrorHandler.parse(response)
-      : null;
+
+    let parsedError = null;
+    if (!response.success && typeof TipErrorHandler !== 'undefined') {
+      try {
+        parsedError = TipErrorHandler.parse(response);
+      } catch (e) {
+        console.error("[Grove Extension] Error parsing tip error:", e);
+      }
+    }
 
     if (response.success) {
       buttonWrapper.setSuccess();
@@ -1994,9 +2007,11 @@ Tip creators you love → {grove_link}`;
         }
       }
     } else {
-      console.error("[Grove Extension] Tweet tip failed:", response.error);
+      console.error("[Grove Extension] Tweet tip failed:", response.error, response.data);
       buttonWrapper.setError();
-      showInlineTipError(buttonWrapper.button, parsedError || response.error || 'Tip failed. Please try again.');
+      // Ensure we always have a message to show
+      const errorMessage = parsedError?.userMessage || parsedError?.message || response.error || 'Tip failed. Please try again.';
+      showInlineTipError(buttonWrapper.button, errorMessage);
     }
   }
 
