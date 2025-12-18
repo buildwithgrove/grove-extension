@@ -9,9 +9,6 @@ const JWT_STORAGE = {
   LEGACY: 'GROVE_API_JWT'
 };
 
-// Update check alarm name
-const UPDATE_CHECK_ALARM = 'grove-update-check';
-
 // Listen for internal messages from popup/content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Clear update badge when user dismisses update notification
@@ -402,36 +399,15 @@ async function checkForUpdatesBackground() {
   }
 }
 
-/**
- * Set up periodic update check alarm
- */
-async function setupUpdateCheckAlarm() {
-  // Create alarm to check every hour
-  await chrome.alarms.create(UPDATE_CHECK_ALARM, {
-    periodInMinutes: 60, // 1 hour
-  });
-
-  // Also check immediately on startup
-  checkForUpdatesBackground();
-}
-
-// Listen for alarm events
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === UPDATE_CHECK_ALARM) {
-    checkForUpdatesBackground();
-  }
-});
-
-// Set up alarm on extension install/update
+// Check for updates on extension install/update
 chrome.runtime.onInstalled.addListener(() => {
-  setupUpdateCheckAlarm();
+  checkForUpdatesBackground();
 });
 
-// Set up alarm on service worker startup (in case it was terminated)
+// Check for updates on browser startup
 chrome.runtime.onStartup.addListener(() => {
-  setupUpdateCheckAlarm();
+  checkForUpdatesBackground();
 });
 
-// Also run setup immediately when service worker loads
-// This handles the case where service worker restarts
-setupUpdateCheckAlarm();
+// Also check when service worker loads
+checkForUpdatesBackground();
