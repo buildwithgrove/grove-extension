@@ -560,16 +560,13 @@ body {
   white-space: nowrap;
 }
 
-#topUpBtn {
-  min-width: 110px;
+#topUpBtn,
+#editDefaultTipBtn {
+  width: 110px;
 }
 
 #topUpBtn svg {
   flex-shrink: 0;
-}
-
-#editDefaultTipBtn {
-  min-width: 110px;
 }
 
 .card-action-btn:hover {
