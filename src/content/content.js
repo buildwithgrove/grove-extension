@@ -1806,7 +1806,7 @@
   }
 
   // Default auto-reply message template (must match popup.js)
-  const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I just sent you a {amount} tip on {chain}! #TipWithGrove
+  const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I just sent you a tip on {chain} via #TipWithGrove!
 
 Tx: {tx_link}
 
@@ -1821,7 +1821,6 @@ Tip creators you love → {grove_link}`;
   function buildAutoReplyMessage(template, values) {
     return template
       .replace(/\{username\}/g, values.username || '')
-      .replace(/\{amount\}/g, values.amount || '')
       .replace(/\{chain\}/g, values.chain || '')
       .replace(/\{tx_link\}/g, values.tx_link || '')
       .replace(/\{grove_link\}/g, values.grove_link || 'grove.city');
@@ -1849,7 +1848,7 @@ Tip creators you love → {grove_link}`;
 
     // Get JWT and settings from storage
     let jwt = '';
-    let autoReplyEnabled = true;
+    let autoReplyEnabled = false;
     let autoReplyMessage = DEFAULT_AUTO_REPLY_MESSAGE;
     let likeOnTipEnabled = true; // Default to true
     let chainName = 'Base Sepolia';
@@ -1863,8 +1862,8 @@ Tip creators you love → {grove_link}`;
 
       // Get other settings from storage
       const result = await chrome.storage.local.get(['GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'GROVE_LIKE_ON_TIP', 'groveChain']);
-      // Auto-reply defaults to true
-      autoReplyEnabled = result.GROVE_AUTO_REPLY !== false;
+      // Auto-reply defaults to false
+      autoReplyEnabled = result.GROVE_AUTO_REPLY === true;
       autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
       // Like on tip defaults to true
       likeOnTipEnabled = result.GROVE_LIKE_ON_TIP !== false;
@@ -1988,7 +1987,6 @@ Tip creators you love → {grove_link}`;
                 // Build reply text from template
                 const replyText = buildAutoReplyMessage(autoReplyMessage, {
                   username: username,
-                  amount: `$${tipAmount.toFixed(2)} USDC`,
                   chain: chainName,
                   tx_link: txLink,
                   grove_link: 'grove.city'

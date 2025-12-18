@@ -160,7 +160,6 @@ The default auto-reply message template is defined in two places (must be kept i
 Available placeholders:
 
 - `{username}` - Twitter username of the tip recipient
-- `{amount}` - Tip amount with currency (e.g., "$0.10 USDC")
 - `{chain}` - Network name (e.g., "Base", "Base Sepolia")
 - `{tx_link}` - Block explorer link to the transaction
 - `{grove_link}` - Link to Grove website (grove.city)
