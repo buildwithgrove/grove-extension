@@ -145,8 +145,9 @@ build_and_upload_github_release_zip: ## Build and upload zip to public GitHub re
 		printf "$(RED)$(CROSS) GitHub CLI (gh) not installed. Run: brew install gh$(RESET)\n"; \
 		exit 1; \
 	fi
-	@# Calculate next patch version and next bump version for display
-	@EXISTING_TAGS=$$(gh release list --repo $(RELEASES_REPO) --json tagName -q '.[].tagName' 2>/dev/null | grep -E "^grove-extension-v$(VERSION)(\.([0-9]+))?$$" || true); \
+	@# Get current version from manifest.json
+	@CURRENT_VERSION=$$(grep '"version"' manifest.json | sed 's/.*"\([0-9]*\.[0-9]*\.[0-9]*\(\.[0-9]*\)\?\)".*/\1/'); \
+	EXISTING_TAGS=$$(gh release list --repo $(RELEASES_REPO) --json tagName -q '.[].tagName' 2>/dev/null | grep -E "^grove-extension-v$(VERSION)(\.([0-9]+))?$$" || true); \
 	if [ -z "$$EXISTING_TAGS" ]; then \
 		NEXT_PATCH="$(VERSION)"; \
 	else \
@@ -162,11 +163,11 @@ build_and_upload_github_release_zip: ## Build and upload zip to public GitHub re
 	PATCH=$$(echo $(VERSION) | cut -d. -f3); \
 	NEXT_VERSION="$$MAJOR.$$MINOR.$$((PATCH + 1))"; \
 	printf "\n"; \
-	printf "$(BOLD)Current VERSION:$(RESET) $(VERSION)\n"; \
+	printf "$(BOLD)Current version:$(RESET) $$CURRENT_VERSION\n"; \
 	printf "\n"; \
 	printf "$(YELLOW)Release type:$(RESET)\n"; \
-	printf "  $(CYAN)[p]$(RESET) Patch release: $(VERSION) → $$NEXT_PATCH\n"; \
-	printf "  $(CYAN)[n]$(RESET) New version:   $(VERSION) → $$NEXT_VERSION\n"; \
+	printf "  $(CYAN)[p]$(RESET) Patch release: $$CURRENT_VERSION → $$NEXT_PATCH\n"; \
+	printf "  $(CYAN)[n]$(RESET) New version:   $$CURRENT_VERSION → $$NEXT_VERSION\n"; \
 	printf "\n"; \
 	printf "$(YELLOW)Choose [P/n]: $(RESET)"; \
 	read release_type; \
