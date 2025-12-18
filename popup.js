@@ -1440,7 +1440,7 @@ async function loadXLoginStatus() {
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.remove('hidden');
       if (homeXLoginBtn) homeXLoginBtn.classList.add('hidden');
       if (homeXDisconnectBtn) homeXDisconnectBtn.classList.remove('hidden');
-      if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Connected to 𝕏';
+      if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Connected';
     } else {
       if (homeXConnectGroup) homeXConnectGroup.classList.remove('hidden');
       if (homeXPostConnectOptions) homeXPostConnectOptions.classList.add('hidden');
