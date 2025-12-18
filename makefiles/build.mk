@@ -147,21 +147,17 @@ build_beta: ## Build and upload beta zip to GitHub releases
 	fi
 	@# Get current version from manifest.json
 	@CURRENT_VERSION=$$(grep '"version"' manifest.json | sed 's/.*"\([0-9]*\.[0-9]*\.[0-9]*\(\.[0-9]*\)\?\)".*/\1/'); \
-	EXISTING_TAGS=$$(gh release list --repo $(RELEASES_REPO) --json tagName -q '.[].tagName' 2>/dev/null | grep -E "^grove-extension-v$(VERSION)(\.([0-9]+))?$$" || true); \
-	if [ -z "$$EXISTING_TAGS" ]; then \
-		NEXT_PATCH="$(VERSION)"; \
-	else \
-		MAX_PATCH=$$(echo "$$EXISTING_TAGS" | sed -n 's/grove-extension-v$(VERSION)\.//p' | sort -n | tail -1); \
-		if [ -z "$$MAX_PATCH" ]; then \
-			NEXT_PATCH="$(VERSION).1"; \
-		else \
-			NEXT_PATCH="$(VERSION).$$((MAX_PATCH + 1))"; \
-		fi; \
-	fi; \
 	MAJOR=$$(echo $(VERSION) | cut -d. -f1); \
 	MINOR=$$(echo $(VERSION) | cut -d. -f2); \
 	PATCH=$$(echo $(VERSION) | cut -d. -f3); \
-	NEXT_VERSION="$$MAJOR.$$MINOR.$$((PATCH + 1))"; \
+	BUILD=$$(echo $(VERSION) | cut -d. -f4); \
+	if [ -n "$$BUILD" ]; then \
+		NEXT_PATCH="$$MAJOR.$$MINOR.$$PATCH.$$((BUILD + 1))"; \
+		NEXT_VERSION="$$MAJOR.$$MINOR.$$((PATCH + 1))"; \
+	else \
+		NEXT_PATCH="$$MAJOR.$$MINOR.$$((PATCH + 1))"; \
+		NEXT_VERSION="$$MAJOR.$$((MINOR + 1)).0"; \
+	fi; \
 	printf "\n"; \
 	printf "$(BOLD)Current version:$(RESET) $$CURRENT_VERSION\n"; \
 	printf "\n"; \
@@ -180,21 +176,18 @@ build_beta: ## Build and upload beta zip to GitHub releases
 
 .PHONY: _grove_release_internal
 _grove_release_internal: _build_extension_zip
-	@# Calculate next patch version by checking existing releases
-	@printf "$(CYAN)ℹ️  Checking existing releases for v$(VERSION)...$(RESET)\n"
-	@EXISTING_TAGS=$$(gh release list --repo $(RELEASES_REPO) --json tagName -q '.[].tagName' 2>/dev/null | grep -E "^grove-extension-v$(VERSION)(\.([0-9]+))?$$" || true); \
-	if [ -z "$$EXISTING_TAGS" ]; then \
-		RELEASE_VERSION="$(VERSION)"; \
-		printf "$(DIM)No existing releases for v$(VERSION), using $(VERSION)$(RESET)\n"; \
+	@# Calculate next patch version by incrementing the last number
+	@printf "$(CYAN)ℹ️  Calculating next version from $(VERSION)...$(RESET)\n"
+	@MAJOR=$$(echo $(VERSION) | cut -d. -f1); \
+	MINOR=$$(echo $(VERSION) | cut -d. -f2); \
+	PATCH=$$(echo $(VERSION) | cut -d. -f3); \
+	BUILD=$$(echo $(VERSION) | cut -d. -f4); \
+	if [ -n "$$BUILD" ]; then \
+		RELEASE_VERSION="$$MAJOR.$$MINOR.$$PATCH.$$((BUILD + 1))"; \
 	else \
-		MAX_PATCH=$$(echo "$$EXISTING_TAGS" | sed -n 's/grove-extension-v$(VERSION)\.//p' | sort -n | tail -1); \
-		if [ -z "$$MAX_PATCH" ]; then \
-			RELEASE_VERSION="$(VERSION).1"; \
-		else \
-			RELEASE_VERSION="$(VERSION).$$((MAX_PATCH + 1))"; \
-		fi; \
-		printf "$(DIM)Found existing releases, next version: $$RELEASE_VERSION$(RESET)\n"; \
+		RELEASE_VERSION="$$MAJOR.$$MINOR.$$((PATCH + 1))"; \
 	fi; \
+	printf "$(DIM)Next version: $$RELEASE_VERSION$(RESET)\n"; \
 	RELEASE_TAG="grove-extension-v$$RELEASE_VERSION"; \
 	LOCAL_TAG="v$$RELEASE_VERSION"; \
 	printf "\n"; \
