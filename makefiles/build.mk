@@ -63,28 +63,42 @@ _build_extension_zip: dev_clean $(BUILD_DIR)
 	@printf "$(GREEN)$(BOLD)📦 Output:$(RESET) $(CYAN)$(ZIP_FILE)$(RESET)\n"
 	@printf "\n"
 
-# Prompt to bump version (for Chrome Store releases)
+# Prompt to bump version with menu of options
 .PHONY: _prompt_version_bump
 _prompt_version_bump:
-	@printf "$(YELLOW)Bump version before building? [Y/n] $(RESET)"; \
-	read ans; \
-	if [ "$${ans:-Y}" = "n" ] || [ "$${ans:-Y}" = "N" ]; then \
-		printf "$(DIM)Skipping version bump$(RESET)\n"; \
-	else \
-		$(MAKE) _do_version_bump; \
-	fi
-	@printf "\n"
-
-# Perform the actual version bump
-.PHONY: _do_version_bump
-_do_version_bump:
 	@CURRENT_VERSION=$$(grep '"version"' manifest.json | sed 's/.*"\([0-9]*\.[0-9]*\.[0-9]*\(\.[0-9]*\)\?\)".*/\1/'); \
 	MAJOR=$$(echo $$CURRENT_VERSION | cut -d. -f1); \
 	MINOR=$$(echo $$CURRENT_VERSION | cut -d. -f2); \
 	PATCH=$$(echo $$CURRENT_VERSION | cut -d. -f3); \
-	NEW_PATCH=$$((PATCH + 1)); \
-	NEW_VERSION="$$MAJOR.$$MINOR.$$NEW_PATCH"; \
-	printf "$(CYAN)Current version:$(RESET) $$CURRENT_VERSION\n"; \
+	BUILD=$$(echo $$CURRENT_VERSION | cut -d. -f4); \
+	V_MAJOR="$$((MAJOR + 1)).0.0"; \
+	V_MINOR="$$MAJOR.$$((MINOR + 1)).0"; \
+	V_PATCH="$$MAJOR.$$MINOR.$$((PATCH + 1))"; \
+	if [ -n "$$BUILD" ]; then \
+		V_BUILD="$$MAJOR.$$MINOR.$$PATCH.$$((BUILD + 1))"; \
+	else \
+		V_BUILD="$$MAJOR.$$MINOR.$$PATCH.1"; \
+	fi; \
+	printf "\n"; \
+	printf "$(BOLD)Current version:$(RESET) $$CURRENT_VERSION\n"; \
+	printf "\n"; \
+	printf "$(YELLOW)Version bump:$(RESET)\n"; \
+	printf "  $(CYAN)[1]$(RESET) Major: $$CURRENT_VERSION → $$V_MAJOR\n"; \
+	printf "  $(CYAN)[2]$(RESET) Minor: $$CURRENT_VERSION → $$V_MINOR\n"; \
+	printf "  $(CYAN)[3]$(RESET) Patch: $$CURRENT_VERSION → $$V_PATCH\n"; \
+	printf "  $(CYAN)[4]$(RESET) Build: $$CURRENT_VERSION → $$V_BUILD\n"; \
+	printf "  $(CYAN)[s]$(RESET) Skip\n"; \
+	printf "\n"; \
+	printf "$(YELLOW)Choose [1/2/3/4/s]: $(RESET)"; \
+	read choice; \
+	case "$$choice" in \
+		1) NEW_VERSION="$$V_MAJOR" ;; \
+		2) NEW_VERSION="$$V_MINOR" ;; \
+		3) NEW_VERSION="$$V_PATCH" ;; \
+		4) NEW_VERSION="$$V_BUILD" ;; \
+		s|S) printf "$(DIM)Skipping version bump$(RESET)\n"; exit 0 ;; \
+		*) printf "$(RED)Invalid choice$(RESET)\n"; exit 1 ;; \
+	esac; \
 	printf "$(GREEN)New version:$(RESET) $$NEW_VERSION\n"; \
 	sed "s/\"version\": \"$$CURRENT_VERSION\"/\"version\": \"$$NEW_VERSION\"/" manifest.json > manifest.json.tmp && mv manifest.json.tmp manifest.json; \
 	sed "s/^VERSION := [0-9]*\.[0-9]*\.[0-9]*\(\.[0-9]*\)\{0,1\}/VERSION := $$NEW_VERSION/" makefiles/build.mk > makefiles/build.mk.tmp && mv makefiles/build.mk.tmp makefiles/build.mk; \
@@ -100,6 +114,7 @@ _do_version_bump:
 		git push && \
 		printf "$(GREEN)$(CHECK) Changes committed and pushed!$(RESET)\n"; \
 	fi
+	@printf "\n"
 
 .PHONY: build_release
 build_release: _prompt_version_bump _build_extension_zip ## Build release zip for Chrome Web Store
@@ -145,49 +160,14 @@ build_beta: ## Build and upload beta zip to GitHub releases
 		printf "$(RED)$(CROSS) GitHub CLI (gh) not installed. Run: brew install gh$(RESET)\n"; \
 		exit 1; \
 	fi
-	@# Get current version from manifest.json
-	@CURRENT_VERSION=$$(grep '"version"' manifest.json | sed 's/.*"\([0-9]*\.[0-9]*\.[0-9]*\(\.[0-9]*\)\?\)".*/\1/'); \
-	MAJOR=$$(echo $(VERSION) | cut -d. -f1); \
-	MINOR=$$(echo $(VERSION) | cut -d. -f2); \
-	PATCH=$$(echo $(VERSION) | cut -d. -f3); \
-	BUILD=$$(echo $(VERSION) | cut -d. -f4); \
-	if [ -n "$$BUILD" ]; then \
-		NEXT_PATCH="$$MAJOR.$$MINOR.$$PATCH.$$((BUILD + 1))"; \
-		NEXT_VERSION="$$MAJOR.$$MINOR.$$((PATCH + 1))"; \
-	else \
-		NEXT_PATCH="$$MAJOR.$$MINOR.$$((PATCH + 1))"; \
-		NEXT_VERSION="$$MAJOR.$$((MINOR + 1)).0"; \
-	fi; \
-	printf "\n"; \
-	printf "$(BOLD)Current version:$(RESET) $$CURRENT_VERSION\n"; \
-	printf "\n"; \
-	printf "$(YELLOW)Release type:$(RESET)\n"; \
-	printf "  $(CYAN)[p]$(RESET) Patch release: $$CURRENT_VERSION → $$NEXT_PATCH\n"; \
-	printf "  $(CYAN)[n]$(RESET) New version:   $$CURRENT_VERSION → $$NEXT_VERSION\n"; \
-	printf "\n"; \
-	printf "$(YELLOW)Choose [P/n]: $(RESET)"; \
-	read release_type; \
-	if [ "$${release_type:-P}" = "n" ] || [ "$${release_type:-P}" = "N" ]; then \
-		$(MAKE) _do_version_bump; \
-		$(MAKE) _grove_release_internal; \
-	else \
-		$(MAKE) _grove_release_internal; \
-	fi
+	@$(MAKE) _prompt_version_bump
+	@$(MAKE) _grove_release_internal
 
 .PHONY: _grove_release_internal
 _grove_release_internal: _build_extension_zip
-	@# Calculate next patch version by incrementing the last number
-	@printf "$(CYAN)ℹ️  Calculating next version from $(VERSION)...$(RESET)\n"
-	@MAJOR=$$(echo $(VERSION) | cut -d. -f1); \
-	MINOR=$$(echo $(VERSION) | cut -d. -f2); \
-	PATCH=$$(echo $(VERSION) | cut -d. -f3); \
-	BUILD=$$(echo $(VERSION) | cut -d. -f4); \
-	if [ -n "$$BUILD" ]; then \
-		RELEASE_VERSION="$$MAJOR.$$MINOR.$$PATCH.$$((BUILD + 1))"; \
-	else \
-		RELEASE_VERSION="$$MAJOR.$$MINOR.$$((PATCH + 1))"; \
-	fi; \
-	printf "$(DIM)Next version: $$RELEASE_VERSION$(RESET)\n"; \
+	@# Use the current version from manifest.json (already bumped by _prompt_version_bump)
+	@RELEASE_VERSION=$$(grep '"version"' manifest.json | sed 's/.*"\([0-9]*\.[0-9]*\.[0-9]*\(\.[0-9]*\)\?\)".*/\1/'); \
+	printf "$(CYAN)ℹ️  Creating release for v$$RELEASE_VERSION...$(RESET)\n"; \
 	RELEASE_TAG="grove-extension-v$$RELEASE_VERSION"; \
 	LOCAL_TAG="v$$RELEASE_VERSION"; \
 	printf "\n"; \
@@ -197,10 +177,7 @@ _grove_release_internal: _build_extension_zip
 	printf "$(YELLOW)║$(RESET)  $(BOLD)Local Git Tag:$(RESET)   $$LOCAL_TAG\n"; \
 	printf "$(YELLOW)%s$(RESET)\n" "╚════════════════════════════════════════════════════════╝"; \
 	printf "\n"; \
-	printf "$(CYAN)ℹ️  Updating manifest version to $$RELEASE_VERSION...$(RESET)\n"; \
-	sed -i.bak "s/\"version\": \"[^\"]*\"/\"version\": \"$$RELEASE_VERSION\"/" manifest.json && rm -f manifest.json.bak; \
-	git add manifest.json && git commit -m "chore: bump manifest version to $$RELEASE_VERSION" && git push; \
-	printf "$(CYAN)ℹ️  Rebuilding zip with updated version...$(RESET)\n"; \
+	printf "$(CYAN)ℹ️  Preparing release zip with public key...$(RESET)\n"; \
 	mkdir -p $(BUILD_DIR)/repack; \
 	cp -r $(INCLUDE_FILES) $(BUILD_DIR)/repack/; \
 	sed 's|"version": "[^"]*"|"version": "'$$RELEASE_VERSION'"|; s|"manifest_version": 3,|"manifest_version": 3,\n  "key": "$(EXTENSION_PUBLIC_KEY)",|' $(BUILD_DIR)/repack/manifest.json > $(BUILD_DIR)/repack/manifest.json.tmp && mv $(BUILD_DIR)/repack/manifest.json.tmp $(BUILD_DIR)/repack/manifest.json; \
