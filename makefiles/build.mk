@@ -4,7 +4,7 @@
 
 # Extension metadata
 EXTENSION_NAME := grove-extension
-VERSION := 1.0.7
+VERSION := 1.0.7.5
 GIT_SHA := $(shell git rev-parse --short HEAD)
 VERSION_FULL := $(VERSION)-$(GIT_SHA)
 
@@ -101,8 +101,8 @@ _do_version_bump:
 		printf "$(GREEN)$(CHECK) Changes committed and pushed!$(RESET)\n"; \
 	fi
 
-.PHONY: build_chrome_store_zip
-build_chrome_store_zip: _prompt_version_bump _build_extension_zip ## Create extension zip for Chrome Web Store
+.PHONY: build_release
+build_release: _prompt_version_bump _build_extension_zip ## Build release zip for Chrome Web Store
 	@printf "$(YELLOW)$(BOLD)Next steps:$(RESET)\n"
 	@printf "  1. Go to $(CYAN)$(CHROME_STORE_CONSOLE)$(RESET)\n"
 	@printf "  2. Ensure you are logged in with the group publisher.\n"
@@ -139,8 +139,8 @@ define RELEASE_NOTES
 endef
 export RELEASE_NOTES
 
-.PHONY: build_and_upload_github_release_zip
-build_and_upload_github_release_zip: ## Build and upload zip to public GitHub releases repo
+.PHONY: build_beta
+build_beta: ## Build and upload beta zip to GitHub releases
 	@if ! command -v gh &> /dev/null; then \
 		printf "$(RED)$(CROSS) GitHub CLI (gh) not installed. Run: brew install gh$(RESET)\n"; \
 		exit 1; \

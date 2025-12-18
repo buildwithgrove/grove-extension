@@ -59,7 +59,7 @@ include ./makefiles/dev.mk
 # Maintain backwards compatibility with existing targets
 
 .PHONY: zip_extension
-zip_extension: build_chrome_store_zip ## (Legacy) Create extension zip
+zip_extension: build_release ## (Legacy) Create extension zip
 
 .PHONY: clean
 clean: dev_clean ## (Legacy) Clean build artifacts

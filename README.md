@@ -82,7 +82,7 @@ The `manifest.json` includes a `key` field for local development. This ensures a
 ### Chrome Web Store
 
 ```bash
-make build_chrome_store_zip
+make build_release
 ```
 
 This will:
@@ -95,7 +95,7 @@ This will:
 ### Beta Side Loading (i.e. GitHub Release)
 
 ```bash
-make build_and_upload_github_release_zip
+make build_beta
 ```
 
 This will:
