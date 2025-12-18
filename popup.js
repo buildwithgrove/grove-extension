@@ -1310,8 +1310,8 @@ async function handleConfirmTipToggle() {
  */
 async function loadAutoReply() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.AUTO_REPLY]);
-  // Auto-reply defaults to true
-  const enabled = result[STORAGE_KEYS.AUTO_REPLY] !== false;
+  // Auto-reply defaults to false
+  const enabled = result[STORAGE_KEYS.AUTO_REPLY] === true;
   if (autoReplyToggle) {
     autoReplyToggle.checked = enabled;
   }
@@ -1383,8 +1383,8 @@ function updateAutoReplyMessageVisibility(enabled) {
 async function loadAutoReplyMessage() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.AUTO_REPLY_MESSAGE, STORAGE_KEYS.AUTO_REPLY]);
   const message = result[STORAGE_KEYS.AUTO_REPLY_MESSAGE] || DEFAULT_AUTO_REPLY_MESSAGE;
-  // Auto-reply defaults to true
-  const autoReplyEnabled = result[STORAGE_KEYS.AUTO_REPLY] !== false;
+  // Auto-reply defaults to false
+  const autoReplyEnabled = result[STORAGE_KEYS.AUTO_REPLY] === true;
 
   if (autoReplyMessageInput) {
     autoReplyMessageInput.value = message;
@@ -3404,7 +3404,7 @@ async function checkAndShowTwitterModal() {
   const twitterModalSeen = result[STORAGE_KEYS.TWITTER_MODAL_SEEN] || false;
 
   // Check if conditions are met
-  if (launchCount >= 3 && hasTipped && !twitterModalSeen) {
+  if (launchCount >= 5 && hasTipped && !twitterModalSeen) {
     // Check if user is already connected to X
     const isXConnected = await XAuth.isLoggedIn();
     if (!isXConnected) {
