@@ -66,7 +66,7 @@ _build_extension_zip: dev_clean $(BUILD_DIR)
 # Prompt to bump version with menu of options
 .PHONY: _prompt_version_bump
 _prompt_version_bump:
-	@CURRENT_VERSION=$$(grep '"version"' manifest.json | sed 's/.*"\([0-9]*\.[0-9]*\.[0-9]*\(\.[0-9]*\)\?\)".*/\1/'); \
+	@CURRENT_VERSION=$$(grep '"version"' manifest.json | sed 's/.*: "\([^"]*\)".*/\1/'); \
 	MAJOR=$$(echo $$CURRENT_VERSION | cut -d. -f1); \
 	MINOR=$$(echo $$CURRENT_VERSION | cut -d. -f2); \
 	PATCH=$$(echo $$CURRENT_VERSION | cut -d. -f3); \
@@ -166,7 +166,7 @@ build_beta: ## Build and upload beta zip to GitHub releases
 .PHONY: _grove_release_internal
 _grove_release_internal: _build_extension_zip
 	@# Use the current version from manifest.json (already bumped by _prompt_version_bump)
-	@RELEASE_VERSION=$$(grep '"version"' manifest.json | sed 's/.*"\([0-9]*\.[0-9]*\.[0-9]*\(\.[0-9]*\)\?\)".*/\1/'); \
+	@RELEASE_VERSION=$$(grep '"version"' manifest.json | sed 's/.*: "\([^"]*\)".*/\1/'); \
 	printf "$(CYAN)ℹ️  Creating release for v$$RELEASE_VERSION...$(RESET)\n"; \
 	RELEASE_TAG="grove-extension-v$$RELEASE_VERSION"; \
 	LOCAL_TAG="v$$RELEASE_VERSION"; \
