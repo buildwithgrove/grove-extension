@@ -554,15 +554,22 @@ body {
   border-radius: var(--radius-full);
   font-weight: 600;
   font-size: 14px;
+  font-family: inherit;
   text-decoration: none;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 #topUpBtn,
 #editDefaultTipBtn {
   width: 110px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  margin-left: auto;
 }
 
 #topUpBtn svg {
@@ -1156,21 +1163,9 @@ button.section-card-btn:hover .quick-access-icon {
 }
 
 .x-connect-chevron {
-  color: var(--color-primary);
+  color: var(--color-text-secondary);
   display: flex;
   align-items: center;
-  animation: pulse-chevron 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse-chevron {
-  0%, 100% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  50% {
-    opacity: 0.6;
-    transform: translateX(3px);
-  }
 }
 
 .x-connect-desc {
