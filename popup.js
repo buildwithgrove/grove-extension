@@ -128,6 +128,8 @@ const STORAGE_KEYS = {
   ENS_NAME: 'GROVE_ENS_NAME',
   TIP_INTRO_SEEN: 'GROVE_TIP_INTRO_SEEN',
   EARN_TAB_SEEN: 'GROVE_EARN_TAB_SEEN',
+  LAUNCH_COUNT: 'GROVE_LAUNCH_COUNT',
+  TWITTER_MODAL_SEEN: 'GROVE_TWITTER_MODAL_SEEN',
 };
 
 /**
@@ -296,6 +298,12 @@ async function init() {
       earnBadge.classList.remove('hidden');
     }
   }
+
+  // Increment launch count
+  await incrementLaunchCount();
+
+  // Check if we should show the Twitter connect modal (after 3 launches and 1 tip)
+  await checkAndShowTwitterModal();
 
   // Check if we should open to X settings (from first tip modal)
   chrome.runtime.sendMessage({ type: 'CHECK_OPEN_TO_X_SETTINGS' }, (response) => {
@@ -472,7 +480,13 @@ function setupEventListeners() {
   // Tip Intro Modal - Page Navigation
   if (tipIntroNextBtn) {
     tipIntroNextBtn.addEventListener('click', () => {
-      goToTipIntroPage(2);
+      // In intro mode, "Got it" button closes the modal
+      // In twitter mode, this button isn't visible (we're on page 2)
+      if (introModalMode === 'intro') {
+        hideTipIntroModal();
+      } else {
+        goToTipIntroPage(2);
+      }
     });
   }
   if (tipIntroConnectBtn) {
@@ -3262,20 +3276,55 @@ function escapeHtml(str) {
 
 /**
  * Tip Button Intro Modal
- * Shows once when user first connects their account
+ * Shows page 1 only when user first connects their account
+ * Twitter connect (page 2) is shown separately after conditions are met
  */
+
+// Track current modal mode: 'intro' shows page 1 only, 'twitter' shows page 2 only
+let introModalMode = 'intro';
+
 async function checkAndShowTipIntroModal() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.TIP_INTRO_SEEN]);
   if (!result[STORAGE_KEYS.TIP_INTRO_SEEN]) {
-    showTipIntroModal();
+    showIntroModalPage1Only();
   }
 }
 
-function showTipIntroModal() {
+/**
+ * Shows only page 1 of the intro modal (You're all set!)
+ * The Next button will close the modal instead of going to page 2
+ */
+function showIntroModalPage1Only() {
+  introModalMode = 'intro';
   if (tipButtonIntroModal) {
     tipButtonIntroModal.classList.remove('hidden');
-    // Reset to page 1
-    goToTipIntroPage(1);
+    // Show page 1
+    if (tipIntroPage1) tipIntroPage1.classList.add('active');
+    if (tipIntroPage2) tipIntroPage2.classList.remove('active');
+    // Hide the page indicator dots for intro-only mode
+    const dotsContainer = document.querySelector('.tip-intro-indicators');
+    if (dotsContainer) dotsContainer.style.display = 'none';
+    // Change Next button text to "Got it"
+    if (tipIntroNextBtn) {
+      tipIntroNextBtn.innerHTML = '<span>Got it</span>';
+    }
+  }
+}
+
+/**
+ * Shows page 2 (Twitter connect) directly
+ * Called when conditions are met: 3+ launches and 1+ tips
+ */
+function showTwitterConnectModal() {
+  introModalMode = 'twitter';
+  if (tipButtonIntroModal) {
+    tipButtonIntroModal.classList.remove('hidden');
+    // Show page 2 directly
+    if (tipIntroPage1) tipIntroPage1.classList.remove('active');
+    if (tipIntroPage2) tipIntroPage2.classList.add('active');
+    // Hide the page indicator dots for twitter-only mode
+    const dotsContainer = document.querySelector('.tip-intro-indicators');
+    if (dotsContainer) dotsContainer.style.display = 'none';
   }
 }
 
@@ -3283,10 +3332,30 @@ async function hideTipIntroModal() {
   if (tipButtonIntroModal) {
     tipButtonIntroModal.classList.add('hidden');
   }
-  // Mark as seen
-  await chrome.storage.local.set({ [STORAGE_KEYS.TIP_INTRO_SEEN]: true });
-  // Reset to page 1 for next time
-  goToTipIntroPage(1);
+  // Mark appropriate flag based on mode
+  if (introModalMode === 'intro') {
+    await chrome.storage.local.set({ [STORAGE_KEYS.TIP_INTRO_SEEN]: true });
+  } else if (introModalMode === 'twitter') {
+    await chrome.storage.local.set({ [STORAGE_KEYS.TWITTER_MODAL_SEEN]: true });
+  }
+  // Reset modal state
+  resetIntroModalState();
+}
+
+/**
+ * Reset modal to default state
+ */
+function resetIntroModalState() {
+  if (tipIntroPage1) tipIntroPage1.classList.add('active');
+  if (tipIntroPage2) tipIntroPage2.classList.remove('active');
+  // Restore dots visibility
+  const dotsContainer = document.querySelector('.tip-intro-indicators');
+  if (dotsContainer) dotsContainer.style.display = '';
+  // Restore Next button text
+  if (tipIntroNextBtn) {
+    tipIntroNextBtn.innerHTML = '<span>Next</span><svg class="bounce-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
+  }
+  introModalMode = 'intro';
 }
 
 function goToTipIntroPage(pageNum) {
@@ -3308,6 +3377,40 @@ function goToTipIntroPage(pageNum) {
       dot.classList.remove('active');
     }
   });
+}
+
+/**
+ * Increment launch count on each popup open
+ */
+async function incrementLaunchCount() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.LAUNCH_COUNT]);
+  const currentCount = result[STORAGE_KEYS.LAUNCH_COUNT] || 0;
+  await chrome.storage.local.set({ [STORAGE_KEYS.LAUNCH_COUNT]: currentCount + 1 });
+}
+
+/**
+ * Check if Twitter connect modal should be shown
+ * Conditions: 3+ launches, 1+ tips, not already seen, not already connected to X
+ */
+async function checkAndShowTwitterModal() {
+  const result = await chrome.storage.local.get([
+    STORAGE_KEYS.LAUNCH_COUNT,
+    STORAGE_KEYS.HAS_TIPPED,
+    STORAGE_KEYS.TWITTER_MODAL_SEEN
+  ]);
+
+  const launchCount = result[STORAGE_KEYS.LAUNCH_COUNT] || 0;
+  const hasTipped = result[STORAGE_KEYS.HAS_TIPPED] || false;
+  const twitterModalSeen = result[STORAGE_KEYS.TWITTER_MODAL_SEEN] || false;
+
+  // Check if conditions are met
+  if (launchCount >= 3 && hasTipped && !twitterModalSeen) {
+    // Check if user is already connected to X
+    const isXConnected = await XAuth.isLoggedIn();
+    if (!isXConnected) {
+      showTwitterConnectModal();
+    }
+  }
 }
 
 /**
