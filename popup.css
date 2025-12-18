@@ -567,8 +567,6 @@ body {
 #topUpBtn,
 #editDefaultTipBtn {
   width: 110px;
-  flex-shrink: 0;
-  box-sizing: border-box;
   margin-left: auto;
 }
 
