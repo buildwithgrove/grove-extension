@@ -590,6 +590,15 @@ function setupEventListeners() {
     homeXDisconnectBtnEl.addEventListener('click', handleXDisconnect);
   }
 
+  // Home X connect button (on card header)
+  const homeXConnectBtnEl = document.getElementById('homeXConnectBtn');
+  if (homeXConnectBtnEl) {
+    homeXConnectBtnEl.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent card click
+      handleXLogin();
+    });
+  }
+
   // Legacy manage button (kept for compatibility but hidden)
   if (manageJwtBtn) {
     manageJwtBtn.addEventListener('click', () => {

@@ -1170,10 +1170,11 @@ button.section-card-btn:hover .quick-access-icon {
 .x-connect-btn {
   font-size: 13px;
   font-weight: 600;
-  color: var(--color-primary);
-  padding: 4px 12px;
+  color: white;
+  padding: 6px 14px;
   border-radius: var(--radius-full);
-  background: var(--color-primary-light);
+  background: var(--color-primary);
+  cursor: pointer;
 }
 
 .x-connect-desc {
