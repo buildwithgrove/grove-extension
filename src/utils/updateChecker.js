@@ -67,6 +67,38 @@ const UpdateChecker = (() => {
   }
 
   /**
+   * Compare two version strings
+   * @param {string} v1 - First version (e.g., "1.0.8")
+   * @param {string} v2 - Second version (e.g., "1.1.0")
+   * @returns {number} - 1 if v1 > v2, -1 if v1 < v2, 0 if equal
+   */
+  function compareVersions(v1, v2) {
+    const parts1 = v1.split('.').map(Number);
+    const parts2 = v2.split('.').map(Number);
+    const maxLen = Math.max(parts1.length, parts2.length);
+
+    for (let i = 0; i < maxLen; i++) {
+      const p1 = parts1[i] || 0;
+      const p2 = parts2[i] || 0;
+      if (p1 > p2) return 1;
+      if (p1 < p2) return -1;
+    }
+    return 0;
+  }
+
+  /**
+   * Check if release version is newer than manifest version
+   * @param {string} releaseTag - The release tag to check
+   * @returns {boolean} - True if release is newer than installed
+   */
+  function isReleaseNewer(releaseTag) {
+    const manifestVersion = getCurrentVersion();
+    const releaseVersion = parseReleaseVersion(releaseTag);
+    if (!releaseVersion) return false;
+    return compareVersions(releaseVersion, manifestVersion) > 0;
+  }
+
+  /**
    * Check if manifest version matches the release version
    * This prevents false update notifications for dev installs
    * @param {string} releaseTag - The release tag to check
@@ -164,11 +196,12 @@ const UpdateChecker = (() => {
       const cachedTag = storage[STORAGE_KEYS.LATEST_TAG];
 
       if (cachedTag) {
-        const isNew = cachedTag !== installedTag && !manifestMatchesRelease(cachedTag);
+        // Only show update if release is actually newer than installed version
+        const isNewer = isReleaseNewer(cachedTag);
         const isDismissed = cachedTag === dismissedTag;
 
         return {
-          available: isNew && !isDismissed,
+          available: isNewer && !isDismissed,
           tag: cachedTag,
           displayVersion: parseDisplayVersion(cachedTag),
           downloadUrl: storage[STORAGE_KEYS.DOWNLOAD_URL],
@@ -191,11 +224,12 @@ const UpdateChecker = (() => {
       [STORAGE_KEYS.DOWNLOAD_URL]: release.downloadUrl,
     });
 
-    const isNew = release.tag !== installedTag && !manifestMatchesRelease(release.tag);
+    // Only show update if release is actually newer than installed version
+    const isNewer = isReleaseNewer(release.tag);
     const isDismissed = release.tag === dismissedTag;
 
     return {
-      available: isNew && !isDismissed,
+      available: isNewer && !isDismissed,
       tag: release.tag,
       displayVersion: release.displayVersion,
       downloadUrl: release.downloadUrl,
