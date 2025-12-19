@@ -10,11 +10,7 @@ const API_ENDPOINTS = {
   'localhost:8000': 'http://localhost:8000',
 };
 
-// Export for different module systems
+// Export to window for browser context
 if (typeof window !== 'undefined') {
   window.API_ENDPOINTS = API_ENDPOINTS;
-}
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { API_ENDPOINTS };
 }

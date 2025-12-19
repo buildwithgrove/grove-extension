@@ -174,13 +174,9 @@ class ErrorBubble {
   }
 }
 
-// Export for different module systems
+// Export to window for browser context
 if (typeof window !== 'undefined') {
   window.ErrorBubble = ErrorBubble;
   // Initialize cleanup listener on load
   ErrorBubble.init();
-}
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { ErrorBubble };
 }

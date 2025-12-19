@@ -74,12 +74,8 @@ class AddressCache {
   }
 }
 
-// Export for different module systems
+// Export to window for browser context
 if (typeof window !== 'undefined') {
   window.AddressCache = AddressCache;
   window.ADDRESS_CACHE_TTL = ADDRESS_CACHE_TTL;
-}
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { AddressCache, ADDRESS_CACHE_TTL };
 }

@@ -46,12 +46,8 @@ function detectDarkMode(platform) {
   return isColorDark(bg);
 }
 
-// Export for different module systems
+// Export to window for browser context
 if (typeof window !== 'undefined') {
   window.detectDarkMode = detectDarkMode;
   window.isColorDark = isColorDark;
-}
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { detectDarkMode, isColorDark };
 }

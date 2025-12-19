@@ -32,12 +32,7 @@ const CHAIN_CONFIG = {
 
 const DEFAULT_CHAIN = 'base';
 
-// Export for different module systems
+// Export to window for browser context
 if (typeof window !== 'undefined') {
   window.CHAIN_CONFIG = CHAIN_CONFIG;
-  window.DEFAULT_CHAIN = DEFAULT_CHAIN;
-}
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { CHAIN_CONFIG, DEFAULT_CHAIN };
 }

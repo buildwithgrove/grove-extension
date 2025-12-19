@@ -57,11 +57,7 @@ function showToast(msg, options = {}) {
   }, duration);
 }
 
-// Export for different module systems
+// Export to window for browser context
 if (typeof window !== 'undefined') {
   window.showToast = showToast;
-}
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { showToast };
 }
