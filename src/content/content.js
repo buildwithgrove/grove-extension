@@ -1968,11 +1968,15 @@ Tip creators you love → {grove_link}`;
           if (tweetId) {
             const isLoggedIn = await XAuth.isLoggedIn();
             if (isLoggedIn) {
+              let didLike = false;
+              let didReply = false;
+
               // Like the tweet if enabled
               if (likeOnTipEnabled) {
                 try {
                   await XAuth.likeTweet(tweetId);
                   console.log("[Grove Extension] Tweet liked successfully");
+                  didLike = true;
                 } catch (likeError) {
                   // Don't fail if like fails (might already be liked)
                   console.error("[Grove Extension] Like failed:", likeError);
@@ -1992,8 +1996,26 @@ Tip creators you love → {grove_link}`;
                   grove_link: 'grove.city'
                 });
 
-                await XAuth.postReply(tweetId, replyText);
-                console.log("[Grove Extension] Auto-reply posted successfully");
+                try {
+                  await XAuth.postReply(tweetId, replyText);
+                  console.log("[Grove Extension] Auto-reply posted successfully");
+                  didReply = true;
+                } catch (replyError) {
+                  console.error("[Grove Extension] Reply failed:", replyError);
+                }
+              }
+
+              // Show success message if any X action was performed
+              if (didLike || didReply) {
+                let message = '';
+                if (didLike && didReply) {
+                  message = 'Liked & replied! Refresh to see.';
+                } else if (didLike) {
+                  message = 'Liked! Refresh to see.';
+                } else if (didReply) {
+                  message = 'Replied! Refresh to see.';
+                }
+                showInlineTipError(buttonWrapper.button, { message, variant: 'success' });
               }
             } else {
               console.log("[Grove Extension] X features skipped - not logged in to X");

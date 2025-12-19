@@ -319,6 +319,11 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+/* Success variant for inline messages */
+.grove-tip-inline-message[data-variant="success"] {
+  border-color: #389f58;
+}
+
 .grove-tip-button:disabled {
 /* Reddit/YouTube disabled states - DO NOT REMOVE: FUTURE FEATURE */
 /* .grove-tip-button-reddit:disabled,
