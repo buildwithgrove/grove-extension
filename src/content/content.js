@@ -6,14 +6,7 @@
 (function () {
   "use strict";
 
-  // JWT Storage Keys (must match keyManager.js and popup.js)
-  const JWT_KEYS = {
-    PRODUCTION: 'GROVE_JWT_PRODUCTION',
-    TESTNET: 'GROVE_JWT_TESTNET',
-    LOCALHOST: 'GROVE_JWT_LOCALHOST',
-    ENVIRONMENT: 'groveEnvironment',
-    ENDPOINT: 'groveEndpoint',
-  };
+  // STORAGE_KEYS is loaded from src/config/storageKeys.js
 
   /**
    * Check if the extension context is still valid
@@ -71,25 +64,25 @@
       }
 
       try {
-        chrome.storage.local.get([JWT_KEYS.PRODUCTION, JWT_KEYS.TESTNET, JWT_KEYS.LOCALHOST, JWT_KEYS.ENVIRONMENT, JWT_KEYS.ENDPOINT], (result) => {
+        chrome.storage.local.get([STORAGE_KEYS.JWT_PRODUCTION, STORAGE_KEYS.JWT_TESTNET, STORAGE_KEYS.JWT_LOCALHOST, STORAGE_KEYS.ENVIRONMENT, STORAGE_KEYS.ENDPOINT], (result) => {
           // Check for Chrome runtime errors (e.g., context invalidated during the call)
           if (chrome.runtime.lastError) {
             reject(new Error('Extension was reloaded. Please refresh the page.'));
             return;
           }
 
-          const isDevMode = result[JWT_KEYS.ENVIRONMENT] === 'local';
-          const endpoint = result[JWT_KEYS.ENDPOINT] || 'production';
+          const isDevMode = result[STORAGE_KEYS.ENVIRONMENT] === 'local';
+          const endpoint = result[STORAGE_KEYS.ENDPOINT] || 'production';
 
           let jwt;
           if (!isDevMode) {
-            jwt = result[JWT_KEYS.PRODUCTION];
+            jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
           } else if (endpoint === 'localhost') {
-            jwt = result[JWT_KEYS.LOCALHOST];
+            jwt = result[STORAGE_KEYS.JWT_LOCALHOST];
           } else if (endpoint === 'testnet') {
-            jwt = result[JWT_KEYS.TESTNET];
+            jwt = result[STORAGE_KEYS.JWT_TESTNET];
           } else {
-            jwt = result[JWT_KEYS.PRODUCTION];
+            jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
           }
           resolve(jwt || null);
         });
@@ -199,17 +192,6 @@
 
     console.log(`[Grove Extension] Platform detected: ${currentAdapter.getPlatformName()}`);
 
-    // Reddit support commented out - X only for now
-    // if (currentAdapter.getPlatformName() === "reddit") {
-    //   setupRedditHoverCardObserver();
-    //
-    //   // Also check if we're on a profile page and handle it
-    //   if (currentAdapter.detectProfilePage()) {
-    //     await initializeProfileButton();
-    //   }
-    //   return;
-    // }
-
     // For Twitter/X, handle tweet tip buttons on all pages
     if (currentAdapter.getPlatformName() === "twitter") {
       // If on a profile page, initialize profile button first (this caches the address)
@@ -286,16 +268,6 @@
     if (hostname.includes("twitter.com") || hostname.includes("x.com")) {
       return new TwitterAdapter();
     }
-
-    // Reddit support commented out - X only for now
-    // if (hostname.includes("reddit.com")) {
-    //   return new RedditAdapter();
-    // }
-
-    // YouTube support commented out - X only for now
-    // if (hostname.includes("youtube.com") || hostname.includes("youtu.be")) {
-    //   return new YouTubeAdapter();
-    // }
 
     // Return GenericAdapter for all other websites
     // Only if GenericAdapter is available (loaded via manifest)
@@ -587,107 +559,6 @@
       }
     }
   }
-
-  // Reddit hover card functions commented out - X only for now
-  // /**
-  //  * Setup observer for Reddit hover cards
-  //  * Reddit hover cards appear dynamically, so we need to watch for them
-  //  */
-  // function setupRedditHoverCardObserver() {
-  //   // Clean up existing observer
-  //   if (hoverCardObserver) {
-  //     hoverCardObserver.disconnect();
-  //   }
-  //
-  //   hoverCardObserver = new MutationObserver((mutations) => {
-  //     for (const mutation of mutations) {
-  //       for (const node of mutation.addedNodes) {
-  //         if (node.nodeType === Node.ELEMENT_NODE) {
-  //           // Check if this is a hover card
-  //           const hoverCard = node.querySelector
-  //             ? node.querySelector('[data-testid="user-hover-card"]')
-  //             : null;
-  //
-  //           if (hoverCard || (node.dataset && node.dataset.testid === "user-hover-card")) {
-  //             injectButtonIntoHoverCard(hoverCard || node);
-  //           }
-  //         }
-  //       }
-  //     }
-  //   });
-  //
-  //   // Start observing the document body for new elements
-  //   hoverCardObserver.observe(document.body, {
-  //     childList: true,
-  //     subtree: true,
-  //   });
-  //
-  // }
-  //
-  // /**
-  //  * Inject button into Reddit hover card
-  //  * @param {Element} hoverCard - The hover card element
-  //  */
-  // async function injectButtonIntoHoverCard(hoverCard) {
-  //
-  //   // Check if button already exists in this hover card
-  //   if (hoverCard.querySelector("#grove-tip-button")) {
-  //     return;
-  //   }
-  //
-  //   // Extract bio from hover card
-  //   const bioSpan = hoverCard.querySelector(".whitespace-normal");
-  //   if (!bioSpan) {
-  //     return;
-  //   }
-  //
-  //   const bio = bioSpan.textContent;
-  //
-  //   // Check if bio contains tippable address
-  //   const hasAddress = AddressParser.hasAddresses(bio);
-  //   if (!hasAddress) {
-  //     return;
-  //   }
-  //
-  //   // Extract address (ENS names are resolved by the backend)
-  //   const result = AddressParser.resolveAddress(bio);
-  //   if (!result.address) {
-  //     console.log("[Grove Extension] Could not extract address in hover card");
-  //     return;
-  //   }
-  //
-  //   console.log(`[Grove Extension] Address found in hover card: ${result.address} (type: ${result.type})`)
-  //
-  //   // Store for this hover card's tip button
-  //   const hoverCardResolvedAddress = result;
-  //
-  //   // Find the main content div that contains everything
-  //   const contentDiv = hoverCard.querySelector(".p-md.flex.flex-col");
-  //   if (!contentDiv) {
-  //     return;
-  //   }
-  //
-  //   // Find the top row with avatar and user info
-  //   const topRow = contentDiv.querySelector(".flex.flex-row.justify-items-start.items-center");
-  //   if (!topRow) {
-  //     return;
-  //   }
-  //
-  //   // Create and inject tip button with click handler
-  //   const tipButton = new TipButton(() => {
-  //     handleTipClick(tipButton);
-  //   }, "reddit");
-  //
-  //   const button = tipButton.create();
-  //
-  //   // Apply advertising mode class if enabled
-  //   if (ADVERTISING_MODE) {
-  //     button.classList.add("grove-ad-mode");
-  //   }
-  //
-  //   // Append button to the end of the top row (after user info)
-  //   topRow.appendChild(button);
-  // }
 
   /**
    * Setup observer for Twitter hover cards (profile popups)
@@ -1805,12 +1676,7 @@
     );
   }
 
-  // Default auto-reply message template (must match popup.js)
-  const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I just sent you a tip on {chain} via #TipWithGrove!
-
-Tx: {tx_link}
-
-Tip creators you love → {grove_link}`;
+  // DEFAULT_AUTO_REPLY_MESSAGE is loaded from src/ui/constants.js
 
   /**
    * Build auto-reply message from template

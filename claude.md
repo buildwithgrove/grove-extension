@@ -338,10 +338,8 @@ Provide the following prompt to Claude (or similar AI):
 ```
 I need you to create a platform adapter for the Grove Tip Extension to add a tip button on [PLATFORM_NAME].
 
-Reference the existing adapters for Twitter, Reddit, and YouTube as examples:
+Reference the existing Twitter adapter as an example:
 - src/adapters/twitter.js
-- src/adapters/reddit.js
-- src/adapters/youtube.js
 
 Here's a screenshot showing where the button should appear:
 [Attach screenshot]

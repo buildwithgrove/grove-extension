@@ -392,7 +392,7 @@
         return 'This address is not compatible with the selected network. Try switching networks.';
       }
 
-      // Adapter not implemented (Reddit, GitHub, etc.)
+      // Platform not yet supported
       if (this._includes(normalizedMessage, 'not yet implemented')) {
         return 'Tipping on this platform is not yet supported.';
       }

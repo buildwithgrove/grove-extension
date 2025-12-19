@@ -107,30 +107,7 @@ const tipIntroDots = document.querySelectorAll('.tip-intro-dot');
 // Initialize Previous Keys UI
 let prevKeysUI = null;
 
-// Storage Keys
-const STORAGE_KEYS = {
-  // Dual JWT slots
-  JWT_PRODUCTION: 'GROVE_JWT_PRODUCTION',
-  JWT_TESTNET: 'GROVE_JWT_TESTNET',
-  JWT: 'GROVE_API_JWT', // Legacy - for migration only
-  // Settings
-  TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
-  CONFIRM_TIP: 'GROVE_CONFIRM_TIP',
-  HAS_TIPPED: 'GROVE_HAS_TIPPED',
-  AUTO_REPLY: 'GROVE_AUTO_REPLY',
-  AUTO_REPLY_MESSAGE: 'GROVE_AUTO_REPLY_MESSAGE',
-  LIKE_ON_TIP: 'GROVE_LIKE_ON_TIP',
-  ENVIRONMENT: 'groveEnvironment',
-  CHAIN: 'groveChain',
-  ENDPOINT: 'groveEndpoint',
-  LAST_BALANCES: 'GROVE_LAST_BALANCES',
-  CLIENT_ADDRESS: 'GROVE_CLIENT_ADDRESS',
-  ENS_NAME: 'GROVE_ENS_NAME',
-  TIP_INTRO_SEEN: 'GROVE_TIP_INTRO_SEEN',
-  EARN_TAB_SEEN: 'GROVE_EARN_TAB_SEEN',
-  LAUNCH_COUNT: 'GROVE_LAUNCH_COUNT',
-  TWITTER_MODAL_SEEN: 'GROVE_TWITTER_MODAL_SEEN',
-};
+// STORAGE_KEYS is loaded from src/config/storageKeys.js
 
 /**
  * Check if developer mode is enabled
@@ -149,12 +126,7 @@ async function getActiveJWT() {
   return KeyManager.getActiveJWT();
 }
 
-// Default auto-reply message template
-const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I just sent you a tip on {chain} via #TipWithGrove!
-
-Tx: {tx_link}
-
-Tip creators you love → {grove_link}`;
+// DEFAULT_AUTO_REPLY_MESSAGE is loaded from src/ui/constants.js
 
 // X Login Elements (now on home screen)
 const likeOnTipToggle = document.getElementById('homeLikeOnTipToggle');
@@ -171,8 +143,8 @@ const DEFAULT_ENV = 'prod';
 const DEFAULT_ENDPOINT = 'production';
 const DEFAULT_BALANCE_DISPLAY = '0.00';
 const TOP_UP_URLS = {
-  mainnet: 'https://app.grove.city/profile',
-  testnet: 'https://app.testnet.grove.city/profile'
+  mainnet: 'https://app.grove.city/profile?tab=tip',
+  testnet: 'https://app.testnet.grove.city/profile?tab=tip'
 };
 const MAINNET_CHAINS = ['base', 'solana'];
 const TESTNET_CHAINS = ['base-sepolia', 'solana-devnet'];
@@ -3121,65 +3093,7 @@ function getDestinationUrl(destination) {
   return `https://${destination}`;
 }
 
-/**
- * Parse destination to extract profile URL and check if it's a specific post
- * Returns { profileUrl, postUrl, profileHandle }
- */
-function parseDestination(destination) {
-  if (!destination) return { profileUrl: null, postUrl: null, profileHandle: null };
-
-  // Check if it's a .base.eth name
-  if (destination.endsWith('.base.eth')) {
-    const name = destination.replace('.base.eth', '');
-    return {
-      profileUrl: `https://www.base.org/name/${encodeURIComponent(name)}`,
-      postUrl: null,
-      profileHandle: destination
-    };
-  }
-
-  // Check if it's a .eth name (but not .base.eth)
-  if (destination.endsWith('.eth')) {
-    return {
-      profileUrl: `https://app.ens.domains/${encodeURIComponent(destination)}`,
-      postUrl: null,
-      profileHandle: destination
-    };
-  }
-
-  // Normalize: add https if needed
-  const fullUrl = destination.startsWith('http') ? destination : `https://${destination}`;
-
-  // Check if it's a Twitter/X status URL
-  const statusMatch = destination.match(/^(x\.com|twitter\.com)\/([^\/]+)\/status\/(\d+)/i);
-  if (statusMatch) {
-    const domain = statusMatch[1];
-    const username = statusMatch[2];
-    return {
-      profileUrl: `https://${domain}/${username}`,
-      postUrl: fullUrl,
-      profileHandle: `@${username}`
-    };
-  }
-
-  // Check if it's just a Twitter/X profile
-  const profileMatch = destination.match(/^(x\.com|twitter\.com)\/([^\/]+)\/?$/i);
-  if (profileMatch) {
-    const username = profileMatch[2];
-    return {
-      profileUrl: fullUrl,
-      postUrl: null,
-      profileHandle: `@${username}`
-    };
-  }
-
-  // For other URLs, just return the destination as-is
-  return {
-    profileUrl: null,
-    postUrl: fullUrl,
-    profileHandle: null
-  };
-}
+// parseDestination is loaded from src/parsers/destination.js
 
 /**
  * Truncate destination string

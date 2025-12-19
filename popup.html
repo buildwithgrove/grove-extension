@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="popup.css">
+  <script src="src/config/storageKeys.js"></script>
   <script src="src/config/networks.js"></script>
   <script src="src/utils/api.js"></script>
   <script src="src/utils/balance.js"></script>
@@ -17,6 +18,8 @@
   <script src="src/storage/keyManager.js"></script>
   <script src="src/ui/prevKeysUI.js"></script>
   <script src="src/auth/xAuth.js"></script>
+  <script src="src/parsers/destination.js"></script>
+  <script src="src/ui/constants.js"></script>
 </head>
 
 <body class="theme-dark">
@@ -236,7 +239,7 @@
                 <div class="balance-spinner"></div>
               </div>
             </div>
-            <a href="https://app.grove.city/profile" target="_blank" class="card-action-btn primary" id="topUpBtn">
+            <a href="https://app.grove.city/profile?tab=tip" target="_blank" class="card-action-btn primary" id="topUpBtn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 2v20m0-20L5 9m7-7l7 7" />

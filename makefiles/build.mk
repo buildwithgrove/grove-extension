@@ -34,9 +34,7 @@ EXCLUDE_PATTERNS := \
 	.DS_Store \
 	*.log \
 	node_modules \
-	poc \
 	makefiles \
-	logo.png \
 	package*.json \
 	Makefile \
 	$(BUILD_DIR)

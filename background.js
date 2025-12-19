@@ -1,13 +1,6 @@
-// Import update checker
+// Import shared modules
+importScripts('src/config/storageKeys.js');
 importScripts('src/utils/updateChecker.js');
-
-// JWT Storage Keys (must match keyManager.js)
-const JWT_STORAGE = {
-  PRODUCTION: 'GROVE_JWT_PRODUCTION',
-  TESTNET: 'GROVE_JWT_TESTNET',
-  LOCAL: 'GROVE_JWT_LOCALHOST',
-  LEGACY: 'GROVE_API_JWT'
-};
 
 // Listen for internal messages from popup/content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -39,11 +32,11 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
     const env = message.environment === 'local' ? 'localhost' : (message.environment || 'production');
     let jwtStorageKey;
     if (env === 'localhost') {
-      jwtStorageKey = JWT_STORAGE.LOCAL;
+      jwtStorageKey = STORAGE_KEYS.JWT_LOCALHOST;
     } else if (env === 'testnet') {
-      jwtStorageKey = JWT_STORAGE.TESTNET;
+      jwtStorageKey = STORAGE_KEYS.JWT_TESTNET;
     } else {
-      jwtStorageKey = JWT_STORAGE.PRODUCTION;
+      jwtStorageKey = STORAGE_KEYS.JWT_PRODUCTION;
     }
 
     // Both localhost and testnet use Base Sepolia; production uses Base mainnet
@@ -80,7 +73,7 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
 
   if (message.type === 'GET_JWT') {
     // Return JWT based on requested environment or current dev mode state
-    chrome.storage.local.get(['groveEnvironment', 'groveEndpoint', JWT_STORAGE.PRODUCTION, JWT_STORAGE.TESTNET, JWT_STORAGE.LOCAL], (result) => {
+    chrome.storage.local.get(['groveEnvironment', 'groveEndpoint', STORAGE_KEYS.JWT_PRODUCTION, STORAGE_KEYS.JWT_TESTNET, STORAGE_KEYS.JWT_LOCALHOST], (result) => {
       const isDevMode = result.groveEnvironment === 'local';
       const endpoint = result.groveEndpoint || 'production';
       // Normalize 'local' to 'localhost'
@@ -88,19 +81,19 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
 
       let jwt;
       if (reqEnv === 'localhost') {
-        jwt = result[JWT_STORAGE.LOCAL];
+        jwt = result[STORAGE_KEYS.JWT_LOCALHOST];
       } else if (reqEnv === 'testnet') {
-        jwt = result[JWT_STORAGE.TESTNET];
+        jwt = result[STORAGE_KEYS.JWT_TESTNET];
       } else if (reqEnv === 'production') {
-        jwt = result[JWT_STORAGE.PRODUCTION];
+        jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
       } else {
         // No environment specified - use current endpoint
         if (endpoint === 'localhost') {
-          jwt = result[JWT_STORAGE.LOCAL];
+          jwt = result[STORAGE_KEYS.JWT_LOCALHOST];
         } else if (endpoint === 'testnet') {
-          jwt = result[JWT_STORAGE.TESTNET];
+          jwt = result[STORAGE_KEYS.JWT_TESTNET];
         } else {
-          jwt = result[JWT_STORAGE.PRODUCTION];
+          jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
         }
       }
       sendResponse({ jwt: jwt || null, isDevMode, environment: endpoint });
@@ -110,7 +103,7 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
 
   if (message.type === 'PING') {
     // Check if there's a JWT for the requested environment (or current mode if not specified)
-    chrome.storage.local.get(['groveEnvironment', 'groveEndpoint', JWT_STORAGE.PRODUCTION, JWT_STORAGE.TESTNET, JWT_STORAGE.LOCAL], (result) => {
+    chrome.storage.local.get(['groveEnvironment', 'groveEndpoint', STORAGE_KEYS.JWT_PRODUCTION, STORAGE_KEYS.JWT_TESTNET, STORAGE_KEYS.JWT_LOCALHOST], (result) => {
       const isDevMode = result.groveEnvironment === 'local';
       const endpoint = result.groveEndpoint || 'production';
       // Normalize 'local' to 'localhost'
@@ -120,19 +113,19 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       // Otherwise fall back to current endpoint
       let jwt;
       if (reqEnv === 'localhost') {
-        jwt = result[JWT_STORAGE.LOCAL];
+        jwt = result[STORAGE_KEYS.JWT_LOCALHOST];
       } else if (reqEnv === 'testnet') {
-        jwt = result[JWT_STORAGE.TESTNET];
+        jwt = result[STORAGE_KEYS.JWT_TESTNET];
       } else if (reqEnv === 'production') {
-        jwt = result[JWT_STORAGE.PRODUCTION];
+        jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
       } else {
         // No environment specified - use current endpoint
         if (endpoint === 'localhost') {
-          jwt = result[JWT_STORAGE.LOCAL];
+          jwt = result[STORAGE_KEYS.JWT_LOCALHOST];
         } else if (endpoint === 'testnet') {
-          jwt = result[JWT_STORAGE.TESTNET];
+          jwt = result[STORAGE_KEYS.JWT_TESTNET];
         } else {
-          jwt = result[JWT_STORAGE.PRODUCTION];
+          jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
         }
       }
 
