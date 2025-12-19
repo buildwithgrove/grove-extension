@@ -3441,43 +3441,35 @@ function showToast(msg) {
     existing.remove();
   }
 
-  const testBanner = document.getElementById('testModeBanner');
-  const bannerVisible = testBanner && testBanner.classList.contains('visible');
-  let topPos;
-  if (bannerVisible) {
-    const bannerRect = testBanner.getBoundingClientRect();
-    topPos = (bannerRect.bottom + 8) + 'px';
-  } else {
-    const header = document.querySelector('.header');
-    const headerRect = header.getBoundingClientRect();
-    topPos = (headerRect.bottom + 8) + 'px';
-  }
-
   const div = document.createElement('div');
   div.className = 'grove-toast';
   div.style.position = 'fixed';
-  div.style.top = topPos;
-  div.style.right = '8px';
-  div.style.transform = 'translateX(120%)';
-  div.style.background = '#22c55e';
+  div.style.bottom = '72px'; // Above nav bar (64px + 8px gap)
+  div.style.left = '50%';
+  div.style.transform = 'translateX(-50%) translateY(20px)';
+  div.style.opacity = '0';
+  div.style.background = '#f0ad4e';
   div.style.color = '#000';
   div.style.padding = '8px 16px';
-  div.style.borderRadius = '20px';
-  div.style.fontSize = '12px';
+  div.style.borderRadius = '8px';
+  div.style.fontSize = '13px';
+  div.style.fontWeight = '500';
   div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
   div.style.zIndex = '2000';
-  div.style.transition = 'transform 0.3s ease-out';
+  div.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
   div.style.whiteSpace = 'nowrap';
   div.textContent = msg;
 
   document.body.appendChild(div);
 
   requestAnimationFrame(() => {
-    div.style.transform = 'translateX(0)';
+    div.style.transform = 'translateX(-50%) translateY(0)';
+    div.style.opacity = '1';
   });
 
   setTimeout(() => {
-    div.style.transform = 'translateX(120%)';
+    div.style.transform = 'translateX(-50%) translateY(20px)';
+    div.style.opacity = '0';
     setTimeout(() => div.remove(), 300);
   }, 2000);
 }
