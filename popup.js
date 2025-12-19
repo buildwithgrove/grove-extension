@@ -149,12 +149,7 @@ async function getActiveJWT() {
   return KeyManager.getActiveJWT();
 }
 
-// Default auto-reply message template
-const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I just sent you a tip on {chain} via #TipWithGrove!
-
-Tx: {tx_link}
-
-Tip creators you love → {grove_link}`;
+// DEFAULT_AUTO_REPLY_MESSAGE is loaded from src/ui/constants.js
 
 // X Login Elements (now on home screen)
 const likeOnTipToggle = document.getElementById('homeLikeOnTipToggle');

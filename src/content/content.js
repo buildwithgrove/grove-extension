@@ -1805,12 +1805,7 @@
     );
   }
 
-  // Default auto-reply message template (must match popup.js)
-  const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I just sent you a tip on {chain} via #TipWithGrove!
-
-Tx: {tx_link}
-
-Tip creators you love → {grove_link}`;
+  // DEFAULT_AUTO_REPLY_MESSAGE is loaded from src/ui/constants.js
 
   /**
    * Build auto-reply message from template
