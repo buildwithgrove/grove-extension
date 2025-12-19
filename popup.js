@@ -541,13 +541,15 @@ function setupEventListeners() {
     });
   }
 
-  // JWT
-  setupTokenBtn.addEventListener('click', () => {
-    // Navigate to settings -> Account and open edit
-    document.querySelector('[data-target="tab-settings"]').click();
-    showSettingsView('account');
-    showJwtEdit();
-  });
+  // JWT setup button (if present)
+  if (setupTokenBtn) {
+    setupTokenBtn.addEventListener('click', () => {
+      // Navigate to settings -> Account and open edit
+      document.querySelector('[data-target="tab-settings"]').click();
+      showSettingsView('account');
+      showJwtEdit();
+    });
+  }
 
   // Developer Mode Banner - click to go to developer settings
   const testModeBanner = document.getElementById('testModeBanner');
