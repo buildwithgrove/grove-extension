@@ -488,6 +488,9 @@ function setupEventListeners() {
     });
   }
 
+  // Onboarding Multi-step Navigation
+  setupOnboardingNavigation();
+
   // Tip Amount (Settings) - synced with Home
   if (settingsEditTipBtn) {
     settingsEditTipBtn.addEventListener('click', showSettingsTipEdit);
@@ -794,6 +797,67 @@ async function handleNavigation(e) {
   if (targetId === 'tab-settings') {
     showSettingsView('main');
   }
+}
+
+/**
+ * Onboarding Multi-step Navigation
+ */
+function setupOnboardingNavigation() {
+  const onboardingContainer = document.querySelector('.onboarding-container');
+  if (!onboardingContainer) return;
+
+  const steps = onboardingContainer.querySelectorAll('.onboarding-step');
+  const progressDots = onboardingContainer.querySelectorAll('.progress-dot');
+  const nextBtns = onboardingContainer.querySelectorAll('.onboarding-btn-next');
+  const backBtns = onboardingContainer.querySelectorAll('.onboarding-btn-back, .onboarding-btn-back-text');
+
+  function goToStep(stepNum) {
+    // Update steps
+    steps.forEach(step => {
+      const currentStep = parseInt(step.dataset.step);
+      if (currentStep === stepNum) {
+        step.classList.add('active');
+        step.style.animation = 'fadeSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+      } else {
+        step.classList.remove('active');
+      }
+    });
+
+    // Update progress dots
+    progressDots.forEach(dot => {
+      const dotStep = parseInt(dot.dataset.step);
+      dot.classList.remove('active', 'completed');
+      if (dotStep === stepNum) {
+        dot.classList.add('active');
+      } else if (dotStep < stepNum) {
+        dot.classList.add('completed');
+      }
+    });
+  }
+
+  // Next buttons
+  nextBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const nextStep = parseInt(btn.dataset.next);
+      goToStep(nextStep);
+    });
+  });
+
+  // Back buttons
+  backBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const prevStep = parseInt(btn.dataset.back);
+      goToStep(prevStep);
+    });
+  });
+
+  // Progress dot clicks
+  progressDots.forEach(dot => {
+    dot.addEventListener('click', () => {
+      const targetStep = parseInt(dot.dataset.step);
+      goToStep(targetStep);
+    });
+  });
 }
 
 /**

@@ -194,35 +194,107 @@
 
       <!-- Onboarding / No Token State -->
       <div id="onboardingState" class="hidden">
-        <div class="onboarding-card">
-          <div class="onboarding-icon">👋</div>
-          <h3>Welcome to Grove</h3>
+        <div class="onboarding-container">
+          <!-- Step 1: Welcome -->
+          <div class="onboarding-step active" data-step="1">
+            <div class="onboarding-visual">
+              <div class="welcome-glow"></div>
+              <div class="welcome-logo">
+                <img src="icons/logomark.png" alt="Grove" class="welcome-logo-img">
+              </div>
+            </div>
+            <div class="onboarding-content">
+              <h2 class="onboarding-title">Welcome to Grove</h2>
+              <p class="onboarding-subtitle">Support creators you love</p>
+            </div>
+            <button class="onboarding-btn-next" data-next="2">
+              <span>Get Started</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
 
-          <ul class="onboarding-features">
-            <li>
-              <span class="feature-icon">💸</span>
-              <div class="feature-text">
-                <strong>Tip with USDC</strong>
-                <span>Send tips to creators on 𝕏</span>
+          <!-- Step 2: How it works -->
+          <div class="onboarding-step" data-step="2">
+            <div class="onboarding-content">
+              <h2 class="onboarding-title">How it works</h2>
+              <div class="feature-cards">
+                <div class="feature-card">
+                  <div class="feature-card-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 2L11 13"></path>
+                      <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+                    </svg>
+                  </div>
+                  <div class="feature-card-content">
+                    <h3>Send USDC tips</h3>
+                    <p>One click on any post</p>
+                  </div>
+                </div>
+                <div class="feature-card">
+                  <div class="feature-card-icon earn-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="12" y1="1" x2="12" y2="23"></line>
+                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                  </div>
+                  <div class="feature-card-content">
+                    <h3>Earn from your posts</h3>
+                    <p>Add wallet to bio to receive</p>
+                  </div>
+                </div>
+                <div class="feature-card">
+                  <div class="feature-card-icon free-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                  </div>
+                  <div class="feature-card-content">
+                    <h3>Zero gas fees</h3>
+                    <p>We cover all costs</p>
+                  </div>
+                </div>
               </div>
-            </li>
-            <li>
-              <span class="feature-icon">💰</span>
-              <div class="feature-text">
-                <strong>Earn from posts</strong>
-                <span>Add wallet to bio to get tipped</span>
-              </div>
-            </li>
-            <li>
-              <span class="feature-icon">⛽</span>
-              <div class="feature-text">
-                <strong>No gas fees</strong>
-                <span>Grove covers all costs</span>
-              </div>
-            </li>
-          </ul>
+            </div>
+            <button class="onboarding-btn-next" data-next="3">
+              <span>Continue</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
 
-          <a class="btn-primary btn-onboarding" href="https://app.grove.city/" target="_blank" rel="noopener noreferrer">Get Started ↗</a>
+          <!-- Step 3: Connect -->
+          <div class="onboarding-step" data-step="3">
+            <div class="onboarding-visual">
+              <div class="connect-visual">
+                <div class="connect-ring"></div>
+                <div class="connect-icon">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 2L11 13"></path>
+                    <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div class="onboarding-content">
+              <h2 class="onboarding-title">Ready to tip?</h2>
+              <p class="onboarding-subtitle">Create an account to get started</p>
+            </div>
+            <a class="onboarding-btn-primary" href="https://app.grove.city/" target="_blank" rel="noopener noreferrer">
+              <span>Create Account</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
+          </div>
+
+          <!-- Progress Dots (at bottom) -->
+          <div class="onboarding-progress">
+            <div class="progress-dot active" data-step="1"></div>
+            <div class="progress-dot" data-step="2"></div>
+            <div class="progress-dot" data-step="3"></div>
+          </div>
         </div>
       </div>
 
