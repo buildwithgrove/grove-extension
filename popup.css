@@ -1010,16 +1010,6 @@ button.section-card-btn:hover .quick-access-icon {
   box-shadow: 0 0 30px rgba(240, 173, 78, 0.6);
 }
 
-.onboarding-hint {
-  font-size: 10px;
-  color: var(--color-text-tertiary);
-  margin-top: 12px;
-  margin-bottom: 0;
-  background: var(--color-surface);
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-}
 
 .onboarding-card .info-text-xs {
   margin-top: 14px;
