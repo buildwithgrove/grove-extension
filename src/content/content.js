@@ -2009,6 +2009,8 @@ Tip creators you love → {grove_link}`;
                 }
               }
 
+              console.log("[Grove Extension] About to show feedback - didLike:", didLike, "didReply:", didReply, "likeFailed:", likeFailed, "replyFailed:", replyFailed);
+
               // Show feedback message based on what happened
               if (didLike || didReply) {
                 // At least one action succeeded
