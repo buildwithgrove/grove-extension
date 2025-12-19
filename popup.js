@@ -192,8 +192,8 @@ async function init() {
         await updateAuthState(null);
         await loadJwtSlots();
         await prevKeysUI.updateCount();
-        AccountDisplay.AccountDisplay.updateEarnAddressDisplay(null);
-        AccountDisplay.AccountDisplay.updateEnsNameDisplay(null);
+        AccountDisplay.updateEarnAddressDisplay(null);
+        AccountDisplay.updateEnsNameDisplay(null);
         if (balanceAmount) {
           balanceAmount.textContent = '0.00';
         }
