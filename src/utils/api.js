@@ -1,13 +1,10 @@
 /**
  * API Utility
  * Handles communication with Grove backend
- * Requires: src/config/endpoints.js, src/config/chains.js
  */
 
 class GroveAPI {
-  // Use shared configs from src/config/endpoints.js and src/config/chains.js
-  // These are loaded before api.js in both manifest.json and popup.html
-  static ENDPOINTS = typeof API_ENDPOINTS !== 'undefined' ? API_ENDPOINTS : {
+  static ENDPOINTS = {
     'production': 'https://api.grove.city',
     'testnet': 'https://api.testnet.grove.city',
     'localhost': 'http://localhost:8000',
@@ -16,7 +13,7 @@ class GroveAPI {
 
   static DEFAULT_TIP_AMOUNT = 0.05; // $0.05 default
 
-  static CHAIN_RPC_ENDPOINTS = typeof CHAIN_CONFIG !== 'undefined' ? CHAIN_CONFIG : {
+  static CHAIN_RPC_ENDPOINTS = {
     'base': {
       name: 'Base',
       chainId: 8453,
