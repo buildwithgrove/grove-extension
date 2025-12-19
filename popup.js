@@ -1456,7 +1456,7 @@ async function loadXLoginStatus() {
       if (homeTwitterSettingsBtn) homeTwitterSettingsBtn.classList.add('hidden');
       if (homeTwitterSettingsPanel) homeTwitterSettingsPanel.classList.remove('hidden');
     } else {
-      if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Settings';
+      if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Setup';
       if (homeXConnectBtn) homeXConnectBtn.classList.remove('hidden');
       if (homeXSettingsGear) homeXSettingsGear.classList.add('hidden');
       // Show card when not connected
@@ -1486,11 +1486,11 @@ async function handleXLogin() {
     if (homeXConnectBtn) {
       homeXConnectBtn.textContent = 'Connect';
     }
-    await loadXLoginStatus();
 
-    // Only show success toast if actually logged in
+    // Only update UI and show toast if actually logged in
     const isLoggedIn = await XAuth.isLoggedIn();
     if (isLoggedIn) {
+      await loadXLoginStatus();
       showToast('Connected to 𝕏');
     }
   } catch (error) {
