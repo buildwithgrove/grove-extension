@@ -1466,26 +1466,23 @@ async function handleXDisconnect() {
 
 async function handleXLogin() {
   try {
-    if (homeXLoginBtn) {
-      homeXLoginBtn.textContent = 'Connecting...';
-      homeXLoginBtn.disabled = true;
+    if (homeXConnectBtn) {
+      homeXConnectBtn.textContent = 'Connecting...';
     }
 
     await XAuth.login();
 
-    // Re-enable button and refresh UI from stored state
-    if (homeXLoginBtn) {
-      homeXLoginBtn.textContent = 'Connect';
-      homeXLoginBtn.disabled = false;
+    // Refresh UI from stored state
+    if (homeXConnectBtn) {
+      homeXConnectBtn.textContent = 'Connect';
     }
     await loadXLoginStatus();
 
     showToast('Connected to 𝕏');
   } catch (error) {
     console.error('[Grove Extension] X login failed:', error);
-    if (homeXLoginBtn) {
-      homeXLoginBtn.textContent = 'Connect';
-      homeXLoginBtn.disabled = false;
+    if (homeXConnectBtn) {
+      homeXConnectBtn.textContent = 'Connect';
     }
     // Truncate long error messages to prevent UI overflow
     const errorMsg = error.message?.length > 50
