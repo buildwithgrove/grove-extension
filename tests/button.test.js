@@ -37,7 +37,10 @@ beforeEach(() => {
 
   // Load constants first (defines GROVE_COLORS)
   loadBrowserScript('src/ui/constants.js', context);
-  
+
+  // Load darkMode (defines detectDarkMode, isColorDark)
+  loadBrowserScript('src/utils/darkMode.js', context);
+
   // Load TipButton
   loadBrowserScript('src/ui/button.js', context);
 
@@ -96,36 +99,30 @@ describe('TipButton', () => {
     });
   });
 
-  describe('isColorDark', () => {
+  describe('isColorDark (from darkMode.js)', () => {
     it('should return true for black', () => {
-      const button = new TipButton(() => {});
-      expect(button.isColorDark('rgb(0, 0, 0)')).toBe(true);
+      expect(context.isColorDark('rgb(0, 0, 0)')).toBe(true);
     });
 
     it('should return false for white', () => {
-      const button = new TipButton(() => {});
-      expect(button.isColorDark('rgb(255, 255, 255)')).toBe(false);
+      expect(context.isColorDark('rgb(255, 255, 255)')).toBe(false);
     });
 
     it('should return true for dark gray', () => {
-      const button = new TipButton(() => {});
-      expect(button.isColorDark('rgb(50, 50, 50)')).toBe(true);
+      expect(context.isColorDark('rgb(50, 50, 50)')).toBe(true);
     });
 
     it('should return false for light gray', () => {
-      const button = new TipButton(() => {});
-      expect(button.isColorDark('rgb(200, 200, 200)')).toBe(false);
+      expect(context.isColorDark('rgb(200, 200, 200)')).toBe(false);
     });
 
     it('should handle rgba format', () => {
-      const button = new TipButton(() => {});
-      expect(button.isColorDark('rgba(0, 0, 0, 1)')).toBe(true);
-      expect(button.isColorDark('rgba(255, 255, 255, 0.5)')).toBe(false);
+      expect(context.isColorDark('rgba(0, 0, 0, 1)')).toBe(true);
+      expect(context.isColorDark('rgba(255, 255, 255, 0.5)')).toBe(false);
     });
 
     it('should default to dark for unparseable colors', () => {
-      const button = new TipButton(() => {});
-      expect(button.isColorDark('invalid')).toBe(true);
+      expect(context.isColorDark('invalid')).toBe(true);
     });
   });
 
