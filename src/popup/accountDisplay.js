@@ -1,12 +1,12 @@
 /**
- * Earn Tab Module
+ * Account Display Module
  * Handles balance display, address display, ENS resolution, and copy functionality
  */
 
 const DEFAULT_BALANCE_DISPLAY = '0.00';
 const DEFAULT_CHAIN = 'base';
 
-const EarnTab = {
+const AccountDisplay = {
   // DOM element references
   elements: {
     balanceDisplay: null,

@@ -162,7 +162,7 @@ async function init() {
   await KeyManager.migrateFromLegacy();
 
   // Initialize Earn Tab module
-  EarnTab.init(
+  AccountDisplay.init(
     {
       balanceDisplay,
       balanceAmount,
@@ -192,8 +192,8 @@ async function init() {
         await updateAuthState(null);
         await loadJwtSlots();
         await prevKeysUI.updateCount();
-        EarnTab.EarnTab.updateEarnAddressDisplay(null);
-        EarnTab.EarnTab.updateEnsNameDisplay(null);
+        AccountDisplay.AccountDisplay.updateEarnAddressDisplay(null);
+        AccountDisplay.AccountDisplay.updateEnsNameDisplay(null);
         if (balanceAmount) {
           balanceAmount.textContent = '0.00';
         }
@@ -268,7 +268,7 @@ async function init() {
     await updateAuthState(key);
     await prevKeysUI.updateCount();
     await prevKeysUI.render();
-    await EarnTab.fetchBalance();
+    await AccountDisplay.fetchBalance();
 
     showToast(`Connected to ${slotConfig?.label || environment}`);
 
@@ -287,7 +287,7 @@ async function init() {
   await loadChain();
   await loadEndpoint();
   await prevKeysUI.updateCount();
-  await EarnTab.loadClientAddress();
+  await AccountDisplay.loadClientAddress();
   loadExtensionVersion();
   checkForUpdates();
   setupEventListeners();
@@ -299,10 +299,10 @@ async function init() {
   updateNetworkSelectorVisibility(endpointInit);
 
   // Fetch balance after everything is loaded (also updates client address)
-  await EarnTab.fetchBalance();
+  await AccountDisplay.fetchBalance();
 
   // Resolve ENS name in the background (don't await to avoid blocking UI)
-  EarnTab.loadAndResolveEnsName();
+  AccountDisplay.loadAndResolveEnsName();
 
   // Show earn tab badge only if user hasn't visited earn tab yet
   const earnTabSeen = await chrome.storage.local.get([STORAGE_KEYS.EARN_TAB_SEEN]);
@@ -354,7 +354,7 @@ function handleVisibilityChange() {
 
   // Refresh based on active tab
   if (tabId === 'tab-home') {
-    EarnTab.fetchBalance();
+    AccountDisplay.fetchBalance();
   } else if (tabId === 'tab-history') {
     loadHistory();
   } else if (tabId === 'tab-leaderboard') {
@@ -726,7 +726,7 @@ function setupEventListeners() {
 
   // Earn Tab - Copy Address Button (copies ENS name if available, otherwise 0x address)
   if (copyEarnAddressBtn) {
-    copyEarnAddressBtn.addEventListener('click', () => EarnTab.copyEarnAddress());
+    copyEarnAddressBtn.addEventListener('click', () => AccountDisplay.copyEarnAddress());
   }
 
   // Listen for storage changes (e.g., when webapp injects JWT via external messaging)
@@ -738,7 +738,7 @@ function setupEventListeners() {
       console.log('[Grove Extension] JWT changed in storage, refreshing...');
       const jwt = await getActiveJWT();
       await updateAuthState(jwt);
-      await EarnTab.fetchBalance();
+      await AccountDisplay.fetchBalance();
     }
 
     // Handle environment (dev mode) changes from background
@@ -768,7 +768,7 @@ function setupEventListeners() {
       const endpointResult = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
       const endpointValue = endpointResult[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
       updateNetworkSelectorVisibility(endpointValue);
-      await EarnTab.fetchBalance();
+      await AccountDisplay.fetchBalance();
     }
 
     if (changes[STORAGE_KEYS.CHAIN]) {
@@ -776,7 +776,7 @@ function setupEventListeners() {
       const newChain = changes[STORAGE_KEYS.CHAIN].newValue;
       updateChainUI(newChain);
       updateTopUpLink(newChain);
-      await EarnTab.fetchBalance();
+      await AccountDisplay.fetchBalance();
     }
   });
 }
@@ -802,7 +802,7 @@ async function handleNavigation(e) {
 
   // Refresh balance when navigating to home
   if (targetId === 'tab-home') {
-    await EarnTab.fetchBalance();
+    await AccountDisplay.fetchBalance();
   }
 
   // Load history when navigating to history tab
@@ -1113,7 +1113,7 @@ async function saveJwt() {
   await prevKeysUI.updateCount();
 
   // Fetch balance with new token
-  await EarnTab.fetchBalance();
+  await AccountDisplay.fetchBalance();
 
   // Go back to home if we were onboarding
   if (!onboardingState.classList.contains('hidden')) {
@@ -1165,7 +1165,7 @@ async function saveJwtForSlot() {
   const activeSlot = await KeyManager.getActiveSlotId();
   if (currentEditSlot === activeSlot) {
     await updateAuthState(token);
-    await EarnTab.fetchBalance();
+    await AccountDisplay.fetchBalance();
   }
 }
 
@@ -1217,8 +1217,8 @@ async function removeJwt() {
   if (slotToRemove === activeSlot) {
     await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
     await updateAuthState(null);
-    EarnTab.updateEarnAddressDisplay(null);
-    EarnTab.updateEnsNameDisplay(null);
+    AccountDisplay.updateEarnAddressDisplay(null);
+    AccountDisplay.updateEnsNameDisplay(null);
   }
 
   hideJwtEdit();
@@ -1272,8 +1272,8 @@ async function clearAllKeys() {
   // Clear auth state
   await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
   await updateAuthState(null);
-  EarnTab.updateEarnAddressDisplay(null);
-  EarnTab.updateEnsNameDisplay(null);
+  AccountDisplay.updateEarnAddressDisplay(null);
+  AccountDisplay.updateEnsNameDisplay(null);
 
   // Update UI
   await loadJwtSlots();
@@ -1514,8 +1514,8 @@ const homeXSettingsGear = document.getElementById('homeXSettingsGear');
 // X OAuth functions are imported from src/auth/xOAuthPopup.js
 // loadXLoginStatus, handleXDisconnect, handleXLogin are available globally
 
-// Earn Tab functions are imported from src/popup/earnTab.js
-// EarnTab.fetchBalance, EarnTab.loadClientAddress, EarnTab.copyEarnAddress, etc.
+// Account display functions are imported from src/popup/accountDisplay.js
+// AccountDisplay.fetchBalance, AccountDisplay.loadClientAddress, AccountDisplay.copyEarnAddress, etc.
 
 /**
  * Environment
@@ -1597,15 +1597,15 @@ async function handleDevModeToggle(e) {
     // Switch to testnet JWT context
     const testnetJwt = await KeyManager.getJWT('testnet');
     await updateAuthState(testnetJwt);
-    EarnTab.updateEarnAddressDisplay(null); // Clear address until balance is fetched
-    EarnTab.updateEnsNameDisplay(null);
+    AccountDisplay.updateEarnAddressDisplay(null); // Clear address until balance is fetched
+    AccountDisplay.updateEnsNameDisplay(null);
 
     // Update slot UI to show testnet as active
     await loadJwtSlots();
 
     if (testnetJwt) {
-      await EarnTab.fetchBalance();
-      EarnTab.loadAndResolveEnsName();
+      await AccountDisplay.fetchBalance();
+      AccountDisplay.loadAndResolveEnsName();
       showToast('Switched to Testnet');
     } else {
       showToast('Developer Mode - Connect via testnet app');
@@ -1635,15 +1635,15 @@ async function handleDevModeToggle(e) {
     // Switch to production JWT context
     const prodJwt = await KeyManager.getJWT('production');
     await updateAuthState(prodJwt);
-    EarnTab.updateEarnAddressDisplay(null); // Clear address until balance is fetched
-    EarnTab.updateEnsNameDisplay(null);
+    AccountDisplay.updateEarnAddressDisplay(null); // Clear address until balance is fetched
+    AccountDisplay.updateEnsNameDisplay(null);
 
     // Update slot UI to show mainnet as active
     await loadJwtSlots();
 
     if (prodJwt) {
-      await EarnTab.fetchBalance();
-      EarnTab.loadAndResolveEnsName();
+      await AccountDisplay.fetchBalance();
+      AccountDisplay.loadAndResolveEnsName();
       showToast('Switched to Mainnet');
     } else {
       showToast('Developer Mode Disabled - Connect via grove.city');
@@ -1706,7 +1706,7 @@ async function handleEndpointChange(e) {
   await updateAuthState(jwt);
   updateChainUI(chain);
   updateTopUpLink(chain);
-  await EarnTab.fetchBalance();
+  await AccountDisplay.fetchBalance();
 
   if (chainChangedBecauseEndpoint) {
     historyTransactions = [];
@@ -1847,7 +1847,7 @@ async function handleChainSelection(e, silent = false) {
   if (!silent) showToast(`Switched to ${NETWORKS[chain].name}`);
 
   // Reload balance
-  EarnTab.fetchBalance();
+  AccountDisplay.fetchBalance();
 
   // Reload history (reset state and refetch)
   historyTransactions = [];
