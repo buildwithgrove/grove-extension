@@ -141,7 +141,7 @@ const DEFAULT_TIP_AMOUNT = 0.10;
 const DEFAULT_CHAIN = 'base';
 const DEFAULT_ENV = 'prod';
 const DEFAULT_ENDPOINT = 'production';
-const DEFAULT_BALANCE_DISPLAY = '0.00';
+// FormatUtils.DEFAULT_BALANCE_DISPLAY is now in FormatUtils
 const TOP_UP_URLS = {
   mainnet: 'https://app.grove.city/profile?tab=tip',
   testnet: 'https://app.testnet.grove.city/profile?tab=tip'
@@ -1475,14 +1475,6 @@ const homeXSettingsGear = document.getElementById('homeXSettingsGear');
 /**
  * Balance
  */
-function formatBalance(balance) {
-  const parsed = parseFloat(balance);
-  if (Number.isNaN(parsed)) {
-    return DEFAULT_BALANCE_DISPLAY;
-  }
-  return parsed.toFixed(2);
-}
-
 async function fetchBalance() {
   balanceDisplay.classList.add('loading');
 
@@ -1502,7 +1494,7 @@ async function fetchBalance() {
   if (cachedBalance !== undefined) {
     balanceAmount.textContent = cachedBalance;
   } else {
-    balanceAmount.textContent = DEFAULT_BALANCE_DISPLAY;
+    balanceAmount.textContent = FormatUtils.DEFAULT_BALANCE_DISPLAY;
   }
 
   try {
@@ -1539,7 +1531,7 @@ async function fetchBalance() {
         await prevKeysUI.updateCount();
         updateEarnAddressDisplay(null);
         updateEnsNameDisplay(null);
-        balanceAmount.textContent = DEFAULT_BALANCE_DISPLAY;
+        balanceAmount.textContent = FormatUtils.DEFAULT_BALANCE_DISPLAY;
 
         showToast('API key invalid or expired. Key archived.');
       }
@@ -1570,13 +1562,13 @@ async function fetchBalance() {
 
     if (chainBalance) {
       // Format balance (remove trailing zeros, max 2 decimal places for display)
-      const formattedBalance = formatBalance(chainBalance.balance);
+      const formattedBalance = FormatUtils.formatBalance(chainBalance.balance);
       balanceAmount.textContent = formattedBalance;
       cachedBalances[chain] = formattedBalance;
       await chrome.storage.local.set({ [STORAGE_KEYS.LAST_BALANCES]: cachedBalances });
     } else {
-      balanceAmount.textContent = DEFAULT_BALANCE_DISPLAY;
-      cachedBalances[chain] = DEFAULT_BALANCE_DISPLAY;
+      balanceAmount.textContent = FormatUtils.DEFAULT_BALANCE_DISPLAY;
+      cachedBalances[chain] = FormatUtils.DEFAULT_BALANCE_DISPLAY;
       await chrome.storage.local.set({ [STORAGE_KEYS.LAST_BALANCES]: cachedBalances });
     }
   } catch (e) {
@@ -2271,7 +2263,7 @@ async function loadTopTippers() {
     const rankIcon = `<span class="rank-number">${i + 1}</span>`;
 
     // Label: wallet address or username
-    let labelHtml = formatAddress(entry.address);
+    let labelHtml = FormatUtils.formatAddress(entry.address);
 
     // Description: latest tip recipient (prefer post/tweet URL over profile URL)
     let descriptionHtml;
@@ -2279,7 +2271,7 @@ async function loadTopTippers() {
       const postUrl = ctx.source_post_url || parsed.postUrl;
       const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
       const linkUrl = postUrl || profileUrl;
-      const linkText = postUrl ? `@${escapeHtml(ctx.recipient_username)}'s post` : `@${escapeHtml(ctx.recipient_username)}`;
+      const linkText = postUrl ? `@${FormatUtils.escapeHtml(ctx.recipient_username)}'s post` : `@${FormatUtils.escapeHtml(ctx.recipient_username)}`;
       descriptionHtml = `Latest tip: <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${linkText}</a>`;
     } else if (parsed.profileHandle) {
       const linkUrl = parsed.postUrl || parsed.profileUrl;
@@ -2297,7 +2289,7 @@ async function loadTopTippers() {
           <div class="transaction-item-description">${descriptionHtml}</div>
         </div>
         <div class="transaction-item-right">
-          <div class="transaction-item-amount received">${formatUSD(entry.totalUSD)}</div>
+          <div class="transaction-item-amount received">${FormatUtils.formatUSD(entry.totalUSD)}</div>
           <div class="transaction-item-time">${entry.tipCount} tips</div>
         </div>
       </div>
@@ -2337,11 +2329,11 @@ async function loadTopEarners() {
     let labelHtml;
     if (ctx.recipient_username) {
       const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
-      labelHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.recipient_username)}</a>`;
+      labelHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${FormatUtils.escapeHtml(ctx.recipient_username)}</a>`;
     } else if (parsed.profileHandle && parsed.profileUrl) {
       labelHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
     } else {
-      labelHtml = formatAddress(entry.address);
+      labelHtml = FormatUtils.formatAddress(entry.address);
     }
 
     // Description: tip count
@@ -2371,7 +2363,7 @@ async function loadTopEarners() {
           <div class="transaction-item-description">${descriptionHtml}</div>
         </div>
         <div class="transaction-item-right">
-          <div class="transaction-item-amount received">${formatUSD(entry.totalUSD)}</div>
+          <div class="transaction-item-amount received">${FormatUtils.formatUSD(entry.totalUSD)}</div>
           <div class="transaction-item-time">${entry.tipCount} tips</div>
         </div>
         <div class="transaction-item-links">
@@ -2380,18 +2372,6 @@ async function loadTopEarners() {
       </div>
     `;
   }).join('');
-}
-
-/**
- * Format USD for pool display (compact: $1.5K, $2.3M)
- */
-function formatPoolUSD(value) {
-  if (value >= 1000000) {
-    return `$${(value / 1000000).toFixed(1)}M`;
-  } else if (value >= 1000) {
-    return `$${(value / 1000).toFixed(1)}K`;
-  }
-  return `$${value.toFixed(2)}`;
 }
 
 /**
@@ -2419,15 +2399,15 @@ async function loadPoolStats() {
     // Update DOM - Hero card
     const availableEl = document.getElementById('pool-available');
     if (availableEl) {
-      availableEl.textContent = formatPoolUSD(available);
+      availableEl.textContent = FormatUtils.formatPoolUSD(available);
       availableEl.classList.remove('loading');
     }
 
     const tippedEl = document.getElementById('pool-tipped');
-    if (tippedEl) tippedEl.textContent = `${formatPoolUSD(totalTipped)} earned`;
+    if (tippedEl) tippedEl.textContent = `${FormatUtils.formatPoolUSD(totalTipped)} earned`;
 
     const fundedEl = document.getElementById('pool-funded');
-    if (fundedEl) fundedEl.textContent = `${formatPoolUSD(totalFunded)} deposited`;
+    if (fundedEl) fundedEl.textContent = `${FormatUtils.formatPoolUSD(totalFunded)} deposited`;
 
     const barFillEl = document.getElementById('pool-bar-fill');
     if (barFillEl) barFillEl.style.width = `${Math.min(percentage, 100)}%`;
@@ -2439,10 +2419,10 @@ async function loadPoolStats() {
     // Update tippers and earners counts
     if (statsRes.success) {
       const tippersEl = document.getElementById('stat-tippers');
-      if (tippersEl) tippersEl.textContent = formatStatCount(statsRes.data.tippers);
+      if (tippersEl) tippersEl.textContent = FormatUtils.formatStatCount(statsRes.data.tippers);
 
       const recipientsEl = document.getElementById('stat-recipients');
-      if (recipientsEl) recipientsEl.textContent = formatStatCount(statsRes.data.recipients);
+      if (recipientsEl) recipientsEl.textContent = FormatUtils.formatStatCount(statsRes.data.recipients);
     }
   } catch (error) {
     console.error('[Grove Extension] Pool stats error:', error);
@@ -2491,12 +2471,12 @@ async function loadLiveTips(isRefresh = false) {
     let labelHtml;
     if (ctx.recipient_username) {
       const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
-      labelHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.recipient_username)}</a>`;
+      labelHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${FormatUtils.escapeHtml(ctx.recipient_username)}</a>`;
     } else if (parsed.profileHandle) {
-      labelHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${escapeHtml(parsed.profileHandle)}</a>`;
+      labelHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.escapeHtml(parsed.profileHandle)}</a>`;
     } else {
       const addressUrl = getAddressExplorerUrl(entry.network, entry.address);
-      labelHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(entry.address)}</a>`;
+      labelHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.formatAddress(entry.address)}</a>`;
     }
 
     // Description: "Tip Received"
@@ -2534,8 +2514,8 @@ async function loadLiveTips(isRefresh = false) {
           <div class="transaction-item-description">${descriptionHtml}</div>
         </div>
         <div class="transaction-item-right">
-          <div class="transaction-item-amount received">${formatUSD(entry.amountUSD)}</div>
-          <div class="transaction-item-time">${formatTimeAgo(entry.confirmedAt)}</div>
+          <div class="transaction-item-amount received">${FormatUtils.formatUSD(entry.amountUSD)}</div>
+          <div class="transaction-item-time">${FormatUtils.formatTimeAgo(entry.confirmedAt)}</div>
         </div>
         <div class="transaction-item-links">
           ${platformLinkHtml}
@@ -2583,40 +2563,6 @@ function refreshLeaderboard() {
 }
 
 /**
- * Format USD value for stats display (compact)
- */
-function formatStatUSD(value) {
-  if (value >= 999500) {
-    // 999,500+ rounds to 1M or shows as X.XM
-    return '$' + (value / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  } else if (value >= 10000) {
-    return '$' + Math.round(value / 1000) + 'K';
-  } else if (value >= 1000) {
-    return '$' + (value / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-  } else if (value >= 100) {
-    return '$' + Math.round(value);
-  } else {
-    return '$' + value.toFixed(2);
-  }
-}
-
-/**
- * Format count value for stats display (compact)
- */
-function formatStatCount(value) {
-  if (value >= 999500) {
-    // 999,500+ rounds to 1M or shows as X.XM
-    return (value / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  } else if (value >= 10000) {
-    return Math.round(value / 1000) + 'K';
-  } else if (value >= 1000) {
-    return (value / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-  } else {
-    return value.toString();
-  }
-}
-
-/**
  * Load leaderboard stats
  */
 async function loadLeaderboardStats() {
@@ -2638,19 +2584,19 @@ async function loadLeaderboardStats() {
 
     if (result.success) {
       if (depositsEl) {
-        depositsEl.textContent = formatStatUSD(result.data.deposits);
+        depositsEl.textContent = FormatUtils.formatStatUSD(result.data.deposits);
         depositsEl.classList.remove('loading');
       }
       if (tipsEl) {
-        tipsEl.textContent = formatStatUSD(result.data.tips);
+        tipsEl.textContent = FormatUtils.formatStatUSD(result.data.tips);
         tipsEl.classList.remove('loading');
       }
       if (tippersEl) {
-        tippersEl.textContent = formatStatCount(result.data.tippers);
+        tippersEl.textContent = FormatUtils.formatStatCount(result.data.tippers);
         tippersEl.classList.remove('loading');
       }
       if (recipientsEl) {
-        recipientsEl.textContent = formatStatCount(result.data.recipients);
+        recipientsEl.textContent = FormatUtils.formatStatCount(result.data.recipients);
         recipientsEl.classList.remove('loading');
       }
     }
@@ -2859,8 +2805,8 @@ function renderHistoryList() {
     const isFailed = tx.status === 'failed';
     const icon = isFailed ? getTransactionIcon('failed') : getTransactionIcon(tx.type);
     const label = isFailed ? 'Tip Failed' : getTransactionLabel(tx.type);
-    const amount = formatHistoryAmount(tx);
-    const time = formatRelativeTime(tx.created_at);
+    const amount = FormatUtils.formatHistoryAmount(tx);
+    const time = FormatUtils.formatRelativeTime(tx.created_at);
     const amountClass = isFailed ? 'failed' : (tx.type === 'tip_sent' ? 'sent' : 'received');
 
     const explorerUrl = getExplorerUrl(tx.network, tx.tx_hash);
@@ -2874,37 +2820,37 @@ function renderHistoryList() {
       // For sent tips: show recipient
       if (ctx.recipient_username) {
         const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
-        descriptionHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.recipient_username)}</a>`;
+        descriptionHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${FormatUtils.escapeHtml(ctx.recipient_username)}</a>`;
       } else if (parsed.profileHandle && parsed.profileUrl) {
         descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
       } else if (parsed.postUrl) {
-        descriptionHtml = `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${truncateDestination(tx.destination)}</a>`;
+        descriptionHtml = `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.truncateDestination(tx.destination)}</a>`;
       } else if (tx.counterparty_address) {
         const addressUrl = getAddressExplorerUrl(tx.network, tx.counterparty_address);
-        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(tx.counterparty_address)}</a>`;
+        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.formatAddress(tx.counterparty_address)}</a>`;
       } else {
-        descriptionHtml = formatNetwork(tx.network);
+        descriptionHtml = FormatUtils.formatNetwork(tx.network);
       }
     } else if (tx.type === 'tip_received') {
       // For received tips: show sender if available
       if (ctx.sender_username) {
         const profileUrl = ctx.sender_profile_url || `https://x.com/${ctx.sender_username}`;
-        descriptionHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.sender_username)}</a>`;
+        descriptionHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${FormatUtils.escapeHtml(ctx.sender_username)}</a>`;
       } else if (tx.counterparty_address) {
         const addressUrl = getAddressExplorerUrl(tx.network, tx.counterparty_address);
-        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(tx.counterparty_address)}</a>`;
+        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.formatAddress(tx.counterparty_address)}</a>`;
       } else if (parsed.profileHandle && parsed.profileUrl) {
         descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
       } else {
-        descriptionHtml = formatNetwork(tx.network);
+        descriptionHtml = FormatUtils.formatNetwork(tx.network);
       }
     } else {
       // Deposits and other types
       if (tx.counterparty_address) {
         const addressUrl = getAddressExplorerUrl(tx.network, tx.counterparty_address);
-        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(tx.counterparty_address)}</a>`;
+        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.formatAddress(tx.counterparty_address)}</a>`;
       } else {
-        descriptionHtml = formatNetwork(tx.network);
+        descriptionHtml = FormatUtils.formatNetwork(tx.network);
       }
     }
 
@@ -3018,14 +2964,14 @@ function getTransactionDescription(tx) {
   if (tx.type === 'tip_sent' || tx.type === 'tip_received') {
     if (tx.destination) {
       // Show destination (twitter.com/username)
-      return truncateDestination(tx.destination);
+      return FormatUtils.truncateDestination(tx.destination);
     }
     if (tx.counterparty_address) {
-      return formatAddress(tx.counterparty_address);
+      return FormatUtils.formatAddress(tx.counterparty_address);
     }
-    return formatNetwork(tx.network);
+    return FormatUtils.formatNetwork(tx.network);
   }
-  return formatNetwork(tx.network);
+  return FormatUtils.formatNetwork(tx.network);
 }
 
 /**
@@ -3093,112 +3039,7 @@ function getDestinationUrl(destination) {
 }
 
 // parseDestination is loaded from src/parsers/destination.js
-
-/**
- * Truncate destination string
- */
-function truncateDestination(dest) {
-  if (!dest) return '';
-  if (dest.length <= 24) return dest;
-  return dest.slice(0, 24) + '...';
-}
-
-/**
- * Format network name
- */
-function formatNetwork(network) {
-  if (!network) return '';
-  if (network.includes('base')) return 'Base';
-  if (network.includes('solana')) return 'Solana';
-  return network.charAt(0).toUpperCase() + network.slice(1);
-}
-
-/**
- * Format history amount with sign
- */
-function formatHistoryAmount(tx) {
-  const amount = parseFloat(tx.amount_usd) || 0;
-  const formatted = formatUSD(amount);
-  if (tx.type === 'tip_sent') {
-    return '-' + formatted;
-  }
-  return '+' + formatted;
-}
-
-/**
- * Format relative time (enhanced version)
- */
-function formatRelativeTime(dateString) {
-  if (!dateString) return '';
-  const now = new Date();
-  const then = new Date(dateString);
-  const seconds = Math.floor((now - then) / 1000);
-
-  if (seconds < 60) return 'Just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-
-  const days = Math.floor(seconds / 86400);
-  if (days === 1) return 'Yesterday';
-  if (days < 7) return `${days}d ago`;
-
-  // Format as date for older items
-  return then.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-/**
- * Format Address (shorten)
- */
-function formatAddress(address) {
-  if (!address) return 'Unknown';
-  if (address.length <= 12) return address;
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
-
-/**
- * Format USD Amount (always at least 2 decimals, up to 6 when needed)
- */
-function formatUSD(amount) {
-  if (amount >= 1000) {
-    return '$' + amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-  if (amount >= 0.01) {
-    return '$' + amount.toFixed(2);
-  }
-  // For very small amounts, show up to 6 decimals but keep at least 2
-  const formatted = amount.toFixed(6).replace(/0+$/, '');
-  // Ensure at least 2 decimal places
-  const decimalPart = formatted.split('.')[1] || '';
-  if (decimalPart.length < 2) {
-    return '$' + amount.toFixed(2);
-  }
-  return '$' + formatted;
-}
-
-/**
- * Format Time Ago
- */
-function formatTimeAgo(timestamp) {
-  if (!timestamp) return '';
-  const now = new Date();
-  const then = new Date(timestamp);
-  const seconds = Math.floor((now - then) / 1000);
-
-  if (seconds < 60) return 'just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  return `${Math.floor(seconds / 86400)}d ago`;
-}
-
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(str) {
-  if (!str) return '';
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
+// Format utilities are loaded from src/utils/formatUtils.js
 
 /**
  * Tip Button Intro Modal
