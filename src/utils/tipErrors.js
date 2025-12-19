@@ -261,18 +261,19 @@
       const spaceBelow = window.innerHeight - anchorRect.bottom;
       const needsFlip = spaceBelow < bubbleRect.height + gap + padding;
 
+      // Use viewport coordinates directly since bubble is position: fixed
       let top;
       if (needsFlip) {
         // Position above the button
-        top = anchorRect.top + window.scrollY - bubbleRect.height - gap;
+        top = anchorRect.top - bubbleRect.height - gap;
       } else {
         // Position below the button
-        top = anchorRect.bottom + window.scrollY + gap;
+        top = anchorRect.bottom + gap;
       }
 
       // Center horizontally under anchor, then clamp to viewport
-      let left = anchorRect.left + window.scrollX + (anchorRect.width / 2) - (bubbleRect.width / 2);
-      left = Math.max(padding, Math.min(left, window.scrollX + window.innerWidth - bubbleRect.width - padding));
+      let left = anchorRect.left + (anchorRect.width / 2) - (bubbleRect.width / 2);
+      left = Math.max(padding, Math.min(left, window.innerWidth - bubbleRect.width - padding));
 
       return { top, left };
     }
