@@ -273,7 +273,7 @@ body {
   padding: 6px 12px;
   background-color: var(--color-surface);
   border: 1px solid transparent;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   color: var(--color-text-primary);
   font-size: 13px;
   font-weight: 600;
@@ -551,7 +551,7 @@ body {
   background-color: var(--color-surface-hover);
   color: var(--color-text-primary);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   font-weight: 600;
   font-size: 14px;
   font-family: inherit;
@@ -795,7 +795,7 @@ button.section-card-btn:hover .quick-access-icon {
 .btn-sm {
   flex: 1;
   padding: 10px 16px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
   font-weight: 600;
   font-size: 13px;
@@ -1031,7 +1031,7 @@ button.section-card-btn:hover .quick-access-icon {
 .btn-full {
   width: 100%;
   padding: 16px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   border: none;
   font-weight: 600;
   font-size: 16px;
@@ -1059,7 +1059,7 @@ button.section-card-btn:hover .quick-access-icon {
   padding: 8px 16px;  /* Reduced padding to match other buttons */
   background: var(--grove-bg-gradient);
   border: 2px solid var(--color-primary);
-  border-radius: 9999px;
+  border-radius: var(--radius-md);
   font-weight: 600;
   font-size: 13px;  /* Slightly smaller to match */
   color: white;
@@ -1118,7 +1118,7 @@ button.section-card-btn:hover .quick-access-icon {
   padding: 6px 16px;
   background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
   border: 2px solid var(--color-primary);
-  border-radius: 9999px;
+  border-radius: var(--radius-md);
   font-weight: 600;
   font-size: 12px;
   color: white;
@@ -1236,7 +1236,7 @@ button.section-card-btn:hover .quick-access-icon {
   font-weight: 600;
   color: white;
   padding: 6px 14px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   background: var(--color-primary);
   cursor: pointer;
 }
@@ -1672,7 +1672,7 @@ button.quick-access-item:hover .quick-access-icon {
   text-decoration: none;
   padding: 3px 8px;
   background-color: var(--color-primary-light);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   transition: all 0.2s;
   white-space: nowrap;
 }
@@ -1785,7 +1785,7 @@ button.quick-access-item:hover .quick-access-icon {
   padding: 12px 16px;
   background-color: var(--color-primary);
   border: 1px solid var(--color-primary);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   color: white;
   font-size: 14px;
   font-weight: 600;
@@ -3527,7 +3527,7 @@ button.quick-access-item:hover .quick-access-icon {
   padding: 12px 16px;
   font-size: 14px;
   font-weight: 600;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
