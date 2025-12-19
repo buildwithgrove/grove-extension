@@ -161,6 +161,48 @@ async function init() {
   // Migrate from legacy single-JWT storage (runs once)
   await KeyManager.migrateFromLegacy();
 
+  // Initialize Earn Tab module
+  EarnTab.init(
+    {
+      balanceDisplay,
+      balanceAmount,
+      earnAddressText,
+      copyEarnAddressBtn,
+      ensLinksSection: document.getElementById('ensLinksSection')
+    },
+    {
+      getActiveJWT,
+      showToast,
+      onAuthFailure: async (jwt, response) => {
+        console.log('[Grove Extension] Auth failure detected, archiving and clearing invalid JWT');
+
+        // Get the active slot to know where to clear
+        const activeSlot = await KeyManager.getActiveSlotId();
+
+        // Archive the invalid key to previous keys
+        await KeyManager.archiveCurrentKey(jwt, activeSlot);
+
+        // Clear the JWT from the active slot
+        await KeyManager.clearJWT(activeSlot);
+
+        // Clear cached data
+        await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME, STORAGE_KEYS.LAST_BALANCES]);
+
+        // Update UI to show disconnected state
+        await updateAuthState(null);
+        await loadJwtSlots();
+        await prevKeysUI.updateCount();
+        EarnTab.EarnTab.updateEarnAddressDisplay(null);
+        EarnTab.EarnTab.updateEnsNameDisplay(null);
+        if (balanceAmount) {
+          balanceAmount.textContent = '0.00';
+        }
+
+        showToast('API key invalid or expired. Key archived.');
+      }
+    }
+  );
+
   // Initialize Previous Keys UI
   prevKeysUI = new PreviousKeysUI(prevKeysCount, prevKeysList, prevKeysContainer);
 
@@ -226,7 +268,7 @@ async function init() {
     await updateAuthState(key);
     await prevKeysUI.updateCount();
     await prevKeysUI.render();
-    await fetchBalance();
+    await EarnTab.fetchBalance();
 
     showToast(`Connected to ${slotConfig?.label || environment}`);
 
@@ -245,7 +287,7 @@ async function init() {
   await loadChain();
   await loadEndpoint();
   await prevKeysUI.updateCount();
-  await loadClientAddress();
+  await EarnTab.loadClientAddress();
   loadExtensionVersion();
   checkForUpdates();
   setupEventListeners();
@@ -257,10 +299,10 @@ async function init() {
   updateNetworkSelectorVisibility(endpointInit);
 
   // Fetch balance after everything is loaded (also updates client address)
-  await fetchBalance();
+  await EarnTab.fetchBalance();
 
   // Resolve ENS name in the background (don't await to avoid blocking UI)
-  loadAndResolveEnsName();
+  EarnTab.loadAndResolveEnsName();
 
   // Show earn tab badge only if user hasn't visited earn tab yet
   const earnTabSeen = await chrome.storage.local.get([STORAGE_KEYS.EARN_TAB_SEEN]);
@@ -312,7 +354,7 @@ function handleVisibilityChange() {
 
   // Refresh based on active tab
   if (tabId === 'tab-home') {
-    fetchBalance();
+    EarnTab.fetchBalance();
   } else if (tabId === 'tab-history') {
     loadHistory();
   } else if (tabId === 'tab-leaderboard') {
@@ -684,7 +726,7 @@ function setupEventListeners() {
 
   // Earn Tab - Copy Address Button (copies ENS name if available, otherwise 0x address)
   if (copyEarnAddressBtn) {
-    copyEarnAddressBtn.addEventListener('click', copyEarnAddress);
+    copyEarnAddressBtn.addEventListener('click', () => EarnTab.copyEarnAddress());
   }
 
   // Listen for storage changes (e.g., when webapp injects JWT via external messaging)
@@ -696,7 +738,7 @@ function setupEventListeners() {
       console.log('[Grove Extension] JWT changed in storage, refreshing...');
       const jwt = await getActiveJWT();
       await updateAuthState(jwt);
-      await fetchBalance();
+      await EarnTab.fetchBalance();
     }
 
     // Handle environment (dev mode) changes from background
@@ -726,7 +768,7 @@ function setupEventListeners() {
       const endpointResult = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
       const endpointValue = endpointResult[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
       updateNetworkSelectorVisibility(endpointValue);
-      await fetchBalance();
+      await EarnTab.fetchBalance();
     }
 
     if (changes[STORAGE_KEYS.CHAIN]) {
@@ -734,7 +776,7 @@ function setupEventListeners() {
       const newChain = changes[STORAGE_KEYS.CHAIN].newValue;
       updateChainUI(newChain);
       updateTopUpLink(newChain);
-      await fetchBalance();
+      await EarnTab.fetchBalance();
     }
   });
 }
@@ -760,7 +802,7 @@ async function handleNavigation(e) {
 
   // Refresh balance when navigating to home
   if (targetId === 'tab-home') {
-    await fetchBalance();
+    await EarnTab.fetchBalance();
   }
 
   // Load history when navigating to history tab
@@ -1071,7 +1113,7 @@ async function saveJwt() {
   await prevKeysUI.updateCount();
 
   // Fetch balance with new token
-  await fetchBalance();
+  await EarnTab.fetchBalance();
 
   // Go back to home if we were onboarding
   if (!onboardingState.classList.contains('hidden')) {
@@ -1123,7 +1165,7 @@ async function saveJwtForSlot() {
   const activeSlot = await KeyManager.getActiveSlotId();
   if (currentEditSlot === activeSlot) {
     await updateAuthState(token);
-    await fetchBalance();
+    await EarnTab.fetchBalance();
   }
 }
 
@@ -1175,8 +1217,8 @@ async function removeJwt() {
   if (slotToRemove === activeSlot) {
     await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
     await updateAuthState(null);
-    updateEarnAddressDisplay(null);
-    updateEnsNameDisplay(null);
+    EarnTab.updateEarnAddressDisplay(null);
+    EarnTab.updateEnsNameDisplay(null);
   }
 
   hideJwtEdit();
@@ -1230,8 +1272,8 @@ async function clearAllKeys() {
   // Clear auth state
   await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
   await updateAuthState(null);
-  updateEarnAddressDisplay(null);
-  updateEnsNameDisplay(null);
+  EarnTab.updateEarnAddressDisplay(null);
+  EarnTab.updateEnsNameDisplay(null);
 
   // Update UI
   await loadJwtSlots();
@@ -1472,296 +1514,8 @@ const homeXSettingsGear = document.getElementById('homeXSettingsGear');
 // X OAuth functions are imported from src/auth/xOAuthPopup.js
 // loadXLoginStatus, handleXDisconnect, handleXLogin are available globally
 
-/**
- * Balance
- */
-function formatBalance(balance) {
-  const parsed = parseFloat(balance);
-  if (Number.isNaN(parsed)) {
-    return DEFAULT_BALANCE_DISPLAY;
-  }
-  return parsed.toFixed(2);
-}
-
-async function fetchBalance() {
-  balanceDisplay.classList.add('loading');
-
-  // Get JWT based on current dev mode
-  const jwt = await getActiveJWT();
-
-  // Get chain and cached balances
-  const storageResult = await chrome.storage.local.get([
-    STORAGE_KEYS.CHAIN,
-    STORAGE_KEYS.LAST_BALANCES
-  ]);
-  const chain = storageResult[STORAGE_KEYS.CHAIN] || DEFAULT_CHAIN;
-  const cachedBalances = storageResult[STORAGE_KEYS.LAST_BALANCES] || {};
-  const cachedBalance = cachedBalances[chain];
-
-  // Show cached balance if available to avoid flashing $0.00
-  if (cachedBalance !== undefined) {
-    balanceAmount.textContent = cachedBalance;
-  } else {
-    balanceAmount.textContent = DEFAULT_BALANCE_DISPLAY;
-  }
-
-  try {
-    if (!jwt) {
-      return;
-    }
-
-    // Fetch account data from API
-    const response = await GroveAPI.getAccount(jwt);
-
-    if (!response.success || !response.data?.balances) {
-      console.error('[Grove Extension] Balance fetch failed:', response.error);
-
-      // Check if this is an auth/account failure (401/403 for invalid JWT, 404 for account not found)
-      const isAuthFailure = response.status === 401 || response.status === 403 || response.status === 404;
-      if (isAuthFailure) {
-        console.log('[Grove Extension] Auth failure detected, archiving and clearing invalid JWT');
-
-        // Get the active slot to know where to clear
-        const activeSlot = await KeyManager.getActiveSlotId();
-
-        // Archive the invalid key to previous keys
-        await KeyManager.archiveCurrentKey(jwt, activeSlot);
-
-        // Clear the JWT from the active slot
-        await KeyManager.clearJWT(activeSlot);
-
-        // Clear cached data
-        await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME, STORAGE_KEYS.LAST_BALANCES]);
-
-        // Update UI to show disconnected state
-        await updateAuthState(null);
-        await loadJwtSlots();
-        await prevKeysUI.updateCount();
-        updateEarnAddressDisplay(null);
-        updateEnsNameDisplay(null);
-        balanceAmount.textContent = DEFAULT_BALANCE_DISPLAY;
-
-        showToast('API key invalid or expired. Key archived.');
-      }
-      return;
-    }
-
-    // Store client_address for Earn tab display
-    if (response.data.client_address) {
-      const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
-      const previousAddress = result[STORAGE_KEYS.CLIENT_ADDRESS];
-
-      await chrome.storage.local.set({ [STORAGE_KEYS.CLIENT_ADDRESS]: response.data.client_address });
-      updateEarnAddressDisplay(response.data.client_address);
-
-      // If address changed, clear cached ENS name and re-resolve
-      if (previousAddress !== response.data.client_address) {
-        await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
-        updateEnsNameDisplay(null);
-        // Resolve in background
-        loadAndResolveEnsName();
-      }
-    }
-
-    // Find balance for current chain (USDC)
-    const chainBalance = response.data.balances.find(
-      b => b.network === chain && b.token_symbol === 'USDC'
-    );
-
-    if (chainBalance) {
-      // Format balance (remove trailing zeros, max 2 decimal places for display)
-      const formattedBalance = formatBalance(chainBalance.balance);
-      balanceAmount.textContent = formattedBalance;
-      cachedBalances[chain] = formattedBalance;
-      await chrome.storage.local.set({ [STORAGE_KEYS.LAST_BALANCES]: cachedBalances });
-    } else {
-      balanceAmount.textContent = DEFAULT_BALANCE_DISPLAY;
-      cachedBalances[chain] = DEFAULT_BALANCE_DISPLAY;
-      await chrome.storage.local.set({ [STORAGE_KEYS.LAST_BALANCES]: cachedBalances });
-    }
-  } catch (e) {
-    console.error('[Grove Extension] Balance fetch failed:', e);
-  } finally {
-    balanceDisplay.classList.remove('loading');
-  }
-}
-
-/**
- * Earn Tab - Unified Address Display
- * Shows ENS name or base name if available, otherwise shows 0x address
- */
-function updateEarnAddressDisplay(displayValue, hasEnsName = false) {
-  const ensLinksSection = document.getElementById('ensLinksSection');
-
-  if (earnAddressText && displayValue) {
-    earnAddressText.textContent = displayValue;
-    earnAddressText.classList.remove('placeholder');
-    if (copyEarnAddressBtn) {
-      copyEarnAddressBtn.disabled = false;
-    }
-    // Hide "Get an ENS name" links when user has one
-    if (ensLinksSection) {
-      if (hasEnsName) {
-        ensLinksSection.classList.add('hidden');
-      } else {
-        ensLinksSection.classList.remove('hidden');
-      }
-    }
-  } else if (earnAddressText) {
-    earnAddressText.textContent = 'Connect to see address';
-    earnAddressText.classList.add('placeholder');
-    if (copyEarnAddressBtn) {
-      copyEarnAddressBtn.disabled = true;
-    }
-    // Show "Get an ENS name" links when not connected
-    if (ensLinksSection) {
-      ensLinksSection.classList.remove('hidden');
-    }
-  }
-}
-
-async function loadClientAddress() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
-  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
-  const ensName = result[STORAGE_KEYS.ENS_NAME];
-
-  // Show ENS/base name if available, otherwise show truncated 0x address
-  if (ensName) {
-    updateEarnAddressDisplay(ensName, true);
-  } else if (address) {
-    // Truncate address for display: 0x1234...abcd
-    const truncated = `${address.slice(0, 6)}...${address.slice(-4)}`;
-    updateEarnAddressDisplay(truncated, false);
-  } else {
-    updateEarnAddressDisplay(null, false);
-  }
-}
-
-async function copyEarnAddress() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
-  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
-  const ensName = result[STORAGE_KEYS.ENS_NAME];
-
-  // Copy ENS name if available, otherwise copy 0x address
-  const valueToCopy = ensName || address;
-  const toastMessage = ensName ? 'Address copied!' : 'Address copied!';
-
-  if (valueToCopy) {
-    try {
-      await navigator.clipboard.writeText(valueToCopy);
-      showToast(toastMessage);
-
-      // Visual feedback
-      if (copyEarnAddressBtn) {
-        copyEarnAddressBtn.classList.add('copied');
-        setTimeout(() => {
-          copyEarnAddressBtn.classList.remove('copied');
-        }, 2000);
-      }
-    } catch (err) {
-      console.error('[Grove Extension] Copy failed:', err);
-      showToast('Failed to copy');
-    }
-  }
-}
-
-/**
- * ENS Reverse Resolution
- * Resolves an Ethereum address to its ENS name (.eth or .base.eth)
- */
-
-
-/**
- * Resolve ENS name for an address using reverse resolution
- * Checks both Ethereum ENS (.eth) and Base ENS (.base.eth)
- */
-async function resolveEnsName(address) {
-  if (!address || !address.startsWith('0x')) {
-    return null;
-  }
-
-  const addr = address.toLowerCase();
-
-  // Try web3.bio API (handles both ENS and Basenames)
-  try {
-    const response = await fetch(`https://api.web3.bio/profile/${addr}`);
-    const data = await response.json();
-
-    if (Array.isArray(data) && data.length > 0) {
-      // Prefer ENS (.eth) over Basenames (.base.eth)
-      const ensProfile = data.find(p => p.platform === 'ens' || (p.identity && p.identity.endsWith('.eth') && !p.identity.endsWith('.base.eth')));
-      if (ensProfile?.identity) {
-        console.log('[Grove Extension] Resolved ENS:', ensProfile.identity);
-        return ensProfile.identity;
-      }
-
-      // Check for Basenames
-      const baseProfile = data.find(p => p.platform === 'basenames' || (p.identity && p.identity.endsWith('.base.eth')));
-      if (baseProfile?.identity) {
-        console.log('[Grove Extension] Resolved Basename:', baseProfile.identity);
-        return baseProfile.identity;
-      }
-    }
-  } catch (e) {
-    console.log('[Grove Extension] web3.bio lookup failed:', e.message);
-  }
-
-  // Fallback: Try Ensideas API for ENS only
-  try {
-    const response = await fetch(`https://ensideas.com/ens/resolve/${addr}`);
-    const data = await response.json();
-    if (data.name && data.name.endsWith('.eth')) {
-      console.log('[Grove Extension] Resolved ENS via Ensideas:', data.name);
-      return data.name;
-    }
-  } catch (e) {
-    console.log('[Grove Extension] Ensideas lookup failed:', e.message);
-  }
-
-  return null;
-}
-
-
-/**
- * Update unified address display in the UI when ENS name changes
- * This is called after ENS resolution completes
- */
-async function updateEnsNameDisplay(ensName) {
-  // Re-load and display the address (will show ENS if available)
-  await loadClientAddress();
-}
-
-/**
- * Load and resolve ENS name for stored address
- */
-async function loadAndResolveEnsName() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
-  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
-  const cachedEnsName = result[STORAGE_KEYS.ENS_NAME];
-
-  // Show cached name immediately if available
-  if (cachedEnsName) {
-    updateEnsNameDisplay(cachedEnsName);
-  }
-
-  // If we have an address, try to resolve it
-  if (address) {
-    try {
-      const ensName = await resolveEnsName(address);
-      if (ensName) {
-        await chrome.storage.local.set({ [STORAGE_KEYS.ENS_NAME]: ensName });
-        updateEnsNameDisplay(ensName);
-      } else if (cachedEnsName) {
-        // Clear cached name if resolution returns nothing
-        await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
-        updateEnsNameDisplay(null);
-      }
-    } catch (e) {
-      console.error('[Grove Extension] ENS resolution failed:', e);
-      // Keep showing cached name on error
-    }
-  }
-}
+// Earn Tab functions are imported from src/popup/earnTab.js
+// EarnTab.fetchBalance, EarnTab.loadClientAddress, EarnTab.copyEarnAddress, etc.
 
 /**
  * Environment
@@ -1843,15 +1597,15 @@ async function handleDevModeToggle(e) {
     // Switch to testnet JWT context
     const testnetJwt = await KeyManager.getJWT('testnet');
     await updateAuthState(testnetJwt);
-    updateEarnAddressDisplay(null); // Clear address until balance is fetched
-    updateEnsNameDisplay(null);
+    EarnTab.updateEarnAddressDisplay(null); // Clear address until balance is fetched
+    EarnTab.updateEnsNameDisplay(null);
 
     // Update slot UI to show testnet as active
     await loadJwtSlots();
 
     if (testnetJwt) {
-      await fetchBalance();
-      loadAndResolveEnsName();
+      await EarnTab.fetchBalance();
+      EarnTab.loadAndResolveEnsName();
       showToast('Switched to Testnet');
     } else {
       showToast('Developer Mode - Connect via testnet app');
@@ -1881,15 +1635,15 @@ async function handleDevModeToggle(e) {
     // Switch to production JWT context
     const prodJwt = await KeyManager.getJWT('production');
     await updateAuthState(prodJwt);
-    updateEarnAddressDisplay(null); // Clear address until balance is fetched
-    updateEnsNameDisplay(null);
+    EarnTab.updateEarnAddressDisplay(null); // Clear address until balance is fetched
+    EarnTab.updateEnsNameDisplay(null);
 
     // Update slot UI to show mainnet as active
     await loadJwtSlots();
 
     if (prodJwt) {
-      await fetchBalance();
-      loadAndResolveEnsName();
+      await EarnTab.fetchBalance();
+      EarnTab.loadAndResolveEnsName();
       showToast('Switched to Mainnet');
     } else {
       showToast('Developer Mode Disabled - Connect via grove.city');
@@ -1952,7 +1706,7 @@ async function handleEndpointChange(e) {
   await updateAuthState(jwt);
   updateChainUI(chain);
   updateTopUpLink(chain);
-  await fetchBalance();
+  await EarnTab.fetchBalance();
 
   if (chainChangedBecauseEndpoint) {
     historyTransactions = [];
@@ -2093,7 +1847,7 @@ async function handleChainSelection(e, silent = false) {
   if (!silent) showToast(`Switched to ${NETWORKS[chain].name}`);
 
   // Reload balance
-  fetchBalance();
+  EarnTab.fetchBalance();
 
   // Reload history (reset state and refetch)
   historyTransactions = [];
