@@ -945,25 +945,53 @@ button.section-card-btn:hover .quick-access-icon {
   font-size: 15px;
 }
 
-.onboarding-tagline {
-  margin-bottom: 4px;
-  font-size: 14px;
+.onboarding-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px 0;
+  width: 100%;
+  text-align: left;
 }
 
-.onboarding-learn-more {
+.onboarding-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.onboarding-features li:last-child {
+  border-bottom: none;
+}
+
+.feature-icon {
+  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-light);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.feature-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.feature-text strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.feature-text span {
   font-size: 12px;
-  margin-bottom: 28px;
-  color: var(--color-text-tertiary);
-}
-
-.onboarding-learn-more a {
   color: var(--color-text-secondary);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.onboarding-learn-more a:hover {
-  color: var(--color-primary);
 }
 
 .btn-onboarding {
@@ -985,9 +1013,12 @@ button.section-card-btn:hover .quick-access-icon {
 .onboarding-hint {
   font-size: 10px;
   color: var(--color-text-tertiary);
-  margin-top: 14px;
+  margin-top: 12px;
   margin-bottom: 0;
-  letter-spacing: 0.3px;
+  background: var(--color-surface);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
 }
 
 .onboarding-card .info-text-xs {
