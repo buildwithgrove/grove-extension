@@ -157,11 +157,38 @@ class XAuth {
   }
 
   /**
-   * Check if user is logged in
+   * Check if user is logged in (just checks token exists)
    */
   static async isLoggedIn() {
     const token = await this.getAccessToken();
     return !!token;
+  }
+
+  /**
+   * Verify token is actually valid by making API call
+   * Clears tokens if invalid
+   */
+  static async verifyConnection() {
+    try {
+      const token = await this.getAccessToken();
+      if (!token) return false;
+
+      const response = await fetch('https://api.twitter.com/2/users/me', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        // Token is invalid, clear it
+        console.log('[Grove X Auth] Token invalid, clearing...');
+        await this.logout();
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('[Grove X Auth] Token verification failed:', error);
+      await this.logout();
+      return false;
+    }
   }
 
   /**

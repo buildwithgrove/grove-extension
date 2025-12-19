@@ -1444,7 +1444,8 @@ const homeXSettingsGear = document.getElementById('homeXSettingsGear');
 
 async function loadXLoginStatus() {
   try {
-    const isLoggedIn = await XAuth.isLoggedIn();
+    // Verify token is actually valid, not just that it exists
+    const isLoggedIn = await XAuth.verifyConnection();
     const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
     const homeTwitterSettingsPanel = document.getElementById('homeTwitterSettingsPanel');
 
@@ -1479,6 +1480,9 @@ async function handleXLogin() {
     if (homeXConnectBtn) {
       homeXConnectBtn.textContent = 'Connecting...';
     }
+
+    // Clear any stale tokens before starting fresh login
+    await XAuth.logout();
 
     await XAuth.login();
 
