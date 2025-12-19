@@ -1133,7 +1133,8 @@ button.section-card-btn:hover .quick-access-icon {
 .x-connect-card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
+  padding: 16px;
 }
 
 .x-connect-header {
@@ -1169,7 +1170,7 @@ button.section-card-btn:hover .quick-access-icon {
 .x-connect-desc {
   font-size: 13px;
   color: var(--color-text-secondary);
-  margin: 0 0 12px 0;
+  margin: 0;
 }
 
 .x-connect-features {
