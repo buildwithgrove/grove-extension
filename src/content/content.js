@@ -2020,6 +2020,7 @@ Tip creators you love → {grove_link}`;
                 } else if (didReply) {
                   message = 'Reply sent! Refresh to view.';
                 }
+                console.log('[Grove Extension] Showing success bubble:', message, 'button:', buttonWrapper.button, 'inDOM:', document.body.contains(buttonWrapper.button));
                 showInlineTipError(buttonWrapper.button, { message, variant: 'success' });
               } else if (likeFailed || replyFailed) {
                 // All attempted actions failed - show warning
