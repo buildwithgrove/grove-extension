@@ -1443,15 +1443,23 @@ const homeXSettingsGear = document.getElementById('homeXSettingsGear');
 async function loadXLoginStatus() {
   try {
     const isLoggedIn = await XAuth.isLoggedIn();
+    const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
+    const homeTwitterSettingsPanel = document.getElementById('homeTwitterSettingsPanel');
 
     if (isLoggedIn) {
       if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Connected';
       if (homeXConnectBtn) homeXConnectBtn.classList.add('hidden');
       if (homeXSettingsGear) homeXSettingsGear.classList.remove('hidden');
+      // Auto-expand settings panel when connected
+      if (homeTwitterSettingsBtn) homeTwitterSettingsBtn.classList.add('hidden');
+      if (homeTwitterSettingsPanel) homeTwitterSettingsPanel.classList.remove('hidden');
     } else {
       if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Settings';
       if (homeXConnectBtn) homeXConnectBtn.classList.remove('hidden');
       if (homeXSettingsGear) homeXSettingsGear.classList.add('hidden');
+      // Show card when not connected
+      if (homeTwitterSettingsBtn) homeTwitterSettingsBtn.classList.remove('hidden');
+      if (homeTwitterSettingsPanel) homeTwitterSettingsPanel.classList.add('hidden');
     }
   } catch (error) {
     console.error('[Grove Extension] X login status check failed:', error);
