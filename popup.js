@@ -1320,8 +1320,8 @@ async function handleConfirmTipToggle() {
  */
 async function loadAutoReply() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.AUTO_REPLY]);
-  // Auto-reply defaults to false
-  const enabled = result[STORAGE_KEYS.AUTO_REPLY] === true;
+  // Auto-reply defaults to true (only false if explicitly set to false)
+  const enabled = result[STORAGE_KEYS.AUTO_REPLY] !== false;
   if (autoReplyToggle) {
     autoReplyToggle.checked = enabled;
   }

@@ -1848,7 +1848,7 @@ Tip creators you love → {grove_link}`;
 
     // Get JWT and settings from storage
     let jwt = '';
-    let autoReplyEnabled = false;
+    let autoReplyEnabled = true; // Default to true
     let autoReplyMessage = DEFAULT_AUTO_REPLY_MESSAGE;
     let likeOnTipEnabled = true; // Default to true
     let chainName = 'Base Sepolia';
@@ -1862,8 +1862,8 @@ Tip creators you love → {grove_link}`;
 
       // Get other settings from storage
       const result = await chrome.storage.local.get(['GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'GROVE_LIKE_ON_TIP', 'groveChain']);
-      // Auto-reply defaults to false
-      autoReplyEnabled = result.GROVE_AUTO_REPLY === true;
+      // Auto-reply defaults to true (only false if explicitly set to false)
+      autoReplyEnabled = result.GROVE_AUTO_REPLY !== false;
       autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
       // Like on tip defaults to true
       likeOnTipEnabled = result.GROVE_LIKE_ON_TIP !== false;
