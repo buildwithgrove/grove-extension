@@ -287,16 +287,6 @@
       return new TwitterAdapter();
     }
 
-    // Reddit support commented out - X only for now
-    // if (hostname.includes("reddit.com")) {
-    //   return new RedditAdapter();
-    // }
-
-    // YouTube support commented out - X only for now
-    // if (hostname.includes("youtube.com") || hostname.includes("youtu.be")) {
-    //   return new YouTubeAdapter();
-    // }
-
     // Return GenericAdapter for all other websites
     // Only if GenericAdapter is available (loaded via manifest)
     if (typeof GenericAdapter !== 'undefined') {
