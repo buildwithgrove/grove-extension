@@ -980,10 +980,13 @@ button.section-card-btn:hover .quick-access-icon {
 }
 
 .onboarding-hint {
-  font-size: 12px;
-  color: var(--color-text-tertiary);
-  margin-top: 12px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-top: 16px;
   margin-bottom: 0;
+  background: var(--color-surface);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
 }
 
 .onboarding-card .info-text-xs {
