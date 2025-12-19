@@ -1395,8 +1395,8 @@ function updateAutoReplyMessageVisibility(enabled) {
 async function loadAutoReplyMessage() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.AUTO_REPLY_MESSAGE, STORAGE_KEYS.AUTO_REPLY]);
   const message = result[STORAGE_KEYS.AUTO_REPLY_MESSAGE] || DEFAULT_AUTO_REPLY_MESSAGE;
-  // Auto-reply defaults to false
-  const autoReplyEnabled = result[STORAGE_KEYS.AUTO_REPLY] === true;
+  // Auto-reply defaults to true (only false if explicitly set to false)
+  const autoReplyEnabled = result[STORAGE_KEYS.AUTO_REPLY] !== false;
 
   if (autoReplyMessageInput) {
     autoReplyMessageInput.value = message;
