@@ -302,7 +302,7 @@ async function init() {
   // Increment launch count
   await incrementLaunchCount();
 
-  // Check if we should show the Twitter connect modal (after 3 launches and 1 tip)
+  // Check if we should show the Twitter connect modal (after 5 launches and 1 tip)
   await checkAndShowTwitterModal();
 
   // Check if we should open to X settings (from first tip modal)
@@ -490,20 +490,11 @@ function setupEventListeners() {
     });
   }
   if (tipIntroConnectBtn) {
-    tipIntroConnectBtn.addEventListener('click', () => {
-      hideTipIntroModal();
-      // Open X settings panel
-      const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
-      const homeTwitterSettingsPanel = document.getElementById('homeTwitterSettingsPanel');
-      const homeXLoginBtn = document.getElementById('homeXLoginBtn');
-      if (homeTwitterSettingsBtn && homeTwitterSettingsPanel) {
-        homeTwitterSettingsBtn.classList.add('hidden');
-        homeTwitterSettingsPanel.classList.remove('hidden');
-        // Trigger the connect button after a brief delay for panel to render
-        if (homeXLoginBtn) {
-          setTimeout(() => homeXLoginBtn.click(), 100);
-        }
-      }
+    tipIntroConnectBtn.addEventListener('click', async () => {
+      // Set flag to open settings when user returns after auth
+      await chrome.storage.local.set({ openToXSettings: true });
+      await hideTipIntroModal();
+      handleXLogin();
     });
   }
   if (tipIntroSkipBtn) {
@@ -1444,8 +1435,8 @@ const homeXSettingsGear = document.getElementById('homeXSettingsGear');
 
 async function loadXLoginStatus() {
   try {
-    // Verify token is actually valid, not just that it exists
-    const isLoggedIn = await XAuth.verifyConnection();
+    // Check if we have a token (don't verify with API call on every load to be faster/robuster)
+    const isLoggedIn = await XAuth.isLoggedIn();
     const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
     const homeTwitterSettingsPanel = document.getElementById('homeTwitterSettingsPanel');
 
@@ -3335,7 +3326,7 @@ function showIntroModalPage1Only() {
 
 /**
  * Shows page 2 (Twitter connect) directly
- * Called when conditions are met: 3+ launches and 1+ tips
+ * Called when conditions are met: 5+ launches and 1+ tips
  */
 function showTwitterConnectModal() {
   introModalMode = 'twitter';

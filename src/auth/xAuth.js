@@ -178,15 +178,17 @@ class XAuth {
       });
 
       if (!response.ok) {
-        // Token is invalid, clear it
-        console.log('[Grove X Auth] Token invalid, clearing...');
-        await this.logout();
+        // Only clear token if we know it's invalid (401/403)
+        if (response.status === 401 || response.status === 403) {
+          console.log('[Grove X Auth] Token invalid, clearing...');
+          await this.logout();
+        }
         return false;
       }
       return true;
     } catch (error) {
       console.error('[Grove X Auth] Token verification failed:', error);
-      await this.logout();
+      // Don't logout on network errors
       return false;
     }
   }
