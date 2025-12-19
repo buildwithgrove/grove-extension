@@ -564,9 +564,16 @@ function setupEventListeners() {
   const homeTwitterSettingsBack = document.getElementById('homeTwitterSettingsBack');
 
   if (homeTwitterSettingsBtn && homeTwitterSettingsPanel) {
-    homeTwitterSettingsBtn.addEventListener('click', () => {
-      homeTwitterSettingsBtn.classList.add('hidden');
-      homeTwitterSettingsPanel.classList.remove('hidden');
+    homeTwitterSettingsBtn.addEventListener('click', async () => {
+      const isLoggedIn = await XAuth.isLoggedIn();
+      if (isLoggedIn) {
+        // Show settings panel when connected
+        homeTwitterSettingsBtn.classList.add('hidden');
+        homeTwitterSettingsPanel.classList.remove('hidden');
+      } else {
+        // Trigger login directly when not connected
+        handleXLogin();
+      }
     });
   }
 
@@ -575,12 +582,6 @@ function setupEventListeners() {
       homeTwitterSettingsPanel.classList.add('hidden');
       homeTwitterSettingsBtn.classList.remove('hidden');
     });
-  }
-
-  // Home X login button
-  const homeXLoginBtnEl = document.getElementById('homeXLoginBtn');
-  if (homeXLoginBtnEl) {
-    homeXLoginBtnEl.addEventListener('click', handleXLogin);
   }
 
   // Home X disconnect button
@@ -1425,28 +1426,23 @@ async function resetAutoReplyMessage() {
  */
 
 // Home screen X elements
-const homeXConnectGroup = document.getElementById('homeXConnectGroup');
-const homeXLoginBtn = document.getElementById('homeXLoginBtn');
 const homeXDisconnectBtn = document.getElementById('homeXDisconnectBtn');
-const homeXPostConnectOptions = document.getElementById('homeXPostConnectOptions');
 const homeXSettingsTitle = document.getElementById('homeXSettingsTitle');
+const homeXConnectBtn = document.getElementById('homeXConnectBtn');
+const homeXSettingsGear = document.getElementById('homeXSettingsGear');
 
 async function loadXLoginStatus() {
   try {
     const isLoggedIn = await XAuth.isLoggedIn();
 
     if (isLoggedIn) {
-      if (homeXConnectGroup) homeXConnectGroup.classList.add('hidden');
-      if (homeXPostConnectOptions) homeXPostConnectOptions.classList.remove('hidden');
-      if (homeXLoginBtn) homeXLoginBtn.classList.add('hidden');
-      if (homeXDisconnectBtn) homeXDisconnectBtn.classList.remove('hidden');
       if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Connected';
+      if (homeXConnectBtn) homeXConnectBtn.classList.add('hidden');
+      if (homeXSettingsGear) homeXSettingsGear.classList.remove('hidden');
     } else {
-      if (homeXConnectGroup) homeXConnectGroup.classList.remove('hidden');
-      if (homeXPostConnectOptions) homeXPostConnectOptions.classList.add('hidden');
-      if (homeXLoginBtn) homeXLoginBtn.classList.remove('hidden');
-      if (homeXDisconnectBtn) homeXDisconnectBtn.classList.add('hidden');
       if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Settings';
+      if (homeXConnectBtn) homeXConnectBtn.classList.remove('hidden');
+      if (homeXSettingsGear) homeXSettingsGear.classList.add('hidden');
     }
   } catch (error) {
     console.error('[Grove Extension] X login status check failed:', error);

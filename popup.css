@@ -1167,6 +1167,15 @@ button.section-card-btn:hover .quick-access-icon {
   align-items: center;
 }
 
+.x-connect-btn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-light);
+}
+
 .x-connect-desc {
   font-size: 13px;
   color: var(--color-text-secondary);
