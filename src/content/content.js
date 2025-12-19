@@ -2011,7 +2011,9 @@ Tip creators you love → {grove_link}`;
 
               // Show feedback message based on what happened
               // Delay slightly to let the success animation settle before positioning bubble
+              console.log("[Grove Extension] Scheduling feedback bubble - didLike:", didLike, "didReply:", didReply);
               setTimeout(() => {
+                console.log("[Grove Extension] In setTimeout - didLike:", didLike, "didReply:", didReply, "button:", buttonWrapper.button);
                 if (didLike || didReply) {
                   // At least one action succeeded
                   let message = '';
@@ -2022,6 +2024,7 @@ Tip creators you love → {grove_link}`;
                   } else if (didReply) {
                     message = 'Reply sent! Refresh to view.';
                   }
+                  console.log("[Grove Extension] Showing message:", message);
                   showInlineTipError(buttonWrapper.button, { message, variant: 'success' });
                 } else if (likeFailed || replyFailed) {
                   // All attempted actions failed - show warning
