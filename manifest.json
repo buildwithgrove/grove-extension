@@ -44,6 +44,7 @@
         "src/utils/api.js",
         "src/utils/tipErrors.js",
         "src/utils/bioFetcher.js",
+        "src/content/hoverCardHandler.js",
         "src/auth/xAuth.js",
         "src/content/xFeatures.js",
         "src/content/content.js"
