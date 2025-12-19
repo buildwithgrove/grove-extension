@@ -21,6 +21,8 @@
   --grove-accent-orange-hover: var(--grove-colors-accent-orangeHover);
   --color-danger: var(--grove-colors-semantic-error);
   --color-danger-rgb: var(--grove-colors-semantic-errorRgb);
+  --color-info: var(--grove-colors-semantic-info);
+  --color-info-rgb: var(--grove-colors-semantic-infoRgb);
 
   /* Warning color - intentionally different from design system for transaction history */
   --color-warning: #f97316;
@@ -1201,8 +1203,8 @@ button.section-card-btn:hover .quick-access-icon {
 }
 
 .onboarding-container .feature-card-icon.free-icon {
-  background: linear-gradient(135deg, rgba(96, 165, 250, 0.15) 0%, rgba(96, 165, 250, 0.05) 100%);
-  color: #60a5fa;
+  background: linear-gradient(135deg, rgba(var(--color-info-rgb), 0.15) 0%, rgba(var(--color-info-rgb), 0.05) 100%);
+  color: var(--color-info);
 }
 
 .onboarding-container .feature-card-content h3 {
