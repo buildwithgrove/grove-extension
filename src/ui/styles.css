@@ -363,6 +363,7 @@
 .animate__bounceIn {
   animation-duration: .75s;
   animation-name: bounceIn;
+  animation-iteration-count: 1;
 }
 
 /* Shake X */
