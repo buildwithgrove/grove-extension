@@ -143,8 +143,8 @@ const DEFAULT_ENV = 'prod';
 const DEFAULT_ENDPOINT = 'production';
 const DEFAULT_BALANCE_DISPLAY = '0.00';
 const TOP_UP_URLS = {
-  mainnet: 'https://app.grove.city/profile',
-  testnet: 'https://app.testnet.grove.city/profile'
+  mainnet: 'https://app.grove.city/profile?tab=tip',
+  testnet: 'https://app.testnet.grove.city/profile?tab=tip'
 };
 const MAINNET_CHAINS = ['base', 'solana'];
 const TESTNET_CHAINS = ['base-sepolia', 'solana-devnet'];
