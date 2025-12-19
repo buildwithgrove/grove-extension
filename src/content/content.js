@@ -113,7 +113,6 @@
   // State
   let currentButton = null;
   let currentAdapter = null;
-  let hoverCardObserver = null;
   let navigationObserver = null;
   let tweetObserver = null;
   let tipPopover = null;
@@ -167,6 +166,27 @@
         pendingTweetButtons.delete(username);
       }
     });
+  }
+
+  // Initialize HoverCardHandler with callbacks
+  if (typeof HoverCardHandler !== 'undefined') {
+    HoverCardHandler.init(
+      {
+        getCachedAddress: getCachedAddress,
+        setCachedAddress: setCachedAddress,
+        checkForAddress: (text) => {
+          if (AddressParser.hasAddresses(text)) {
+            return AddressParser.resolveAddress(text);
+          }
+          return null;
+        },
+        detectDarkMode: detectDarkMode,
+        onTipClick: handleTweetTipClick,
+        formatTipAmount: formatTipAmount,
+        ensureEllipsisStyles: ensureEllipsisAnimationStyles
+      },
+      typeof GROVE_COLORS !== 'undefined' ? GROVE_COLORS : null
+    );
   }
 
   /**
@@ -224,7 +244,9 @@
       setupTwitterTweetObserver();
 
       // Also set up hover card observer for profile popups
-      setupTwitterHoverCardObserver();
+      if (typeof HoverCardHandler !== 'undefined') {
+        HoverCardHandler.startObserving();
+      }
       return;
     }
 
@@ -572,304 +594,7 @@
     }
   }
 
-  /**
-   * Setup observer for Twitter hover cards (profile popups)
-   */
-  function setupTwitterHoverCardObserver() {
-    // Use the existing hoverCardObserver variable
-    if (hoverCardObserver) {
-      hoverCardObserver.disconnect();
-    }
-
-    hoverCardObserver = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        for (const node of mutation.addedNodes) {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            // Twitter hover cards appear in a div with data-testid="HoverCard"
-            // or in a [data-testid="hoverCardParent"]
-            let hoverCard = null;
-
-            if (node.matches && node.matches('[data-testid="HoverCard"]')) {
-              hoverCard = node;
-            } else if (node.querySelector) {
-              hoverCard = node.querySelector('[data-testid="HoverCard"]');
-            }
-
-            if (hoverCard) {
-              injectButtonIntoTwitterHoverCard(hoverCard);
-            }
-          }
-        }
-      }
-    });
-
-    hoverCardObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-  }
-
-  /**
-   * Inject tip button into Twitter hover card
-   * @param {Element} hoverCard - The hover card element
-   */
-  function injectButtonIntoTwitterHoverCard(hoverCard) {
-    // Check if button already exists
-    if (hoverCard.querySelector('.grove-hovercard-tip-button')) {
-      return;
-    }
-
-    // Find the top-right area - look for the follow button or the card header
-    // The hover card has a structure with user info at the top
-    const followButton = hoverCard.querySelector('[data-testid$="-follow"]') ||
-                         hoverCard.querySelector('[data-testid$="-unfollow"]');
-
-    if (!followButton) {
-      // Try to find any button container in the top area
-      return;
-    }
-
-    const buttonContainer = followButton.parentElement;
-    if (!buttonContainer) return;
-
-    // Get the username from the hover card to build the profile URL
-    const usernameLink = hoverCard.querySelector('a[href^="/"][role="link"]');
-    let profileUrl = null;
-    let username = null;
-    if (usernameLink) {
-      const href = usernameLink.getAttribute('href');
-      if (href && /^\/[a-zA-Z0-9_]+$/.test(href)) {
-        profileUrl = `https://x.com${href}`;
-        username = href.substring(1); // Remove leading slash
-      }
-    }
-
-    if (!profileUrl) return;
-
-    // Check if user has a tippable address in display name or bio
-    // First check the cache
-    if (username) {
-      const cached = getCachedAddress(username);
-      if (cached === 'no-address') {
-        return; // Already checked, no address found
-      }
-      if (cached && cached.address) {
-        // Has cached address, proceed to show button
-      } else {
-        // Not cached, need to check display name and bio
-        let hasTippableAddress = false;
-
-        // Check display name (the bold name shown in hover card)
-        const displayNameElement = hoverCard.querySelector('[data-testid="UserName"]') ||
-                                   hoverCard.querySelector('a[href^="/"][role="link"] span');
-        const displayName = displayNameElement?.textContent || '';
-
-        if (displayName && AddressParser.hasAddresses(displayName)) {
-          const addressResult = AddressParser.resolveAddress(displayName);
-          if (addressResult.address) {
-            hasTippableAddress = true;
-            setCachedAddress(username, addressResult);
-            console.log(`[Grove Extension] Hover card: Found address in display name for @${username}: ${addressResult.address}`);
-          }
-        }
-
-        // If not in display name, check bio/description
-        if (!hasTippableAddress) {
-          const bioElement = hoverCard.querySelector('[data-testid="UserDescription"]');
-          const bio = bioElement?.textContent || '';
-
-          if (bio && AddressParser.hasAddresses(bio)) {
-            const addressResult = AddressParser.resolveAddress(bio);
-            if (addressResult.address) {
-              hasTippableAddress = true;
-              setCachedAddress(username, addressResult);
-              console.log(`[Grove Extension] Hover card: Found address in bio for @${username}: ${addressResult.address}`);
-            }
-          }
-        }
-
-        // If no tippable address found, cache negative result and return
-        if (!hasTippableAddress) {
-          setCachedAddress(username, 'no-address');
-          return;
-        }
-      }
-    }
-
-    // Create the tip button
-    const isDarkMode = detectDarkMode();
-    const bgColor = isDarkMode ? '#1a1a1a' : '#ffffff';
-    const bgHoverColor = isDarkMode ? '#252525' : '#f0f0f0';
-    const textColor = isDarkMode ? '#ffffff' : '#1a1a1a';
-
-    const button = document.createElement('button');
-    button.className = 'grove-hovercard-tip-button';
-    button.setAttribute('aria-label', 'Send a tip');
-    button.setAttribute('type', 'button');
-
-    button.style.cssText = `
-      background: ${bgColor} !important;
-      border: 2px solid ${GROVE_COLORS.primary} !important;
-      border-radius: 9999px !important;
-      padding: 0 16px !important;
-      height: 32px !important;
-      min-height: 32px !important;
-      min-width: 32px !important;
-      position: relative !important;
-      overflow: hidden !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      gap: 4px !important;
-      cursor: pointer !important;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-      box-shadow: 0 2px 8px ${GROVE_COLORS.shadow} !important;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-      line-height: 1 !important;
-    `;
-
-    // Create text span
-    const textSpan = document.createElement('span');
-    textSpan.textContent = 'Tip';
-    textSpan.style.cssText = `
-      color: ${textColor} !important;
-      font-weight: 600 !important;
-      font-size: 14px !important;
-      position: relative !important;
-      z-index: 2 !important;
-      display: flex !important;
-      align-items: center !important;
-    `;
-
-    // Create emoji span
-    const emojiSpan = document.createElement('span');
-    emojiSpan.textContent = '🌿';
-    emojiSpan.style.cssText = `
-      font-size: 15px !important;
-      margin-left: 4px !important;
-      position: relative !important;
-      z-index: 2 !important;
-    `;
-
-    // Create sheen overlay
-    const sheenOverlay = document.createElement('div');
-    sheenOverlay.style.cssText = `
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
-      pointer-events: none !important;
-      z-index: 1 !important;
-      animation: grove-sheen-slide 3s ease-in-out infinite !important;
-    `;
-    const defaultSheenBackground = sheenOverlay.style.background;
-
-    textSpan.appendChild(emojiSpan);
-    button.appendChild(sheenOverlay);
-    button.appendChild(textSpan);
-
-    // Hover effects
-    button.addEventListener('mouseenter', () => {
-      button.style.background = `${bgHoverColor} !important`;
-      button.style.transform = 'translateY(-1px)';
-      button.style.boxShadow = `0 4px 12px ${GROVE_COLORS.shadowHover} !important`;
-    });
-
-    button.addEventListener('mouseleave', () => {
-      button.style.background = `${bgColor} !important`;
-      button.style.transform = 'translateY(0)';
-      button.style.boxShadow = `0 2px 8px ${GROVE_COLORS.shadow} !important`;
-    });
-
-    // Click handler
-    button.addEventListener('click', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const buttonWrapper = {
-        button: button,
-        textSpan: textSpan,
-        emojiSpan: emojiSpan,
-        setLoading: (amount) => {
-          ensureEllipsisAnimationStyles();
-          button.disabled = true;
-          button.style.pointerEvents = 'none';
-          // Update button text to show sending state
-          const formattedAmount = formatTipAmount(amount);
-          const sendingText = formattedAmount ? `Sending $${formattedAmount}` : 'Sending';
-          textSpan.textContent = sendingText;
-          textSpan.classList.add('grove-ellipsis');
-          const colors = [
-            { border: '#389f58', shadow: '0 0 12px #389f58' },
-            { border: '#4fb76d', shadow: '0 0 12px #4fb76d' },
-            { border: '#f0ad4e', shadow: '0 0 12px #f0ad4e' },
-            { border: '#4fb76d', shadow: '0 0 12px #4fb76d' },
-          ];
-          let colorIndex = 0;
-          button._loadingInterval = setInterval(() => {
-            colorIndex++;
-            const color = colors[colorIndex % colors.length];
-            button.style.setProperty('border-color', color.border, 'important');
-            button.style.setProperty('box-shadow', color.shadow, 'important');
-          }, 150);
-        },
-        setSuccess: () => {
-          if (button._loadingInterval) clearInterval(button._loadingInterval);
-          button.disabled = false;
-          button.style.pointerEvents = '';
-          button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
-          button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
-          sheenOverlay.style.background = defaultSheenBackground;
-          textSpan.classList.remove('grove-ellipsis');
-          textSpan.textContent = 'Sent! ✓';
-          button.classList.add('animate__animated', 'animate__bounceIn');
-          setTimeout(() => {
-            textSpan.textContent = 'Tip';
-            textSpan.appendChild(emojiSpan);
-            button.classList.remove('animate__animated', 'animate__bounceIn');
-          }, 2000);
-        },
-        setError: () => {
-          if (button._loadingInterval) clearInterval(button._loadingInterval);
-          button.disabled = false;
-          button.style.pointerEvents = '';
-          button.style.setProperty('border', `2px solid ${GROVE_COLORS.error || '#ef4444'}`, 'important');
-          button.style.setProperty('box-shadow', `0 0 12px ${GROVE_COLORS.errorShadow || 'rgba(239, 68, 68, 0.55)'}`, 'important');
-          sheenOverlay.style.background = 'linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.35), transparent)';
-          textSpan.classList.remove('grove-ellipsis');
-          textSpan.textContent = 'Failed ✗';
-          button.classList.add('animate__animated', 'animate__shakeX');
-          setTimeout(() => {
-            textSpan.textContent = 'Tip';
-            textSpan.appendChild(emojiSpan);
-            button.classList.remove('animate__animated', 'animate__shakeX');
-            button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
-            button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
-            sheenOverlay.style.background = defaultSheenBackground;
-          }, 2000);
-        }
-      };
-
-      await handleTweetTipClick(buttonWrapper, profileUrl);
-    });
-
-    // Create a wrapper to hold both buttons in a row
-    const wrapper = document.createElement('div');
-    wrapper.className = 'grove-hovercard-buttons';
-    wrapper.style.cssText = `
-      display: flex !important;
-      flex-direction: row !important;
-      align-items: center !important;
-      gap: 8px !important;
-    `;
-
-    // Insert wrapper where follow button is, then move follow button into wrapper
-    followButton.parentElement.insertBefore(wrapper, followButton);
-    wrapper.appendChild(button);
-    wrapper.appendChild(followButton);
-  }
+  // Hover card handling is now in src/content/hoverCardHandler.js
 
   /**
    * Setup observer for Twitter tweets
@@ -1740,9 +1465,8 @@
     if (floatingContainer) {
       floatingContainer.remove();
     }
-    if (hoverCardObserver) {
-      hoverCardObserver.disconnect();
-      hoverCardObserver = null;
+    if (typeof HoverCardHandler !== 'undefined') {
+      HoverCardHandler.stopObserving();
     }
     if (tweetObserver) {
       tweetObserver.disconnect();
