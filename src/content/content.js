@@ -287,6 +287,7 @@
       return new TwitterAdapter();
     }
 
+<<<<<<< Updated upstream
     // Reddit support commented out - X only for now
     // if (hostname.includes("reddit.com")) {
     //   return new RedditAdapter();
@@ -296,6 +297,11 @@
     // if (hostname.includes("youtube.com") || hostname.includes("youtu.be")) {
     //   return new YouTubeAdapter();
     // }
+=======
+    if (hostname.includes("soundcloud.com")) {
+      return new SoundCloudAdapter();
+    }
+>>>>>>> Stashed changes
 
     // Return GenericAdapter for all other websites
     // Only if GenericAdapter is available (loaded via manifest)
@@ -332,22 +338,30 @@
 
       console.log("[Grove Extension] Bio extracted");
 
+      // TODO_IN_THIS_PR: Remove this hack before merging.
+      // For SoundCloud testing, we inject the button even if no address is found in the bio.
+      const isTestingBypass = currentAdapter.getPlatformName() === 'soundcloud';
+
       // Check if bio contains tippable address
       const hasAddress = AddressParser.hasAddresses(bio);
-      if (!hasAddress) {
+      if (!hasAddress && !isTestingBypass) {
         console.log("[Grove Extension] No tippable address found in bio - not showing button");
         return;
       }
 
       // Extract address (ENS names are resolved by the backend)
       const result = AddressParser.resolveAddress(bio);
-      if (!result.address) {
+      if (!result.address && !isTestingBypass) {
         console.log("[Grove Extension] Could not extract address - not showing button");
         return;
       }
 
-      resolvedAddress = result;
-      console.log(`[Grove Extension] ✅ Address detected: ${result.address} (type: ${result.type})`)
+      resolvedAddress = result.address ? result : null;
+      if (resolvedAddress) {
+        console.log(`[Grove Extension] ✅ Address detected: ${resolvedAddress.address} (type: ${resolvedAddress.type})`)
+      } else {
+        console.log("[Grove Extension] No address detected, but continuing due to testing bypass");
+      }
 
       // Cache the address by username for tweet tip buttons
       if (currentAdapter.getPlatformName() === 'twitter') {
@@ -535,17 +549,23 @@
     }
 
     // Build context metadata for the tip
-    // Note: sender_platform can be 'x' or 'twitter' - both map to X/Twitter
+    const platformName = currentAdapter.getPlatformName();
     const username = extractUsernameFromUrl(window.location.href);
     const context = {
       source_post_url: window.location.href,
-      sender_platform: 'x'
+      sender_platform: platformName === 'twitter' ? 'x' : platformName
     };
+    
     if (username) {
       context.recipient_username = username;
-      context.recipient_profile_url = `https://x.com/${username}`;
+      if (platformName === 'twitter') {
+        context.recipient_profile_url = `https://x.com/${username}`;
+      } else if (platformName === 'soundcloud') {
+        context.recipient_profile_url = `https://soundcloud.com/${username}`;
+      }
     }
 
+<<<<<<< Updated upstream
     // Add sender info if X is authenticated with real username
     if (typeof XAuth !== 'undefined') {
       try {
@@ -558,6 +578,11 @@
       } catch (e) {
         // Ignore - sender info is optional
       }
+=======
+    // Add sender info if X is authenticated (from xFeatures.js)
+    if (platformName === 'twitter' && typeof addXSenderInfo === 'function') {
+      await addXSenderInfo(context);
+>>>>>>> Stashed changes
     }
 
     // Send tip via API with JWT, amount, and context
@@ -1228,10 +1253,18 @@
    * @returns {string|null} - Username or null
    */
   function extractUsernameFromUrl(url) {
-    const match = url.match(/^https:\/\/(twitter|x)\.com\/([^\/\?]+)\/?/);
-    if (match && match[2] && !['home', 'explore', 'search', 'notifications', 'messages', 'settings', 'i'].includes(match[2])) {
-      return match[2];
+    // Twitter/X pattern
+    const xMatch = url.match(/^https:\/\/(twitter|x)\.com\/([^\/\?]+)\/?/);
+    if (xMatch && xMatch[2] && !['home', 'explore', 'search', 'notifications', 'messages', 'settings', 'i'].includes(xMatch[2])) {
+      return xMatch[2];
     }
+
+    // SoundCloud pattern
+    const scMatch = url.match(/^https:\/\/soundcloud\.com\/([^\/\?]+)\/?/);
+    if (scMatch && scMatch[1] && !['discover', 'feed', 'notifications', 'messages', 'upload', 'settings', 'you', 'artists', 'search'].includes(scMatch[1])) {
+      return scMatch[1];
+    }
+
     return null;
   }
 

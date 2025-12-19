@@ -127,15 +127,18 @@ class TipButton {
     this.bgColor = bgColor;
     this.bgHoverColor = bgHoverColor;
 
+    // Adjust height for SoundCloud to match their medium buttons
+    const buttonHeight = this.platform === 'soundcloud' ? '32px' : '36px';
+
     // Apply inline styles
     this.button.style.cssText = `
       background: ${bgColor} !important;
       border: 2px solid ${GROVE_COLORS.primary} !important;
       border-radius: 9999px !important;
       padding: 0 16px !important;
-      height: 36px !important;
-      min-height: 36px !important;
-      max-height: 36px !important;
+      height: ${buttonHeight} !important;
+      min-height: ${buttonHeight} !important;
+      max-height: ${buttonHeight} !important;
       min-width: 32px !important;
       position: relative !important;
       overflow: hidden !important;
@@ -957,9 +960,10 @@ class TipButton {
       return false;
     }
 
-    // Style the button to match Twitter's spacing and ensure proper alignment
-    this.button.style.marginLeft = '8px';
-    this.button.style.marginRight = '8px';
+    // Style the button to match platform spacing and ensure proper alignment
+    const margin = this.platform === 'twitter' ? '8px' : '5px';
+    this.button.style.marginLeft = margin;
+    this.button.style.marginRight = margin;
     this.button.style.alignSelf = 'flex-start';
     this.button.style.flexShrink = '0';
     this.button.style.marginTop = '0px';
