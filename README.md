@@ -62,6 +62,9 @@ git clone --recurse-submodules https://github.com/buildwithgrove/grove-extension
 
 # Or initialize submodules after cloning
 git submodule update --init
+
+# Install dev dependencies (for testing)
+npm install
 ```
 
 ### Local Development
@@ -72,6 +75,13 @@ git submodule update --init
 4. Select this directory
 
 To reload after changes: click the refresh icon on the extension card or use [Extensions Reloader](https://chromewebstore.google.com/detail/extensions-reloader/fimgfedafeadlieiabdeeaodndnlbhid).
+
+### Testing
+
+```bash
+npm test           # Run tests once
+npm run test:watch # Run tests in watch mode
+```
 
 ### Manifest Key
 
