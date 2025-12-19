@@ -174,9 +174,12 @@
       variant = parsedErrorOrMessage.variant || 'error';
     }
 
+    console.log('[Grove Extension] showInlineTipError called - message:', message, 'variant:', variant, 'buttonEl:', buttonEl);
+
     if (!message) return;
 
     if (typeof TipErrorHandler !== 'undefined') {
+      console.log('[Grove Extension] Calling TipErrorHandler.showInlineMessage');
       TipErrorHandler.showInlineMessage(buttonEl, message, variant);
     } else {
       // TipErrorHandler should always be available via manifest.json,
@@ -2006,6 +2009,7 @@ Tip creators you love → {grove_link}`;
               }
 
               // Show success message if any X action was performed
+              console.log("[Grove Extension] X actions completed - didLike:", didLike, "didReply:", didReply);
               if (didLike || didReply) {
                 let message = '';
                 if (didLike && didReply) {
@@ -2015,6 +2019,7 @@ Tip creators you love → {grove_link}`;
                 } else if (didReply) {
                   message = 'Reply sent! Refresh to view.';
                 }
+                console.log("[Grove Extension] Showing success message:", message);
                 showInlineTipError(buttonWrapper.button, { message, variant: 'success' });
               }
             } else {
