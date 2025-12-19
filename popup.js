@@ -161,7 +161,7 @@ async function init() {
   // Migrate from legacy single-JWT storage (runs once)
   await KeyManager.migrateFromLegacy();
 
-  // Initialize Earn Tab module
+  // Initialize Account Display module
   AccountDisplay.init(
     {
       balanceDisplay,
