@@ -1469,73 +1469,8 @@ const homeXSettingsTitle = document.getElementById('homeXSettingsTitle');
 const homeXConnectBtn = document.getElementById('homeXConnectBtn');
 const homeXSettingsGear = document.getElementById('homeXSettingsGear');
 
-async function loadXLoginStatus() {
-  try {
-    // Check if we have a token (don't verify with API call on every load to be faster/robuster)
-    const isLoggedIn = await XAuth.isLoggedIn();
-    const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
-    const homeTwitterSettingsPanel = document.getElementById('homeTwitterSettingsPanel');
-
-    if (isLoggedIn) {
-      if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Connected';
-      if (homeXConnectBtn) homeXConnectBtn.classList.add('hidden');
-      if (homeXSettingsGear) homeXSettingsGear.classList.remove('hidden');
-      // Auto-expand settings panel when connected
-      if (homeTwitterSettingsBtn) homeTwitterSettingsBtn.classList.add('hidden');
-      if (homeTwitterSettingsPanel) homeTwitterSettingsPanel.classList.remove('hidden');
-    } else {
-      if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Setup';
-      if (homeXConnectBtn) homeXConnectBtn.classList.remove('hidden');
-      if (homeXSettingsGear) homeXSettingsGear.classList.add('hidden');
-      // Show card when not connected
-      if (homeTwitterSettingsBtn) homeTwitterSettingsBtn.classList.remove('hidden');
-      if (homeTwitterSettingsPanel) homeTwitterSettingsPanel.classList.add('hidden');
-    }
-  } catch (error) {
-    console.error('[Grove Extension] X login status check failed:', error);
-  }
-}
-
-async function handleXDisconnect() {
-  await XAuth.logout();
-  await loadXLoginStatus();
-  showToast('Disconnected from 𝕏');
-}
-
-async function handleXLogin() {
-  try {
-    if (homeXConnectBtn) {
-      homeXConnectBtn.textContent = 'Connecting...';
-    }
-
-    // Clear any stale tokens before starting fresh login
-    await XAuth.logout();
-
-    await XAuth.login();
-
-    // Refresh UI from stored state
-    if (homeXConnectBtn) {
-      homeXConnectBtn.textContent = 'Connect';
-    }
-
-    // Only update UI and show toast if actually logged in
-    const isLoggedIn = await XAuth.isLoggedIn();
-    if (isLoggedIn) {
-      await loadXLoginStatus();
-      showToast('Connected to 𝕏');
-    }
-  } catch (error) {
-    console.error('[Grove Extension] X login failed:', error);
-    if (homeXConnectBtn) {
-      homeXConnectBtn.textContent = 'Connect';
-    }
-    // Truncate long error messages to prevent UI overflow
-    const errorMsg = error.message?.length > 50
-      ? error.message.substring(0, 50) + '...'
-      : error.message;
-    showToast('Login failed: ' + errorMsg);
-  }
-}
+// X OAuth functions are imported from src/auth/xOAuthPopup.js
+// loadXLoginStatus, handleXDisconnect, handleXLogin are available globally
 
 /**
  * Balance
