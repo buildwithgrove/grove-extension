@@ -601,24 +601,45 @@ body {
   border-radius: var(--radius-lg);
   padding: 24px;
   margin: 0 16px 8px;
+  border: 1px solid var(--color-border);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .section-card:first-child {
   margin-top: 0;
 }
 
+/* Balance card - primary emphasis with glow */
+#connectedState > .section-card:first-child {
+  border-color: rgba(56, 159, 88, 0.25);
+  box-shadow: 0 4px 24px rgba(56, 159, 88, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(56, 159, 88, 0.05) 100%);
+}
+
+/* Default Tip card - subtle accent */
+#defaultTipCard {
+  border-color: rgba(56, 159, 88, 0.15);
+  transition: all 0.3s ease;
+}
+
+#defaultTipCard:hover {
+  border-color: rgba(56, 159, 88, 0.3);
+  box-shadow: 0 4px 16px rgba(56, 159, 88, 0.08);
+}
+
 /* Clickable Section Card (button) */
 button.section-card-btn {
   width: calc(100% - 32px);
-  border: none;
+  border: 1px solid var(--color-border);
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: all 0.2s ease;
   text-align: left;
   font-family: inherit;
 }
 
 button.section-card-btn:hover {
   background-color: var(--color-surface-hover);
+  border-color: rgba(56, 159, 88, 0.3);
 }
 
 button.section-card-btn .quick-access-icon {
@@ -871,11 +892,11 @@ button.section-card-btn:hover .quick-access-icon {
   to { opacity: 0.7; }
 }
 
-/* Success pill button (for connect actions) */
+/* Success button (for connect actions) */
 .btn-success-text {
   background: var(--color-primary);
   border: none;
-  border-radius: 20px;
+  border-radius: var(--radius-sm);
   color: white;
   font-size: 12px;
   font-weight: 600;
@@ -887,11 +908,11 @@ button.section-card-btn:hover .quick-access-icon {
   background: var(--color-primary-hover);
 }
 
-/* Danger pill button (for disconnect actions) */
+/* Danger button (for disconnect actions) */
 .btn-danger-text {
   background: var(--color-danger);
   border: none;
-  border-radius: 20px;
+  border-radius: var(--radius-sm);
   color: white;
   font-size: 12px;
   font-weight: 600;
@@ -1642,7 +1663,7 @@ button.section-card-btn:hover .quick-access-icon {
   font-weight: 600;
   color: white;
   padding: 6px 14px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--color-primary);
   cursor: pointer;
 }
@@ -1973,6 +1994,9 @@ button.quick-access-item:hover .quick-access-icon {
 .your-address-section {
   margin: 0 16px 12px;
   padding: 16px;
+  border-color: rgba(56, 159, 88, 0.2);
+  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(56, 159, 88, 0.03) 100%);
+  box-shadow: 0 4px 16px rgba(56, 159, 88, 0.08);
 }
 
 .your-address-section .section-header h3 {
@@ -2118,6 +2142,13 @@ button.quick-access-item:hover .quick-access-icon {
   margin: 0 16px 16px;
   padding: 18px;
   text-align: left;
+  border-color: rgba(56, 159, 88, 0.15);
+  transition: all 0.3s ease;
+}
+
+.how-to-earn-section:hover {
+  border-color: rgba(56, 159, 88, 0.25);
+  box-shadow: 0 4px 20px rgba(56, 159, 88, 0.1);
 }
 
 .how-to-earn-title {
@@ -2142,9 +2173,9 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 .earn-step-number {
-  width: 22px;
-  height: 22px;
-  background: var(--color-primary);
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #2f8549 100%);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -2153,6 +2184,7 @@ button.quick-access-item:hover .quick-access-icon {
   font-weight: 700;
   font-size: 11px;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(56, 159, 88, 0.3);
 }
 
 .earn-step-content {
@@ -2189,20 +2221,27 @@ button.quick-access-item:hover .quick-access-icon {
   gap: 8px;
   width: 100%;
   padding: 12px 16px;
-  background-color: var(--color-primary);
-  border: 1px solid var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #2f8549 100%);
+  border: none;
   border-radius: var(--radius-md);
   color: white;
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(56, 159, 88, 0.25);
 }
 
 .how-to-earn-btn:hover {
-  background-color: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
+  background: linear-gradient(135deg, #2f8549 0%, #267a3d 100%);
   color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(56, 159, 88, 0.35);
+}
+
+.how-to-earn-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(56, 159, 88, 0.25);
 }
 
 .x-logo-text {
@@ -2745,12 +2784,25 @@ button.quick-access-item:hover .quick-access-icon {
   color: var(--color-text-tertiary);
   cursor: pointer;
   padding: 6px 8px;
-  transition: color 0.2s;
+  transition: color 0.2s, transform 0.15s ease;
   flex: 1;
   min-width: 0;
 }
 
+.nav-item:hover {
+  color: var(--color-text-secondary);
+  transform: translateY(-1px);
+}
+
+.nav-item:active {
+  transform: translateY(0) scale(0.95);
+}
+
 .nav-item.active {
+  color: var(--color-primary);
+}
+
+.nav-item.active:hover {
   color: var(--color-primary);
 }
 
@@ -2845,6 +2897,75 @@ button.quick-access-item:hover .quick-access-icon {
   font-size: 13px;
 }
 
+/* Enhanced empty states for History and Leaderboard */
+.history-empty,
+.history-not-connected,
+.leaderboard-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.history-empty .empty-icon,
+.history-not-connected .empty-icon,
+.leaderboard-empty .empty-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(56, 159, 88, 0.1);
+  border-radius: 50%;
+  margin-bottom: 16px;
+  box-shadow: 0 0 24px rgba(56, 159, 88, 0.15);
+  color: var(--color-primary);
+  opacity: 1;
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.history-empty .empty-icon svg,
+.history-not-connected .empty-icon svg,
+.leaderboard-empty .empty-icon svg {
+  width: 28px;
+  height: 28px;
+  stroke: var(--color-primary);
+}
+
+.history-empty p,
+.history-not-connected p,
+.leaderboard-empty p {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Error state styling */
+.history-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.history-error .empty-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 50%;
+  margin-bottom: 16px;
+  color: var(--color-danger);
+  font-size: 28px;
+  font-weight: 700;
+}
+
 /* Leaderboard */
 .leaderboard-list {
   display: flex;
@@ -2861,11 +2982,17 @@ button.quick-access-item:hover .quick-access-icon {
   gap: 16px;
   padding: 16px;
   background: var(--color-surface);
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .leaderboard-item:hover {
   background: var(--color-surface-hover);
+  transform: translateX(4px);
+}
+
+.leaderboard-item:active {
+  transform: translateX(2px);
 }
 
 .leaderboard-item .rank {
@@ -3152,7 +3279,7 @@ button.quick-access-item:hover .quick-access-icon {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  border-radius: 16px;
+  border-radius: var(--radius-sm);
   transition: all 0.2s;
 }
 
@@ -3371,11 +3498,16 @@ button.quick-access-item:hover .quick-access-icon {
   gap: 12px;
   padding: 14px 16px;
   background: var(--color-surface);
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .transaction-item:hover {
   background: var(--color-surface-hover);
+  transform: translateX(4px);
+}
+
+.transaction-item:active {
+  transform: translateX(2px);
 }
 
 /* Description link (to tweet/content) - clickable elements should be prominent */
