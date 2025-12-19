@@ -2009,33 +2009,33 @@ Tip creators you love → {grove_link}`;
                 }
               }
 
-              console.log("[Grove Extension] About to show feedback - didLike:", didLike, "didReply:", didReply, "likeFailed:", likeFailed, "replyFailed:", replyFailed);
-
               // Show feedback message based on what happened
-              if (didLike || didReply) {
-                // At least one action succeeded
-                let message = '';
-                if (didLike && didReply) {
-                  message = 'Liked & replied! Refresh to view.';
-                } else if (didLike) {
-                  message = 'Post liked! Refresh to view.';
-                } else if (didReply) {
-                  message = 'Reply sent! Refresh to view.';
+              // Delay slightly to let the success animation settle before positioning bubble
+              setTimeout(() => {
+                if (didLike || didReply) {
+                  // At least one action succeeded
+                  let message = '';
+                  if (didLike && didReply) {
+                    message = 'Liked & replied! Refresh to view.';
+                  } else if (didLike) {
+                    message = 'Post liked! Refresh to view.';
+                  } else if (didReply) {
+                    message = 'Reply sent! Refresh to view.';
+                  }
+                  showInlineTipError(buttonWrapper.button, { message, variant: 'success' });
+                } else if (likeFailed || replyFailed) {
+                  // All attempted actions failed - show warning
+                  let message = '';
+                  if (likeFailed && replyFailed) {
+                    message = 'Like & reply failed (rate limited?)';
+                  } else if (likeFailed) {
+                    message = 'Like failed (rate limited?)';
+                  } else if (replyFailed) {
+                    message = 'Reply failed (rate limited?)';
+                  }
+                  showInlineTipError(buttonWrapper.button, { message, variant: 'warning' });
                 }
-                console.log('[Grove Extension] Showing success bubble:', message, 'button:', buttonWrapper.button, 'inDOM:', document.body.contains(buttonWrapper.button));
-                showInlineTipError(buttonWrapper.button, { message, variant: 'success' });
-              } else if (likeFailed || replyFailed) {
-                // All attempted actions failed - show warning
-                let message = '';
-                if (likeFailed && replyFailed) {
-                  message = 'Like & reply failed (rate limited?)';
-                } else if (likeFailed) {
-                  message = 'Like failed (rate limited?)';
-                } else if (replyFailed) {
-                  message = 'Reply failed (rate limited?)';
-                }
-                showInlineTipError(buttonWrapper.button, { message, variant: 'warning' });
-              }
+              }, 300);
             } else {
               console.log("[Grove Extension] X features skipped - not logged in to X");
             }

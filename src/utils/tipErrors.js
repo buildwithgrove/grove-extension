@@ -175,11 +175,7 @@
      * @param {string} variant - 'error' (all errors use red)
      */
     static showInlineMessage(targetEl, message, variant = 'error') {
-      console.log('[TipErrorHandler] showInlineMessage called:', { targetEl, message, variant });
-      if (!targetEl || !message) {
-        console.log('[TipErrorHandler] Early return - targetEl:', !!targetEl, 'message:', !!message);
-        return;
-      }
+      if (!targetEl || !message) return;
 
       // Remove previous bubble if present
       this._clearActiveBubble();
@@ -217,14 +213,11 @@
       bubble.style.visibility = 'visible';
       bubble.style.pointerEvents = 'auto';
 
-      console.log('[TipErrorHandler] Bubble positioned at:', position, 'bubble in DOM:', document.body.contains(bubble));
-
       // Fade in
       requestAnimationFrame(() => bubble.classList.add('grove-tip-inline-message--visible'));
 
       // Close button handler
-      const dismissBubble = (reason) => {
-        console.log('[TipErrorHandler] Dismissing bubble, reason:', reason);
+      const dismissBubble = () => {
         bubble.classList.remove('grove-tip-inline-message--visible');
         window.setTimeout(() => bubble.remove(), 120);
         this._activeBubble = null;
@@ -237,17 +230,16 @@
 
       closeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        dismissBubble('close button');
+        dismissBubble();
       });
 
       // Dismiss on scroll - add small delay to avoid immediate dismissal from dynamic content
       setTimeout(() => {
-        this._scrollHandler = () => dismissBubble('scroll');
+        this._scrollHandler = () => dismissBubble();
         window.addEventListener('scroll', this._scrollHandler, true);
       }, 100);
 
       this._activeBubble = bubble;
-      console.log('[TipErrorHandler] Bubble setup complete, activeBubble set');
     }
 
     /**
