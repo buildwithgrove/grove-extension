@@ -174,12 +174,9 @@
       variant = parsedErrorOrMessage.variant || 'error';
     }
 
-    console.log('[Grove Extension] showInlineTipError called - message:', message, 'variant:', variant, 'buttonEl:', buttonEl);
-
     if (!message) return;
 
     if (typeof TipErrorHandler !== 'undefined') {
-      console.log('[Grove Extension] Calling TipErrorHandler.showInlineMessage');
       TipErrorHandler.showInlineMessage(buttonEl, message, variant);
     } else {
       // TipErrorHandler should always be available via manifest.json,
@@ -1973,6 +1970,8 @@ Tip creators you love → {grove_link}`;
             if (isLoggedIn) {
               let didLike = false;
               let didReply = false;
+              let likeFailed = false;
+              let replyFailed = false;
 
               // Like the tweet if enabled
               if (likeOnTipEnabled) {
@@ -1981,8 +1980,9 @@ Tip creators you love → {grove_link}`;
                   console.log("[Grove Extension] Tweet liked successfully");
                   didLike = true;
                 } catch (likeError) {
-                  // Don't fail if like fails (might already be liked)
+                  // Don't fail if like fails (might already be liked or rate limited)
                   console.error("[Grove Extension] Like failed:", likeError);
+                  likeFailed = true;
                 }
               }
 
@@ -2005,12 +2005,13 @@ Tip creators you love → {grove_link}`;
                   didReply = true;
                 } catch (replyError) {
                   console.error("[Grove Extension] Reply failed:", replyError);
+                  replyFailed = true;
                 }
               }
 
-              // Show success message if any X action was performed
-              console.log("[Grove Extension] X actions completed - didLike:", didLike, "didReply:", didReply);
+              // Show feedback message based on what happened
               if (didLike || didReply) {
+                // At least one action succeeded
                 let message = '';
                 if (didLike && didReply) {
                   message = 'Liked & replied! Refresh to view.';
@@ -2019,8 +2020,18 @@ Tip creators you love → {grove_link}`;
                 } else if (didReply) {
                   message = 'Reply sent! Refresh to view.';
                 }
-                console.log("[Grove Extension] Showing success message:", message);
                 showInlineTipError(buttonWrapper.button, { message, variant: 'success' });
+              } else if (likeFailed || replyFailed) {
+                // All attempted actions failed - show warning
+                let message = '';
+                if (likeFailed && replyFailed) {
+                  message = 'Like & reply failed (rate limited?)';
+                } else if (likeFailed) {
+                  message = 'Like failed (rate limited?)';
+                } else if (replyFailed) {
+                  message = 'Reply failed (rate limited?)';
+                }
+                showInlineTipError(buttonWrapper.button, { message, variant: 'warning' });
               }
             } else {
               console.log("[Grove Extension] X features skipped - not logged in to X");

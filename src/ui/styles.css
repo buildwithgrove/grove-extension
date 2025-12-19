@@ -324,6 +324,11 @@
   border-color: #389f58;
 }
 
+/* Warning variant for inline messages */
+.grove-tip-inline-message[data-variant="warning"] {
+  border-color: #f97316;
+}
+
 .grove-tip-button:disabled {
 /* Reddit/YouTube disabled states - DO NOT REMOVE: FUTURE FEATURE */
 /* .grove-tip-button-reddit:disabled,
