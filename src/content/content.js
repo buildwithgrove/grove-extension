@@ -2009,11 +2009,11 @@ Tip creators you love → {grove_link}`;
               if (didLike || didReply) {
                 let message = '';
                 if (didLike && didReply) {
-                  message = 'Liked & replied! Refresh to see.';
+                  message = 'Liked & replied! Refresh to view.';
                 } else if (didLike) {
-                  message = 'Liked! Refresh to see.';
+                  message = 'Post liked! Refresh to view.';
                 } else if (didReply) {
-                  message = 'Replied! Refresh to see.';
+                  message = 'Reply sent! Refresh to view.';
                 }
                 showInlineTipError(buttonWrapper.button, { message, variant: 'success' });
               }
