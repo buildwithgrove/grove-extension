@@ -946,25 +946,28 @@ button.section-card-btn:hover .quick-access-icon {
 }
 
 .onboarding-tagline {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+  font-size: 14px;
 }
 
 .onboarding-learn-more {
-  font-size: 13px;
-  margin-bottom: 24px;
+  font-size: 12px;
+  margin-bottom: 28px;
+  color: var(--color-text-tertiary);
 }
 
 .onboarding-learn-more a {
-  color: var(--color-primary);
-  text-decoration: none;
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .onboarding-learn-more a:hover {
-  text-decoration: underline;
+  color: var(--color-primary);
 }
 
 .btn-onboarding {
-  padding: 12px 32px;
+  padding: 12px 36px;
   border-radius: var(--radius-full);
   font-weight: 600;
   font-size: 15px;
@@ -980,13 +983,11 @@ button.section-card-btn:hover .quick-access-icon {
 }
 
 .onboarding-hint {
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  margin-top: 16px;
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  margin-top: 14px;
   margin-bottom: 0;
-  background: var(--color-surface);
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
+  letter-spacing: 0.3px;
 }
 
 .onboarding-card .info-text-xs {
