@@ -107,30 +107,7 @@ const tipIntroDots = document.querySelectorAll('.tip-intro-dot');
 // Initialize Previous Keys UI
 let prevKeysUI = null;
 
-// Storage Keys
-const STORAGE_KEYS = {
-  // Dual JWT slots
-  JWT_PRODUCTION: 'GROVE_JWT_PRODUCTION',
-  JWT_TESTNET: 'GROVE_JWT_TESTNET',
-  JWT: 'GROVE_API_JWT', // Legacy - for migration only
-  // Settings
-  TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
-  CONFIRM_TIP: 'GROVE_CONFIRM_TIP',
-  HAS_TIPPED: 'GROVE_HAS_TIPPED',
-  AUTO_REPLY: 'GROVE_AUTO_REPLY',
-  AUTO_REPLY_MESSAGE: 'GROVE_AUTO_REPLY_MESSAGE',
-  LIKE_ON_TIP: 'GROVE_LIKE_ON_TIP',
-  ENVIRONMENT: 'groveEnvironment',
-  CHAIN: 'groveChain',
-  ENDPOINT: 'groveEndpoint',
-  LAST_BALANCES: 'GROVE_LAST_BALANCES',
-  CLIENT_ADDRESS: 'GROVE_CLIENT_ADDRESS',
-  ENS_NAME: 'GROVE_ENS_NAME',
-  TIP_INTRO_SEEN: 'GROVE_TIP_INTRO_SEEN',
-  EARN_TAB_SEEN: 'GROVE_EARN_TAB_SEEN',
-  LAUNCH_COUNT: 'GROVE_LAUNCH_COUNT',
-  TWITTER_MODAL_SEEN: 'GROVE_TWITTER_MODAL_SEEN',
-};
+// STORAGE_KEYS is loaded from src/config/storageKeys.js
 
 /**
  * Check if developer mode is enabled

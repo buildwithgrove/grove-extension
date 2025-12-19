@@ -6,14 +6,7 @@
 (function () {
   "use strict";
 
-  // JWT Storage Keys (must match keyManager.js and popup.js)
-  const JWT_KEYS = {
-    PRODUCTION: 'GROVE_JWT_PRODUCTION',
-    TESTNET: 'GROVE_JWT_TESTNET',
-    LOCALHOST: 'GROVE_JWT_LOCALHOST',
-    ENVIRONMENT: 'groveEnvironment',
-    ENDPOINT: 'groveEndpoint',
-  };
+  // STORAGE_KEYS is loaded from src/config/storageKeys.js
 
   /**
    * Check if the extension context is still valid
@@ -71,25 +64,25 @@
       }
 
       try {
-        chrome.storage.local.get([JWT_KEYS.PRODUCTION, JWT_KEYS.TESTNET, JWT_KEYS.LOCALHOST, JWT_KEYS.ENVIRONMENT, JWT_KEYS.ENDPOINT], (result) => {
+        chrome.storage.local.get([STORAGE_KEYS.JWT_PRODUCTION, STORAGE_KEYS.JWT_TESTNET, STORAGE_KEYS.JWT_LOCALHOST, STORAGE_KEYS.ENVIRONMENT, STORAGE_KEYS.ENDPOINT], (result) => {
           // Check for Chrome runtime errors (e.g., context invalidated during the call)
           if (chrome.runtime.lastError) {
             reject(new Error('Extension was reloaded. Please refresh the page.'));
             return;
           }
 
-          const isDevMode = result[JWT_KEYS.ENVIRONMENT] === 'local';
-          const endpoint = result[JWT_KEYS.ENDPOINT] || 'production';
+          const isDevMode = result[STORAGE_KEYS.ENVIRONMENT] === 'local';
+          const endpoint = result[STORAGE_KEYS.ENDPOINT] || 'production';
 
           let jwt;
           if (!isDevMode) {
-            jwt = result[JWT_KEYS.PRODUCTION];
+            jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
           } else if (endpoint === 'localhost') {
-            jwt = result[JWT_KEYS.LOCALHOST];
+            jwt = result[STORAGE_KEYS.JWT_LOCALHOST];
           } else if (endpoint === 'testnet') {
-            jwt = result[JWT_KEYS.TESTNET];
+            jwt = result[STORAGE_KEYS.JWT_TESTNET];
           } else {
-            jwt = result[JWT_KEYS.PRODUCTION];
+            jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
           }
           resolve(jwt || null);
         });

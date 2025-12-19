@@ -30,6 +30,7 @@
     {
       "matches": ["https://twitter.com/*", "https://x.com/*"],
       "js": [
+        "src/config/storageKeys.js",
         "src/parsers/address.js",
         "src/adapters/base.js",
         "src/adapters/twitter.js",
@@ -54,6 +55,7 @@
         "https://www.x.com/*"
       ],
       "js": [
+        "src/config/storageKeys.js",
         "src/parsers/address.js",
         "src/adapters/base.js",
         "src/adapters/generic.js",
