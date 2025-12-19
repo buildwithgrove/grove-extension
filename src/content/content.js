@@ -519,18 +519,9 @@
       context.recipient_profile_url = `https://x.com/${username}`;
     }
 
-    // Add sender info if X is authenticated with real username
-    if (typeof XAuth !== 'undefined') {
-      try {
-        const senderInfo = await XAuth.getStoredUserInfo();
-        // Only use if we have a real username (not the fallback 'Connected')
-        if (senderInfo && senderInfo.username && senderInfo.username !== 'Connected') {
-          context.sender_username = senderInfo.username;
-          context.sender_profile_url = `https://x.com/${senderInfo.username}`;
-        }
-      } catch (e) {
-        // Ignore - sender info is optional
-      }
+    // Add sender info if X is authenticated (from xFeatures.js)
+    if (typeof addXSenderInfo === 'function') {
+      await addXSenderInfo(context);
     }
 
     // Send tip via API with JWT, amount, and context
@@ -1692,17 +1683,8 @@
 
   /**
    * Build auto-reply message from template
-   * @param {string} template - Message template with placeholders
-   * @param {Object} values - Object containing placeholder values
-   * @returns {string} - Formatted message
+   * buildAutoReplyMessage is imported from src/content/xFeatures.js
    */
-  function buildAutoReplyMessage(template, values) {
-    return template
-      .replace(/\{username\}/g, values.username || '')
-      .replace(/\{chain\}/g, values.chain || '')
-      .replace(/\{tx_link\}/g, values.tx_link || '')
-      .replace(/\{grove_link\}/g, values.grove_link || 'grove.city');
-  }
 
   /**
    * Send tip for a tweet
@@ -1810,18 +1792,9 @@
       context.recipient_profile_url = `https://x.com/${username}`;
     }
 
-    // Add sender info if X is authenticated with real username
-    if (typeof XAuth !== 'undefined') {
-      try {
-        const senderInfo = await XAuth.getStoredUserInfo();
-        // Only use if we have a real username (not the fallback 'Connected')
-        if (senderInfo && senderInfo.username && senderInfo.username !== 'Connected') {
-          context.sender_username = senderInfo.username;
-          context.sender_profile_url = `https://x.com/${senderInfo.username}`;
-        }
-      } catch (e) {
-        // Ignore - sender info is optional
-      }
+    // Add sender info if X is authenticated (from xFeatures.js)
+    if (typeof addXSenderInfo === 'function') {
+      await addXSenderInfo(context);
     }
 
     // Send tip via API with context
