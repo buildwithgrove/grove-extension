@@ -1488,7 +1488,11 @@ async function handleXLogin() {
     }
     await loadXLoginStatus();
 
-    showToast('Connected to 𝕏');
+    // Only show success toast if actually logged in
+    const isLoggedIn = await XAuth.isLoggedIn();
+    if (isLoggedIn) {
+      showToast('Connected to 𝕏');
+    }
   } catch (error) {
     console.error('[Grove Extension] X login failed:', error);
     if (homeXConnectBtn) {
