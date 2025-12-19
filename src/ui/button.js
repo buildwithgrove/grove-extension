@@ -1,7 +1,7 @@
 /**
  * Tip Button UI
  * Creates and manages the tip button element
- * Requires: src/ui/constants.js
+ * Requires: src/ui/constants.js, src/utils/darkMode.js
  */
 
 class TipButton {
@@ -14,50 +14,21 @@ class TipButton {
     this.onClickCallback = onClickCallback;
     this.button = null;
     this.platform = platform;
-    this.isDarkMode = this.detectDarkMode();
+    // Use shared dark mode detector
+    this.isDarkMode = typeof detectDarkMode === 'function'
+      ? detectDarkMode(platform)
+      : this._fallbackDetectDarkMode();
   }
 
   /**
-   * Detect if the page is in dark mode
+   * Fallback dark mode detection if shared module not loaded
    * @returns {boolean}
    */
-  detectDarkMode() {
-    // Platform-specific detection
-    if (this.platform === 'twitter') {
-      // Twitter uses backgroundColor on body or color-scheme
-      const bg = document.body.style.backgroundColor ||
-                 window.getComputedStyle(document.body).backgroundColor;
-      if (bg) {
-        return this.isColorDark(bg);
-      }
-    }
-
-    // Fallback: check system preference
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return true;
-    }
-
-    // Fallback: check body background luminosity
+  _fallbackDetectDarkMode() {
     const bg = window.getComputedStyle(document.body).backgroundColor;
-    return this.isColorDark(bg);
-  }
-
-  /**
-   * Check if a color is dark based on luminosity
-   * @param {string} color - CSS color string (rgb/rgba)
-   * @returns {boolean}
-   */
-  isColorDark(color) {
-    // Parse rgb/rgba color
-    const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-    if (!match) return true; // Default to dark if can't parse
-
-    const r = parseInt(match[1]);
-    const g = parseInt(match[2]);
-    const b = parseInt(match[3]);
-
-    // Calculate relative luminance
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (!match) return true;
+    const luminance = (0.299 * parseInt(match[1]) + 0.587 * parseInt(match[2]) + 0.114 * parseInt(match[3])) / 255;
     return luminance < 0.5;
   }
 

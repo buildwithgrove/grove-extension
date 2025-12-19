@@ -120,10 +120,11 @@
   let firstTipModal = null;
   let resolvedAddress = null; // Stores address info (0x address or ENS name)
 
-  // Address cache: maps username -> { address, type, original, timestamp }
-  // Cache entries expire after 10 minutes
-  const addressCache = new Map();
-  const ADDRESS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+  // Address cache: uses shared AddressCache class from src/utils/addressCache.js
+  // Cache entries expire after 10 minutes (configured in ADDRESS_CACHE_TTL)
+  const addressCache = typeof AddressCache !== 'undefined'
+    ? new AddressCache()
+    : new Map(); // Fallback for backwards compatibility
 
   // Track which tweets already have buttons to avoid duplicates
   const processedTweets = new WeakSet();
@@ -1108,28 +1109,39 @@
 
   /**
    * Get cached address for a username
+   * Uses shared AddressCache class if available, falls back to Map-based implementation
    * @param {string} username - Twitter username
    * @returns {Object|string|null} - Cached address result, 'no-address', or null if not cached/expired
    */
   function getCachedAddress(username) {
+    // Use AddressCache.get() if available (handles TTL internally)
+    if (addressCache instanceof AddressCache) {
+      return addressCache.get(username);
+    }
+    // Fallback for Map-based cache
     const cached = addressCache.get(username);
     if (!cached) return null;
-
-    // Check if expired
-    if (Date.now() - cached.timestamp > ADDRESS_CACHE_TTL) {
+    const ttl = typeof ADDRESS_CACHE_TTL !== 'undefined' ? ADDRESS_CACHE_TTL : 10 * 60 * 1000;
+    if (Date.now() - cached.timestamp > ttl) {
       addressCache.delete(username);
       return null;
     }
-
     return cached.data;
   }
 
   /**
    * Set cached address for a username
+   * Uses shared AddressCache class if available
    * @param {string} username - Twitter username
    * @param {Object|string} data - Address result or 'no-address'
    */
   function setCachedAddress(username, data) {
+    // Use AddressCache.set() if available
+    if (addressCache instanceof AddressCache) {
+      addressCache.set(username, data);
+      return;
+    }
+    // Fallback for Map-based cache
     addressCache.set(username, {
       data,
       timestamp: Date.now()
@@ -1920,23 +1932,8 @@
     }
   }
 
-  /**
-   * Detect if page is in dark mode
-   * @returns {boolean}
-   */
-  function detectDarkMode() {
-    // Check Twitter's background color
-    const bg = document.body.style.backgroundColor ||
-               window.getComputedStyle(document.body).backgroundColor;
-    if (bg) {
-      const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-      if (match) {
-        const luminance = (0.299 * parseInt(match[1]) + 0.587 * parseInt(match[2]) + 0.114 * parseInt(match[3])) / 255;
-        return luminance < 0.5;
-      }
-    }
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  }
+  // Use shared detectDarkMode from src/utils/darkMode.js if available
+  // The shared module is loaded before content.js in manifest.json
 
   /**
    * Clean up when page changes

@@ -3404,48 +3404,8 @@ async function checkAndShowTwitterModal() {
   }
 }
 
-/**
- * Toast Notification
- */
-function showToast(msg) {
-  // Remove any existing toast
-  const existing = document.querySelector('.grove-toast');
-  if (existing) {
-    existing.remove();
-  }
-
-  const div = document.createElement('div');
-  div.className = 'grove-toast';
-  div.style.position = 'fixed';
-  div.style.bottom = '72px'; // Above nav bar (64px + 8px gap)
-  div.style.left = '50%';
-  div.style.transform = 'translateX(-50%) translateY(20px)';
-  div.style.opacity = '0';
-  div.style.background = '#f0ad4e';
-  div.style.color = '#000';
-  div.style.padding = '8px 16px';
-  div.style.borderRadius = '8px';
-  div.style.fontSize = '13px';
-  div.style.fontWeight = '500';
-  div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-  div.style.zIndex = '2000';
-  div.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
-  div.style.whiteSpace = 'nowrap';
-  div.textContent = msg;
-
-  document.body.appendChild(div);
-
-  requestAnimationFrame(() => {
-    div.style.transform = 'translateX(-50%) translateY(0)';
-    div.style.opacity = '1';
-  });
-
-  setTimeout(() => {
-    div.style.transform = 'translateX(-50%) translateY(20px)';
-    div.style.opacity = '0';
-    setTimeout(() => div.remove(), 300);
-  }, 2000);
-}
+// Toast notification: uses shared showToast from src/ui/toast.js
+// Loaded via popup.html script tag before popup.js
 
 /**
  * Toggle Password Visibility

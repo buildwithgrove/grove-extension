@@ -1,44 +1,50 @@
 /**
  * API Utility
  * Handles communication with Grove backend
+ * Requires: src/config/endpoints.js, src/config/chains.js
  */
 
 class GroveAPI {
-  static ENDPOINTS = {
-    'production': 'https://api.grove.city',
-    'testnet': 'https://api.testnet.grove.city',
-    'localhost': 'http://localhost:8000',
-    'localhost:8000': 'http://localhost:8000',
-  };
+  // Use shared configs, with fallbacks for backwards compatibility
+  static get ENDPOINTS() {
+    return typeof API_ENDPOINTS !== 'undefined' ? API_ENDPOINTS : {
+      'production': 'https://api.grove.city',
+      'testnet': 'https://api.testnet.grove.city',
+      'localhost': 'http://localhost:8000',
+      'localhost:8000': 'http://localhost:8000',
+    };
+  }
 
   static DEFAULT_TIP_AMOUNT = 0.05; // $0.05 default
 
-  static CHAIN_RPC_ENDPOINTS = {
-    'base': {
-      name: 'Base',
-      chainId: 8453,
-      rpcUrl: 'https://mainnet.base.org',
-      explorerUrl: 'https://basescan.org'
-    },
-    'base-sepolia': {
-      name: 'Base Sepolia',
-      chainId: 84532,
-      rpcUrl: 'https://sepolia.base.org',
-      explorerUrl: 'https://sepolia.basescan.org'
-    },
-    'solana': {
-      name: 'Solana',
-      chainId: null,
-      rpcUrl: 'https://api.mainnet-beta.solana.com',
-      explorerUrl: 'https://explorer.solana.com'
-    },
-    'solana-devnet': {
-      name: 'Solana Devnet',
-      chainId: null,
-      rpcUrl: 'https://api.devnet.solana.com',
-      explorerUrl: 'https://explorer.solana.com?cluster=devnet'
-    }
-  };
+  static get CHAIN_RPC_ENDPOINTS() {
+    return typeof CHAIN_CONFIG !== 'undefined' ? CHAIN_CONFIG : {
+      'base': {
+        name: 'Base',
+        chainId: 8453,
+        rpcUrl: 'https://mainnet.base.org',
+        explorerUrl: 'https://basescan.org'
+      },
+      'base-sepolia': {
+        name: 'Base Sepolia',
+        chainId: 84532,
+        rpcUrl: 'https://sepolia.base.org',
+        explorerUrl: 'https://sepolia.basescan.org'
+      },
+      'solana': {
+        name: 'Solana',
+        chainId: null,
+        rpcUrl: 'https://api.mainnet-beta.solana.com',
+        explorerUrl: 'https://explorer.solana.com'
+      },
+      'solana-devnet': {
+        name: 'Solana Devnet',
+        chainId: null,
+        rpcUrl: 'https://api.devnet.solana.com',
+        explorerUrl: 'https://explorer.solana.com?cluster=devnet'
+      }
+    };
+  }
 
   static GROVE_API_JWT = ''; // Placeholder for now
 
