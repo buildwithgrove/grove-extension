@@ -947,10 +947,13 @@ button.section-card-btn:hover .quick-access-icon {
 
 .onboarding-features {
   list-style: none;
-  padding: 0;
+  padding: 12px 14px;
   margin: 0 0 24px 0;
   width: 100%;
   text-align: left;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
 }
 
 .onboarding-features li {
@@ -961,8 +964,13 @@ button.section-card-btn:hover .quick-access-icon {
   border-bottom: 1px solid var(--color-border);
 }
 
+.onboarding-features li:first-child {
+  padding-top: 0;
+}
+
 .onboarding-features li:last-child {
   border-bottom: none;
+  padding-bottom: 0;
 }
 
 .feature-icon {
@@ -984,19 +992,20 @@ button.section-card-btn:hover .quick-access-icon {
 }
 
 .feature-text strong {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);
 }
 
 .feature-text span {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-text-secondary);
+  line-height: 1.4;
 }
 
 .btn-onboarding {
   padding: 12px 36px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   font-weight: 600;
   font-size: 15px;
   text-decoration: none;
