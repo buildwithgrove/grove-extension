@@ -2255,46 +2255,7 @@ async function loadTopTippers() {
     return;
   }
 
-  list.innerHTML = result.data.entries.map((entry, i) => {
-    const ctx = entry.lastTipContext || {};
-    const parsed = entry.lastTipDestination ? parseDestination(entry.lastTipDestination) : {};
-
-    // Icon with rank number
-    const rankIcon = `<span class="rank-number">${i + 1}</span>`;
-
-    // Label: wallet address or username
-    let labelHtml = FormatUtils.formatAddress(entry.address);
-
-    // Description: latest tip recipient (prefer post/tweet URL over profile URL)
-    let descriptionHtml;
-    if (ctx.recipient_username) {
-      const postUrl = ctx.source_post_url || parsed.postUrl;
-      const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
-      const linkUrl = postUrl || profileUrl;
-      const linkText = postUrl ? `@${FormatUtils.escapeHtml(ctx.recipient_username)}'s post` : `@${FormatUtils.escapeHtml(ctx.recipient_username)}`;
-      descriptionHtml = `Latest tip: <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${linkText}</a>`;
-    } else if (parsed.profileHandle) {
-      const linkUrl = parsed.postUrl || parsed.profileUrl;
-      const linkText = parsed.postUrl ? `${parsed.profileHandle}'s post` : parsed.profileHandle;
-      descriptionHtml = `Latest tip: <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${linkText}</a>`;
-    } else {
-      descriptionHtml = `${entry.tipCount.toLocaleString()} tips sent`;
-    }
-
-    return `
-      <div class="transaction-item">
-        <div class="transaction-item-icon rank-icon">${rankIcon}</div>
-        <div class="transaction-item-details">
-          <div class="transaction-item-label">${labelHtml}</div>
-          <div class="transaction-item-description">${descriptionHtml}</div>
-        </div>
-        <div class="transaction-item-right">
-          <div class="transaction-item-amount received">${FormatUtils.formatUSD(entry.totalUSD)}</div>
-          <div class="transaction-item-time">${entry.tipCount} tips</div>
-        </div>
-      </div>
-    `;
-  }).join('');
+  list.innerHTML = LeaderboardRenderer.renderTippersList(result.data.entries);
 }
 
 /**
@@ -2318,60 +2279,7 @@ async function loadTopEarners() {
     return;
   }
 
-  list.innerHTML = result.data.entries.map((entry, i) => {
-    const ctx = entry.lastTipContext || {};
-    const parsed = entry.lastTipDestination ? parseDestination(entry.lastTipDestination) : {};
-
-    // Icon with rank number
-    const rankIcon = `<span class="rank-number">${i + 1}</span>`;
-
-    // Label: show the earner's identity (recipient username or address)
-    let labelHtml;
-    if (ctx.recipient_username) {
-      const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
-      labelHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${FormatUtils.escapeHtml(ctx.recipient_username)}</a>`;
-    } else if (parsed.profileHandle && parsed.profileUrl) {
-      labelHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
-    } else {
-      labelHtml = FormatUtils.formatAddress(entry.address);
-    }
-
-    // Description: tip count
-    const descriptionHtml = `${entry.tipCount.toLocaleString()} tips received`;
-
-    // Platform link icon (X icon for Twitter/X tips)
-    const isTwitter = (ctx.source_post_url && (ctx.source_post_url.includes('x.com') || ctx.source_post_url.includes('twitter.com'))) ||
-      (parsed.profileUrl && (parsed.profileUrl.includes('x.com') || parsed.profileUrl.includes('twitter.com'))) ||
-      (entry.lastTipSocialGraph && (entry.lastTipSocialGraph.includes('x.com') || entry.lastTipSocialGraph.includes('twitter.com')));
-
-    let platformUrl = ctx.source_post_url || parsed.postUrl || parsed.profileUrl ||
-      (entry.lastTipSocialGraph && (entry.lastTipSocialGraph.startsWith('http') ? entry.lastTipSocialGraph : `https://${entry.lastTipSocialGraph}`));
-
-    const platformLinkHtml = isTwitter && platformUrl
-      ? `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="View on X">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-          </svg>
-        </a>`
-      : `<span class="history-platform-link history-platform-link-empty"></span>`;
-
-    return `
-      <div class="transaction-item">
-        <div class="transaction-item-icon rank-icon">${rankIcon}</div>
-        <div class="transaction-item-details">
-          <div class="transaction-item-label">${labelHtml}</div>
-          <div class="transaction-item-description">${descriptionHtml}</div>
-        </div>
-        <div class="transaction-item-right">
-          <div class="transaction-item-amount received">${FormatUtils.formatUSD(entry.totalUSD)}</div>
-          <div class="transaction-item-time">${entry.tipCount} tips</div>
-        </div>
-        <div class="transaction-item-links">
-          ${platformLinkHtml}
-        </div>
-      </div>
-    `;
-  }).join('');
+  list.innerHTML = LeaderboardRenderer.renderEarnersList(result.data.entries);
 }
 
 /**
@@ -2454,76 +2362,20 @@ async function loadLiveTips(isRefresh = false) {
     return;
   }
 
-  const newEntries = result.data.entries.filter(e => !seenTxHashes.has(e.txHash));
+  // Track new entries for animation
+  const newTxHashes = new Set();
+  if (isRefresh) {
+    result.data.entries.forEach(e => {
+      if (!seenTxHashes.has(e.txHash)) {
+        newTxHashes.add(e.txHash);
+      }
+    });
+  }
 
   // Update seen hashes
   result.data.entries.forEach(e => seenTxHashes.add(e.txHash));
 
-  list.innerHTML = result.data.entries.map((entry) => {
-    const isNew = newEntries.some(n => n.txHash === entry.txHash) && isRefresh;
-    const parsed = parseDestination(entry.destination);
-    const ctx = entry.context || {};
-
-    // Dollar icon for tips
-    const icon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>';
-
-    // Label: recipient name (the main info)
-    let labelHtml;
-    if (ctx.recipient_username) {
-      const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
-      labelHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${FormatUtils.escapeHtml(ctx.recipient_username)}</a>`;
-    } else if (parsed.profileHandle) {
-      labelHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.escapeHtml(parsed.profileHandle)}</a>`;
-    } else {
-      const addressUrl = getAddressExplorerUrl(entry.network, entry.address);
-      labelHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.formatAddress(entry.address)}</a>`;
-    }
-
-    // Description: "Tip Received"
-    const descriptionHtml = 'Tip Received';
-
-    // Platform link (X icon) - show if it's a Twitter/X tip
-    const isTwitter = (ctx.source_post_url && (ctx.source_post_url.includes('x.com') || ctx.source_post_url.includes('twitter.com'))) ||
-      (parsed.profileUrl && (parsed.profileUrl.includes('x.com') || parsed.profileUrl.includes('twitter.com')));
-
-    let platformUrl = ctx.source_post_url || parsed.postUrl || parsed.profileUrl;
-    const platformLinkHtml = isTwitter && platformUrl
-      ? `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="View on X">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-          </svg>
-        </a>`
-      : `<span class="history-platform-link history-platform-link-empty"></span>`;
-
-    // TX link (chain icon)
-    const explorerUrl = getExplorerUrl(entry.network, entry.txHash);
-    const txLinkHtml = explorerUrl
-      ? `<a href="${explorerUrl}" target="_blank" rel="noopener noreferrer" class="history-tx-link" title="View transaction">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-          </svg>
-        </a>`
-      : `<span class="history-tx-link history-tx-link-empty"></span>`;
-
-    return `
-      <div class="transaction-item${isNew ? ' new' : ''}">
-        <div class="transaction-item-icon tip_received">${icon}</div>
-        <div class="transaction-item-details">
-          <div class="transaction-item-label">${labelHtml}</div>
-          <div class="transaction-item-description">${descriptionHtml}</div>
-        </div>
-        <div class="transaction-item-right">
-          <div class="transaction-item-amount received">${FormatUtils.formatUSD(entry.amountUSD)}</div>
-          <div class="transaction-item-time">${FormatUtils.formatTimeAgo(entry.confirmedAt)}</div>
-        </div>
-        <div class="transaction-item-links">
-          ${platformLinkHtml}
-          ${txLinkHtml}
-        </div>
-      </div>
-    `;
-  }).join('');
+  list.innerHTML = LeaderboardRenderer.renderLiveTipsList(result.data.entries, newTxHashes);
 }
 
 /**
@@ -2809,7 +2661,7 @@ function renderHistoryList() {
     const time = FormatUtils.formatRelativeTime(tx.created_at);
     const amountClass = isFailed ? 'failed' : (tx.type === 'tip_sent' ? 'sent' : 'received');
 
-    const explorerUrl = getExplorerUrl(tx.network, tx.tx_hash);
+    const explorerUrl = LeaderboardRenderer.getExplorerUrl(tx.network, tx.tx_hash);
     const parsed = parseDestination(tx.destination);
     const ctx = tx.context || {};
 
@@ -2826,7 +2678,7 @@ function renderHistoryList() {
       } else if (parsed.postUrl) {
         descriptionHtml = `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.truncateDestination(tx.destination)}</a>`;
       } else if (tx.counterparty_address) {
-        const addressUrl = getAddressExplorerUrl(tx.network, tx.counterparty_address);
+        const addressUrl = LeaderboardRenderer.getAddressExplorerUrl(tx.network, tx.counterparty_address);
         descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.formatAddress(tx.counterparty_address)}</a>`;
       } else {
         descriptionHtml = FormatUtils.formatNetwork(tx.network);
@@ -2837,7 +2689,7 @@ function renderHistoryList() {
         const profileUrl = ctx.sender_profile_url || `https://x.com/${ctx.sender_username}`;
         descriptionHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${FormatUtils.escapeHtml(ctx.sender_username)}</a>`;
       } else if (tx.counterparty_address) {
-        const addressUrl = getAddressExplorerUrl(tx.network, tx.counterparty_address);
+        const addressUrl = LeaderboardRenderer.getAddressExplorerUrl(tx.network, tx.counterparty_address);
         descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.formatAddress(tx.counterparty_address)}</a>`;
       } else if (parsed.profileHandle && parsed.profileUrl) {
         descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
@@ -2847,7 +2699,7 @@ function renderHistoryList() {
     } else {
       // Deposits and other types
       if (tx.counterparty_address) {
-        const addressUrl = getAddressExplorerUrl(tx.network, tx.counterparty_address);
+        const addressUrl = LeaderboardRenderer.getAddressExplorerUrl(tx.network, tx.counterparty_address);
         descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.formatAddress(tx.counterparty_address)}</a>`;
       } else {
         descriptionHtml = FormatUtils.formatNetwork(tx.network);
@@ -2974,72 +2826,9 @@ function getTransactionDescription(tx) {
   return FormatUtils.formatNetwork(tx.network);
 }
 
-/**
- * Get block explorer URL for a transaction
- */
-function getExplorerUrl(network, txHash) {
-  if (!txHash) return null;
-
-  // Normalize: lowercase and replace underscores with hyphens
-  const normalized = (network || '').toLowerCase().replace(/_/g, '-');
-
-  if (normalized.includes('base')) {
-    const isTestnet = normalized.includes('sepolia') || normalized.includes('testnet');
-    const baseUrl = isTestnet ? 'https://sepolia.basescan.org' : 'https://basescan.org';
-    return `${baseUrl}/tx/${txHash}`;
-  }
-
-  if (normalized.includes('solana') || normalized.includes('sol')) {
-    const isDevnet = normalized.includes('devnet') || normalized.includes('testnet');
-    const cluster = isDevnet ? '?cluster=devnet' : '';
-    return `https://solscan.io/tx/${txHash}${cluster}`;
-  }
-
-  // Default to Base mainnet if network unknown but tx_hash exists
-  return `https://basescan.org/tx/${txHash}`;
-}
-
-/**
- * Get block explorer URL for an address
- */
-function getAddressExplorerUrl(network, address) {
-  if (!address) return null;
-
-  const normalized = (network || '').toLowerCase().replace(/_/g, '-');
-
-  if (normalized.includes('base')) {
-    const isTestnet = normalized.includes('sepolia') || normalized.includes('testnet');
-    const baseUrl = isTestnet ? 'https://sepolia.basescan.org' : 'https://basescan.org';
-    return `${baseUrl}/address/${address}`;
-  }
-
-  if (normalized.includes('solana') || normalized.includes('sol')) {
-    const isDevnet = normalized.includes('devnet') || normalized.includes('testnet');
-    const cluster = isDevnet ? '?cluster=devnet' : '';
-    return `https://solscan.io/account/${address}${cluster}`;
-  }
-
-  // Default to Base mainnet
-  return `https://basescan.org/address/${address}`;
-}
-
-/**
- * Get URL for the tipped content (tweet, etc)
- */
-function getDestinationUrl(destination) {
-  if (!destination) return null;
-
-  // If it already has a protocol, return as-is
-  if (destination.startsWith('http://') || destination.startsWith('https://')) {
-    return destination;
-  }
-
-  // Construct full URL from destination (e.g., "x.com/user/status/123" -> "https://x.com/user/status/123")
-  return `https://${destination}`;
-}
-
 // parseDestination is loaded from src/parsers/destination.js
 // Format utilities are loaded from src/utils/formatUtils.js
+// Leaderboard renderer is loaded from src/ui/leaderboardRenderer.js
 
 /**
  * Tip Button Intro Modal
