@@ -2652,121 +2652,8 @@ function renderHistoryList() {
   const start = historyCurrentPage * HISTORY_PAGE_SIZE;
   const pageItems = filtered.slice(start, start + HISTORY_PAGE_SIZE);
 
-  // Render items
-  list.innerHTML = pageItems.map(tx => {
-    const isFailed = tx.status === 'failed';
-    const icon = isFailed ? getTransactionIcon('failed') : getTransactionIcon(tx.type);
-    const label = isFailed ? 'Tip Failed' : getTransactionLabel(tx.type);
-    const amount = FormatUtils.formatHistoryAmount(tx);
-    const time = FormatUtils.formatRelativeTime(tx.created_at);
-    const amountClass = isFailed ? 'failed' : (tx.type === 'tip_sent' ? 'sent' : 'received');
-
-    const explorerUrl = LeaderboardRenderer.getExplorerUrl(tx.network, tx.tx_hash);
-    const parsed = parseDestination(tx.destination);
-    const ctx = tx.context || {};
-
-    // Build description with links - prefer context data when available
-    let descriptionHtml;
-
-    if (tx.type === 'tip_sent') {
-      // For sent tips: show recipient
-      if (ctx.recipient_username) {
-        const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
-        descriptionHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${FormatUtils.escapeHtml(ctx.recipient_username)}</a>`;
-      } else if (parsed.profileHandle && parsed.profileUrl) {
-        descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
-      } else if (parsed.postUrl) {
-        descriptionHtml = `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.truncateDestination(tx.destination)}</a>`;
-      } else if (tx.counterparty_address) {
-        const addressUrl = LeaderboardRenderer.getAddressExplorerUrl(tx.network, tx.counterparty_address);
-        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.formatAddress(tx.counterparty_address)}</a>`;
-      } else {
-        descriptionHtml = FormatUtils.formatNetwork(tx.network);
-      }
-    } else if (tx.type === 'tip_received') {
-      // For received tips: show sender if available
-      if (ctx.sender_username) {
-        const profileUrl = ctx.sender_profile_url || `https://x.com/${ctx.sender_username}`;
-        descriptionHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${FormatUtils.escapeHtml(ctx.sender_username)}</a>`;
-      } else if (tx.counterparty_address) {
-        const addressUrl = LeaderboardRenderer.getAddressExplorerUrl(tx.network, tx.counterparty_address);
-        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.formatAddress(tx.counterparty_address)}</a>`;
-      } else if (parsed.profileHandle && parsed.profileUrl) {
-        descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
-      } else {
-        descriptionHtml = FormatUtils.formatNetwork(tx.network);
-      }
-    } else {
-      // Deposits and other types
-      if (tx.counterparty_address) {
-        const addressUrl = LeaderboardRenderer.getAddressExplorerUrl(tx.network, tx.counterparty_address);
-        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.formatAddress(tx.counterparty_address)}</a>`;
-      } else {
-        descriptionHtml = FormatUtils.formatNetwork(tx.network);
-      }
-    }
-
-
-    // Platform link icon (X icon for Twitter/X tips)
-    // Check context, destination, and social_graph for Twitter/X
-    // Note: sender_platform can be 'x' or 'twitter' - both are valid and map to X/Twitter
-    const isTwitterFromContext = ctx.sender_platform === 'twitter' || ctx.sender_platform === 'x' ||
-      (ctx.source_post_url && (ctx.source_post_url.includes('x.com') || ctx.source_post_url.includes('twitter.com')));
-    const isTwitterFromDestination = parsed.profileUrl && (parsed.profileUrl.includes('x.com') || parsed.profileUrl.includes('twitter.com'));
-    const isTwitterFromSocialGraph = tx.social_graph && (tx.social_graph.includes('x.com') || tx.social_graph.includes('twitter.com'));
-    const isTwitter = isTwitterFromContext || isTwitterFromDestination || isTwitterFromSocialGraph;
-
-    // Use source_post_url from context first, then destination URL, then social_graph
-    let platformUrl = null;
-    let platformTitle = 'View on X';
-    if (ctx.source_post_url) {
-      platformUrl = ctx.source_post_url;
-      platformTitle = ctx.source_post_url.includes('/status/') ? 'View post' : 'View profile';
-    } else if (isTwitterFromDestination) {
-      platformUrl = parsed.postUrl || parsed.profileUrl;
-      platformTitle = parsed.postUrl ? 'View post' : 'View profile';
-    } else if (isTwitterFromSocialGraph) {
-      platformUrl = tx.social_graph.startsWith('http') ? tx.social_graph : `https://${tx.social_graph}`;
-      platformTitle = 'View source';
-    }
-
-    // Always render platform icon slot for alignment, but only make it clickable if there's a URL
-    const platformLinkHtml = isTwitter && platformUrl
-      ? `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="${platformTitle}">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-          </svg>
-        </a>`
-      : `<span class="history-platform-link history-platform-link-empty"></span>`;
-
-    // TX link icon (chain icon)
-    const txLinkHtml = explorerUrl
-      ? `<a href="${explorerUrl}" target="_blank" rel="noopener noreferrer" class="history-tx-link" title="View transaction">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-          </svg>
-        </a>`
-      : `<span class="history-tx-link history-tx-link-empty"></span>`;
-
-    return `
-      <div class="transaction-item">
-        <div class="transaction-item-icon ${isFailed ? 'failed' : tx.type}">${icon}</div>
-        <div class="transaction-item-details">
-          <div class="transaction-item-label">${descriptionHtml}</div>
-          <div class="transaction-item-description">${label}</div>
-        </div>
-        <div class="transaction-item-right">
-          <div class="transaction-item-amount ${amountClass}">${amount}</div>
-          <div class="transaction-item-time">${time}</div>
-        </div>
-        <div class="transaction-item-links">
-          ${platformLinkHtml}
-          ${txLinkHtml}
-        </div>
-      </div>
-    `;
-  }).join('');
+  // Render items using HistoryRenderer
+  list.innerHTML = HistoryRenderer.renderHistoryList(pageItems);
 
   // Update pagination
   if (totalPages > 1) {
@@ -2779,56 +2666,10 @@ function renderHistoryList() {
   }
 }
 
-/**
- * Get transaction icon based on type
- */
-function getTransactionIcon(type) {
-  switch (type) {
-    case 'tip_sent':
-      return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5m0 0l-7 7m7-7l7 7"/></svg>';
-    case 'tip_received':
-      return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m0 0l7-7m-7 7l-7-7"/></svg>';
-    case 'deposit':
-      return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>';
-    case 'failed':
-      return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>';
-    default:
-      return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>';
-  }
-}
-
-/**
- * Get transaction label based on type
- */
-function getTransactionLabel(type) {
-  switch (type) {
-    case 'tip_sent': return 'Tip Sent';
-    case 'tip_received': return 'Tip Received';
-    case 'deposit': return 'Deposit';
-    default: return 'Transaction';
-  }
-}
-
-/**
- * Get transaction description
- */
-function getTransactionDescription(tx) {
-  if (tx.type === 'tip_sent' || tx.type === 'tip_received') {
-    if (tx.destination) {
-      // Show destination (twitter.com/username)
-      return FormatUtils.truncateDestination(tx.destination);
-    }
-    if (tx.counterparty_address) {
-      return FormatUtils.formatAddress(tx.counterparty_address);
-    }
-    return FormatUtils.formatNetwork(tx.network);
-  }
-  return FormatUtils.formatNetwork(tx.network);
-}
-
 // parseDestination is loaded from src/parsers/destination.js
 // Format utilities are loaded from src/utils/formatUtils.js
 // Leaderboard renderer is loaded from src/ui/leaderboardRenderer.js
+// History renderer is loaded from src/ui/historyRenderer.js
 
 /**
  * Tip Button Intro Modal
