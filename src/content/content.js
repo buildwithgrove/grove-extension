@@ -367,14 +367,14 @@
     }
 
     // Get settings from storage
-    let tipAmount = 0.10; // default
+    let tipAmount = 0.02; // default
     let confirmBeforeTipping = false; // default off
     let hasTipped = false; // whether user has tipped before
 
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         const result = await chrome.storage.local.get(['GROVE_TIP_AMOUNT', 'GROVE_CONFIRM_TIP', 'GROVE_HAS_TIPPED']);
-        tipAmount = result.GROVE_TIP_AMOUNT || 0.10;
+        tipAmount = result.GROVE_TIP_AMOUNT || 0.02;
         confirmBeforeTipping = result.GROVE_CONFIRM_TIP || false;
         hasTipped = result.GROVE_HAS_TIPPED || false;
       }
@@ -1099,14 +1099,14 @@
     }
 
     // Get settings from storage
-    let tipAmount = 0.10;
+    let tipAmount = 0.02;
     let confirmBeforeTipping = false;
     let hasTipped = false;
 
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         const result = await chrome.storage.local.get(['GROVE_TIP_AMOUNT', 'GROVE_CONFIRM_TIP', 'GROVE_HAS_TIPPED']);
-        tipAmount = result.GROVE_TIP_AMOUNT || 0.10;
+        tipAmount = result.GROVE_TIP_AMOUNT || 0.02;
         confirmBeforeTipping = result.GROVE_CONFIRM_TIP || false;
         hasTipped = result.GROVE_HAS_TIPPED || false;
       }

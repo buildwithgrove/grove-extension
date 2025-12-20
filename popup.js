@@ -137,7 +137,7 @@ const saveAutoReplyMessageBtn = document.getElementById('homeSaveAutoReplyMessag
 const resetAutoReplyMessageBtn = document.getElementById('homeResetAutoReplyMessageBtn');
 
 // Defaults
-const DEFAULT_TIP_AMOUNT = 0.10;
+const DEFAULT_TIP_AMOUNT = 0.02;
 const DEFAULT_CHAIN = 'base';
 const DEFAULT_ENV = 'prod';
 const DEFAULT_ENDPOINT = 'production';
