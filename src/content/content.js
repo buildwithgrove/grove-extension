@@ -189,6 +189,17 @@
     );
   }
 
+  // Initialize ProfilePageHandler with callbacks
+  if (typeof ProfilePageHandler !== 'undefined') {
+    ProfilePageHandler.init({
+      hasAddresses: (text) => AddressParser.hasAddresses(text),
+      resolveAddress: (text) => AddressParser.resolveAddress(text),
+      setCachedAddress: setCachedAddress,
+      onTipClick: handleTipClick,
+      extractUsernameFromUrl: extractUsernameFromUrl
+    });
+  }
+
   /**
    * Show a small inline error/warning anchored to the tip button.
    * Delegates to TipErrorHandler.showInlineMessage() which handles positioning,
@@ -237,7 +248,13 @@
     if (currentAdapter.getPlatformName() === "twitter") {
       // If on a profile page, initialize profile button first (this caches the address)
       if (currentAdapter.detectProfilePage()) {
-        await initializeProfileButton();
+        if (typeof ProfilePageHandler !== 'undefined') {
+          const result = await ProfilePageHandler.initialize(currentAdapter);
+          if (result) {
+            resolvedAddress = result;
+            currentButton = ProfilePageHandler.getButton();
+          }
+        }
       }
 
       // Always set up tweet observer on Twitter (after profile init so cache is populated)
@@ -266,9 +283,14 @@
       return;
     }
 
-
     // Initialize profile button
-    await initializeProfileButton();
+    if (typeof ProfilePageHandler !== 'undefined') {
+      const result = await ProfilePageHandler.initialize(currentAdapter);
+      if (result) {
+        resolvedAddress = result;
+        currentButton = ProfilePageHandler.getButton();
+      }
+    }
   }
 
   /**
@@ -321,77 +343,7 @@
     return null;
   }
 
-  /**
-   * Initialize profile button (reusable for different profile types)
-   * Handles profile page logic for extracting bio, checking for addresses, and injecting button
-   */
-  async function initializeProfileButton() {
-
-    try {
-      // Wait for profile to load (if adapter supports it)
-      if (typeof currentAdapter.waitForProfileLoad === "function") {
-        const loaded = await currentAdapter.waitForProfileLoad();
-        if (!loaded) {
-          return;
-        }
-      }
-
-
-      // Extract bio to check for addresses
-      const bio = currentAdapter.extractBio();
-
-      if (!bio) {
-        console.log("[Grove Extension] No bio found - not showing button");
-        return;
-      }
-
-      console.log("[Grove Extension] Bio extracted");
-
-      // Check if bio contains tippable address
-      const hasAddress = AddressParser.hasAddresses(bio);
-      if (!hasAddress) {
-        console.log("[Grove Extension] No tippable address found in bio - not showing button");
-        return;
-      }
-
-      // Extract address (ENS names are resolved by the backend)
-      const result = AddressParser.resolveAddress(bio);
-      if (!result.address) {
-        console.log("[Grove Extension] Could not extract address - not showing button");
-        return;
-      }
-
-      resolvedAddress = result;
-      console.log(`[Grove Extension] ✅ Address detected: ${result.address} (type: ${result.type})`)
-
-      // Cache the address by username for tweet tip buttons
-      if (currentAdapter.getPlatformName() === 'twitter') {
-        const username = extractUsernameFromUrl(window.location.href);
-        if (username) {
-          setCachedAddress(username, result);
-          console.log(`[Grove Extension] Cached address for @${username}`);
-        }
-      }
-
-      // Get button placement location
-      const placement = currentAdapter.getButtonPlacement();
-      if (!placement) {
-        console.log("[Grove Extension] Could not find button placement location");
-        return;
-      }
-
-      // Create and inject tip button
-      const platformName = currentAdapter.getPlatformName();
-      currentButton = new TipButton(handleTipClick, platformName);
-
-      const button = currentButton.create();
-      button.classList.add("grove-ad-mode");
-
-      currentButton.inject(placement);
-    } catch (error) {
-      console.error("[Grove Extension] Button initialization failed:", error);
-    }
-  }
+  // Profile button initialization is now handled by ProfilePageHandler
 
   /**
    * Handle tip button click - shows popover for amount confirmation (if enabled)
