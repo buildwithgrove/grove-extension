@@ -25,6 +25,7 @@ INCLUDE_FILES := \
 	popup.css \
 	popup.js \
 	README.md \
+	design-system \
 	icons \
 	src
 
