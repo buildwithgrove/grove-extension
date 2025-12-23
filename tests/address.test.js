@@ -153,6 +153,28 @@ describe('AddressParser', () => {
     });
   });
 
+  describe('exclusion helpers', () => {
+    it('should treat word continuation and emoji correctly', () => {
+      const base = 'x.eth';
+      const withEmoji = `${base}🔥`;
+      const withLetters = `${base}ers`;
+      const withNumbers = `${base}123`;
+      const withUnderscore = `${base}_name`;
+
+      expect(AddressExclusions.isExcludedAddressMatch(base, base, 0)).toBe(false);
+      expect(AddressExclusions.isExcludedAddressMatch(base, withEmoji, 0)).toBe(false);
+      expect(AddressExclusions.isExcludedAddressMatch(base, withLetters, 0)).toBe(true);
+      expect(AddressExclusions.isExcludedAddressMatch(base, withNumbers, 0)).toBe(true);
+      expect(AddressExclusions.isExcludedAddressMatch(base, withUnderscore, 0)).toBe(true);
+    });
+
+    it('should return the whitespace-delimited token containing the match', () => {
+      const text = 'find me at https://claude.ai/x.eth?ref=profile today';
+      const index = text.indexOf('x.eth');
+      expect(AddressExclusions.getToken(text, index)).toBe('https://claude.ai/x.eth?ref=profile');
+    });
+  });
+
   describe('x.eth contexts', () => {
     const samples = [
       ['x.eth', 'standalone'],

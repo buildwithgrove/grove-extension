@@ -9,6 +9,7 @@ class AddressParser {
   // Valid characters per ENSIP-15: alphanumeric, $, _, hyphens, unicode letters, emoji
   // Matches: vitalik.eth, $$$$$.base.eth, 🔥.eth, café.eth, jesse.base.eth
   static ENS_PATTERN = /(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*(?:\.(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*)*\.eth\b/iu;
+  static ENS_PATTERN_GLOBAL = /(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*(?:\.(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*)*\.eth\b/giu;
 
   // Solana address pattern commented out - Base/Base Sepolia only for now
   // Solana address pattern: base58 encoded, 32-44 chars
@@ -106,7 +107,7 @@ class AddressParser {
   static getEnsMatches(text) {
     if (!text) return [];
 
-    const pattern = this.getEnsPatternGlobal();
+    const pattern = this.ENS_PATTERN_GLOBAL;
     const exclusions = this.getExclusions();
     const matches = [];
 
@@ -125,10 +126,7 @@ class AddressParser {
   }
 
   static getEnsPatternGlobal() {
-    const flags = this.ENS_PATTERN.flags.includes('g')
-      ? this.ENS_PATTERN.flags
-      : `${this.ENS_PATTERN.flags}g`;
-    return new RegExp(this.ENS_PATTERN.source, flags);
+    return this.ENS_PATTERN_GLOBAL;
   }
 
   static getExclusions() {

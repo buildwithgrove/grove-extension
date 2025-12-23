@@ -2,22 +2,23 @@
  * Address exclusion helpers and lists.
  */
 
-const ADDRESS_SUFFIXES = ['.eth', '.base.eth', '.sol', '.near'];
 // TODO: add more address suffixes as we support them.
+const ADDRESS_SUFFIXES = ['.eth', '.base.eth', '.sol', '.near'];
 
+// Domain exclusions apply to full tokens and also match subdomains/paths.
 const DOMAIN_EXCLUSION_LIST = ['claude.ai'];
 
 // Treat letters, numbers, and underscores as "word continuation" so
 // matches like "x.ethers" are excluded, while emoji after "x.eth" are allowed.
 const WORD_CONTINUATION_PATTERN = /[\p{L}\p{N}_]/u;
 
-// Check if candidate ends with a supported address suffix.
+// Check if the matched candidate substring ends with a supported address suffix.
 function hasKnownAddressSuffix(candidate) {
   const lowerCandidate = candidate.toLowerCase();
   return ADDRESS_SUFFIXES.some((suffix) => lowerCandidate.endsWith(suffix));
 }
 
-// Return the whitespace-delimited token that contains the match.
+// Return the whitespace-delimited token containing the matched substring.
 function getToken(text, startIndex) {
   let start = startIndex;
   let end = startIndex;
