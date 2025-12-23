@@ -4,18 +4,12 @@
 
 # Extension metadata
 EXTENSION_NAME := grove-extension
-VERSION := 1.2.3
-GIT_SHA := $(shell git rev-parse --short HEAD)
-VERSION_FULL := $(VERSION)-$(GIT_SHA)
 
 # Chrome Web Store URLs
 CHROME_STORE_CONSOLE := https://chrome.google.com/webstore/devconsole/21d27706-ef22-4f83-8ddc-9f6109acef7d/jheejecmpfgifgdodgipilpgfaiecndm/edit/package
 
 # Public repo for hosting release downloads (must be public for shareable URLs)
 RELEASES_REPO := buildwithgrove/grove-releases
-
-# Build artifacts
-ZIP_FILE := $(BUILD_DIR)/$(EXTENSION_NAME)-v$(VERSION_FULL).zip
 
 # Files to include in extension
 INCLUDE_FILES := \
@@ -43,24 +37,26 @@ EXCLUDE_PATTERNS := \
 # Internal target for building the zip (no instructions shown)
 .PHONY: _build_extension_zip
 _build_extension_zip: dev_clean $(BUILD_DIR)
-	@printf "\n"
-	@printf "$(YELLOW)%s$(RESET)\n" "╔════════════════════════════════════════════════════════╗"
-	@printf "$(YELLOW)%s$(RESET)\n" "║  🌳 Building Grove Extension v$(VERSION_FULL)            ║"
-	@printf "$(YELLOW)%s$(RESET)\n" "╚════════════════════════════════════════════════════════╝"
-	@printf "\n"
-	@# Copy files to staging directory and strip the "key" field from manifest
-	$(call print_info,Preparing files for packaging...)
-	$(Q)mkdir -p $(BUILD_DIR)/staging
-	$(Q)cp -r $(INCLUDE_FILES) $(BUILD_DIR)/staging/
-	@# Use cross-platform sed: create temp file, then move (works on both Linux and macOS)
-	$(Q)sed '/"key":/d' $(BUILD_DIR)/staging/manifest.json > $(BUILD_DIR)/staging/manifest.json.tmp && mv $(BUILD_DIR)/staging/manifest.json.tmp $(BUILD_DIR)/staging/manifest.json
-	$(call print_info,Creating zip file: $(ZIP_FILE))
-	$(Q)cd $(BUILD_DIR)/staging && zip -rq ../$(EXTENSION_NAME)-v$(VERSION_FULL).zip .
-	$(Q)rm -rf $(BUILD_DIR)/staging
-	$(call print_success,Extension packaged successfully!)
-	@printf "\n"
-	@printf "$(GREEN)$(BOLD)📦 Output:$(RESET) $(CYAN)$(ZIP_FILE)$(RESET)\n"
-	@printf "\n"
+	@VERSION=$$(grep '"version"' manifest.json | sed 's/.*: "\([^"]*\)".*/\1/'); \
+	GIT_SHA=$$(git rev-parse --short HEAD); \
+	VERSION_FULL="$$VERSION-$$GIT_SHA"; \
+	ZIP_FILE="$(BUILD_DIR)/$(EXTENSION_NAME)-v$$VERSION_FULL.zip"; \
+	printf "\n"; \
+	printf "$(GREEN)%s$(RESET)\n" "╔════════════════════════════════════════════════════════╗"; \
+	printf "$(GREEN)%s$(RESET)\n" "║  🌳 Building Grove Extension v$$VERSION_FULL            ║"; \
+	printf "$(GREEN)%s$(RESET)\n" "╚════════════════════════════════════════════════════════╝"; \
+	printf "\n"; \
+	printf "$(CYAN)ℹ️  Preparing files for packaging...$(RESET)\n"; \
+	mkdir -p $(BUILD_DIR)/staging; \
+	cp -r $(INCLUDE_FILES) $(BUILD_DIR)/staging/; \
+	sed '/"key":/d' $(BUILD_DIR)/staging/manifest.json > $(BUILD_DIR)/staging/manifest.json.tmp && mv $(BUILD_DIR)/staging/manifest.json.tmp $(BUILD_DIR)/staging/manifest.json; \
+	printf "$(CYAN)ℹ️  Creating zip file: $$ZIP_FILE$(RESET)\n"; \
+	cd $(BUILD_DIR)/staging && zip -rq ../$(EXTENSION_NAME)-v$$VERSION_FULL.zip .; \
+	rm -rf $(BUILD_DIR)/staging; \
+	printf "$(GREEN)$(CHECK) Extension packaged successfully!$(RESET)\n"; \
+	printf "\n"; \
+	printf "$(GREEN)$(BOLD)📦 Output:$(RESET) $(CYAN)$$ZIP_FILE$(RESET)\n"; \
+	printf "\n"
 
 # Prompt to bump version with menu of options
 .PHONY: _prompt_version_bump
@@ -100,7 +96,6 @@ _prompt_version_bump:
 	esac; \
 	printf "$(GREEN)New version:$(RESET) $$NEW_VERSION\n"; \
 	sed "s/\"version\": \"$$CURRENT_VERSION\"/\"version\": \"$$NEW_VERSION\"/" manifest.json > manifest.json.tmp && mv manifest.json.tmp manifest.json; \
-	sed "s/^VERSION := [0-9]*\.[0-9]*\.[0-9]*\(\.[0-9]*\)\{0,1\}/VERSION := $$NEW_VERSION/" makefiles/build.mk > makefiles/build.mk.tmp && mv makefiles/build.mk.tmp makefiles/build.mk; \
 	printf "$(GREEN)$(CHECK) Version bumped to $$NEW_VERSION$(RESET)\n"; \
 	printf "\n"; \
 	printf "$(YELLOW)Commit and push version bump? [Y/n] $(RESET)"; \
@@ -108,7 +103,7 @@ _prompt_version_bump:
 	if [ "$${commit_ans:-Y}" = "n" ] || [ "$${commit_ans:-Y}" = "N" ]; then \
 		printf "$(DIM)Skipping commit$(RESET)\n"; \
 	else \
-		git add manifest.json makefiles/build.mk && \
+		git add manifest.json && \
 		git commit -m "chore: bump version to $$NEW_VERSION" && \
 		git push && \
 		printf "$(GREEN)$(CHECK) Changes committed and pushed!$(RESET)\n"; \
