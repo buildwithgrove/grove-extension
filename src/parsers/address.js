@@ -107,17 +107,7 @@ class AddressParser {
   static getEnsMatches(text) {
     if (!text) return [];
 
-    if (typeof AddressMatchers !== 'undefined' && AddressMatchers.getEnsMatches) {
-      return AddressMatchers.getEnsMatches(text);
-    }
-
-    const matches = [];
-
-    for (const match of text.matchAll(this.ENS_PATTERN_GLOBAL)) {
-      matches.push(match[0]);
-    }
-
-    return matches;
+    return AddressMatchers.getEnsMatches(text);
   }
 }
 
