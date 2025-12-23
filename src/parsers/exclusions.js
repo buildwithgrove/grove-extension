@@ -7,13 +7,17 @@ const ADDRESS_SUFFIXES = ['.eth', '.base.eth', '.sol', '.near'];
 
 const DOMAIN_EXCLUSION_LIST = ['claude.ai'];
 
+// Treat letters, numbers, and underscores as "word continuation" so
+// matches like "x.ethers" are excluded, while emoji after "x.eth" are allowed.
 const WORD_CONTINUATION_PATTERN = /[\p{L}\p{N}_]/u;
 
+// Check if candidate ends with a supported address suffix.
 function hasKnownAddressSuffix(candidate) {
   const lowerCandidate = candidate.toLowerCase();
   return ADDRESS_SUFFIXES.some((suffix) => lowerCandidate.endsWith(suffix));
 }
 
+// Return the whitespace-delimited token that contains the match.
 function getToken(text, startIndex) {
   let start = startIndex;
   let end = startIndex;
@@ -29,6 +33,8 @@ function getToken(text, startIndex) {
   return text.slice(start, end);
 }
 
+// Decide if a candidate match should be excluded based on suffixes,
+// word-continuation, or domain exclusion list.
 function isExcludedAddressMatch(candidate, text, startIndex) {
   if (!hasKnownAddressSuffix(candidate)) {
     return true;
