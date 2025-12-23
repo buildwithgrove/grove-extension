@@ -386,7 +386,9 @@ function showUpdateBanner(tag, displayVersion, downloadUrl) {
       await UpdateChecker.dismissUpdate(tag);
       hideUpdateBanner();
       // Clear the badge in background
-      chrome.runtime.sendMessage({ type: 'CLEAR_UPDATE_BADGE' });
+      chrome.runtime.sendMessage({ type: 'CLEAR_UPDATE_BADGE' }, () => {
+        void chrome.runtime.lastError; // Suppress warning if service worker inactive
+      });
     };
   }
 }
