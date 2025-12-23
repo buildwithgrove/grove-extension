@@ -6,14 +6,7 @@
 (function () {
   "use strict";
 
-  // JWT Storage Keys (must match keyManager.js and popup.js)
-  const JWT_KEYS = {
-    PRODUCTION: 'GROVE_JWT_PRODUCTION',
-    TESTNET: 'GROVE_JWT_TESTNET',
-    LOCALHOST: 'GROVE_JWT_LOCALHOST',
-    ENVIRONMENT: 'groveEnvironment',
-    ENDPOINT: 'groveEndpoint',
-  };
+  // STORAGE_KEYS is loaded from src/config/storageKeys.js
 
   /**
    * Check if the extension context is still valid
@@ -71,25 +64,25 @@
       }
 
       try {
-        chrome.storage.local.get([JWT_KEYS.PRODUCTION, JWT_KEYS.TESTNET, JWT_KEYS.LOCALHOST, JWT_KEYS.ENVIRONMENT, JWT_KEYS.ENDPOINT], (result) => {
+        chrome.storage.local.get([STORAGE_KEYS.JWT_PRODUCTION, STORAGE_KEYS.JWT_TESTNET, STORAGE_KEYS.JWT_LOCALHOST, STORAGE_KEYS.ENVIRONMENT, STORAGE_KEYS.ENDPOINT], (result) => {
           // Check for Chrome runtime errors (e.g., context invalidated during the call)
           if (chrome.runtime.lastError) {
             reject(new Error('Extension was reloaded. Please refresh the page.'));
             return;
           }
 
-          const isDevMode = result[JWT_KEYS.ENVIRONMENT] === 'local';
-          const endpoint = result[JWT_KEYS.ENDPOINT] || 'production';
+          const isDevMode = result[STORAGE_KEYS.ENVIRONMENT] === 'local';
+          const endpoint = result[STORAGE_KEYS.ENDPOINT] || 'production';
 
           let jwt;
           if (!isDevMode) {
-            jwt = result[JWT_KEYS.PRODUCTION];
+            jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
           } else if (endpoint === 'localhost') {
-            jwt = result[JWT_KEYS.LOCALHOST];
+            jwt = result[STORAGE_KEYS.JWT_LOCALHOST];
           } else if (endpoint === 'testnet') {
-            jwt = result[JWT_KEYS.TESTNET];
+            jwt = result[STORAGE_KEYS.JWT_TESTNET];
           } else {
-            jwt = result[JWT_KEYS.PRODUCTION];
+            jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
           }
           resolve(jwt || null);
         });
@@ -120,40 +113,92 @@
   // State
   let currentButton = null;
   let currentAdapter = null;
-  let hoverCardObserver = null;
   let navigationObserver = null;
   let tweetObserver = null;
   let tipPopover = null;
   let firstTipModal = null;
   let resolvedAddress = null; // Stores address info (0x address or ENS name)
 
-  // Address cache: maps username -> { address, type, original, timestamp }
-  // Cache entries expire after 10 minutes
-  const addressCache = new Map();
-  const ADDRESS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+  // Address cache: uses shared AddressCache class from src/utils/addressCache.js
+  // Cache entries expire after 10 minutes (configured in ADDRESS_CACHE_TTL)
+  const addressCache = typeof AddressCache !== 'undefined'
+    ? new AddressCache()
+    : new Map(); // Fallback for backwards compatibility
 
   // Track which tweets already have buttons to avoid duplicates
   const processedTweets = new WeakSet();
-
-  // Bio fetch queue: usernames pending background bio fetch
-  const bioFetchQueue = new Set();
-  const bioFetchInProgress = new Set();
-  const BIO_FETCH_INTERVAL = 300; // ms between fetches (rate limiting)
-  const BIO_FETCH_MAX_CONCURRENT = 3; // Allow some parallelism
-  let bioFetchTimer = null;
-  let bioFetchActiveCount = 0;
 
   // Track tweet elements by username for button injection after bio fetch
   // Maps username -> Set of { tweetElement, tweetUrl, dateElement, isQuotedTweet }
   const pendingTweetButtons = new Map();
 
-  // Twitter API configuration for bio fetching
-  // Bearer token is public and used by Twitter's web client
-  const TWITTER_BEARER_TOKEN = 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
-  // GraphQL query ID for UserByScreenName - Twitter rotates these, may need updating
-  // To find current ID: open x.com profile, check Network tab for UserByScreenName request
-  const TWITTER_USER_BY_SCREEN_NAME_QUERY_ID = 'G3KGOASz96M-Qu0nwmGXNg';
-  let twitterCsrfToken = null;
+  // Initialize BioFetcher with callbacks
+  if (typeof BioFetcher !== 'undefined') {
+    BioFetcher.init({
+      isUserCached: (username) => getCachedAddress(username) !== null,
+      onBioFetched: (username, { displayName, bio }) => {
+        const combinedText = [displayName, bio].filter(Boolean).join(' ');
+
+        if (combinedText && AddressParser.hasAddresses(combinedText)) {
+          const addressResult = AddressParser.resolveAddress(combinedText);
+          if (addressResult.address) {
+            // Cache the positive result
+            setCachedAddress(username, addressResult);
+            console.log(`[Grove Extension] Bio fetch: Found address for @${username}: ${addressResult.address}`);
+
+            // Inject buttons for all pending tweets from this user
+            injectPendingButtons(username);
+          } else {
+            // No valid address found
+            setCachedAddress(username, 'no-address');
+          }
+        } else {
+          // No address in bio/display name
+          setCachedAddress(username, 'no-address');
+        }
+
+        // Clean up pending tweets
+        pendingTweetButtons.delete(username);
+      },
+      onFetchError: (username, error) => {
+        console.log(`[Grove Extension] Bio fetch failed for @${username}: ${error}`);
+        // Don't cache on error - allow retry later
+        pendingTweetButtons.delete(username);
+      }
+    });
+  }
+
+  // Initialize HoverCardHandler with callbacks
+  if (typeof HoverCardHandler !== 'undefined') {
+    HoverCardHandler.init(
+      {
+        getCachedAddress: getCachedAddress,
+        setCachedAddress: setCachedAddress,
+        checkForAddress: (text) => {
+          if (AddressParser.hasAddresses(text)) {
+            return AddressParser.resolveAddress(text);
+          }
+          return null;
+        },
+        detectDarkMode: detectDarkMode,
+        onTipClick: handleTweetTipClick,
+        formatTipAmount: formatTipAmount,
+        ensureEllipsisStyles: ensureEllipsisAnimationStyles
+      },
+      typeof GROVE_COLORS !== 'undefined' ? GROVE_COLORS : null
+    );
+  }
+
+  // Initialize ProfilePageHandler with callbacks
+  if (typeof ProfilePageHandler !== 'undefined') {
+    ProfilePageHandler.init({
+      hasAddresses: (text) => AddressParser.hasAddresses(text),
+      resolveAddress: (text) => AddressParser.resolveAddress(text),
+      setCachedAddress: setCachedAddress,
+      onTipClick: handleTipClick,
+      extractUsernameFromUrl: extractUsernameFromUrl
+    });
+  }
 
   /**
    * Show a small inline error/warning anchored to the tip button.
@@ -199,29 +244,26 @@
 
     console.log(`[Grove Extension] Platform detected: ${currentAdapter.getPlatformName()}`);
 
-    // Reddit support commented out - X only for now
-    // if (currentAdapter.getPlatformName() === "reddit") {
-    //   setupRedditHoverCardObserver();
-    //
-    //   // Also check if we're on a profile page and handle it
-    //   if (currentAdapter.detectProfilePage()) {
-    //     await initializeProfileButton();
-    //   }
-    //   return;
-    // }
-
     // For Twitter/X, handle tweet tip buttons on all pages
     if (currentAdapter.getPlatformName() === "twitter") {
       // If on a profile page, initialize profile button first (this caches the address)
       if (currentAdapter.detectProfilePage()) {
-        await initializeProfileButton();
+        if (typeof ProfilePageHandler !== 'undefined') {
+          const result = await ProfilePageHandler.initialize(currentAdapter);
+          if (result) {
+            resolvedAddress = result;
+            currentButton = ProfilePageHandler.getButton();
+          }
+        }
       }
 
       // Always set up tweet observer on Twitter (after profile init so cache is populated)
       setupTwitterTweetObserver();
 
       // Also set up hover card observer for profile popups
-      setupTwitterHoverCardObserver();
+      if (typeof HoverCardHandler !== 'undefined') {
+        HoverCardHandler.startObserving();
+      }
       return;
     }
 
@@ -241,9 +283,14 @@
       return;
     }
 
-
     // Initialize profile button
-    await initializeProfileButton();
+    if (typeof ProfilePageHandler !== 'undefined') {
+      const result = await ProfilePageHandler.initialize(currentAdapter);
+      if (result) {
+        resolvedAddress = result;
+        currentButton = ProfilePageHandler.getButton();
+      }
+    }
   }
 
   /**
@@ -287,21 +334,9 @@
       return new TwitterAdapter();
     }
 
-<<<<<<< Updated upstream
-    // Reddit support commented out - X only for now
-    // if (hostname.includes("reddit.com")) {
-    //   return new RedditAdapter();
-    // }
-
-    // YouTube support commented out - X only for now
-    // if (hostname.includes("youtube.com") || hostname.includes("youtu.be")) {
-    //   return new YouTubeAdapter();
-    // }
-=======
     if (hostname.includes("soundcloud.com")) {
       return new SoundCloudAdapter();
     }
->>>>>>> Stashed changes
 
     // Return GenericAdapter for all other websites
     // Only if GenericAdapter is available (loaded via manifest)
@@ -312,85 +347,7 @@
     return null;
   }
 
-  /**
-   * Initialize profile button (reusable for different profile types)
-   * Handles profile page logic for extracting bio, checking for addresses, and injecting button
-   */
-  async function initializeProfileButton() {
-
-    try {
-      // Wait for profile to load (if adapter supports it)
-      if (typeof currentAdapter.waitForProfileLoad === "function") {
-        const loaded = await currentAdapter.waitForProfileLoad();
-        if (!loaded) {
-          return;
-        }
-      }
-
-
-      // Extract bio to check for addresses
-      const bio = currentAdapter.extractBio();
-
-      if (!bio) {
-        console.log("[Grove Extension] No bio found - not showing button");
-        return;
-      }
-
-      console.log("[Grove Extension] Bio extracted");
-
-      // TODO_IN_THIS_PR: Remove this hack before merging.
-      // For SoundCloud testing, we inject the button even if no address is found in the bio.
-      const isTestingBypass = currentAdapter.getPlatformName() === 'soundcloud';
-
-      // Check if bio contains tippable address
-      const hasAddress = AddressParser.hasAddresses(bio);
-      if (!hasAddress && !isTestingBypass) {
-        console.log("[Grove Extension] No tippable address found in bio - not showing button");
-        return;
-      }
-
-      // Extract address (ENS names are resolved by the backend)
-      const result = AddressParser.resolveAddress(bio);
-      if (!result.address && !isTestingBypass) {
-        console.log("[Grove Extension] Could not extract address - not showing button");
-        return;
-      }
-
-      resolvedAddress = result.address ? result : null;
-      if (resolvedAddress) {
-        console.log(`[Grove Extension] ✅ Address detected: ${resolvedAddress.address} (type: ${resolvedAddress.type})`)
-      } else {
-        console.log("[Grove Extension] No address detected, but continuing due to testing bypass");
-      }
-
-      // Cache the address by username for tweet tip buttons
-      if (currentAdapter.getPlatformName() === 'twitter') {
-        const username = extractUsernameFromUrl(window.location.href);
-        if (username) {
-          setCachedAddress(username, result);
-          console.log(`[Grove Extension] Cached address for @${username}`);
-        }
-      }
-
-      // Get button placement location
-      const placement = currentAdapter.getButtonPlacement();
-      if (!placement) {
-        console.log("[Grove Extension] Could not find button placement location");
-        return;
-      }
-
-      // Create and inject tip button
-      const platformName = currentAdapter.getPlatformName();
-      currentButton = new TipButton(handleTipClick, platformName);
-
-      const button = currentButton.create();
-      button.classList.add("grove-ad-mode");
-
-      currentButton.inject(placement);
-    } catch (error) {
-      console.error("[Grove Extension] Button initialization failed:", error);
-    }
-  }
+  // Profile button initialization is now handled by ProfilePageHandler
 
   /**
    * Handle tip button click - shows popover for amount confirmation (if enabled)
@@ -414,14 +371,14 @@
     }
 
     // Get settings from storage
-    let tipAmount = 0.10; // default
+    let tipAmount = 0.02; // default
     let confirmBeforeTipping = false; // default off
     let hasTipped = false; // whether user has tipped before
 
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         const result = await chrome.storage.local.get(['GROVE_TIP_AMOUNT', 'GROVE_CONFIRM_TIP', 'GROVE_HAS_TIPPED']);
-        tipAmount = result.GROVE_TIP_AMOUNT || 0.10;
+        tipAmount = result.GROVE_TIP_AMOUNT || 0.02;
         confirmBeforeTipping = result.GROVE_CONFIRM_TIP || false;
         hasTipped = result.GROVE_HAS_TIPPED || false;
       }
@@ -551,11 +508,17 @@
     // Build context metadata for the tip
     const platformName = currentAdapter.getPlatformName();
     const username = extractUsernameFromUrl(window.location.href);
-    const context = {
-      source_post_url: window.location.href,
-      sender_platform: platformName === 'twitter' ? 'x' : platformName
-    };
     
+    // Determine platform name from adapter, default to generic
+    const senderPlatform = currentAdapter ? currentAdapter.getApiPlatformName() : 'generic';
+
+    const context = {
+      source_post_url: window.location.href
+    };
+
+    if (senderPlatform && senderPlatform !== 'generic') {
+      context.sender_platform = senderPlatform;
+    }
     if (username) {
       context.recipient_username = username;
       if (platformName === 'twitter') {
@@ -565,24 +528,9 @@
       }
     }
 
-<<<<<<< Updated upstream
-    // Add sender info if X is authenticated with real username
-    if (typeof XAuth !== 'undefined') {
-      try {
-        const senderInfo = await XAuth.getStoredUserInfo();
-        // Only use if we have a real username (not the fallback 'Connected')
-        if (senderInfo && senderInfo.username && senderInfo.username !== 'Connected') {
-          context.sender_username = senderInfo.username;
-          context.sender_profile_url = `https://x.com/${senderInfo.username}`;
-        }
-      } catch (e) {
-        // Ignore - sender info is optional
-      }
-=======
     // Add sender info if X is authenticated (from xFeatures.js)
-    if (platformName === 'twitter' && typeof addXSenderInfo === 'function') {
+    if (typeof addXSenderInfo === 'function') {
       await addXSenderInfo(context);
->>>>>>> Stashed changes
     }
 
     // Send tip via API with JWT, amount, and context
@@ -613,405 +561,7 @@
     }
   }
 
-  // Reddit hover card functions commented out - X only for now
-  // /**
-  //  * Setup observer for Reddit hover cards
-  //  * Reddit hover cards appear dynamically, so we need to watch for them
-  //  */
-  // function setupRedditHoverCardObserver() {
-  //   // Clean up existing observer
-  //   if (hoverCardObserver) {
-  //     hoverCardObserver.disconnect();
-  //   }
-  //
-  //   hoverCardObserver = new MutationObserver((mutations) => {
-  //     for (const mutation of mutations) {
-  //       for (const node of mutation.addedNodes) {
-  //         if (node.nodeType === Node.ELEMENT_NODE) {
-  //           // Check if this is a hover card
-  //           const hoverCard = node.querySelector
-  //             ? node.querySelector('[data-testid="user-hover-card"]')
-  //             : null;
-  //
-  //           if (hoverCard || (node.dataset && node.dataset.testid === "user-hover-card")) {
-  //             injectButtonIntoHoverCard(hoverCard || node);
-  //           }
-  //         }
-  //       }
-  //     }
-  //   });
-  //
-  //   // Start observing the document body for new elements
-  //   hoverCardObserver.observe(document.body, {
-  //     childList: true,
-  //     subtree: true,
-  //   });
-  //
-  // }
-  //
-  // /**
-  //  * Inject button into Reddit hover card
-  //  * @param {Element} hoverCard - The hover card element
-  //  */
-  // async function injectButtonIntoHoverCard(hoverCard) {
-  //
-  //   // Check if button already exists in this hover card
-  //   if (hoverCard.querySelector("#grove-tip-button")) {
-  //     return;
-  //   }
-  //
-  //   // Extract bio from hover card
-  //   const bioSpan = hoverCard.querySelector(".whitespace-normal");
-  //   if (!bioSpan) {
-  //     return;
-  //   }
-  //
-  //   const bio = bioSpan.textContent;
-  //
-  //   // Check if bio contains tippable address
-  //   const hasAddress = AddressParser.hasAddresses(bio);
-  //   if (!hasAddress) {
-  //     return;
-  //   }
-  //
-  //   // Extract address (ENS names are resolved by the backend)
-  //   const result = AddressParser.resolveAddress(bio);
-  //   if (!result.address) {
-  //     console.log("[Grove Extension] Could not extract address in hover card");
-  //     return;
-  //   }
-  //
-  //   console.log(`[Grove Extension] Address found in hover card: ${result.address} (type: ${result.type})`)
-  //
-  //   // Store for this hover card's tip button
-  //   const hoverCardResolvedAddress = result;
-  //
-  //   // Find the main content div that contains everything
-  //   const contentDiv = hoverCard.querySelector(".p-md.flex.flex-col");
-  //   if (!contentDiv) {
-  //     return;
-  //   }
-  //
-  //   // Find the top row with avatar and user info
-  //   const topRow = contentDiv.querySelector(".flex.flex-row.justify-items-start.items-center");
-  //   if (!topRow) {
-  //     return;
-  //   }
-  //
-  //   // Create and inject tip button with click handler
-  //   const tipButton = new TipButton(() => {
-  //     handleTipClick(tipButton);
-  //   }, "reddit");
-  //
-  //   const button = tipButton.create();
-  //
-  //   // Apply advertising mode class if enabled
-  //   if (ADVERTISING_MODE) {
-  //     button.classList.add("grove-ad-mode");
-  //   }
-  //
-  //   // Append button to the end of the top row (after user info)
-  //   topRow.appendChild(button);
-  // }
-
-  /**
-   * Setup observer for Twitter hover cards (profile popups)
-   */
-  function setupTwitterHoverCardObserver() {
-    // Use the existing hoverCardObserver variable
-    if (hoverCardObserver) {
-      hoverCardObserver.disconnect();
-    }
-
-    hoverCardObserver = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        for (const node of mutation.addedNodes) {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            // Twitter hover cards appear in a div with data-testid="HoverCard"
-            // or in a [data-testid="hoverCardParent"]
-            let hoverCard = null;
-
-            if (node.matches && node.matches('[data-testid="HoverCard"]')) {
-              hoverCard = node;
-            } else if (node.querySelector) {
-              hoverCard = node.querySelector('[data-testid="HoverCard"]');
-            }
-
-            if (hoverCard) {
-              injectButtonIntoTwitterHoverCard(hoverCard);
-            }
-          }
-        }
-      }
-    });
-
-    hoverCardObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-  }
-
-  /**
-   * Inject tip button into Twitter hover card
-   * @param {Element} hoverCard - The hover card element
-   */
-  function injectButtonIntoTwitterHoverCard(hoverCard) {
-    // Check if button already exists
-    if (hoverCard.querySelector('.grove-hovercard-tip-button')) {
-      return;
-    }
-
-    // Find the top-right area - look for the follow button or the card header
-    // The hover card has a structure with user info at the top
-    const followButton = hoverCard.querySelector('[data-testid$="-follow"]') ||
-                         hoverCard.querySelector('[data-testid$="-unfollow"]');
-
-    if (!followButton) {
-      // Try to find any button container in the top area
-      return;
-    }
-
-    const buttonContainer = followButton.parentElement;
-    if (!buttonContainer) return;
-
-    // Get the username from the hover card to build the profile URL
-    const usernameLink = hoverCard.querySelector('a[href^="/"][role="link"]');
-    let profileUrl = null;
-    let username = null;
-    if (usernameLink) {
-      const href = usernameLink.getAttribute('href');
-      if (href && /^\/[a-zA-Z0-9_]+$/.test(href)) {
-        profileUrl = `https://x.com${href}`;
-        username = href.substring(1); // Remove leading slash
-      }
-    }
-
-    if (!profileUrl) return;
-
-    // Check if user has a tippable address in display name or bio
-    // First check the cache
-    if (username) {
-      const cached = getCachedAddress(username);
-      if (cached === 'no-address') {
-        return; // Already checked, no address found
-      }
-      if (cached && cached.address) {
-        // Has cached address, proceed to show button
-      } else {
-        // Not cached, need to check display name and bio
-        let hasTippableAddress = false;
-
-        // Check display name (the bold name shown in hover card)
-        const displayNameElement = hoverCard.querySelector('[data-testid="UserName"]') ||
-                                   hoverCard.querySelector('a[href^="/"][role="link"] span');
-        const displayName = displayNameElement?.textContent || '';
-
-        if (displayName && AddressParser.hasAddresses(displayName)) {
-          const addressResult = AddressParser.resolveAddress(displayName);
-          if (addressResult.address) {
-            hasTippableAddress = true;
-            setCachedAddress(username, addressResult);
-            console.log(`[Grove Extension] Hover card: Found address in display name for @${username}: ${addressResult.address}`);
-          }
-        }
-
-        // If not in display name, check bio/description
-        if (!hasTippableAddress) {
-          const bioElement = hoverCard.querySelector('[data-testid="UserDescription"]');
-          const bio = bioElement?.textContent || '';
-
-          if (bio && AddressParser.hasAddresses(bio)) {
-            const addressResult = AddressParser.resolveAddress(bio);
-            if (addressResult.address) {
-              hasTippableAddress = true;
-              setCachedAddress(username, addressResult);
-              console.log(`[Grove Extension] Hover card: Found address in bio for @${username}: ${addressResult.address}`);
-            }
-          }
-        }
-
-        // If no tippable address found, cache negative result and return
-        if (!hasTippableAddress) {
-          setCachedAddress(username, 'no-address');
-          return;
-        }
-      }
-    }
-
-    // Create the tip button
-    const isDarkMode = detectDarkMode();
-    const bgColor = isDarkMode ? '#1a1a1a' : '#ffffff';
-    const bgHoverColor = isDarkMode ? '#252525' : '#f0f0f0';
-    const textColor = isDarkMode ? '#ffffff' : '#1a1a1a';
-
-    const button = document.createElement('button');
-    button.className = 'grove-hovercard-tip-button';
-    button.setAttribute('aria-label', 'Send a tip');
-    button.setAttribute('type', 'button');
-
-    button.style.cssText = `
-      background: ${bgColor} !important;
-      border: 2px solid ${GROVE_COLORS.primary} !important;
-      border-radius: 9999px !important;
-      padding: 0 16px !important;
-      height: 32px !important;
-      min-height: 32px !important;
-      min-width: 32px !important;
-      position: relative !important;
-      overflow: hidden !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      gap: 4px !important;
-      cursor: pointer !important;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-      box-shadow: 0 2px 8px ${GROVE_COLORS.shadow} !important;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-      line-height: 1 !important;
-    `;
-
-    // Create text span
-    const textSpan = document.createElement('span');
-    textSpan.textContent = 'Tip';
-    textSpan.style.cssText = `
-      color: ${textColor} !important;
-      font-weight: 600 !important;
-      font-size: 14px !important;
-      position: relative !important;
-      z-index: 2 !important;
-      display: flex !important;
-      align-items: center !important;
-    `;
-
-    // Create emoji span
-    const emojiSpan = document.createElement('span');
-    emojiSpan.textContent = '🌿';
-    emojiSpan.style.cssText = `
-      font-size: 15px !important;
-      margin-left: 4px !important;
-      position: relative !important;
-      z-index: 2 !important;
-    `;
-
-    // Create sheen overlay
-    const sheenOverlay = document.createElement('div');
-    sheenOverlay.style.cssText = `
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
-      pointer-events: none !important;
-      z-index: 1 !important;
-      animation: grove-sheen-slide 3s ease-in-out infinite !important;
-    `;
-    const defaultSheenBackground = sheenOverlay.style.background;
-
-    textSpan.appendChild(emojiSpan);
-    button.appendChild(sheenOverlay);
-    button.appendChild(textSpan);
-
-    // Hover effects
-    button.addEventListener('mouseenter', () => {
-      button.style.background = `${bgHoverColor} !important`;
-      button.style.transform = 'translateY(-1px)';
-      button.style.boxShadow = `0 4px 12px ${GROVE_COLORS.shadowHover} !important`;
-    });
-
-    button.addEventListener('mouseleave', () => {
-      button.style.background = `${bgColor} !important`;
-      button.style.transform = 'translateY(0)';
-      button.style.boxShadow = `0 2px 8px ${GROVE_COLORS.shadow} !important`;
-    });
-
-    // Click handler
-    button.addEventListener('click', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const buttonWrapper = {
-        button: button,
-        textSpan: textSpan,
-        emojiSpan: emojiSpan,
-        setLoading: (amount) => {
-          ensureEllipsisAnimationStyles();
-          button.disabled = true;
-          button.style.pointerEvents = 'none';
-          // Update button text to show sending state
-          const formattedAmount = formatTipAmount(amount);
-          const sendingText = formattedAmount ? `Sending $${formattedAmount}` : 'Sending';
-          textSpan.textContent = sendingText;
-          textSpan.classList.add('grove-ellipsis');
-          const colors = [
-            { border: '#389f58', shadow: '0 0 12px #389f58' },
-            { border: '#4fb76d', shadow: '0 0 12px #4fb76d' },
-            { border: '#f0ad4e', shadow: '0 0 12px #f0ad4e' },
-            { border: '#4fb76d', shadow: '0 0 12px #4fb76d' },
-          ];
-          let colorIndex = 0;
-          button._loadingInterval = setInterval(() => {
-            colorIndex++;
-            const color = colors[colorIndex % colors.length];
-            button.style.setProperty('border-color', color.border, 'important');
-            button.style.setProperty('box-shadow', color.shadow, 'important');
-          }, 150);
-        },
-        setSuccess: () => {
-          if (button._loadingInterval) clearInterval(button._loadingInterval);
-          button.disabled = false;
-          button.style.pointerEvents = '';
-          button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
-          button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
-          sheenOverlay.style.background = defaultSheenBackground;
-          textSpan.classList.remove('grove-ellipsis');
-          textSpan.textContent = 'Sent! ✓';
-          button.classList.add('animate__animated', 'animate__bounceIn');
-          setTimeout(() => {
-            textSpan.textContent = 'Tip';
-            textSpan.appendChild(emojiSpan);
-            button.classList.remove('animate__animated', 'animate__bounceIn');
-          }, 2000);
-        },
-        setError: () => {
-          if (button._loadingInterval) clearInterval(button._loadingInterval);
-          button.disabled = false;
-          button.style.pointerEvents = '';
-          button.style.setProperty('border', `2px solid ${GROVE_COLORS.error || '#ef4444'}`, 'important');
-          button.style.setProperty('box-shadow', `0 0 12px ${GROVE_COLORS.errorShadow || 'rgba(239, 68, 68, 0.55)'}`, 'important');
-          sheenOverlay.style.background = 'linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.35), transparent)';
-          textSpan.classList.remove('grove-ellipsis');
-          textSpan.textContent = 'Failed ✗';
-          button.classList.add('animate__animated', 'animate__shakeX');
-          setTimeout(() => {
-            textSpan.textContent = 'Tip';
-            textSpan.appendChild(emojiSpan);
-            button.classList.remove('animate__animated', 'animate__shakeX');
-            button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
-            button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
-            sheenOverlay.style.background = defaultSheenBackground;
-          }, 2000);
-        }
-      };
-
-      await handleTweetTipClick(buttonWrapper, profileUrl);
-    });
-
-    // Create a wrapper to hold both buttons in a row
-    const wrapper = document.createElement('div');
-    wrapper.className = 'grove-hovercard-buttons';
-    wrapper.style.cssText = `
-      display: flex !important;
-      flex-direction: row !important;
-      align-items: center !important;
-      gap: 8px !important;
-    `;
-
-    // Insert wrapper where follow button is, then move follow button into wrapper
-    followButton.parentElement.insertBefore(wrapper, followButton);
-    wrapper.appendChild(button);
-    wrapper.appendChild(followButton);
-  }
+  // Hover card handling is now in src/content/hoverCardHandler.js
 
   /**
    * Setup observer for Twitter tweets
@@ -1270,28 +820,39 @@
 
   /**
    * Get cached address for a username
+   * Uses shared AddressCache class if available, falls back to Map-based implementation
    * @param {string} username - Twitter username
    * @returns {Object|string|null} - Cached address result, 'no-address', or null if not cached/expired
    */
   function getCachedAddress(username) {
+    // Use AddressCache.get() if available (handles TTL internally)
+    if (addressCache instanceof AddressCache) {
+      return addressCache.get(username);
+    }
+    // Fallback for Map-based cache
     const cached = addressCache.get(username);
     if (!cached) return null;
-
-    // Check if expired
-    if (Date.now() - cached.timestamp > ADDRESS_CACHE_TTL) {
+    const ttl = typeof ADDRESS_CACHE_TTL !== 'undefined' ? ADDRESS_CACHE_TTL : 10 * 60 * 1000;
+    if (Date.now() - cached.timestamp > ttl) {
       addressCache.delete(username);
       return null;
     }
-
     return cached.data;
   }
 
   /**
    * Set cached address for a username
+   * Uses shared AddressCache class if available
    * @param {string} username - Twitter username
    * @param {Object|string} data - Address result or 'no-address'
    */
   function setCachedAddress(username, data) {
+    // Use AddressCache.set() if available
+    if (addressCache instanceof AddressCache) {
+      addressCache.set(username, data);
+      return;
+    }
+    // Fallback for Map-based cache
     addressCache.set(username, {
       data,
       timestamp: Date.now()
@@ -1300,6 +861,7 @@
 
   /**
    * Queue a username for background bio fetch
+   * Uses BioFetcher module for the actual fetching
    * @param {string} username - Twitter username
    * @param {Element} tweetElement - The tweet element to inject button into
    * @param {string} tweetUrl - The tweet URL
@@ -1307,24 +869,6 @@
    * @param {boolean} isQuotedTweet - Whether this is a quoted tweet
    */
   function queueBioFetch(username, tweetElement, tweetUrl, dateElement, isQuotedTweet = false) {
-    // Don't queue if already cached, in progress, or queued
-    const cached = getCachedAddress(username);
-    if (cached !== null) {
-      console.log(`[Grove Extension] queueBioFetch: @${username} already cached`);
-      return;
-    }
-    if (bioFetchInProgress.has(username)) {
-      console.log(`[Grove Extension] queueBioFetch: @${username} already in progress`);
-      // Still add to pending tweets so button gets injected when fetch completes
-    } else if (bioFetchQueue.has(username)) {
-      console.log(`[Grove Extension] queueBioFetch: @${username} already in queue`);
-      // Still add to pending tweets
-    } else {
-      // Add to queue
-      console.log(`[Grove Extension] queueBioFetch: Adding @${username} to queue (queue size: ${bioFetchQueue.size})`);
-      bioFetchQueue.add(username);
-    }
-
     // Track the tweet element so we can inject button when bio returns
     if (!pendingTweetButtons.has(username)) {
       pendingTweetButtons.set(username, new Set());
@@ -1336,193 +880,9 @@
       isQuotedTweet
     });
 
-    // Start processing queue
-    scheduleNextBioFetch();
-  }
-
-  /**
-   * Get Twitter CSRF token from cookies
-   * @returns {string|null}
-   */
-  function getTwitterCsrfToken() {
-    if (twitterCsrfToken) return twitterCsrfToken;
-
-    // Extract ct0 cookie (CSRF token used by Twitter)
-    const cookies = document.cookie.split(';');
-    for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'ct0') {
-        twitterCsrfToken = value;
-        return value;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Fetch user bio using Twitter's REST API (v1.1 style via GraphQL gateway)
-   * This works because the content script runs in x.com context with user's cookies
-   * @param {string} username - Twitter username
-   * @returns {Promise<{displayName: string|null, bio: string|null, error?: string}>}
-   */
-  async function fetchTwitterUserBio(username) {
-    console.log(`[Grove Extension] Fetching bio for @${username}...`);
-
-    const csrfToken = getTwitterCsrfToken();
-    if (!csrfToken) {
-      console.log(`[Grove Extension] No CSRF token found for @${username}`);
-      return { displayName: null, bio: null, error: 'No CSRF token found' };
-    }
-
-    // Use Twitter's user lookup endpoint (more stable than GraphQL)
-    const url = `https://x.com/i/api/graphql/BQ6xjFU6Mgm-WhEP3OiT9w/UserByScreenName?variables=${encodeURIComponent(JSON.stringify({
-      screen_name: username,
-      withSafetyModeUserFields: true
-    }))}&features=${encodeURIComponent(JSON.stringify({
-      hidden_profile_subscriptions_enabled: true,
-      rweb_tipjar_consumption_enabled: true,
-      responsive_web_graphql_exclude_directive_enabled: true,
-      verified_phone_label_enabled: false,
-      subscriptions_verification_info_is_identity_verified_enabled: true,
-      subscriptions_verification_info_verified_since_enabled: true,
-      highlights_tweets_tab_ui_enabled: true,
-      responsive_web_twitter_article_notes_tab_enabled: true,
-      subscriptions_feature_can_gift_premium: true,
-      creator_subscriptions_tweet_preview_api_enabled: true,
-      responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-      responsive_web_graphql_timeline_navigation_enabled: true
-    }))}&fieldToggles=${encodeURIComponent(JSON.stringify({
-      withAuxiliaryUserLabels: false
-    }))}`;
-
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'authorization': `Bearer ${decodeURIComponent(TWITTER_BEARER_TOKEN)}`,
-          'x-csrf-token': csrfToken,
-          'x-twitter-active-user': 'yes',
-          'x-twitter-auth-type': 'OAuth2Session',
-          'x-twitter-client-language': 'en',
-          'content-type': 'application/json'
-        },
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        // Try to get error details
-        const errorText = await response.text().catch(() => '');
-        console.log(`[Grove Extension] API response for @${username}: ${response.status} - ${errorText.substring(0, 200)}`);
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      // Extract user data from GraphQL response
-      const user = data?.data?.user?.result;
-      if (!user || user.__typename === 'UserUnavailable') {
-        return { displayName: null, bio: null, error: 'User not found' };
-      }
-
-      const legacy = user.legacy || {};
-      console.log(`[Grove Extension] Got bio for @${username}: "${legacy.description?.substring(0, 100)}..."`);
-      return {
-        displayName: legacy.name || null,
-        bio: legacy.description || null
-      };
-    } catch (error) {
-      console.error(`[Grove Extension] Twitter API error for @${username}:`, error);
-      return { displayName: null, bio: null, error: error.message };
-    }
-  }
-
-  /**
-   * Process a single bio fetch
-   * @param {string} username - Twitter username to fetch
-   */
-  async function processSingleBioFetch(username) {
-    bioFetchActiveCount++;
-
-    try {
-      // Fetch bio using Twitter's GraphQL API directly from content script
-      const response = await fetchTwitterUserBio(username);
-
-      bioFetchInProgress.delete(username);
-
-      if (response && !response.error) {
-        const { displayName, bio } = response;
-        const combinedText = [displayName, bio].filter(Boolean).join(' ');
-
-        if (combinedText && AddressParser.hasAddresses(combinedText)) {
-          const addressResult = AddressParser.resolveAddress(combinedText);
-          if (addressResult.address) {
-            // Cache the positive result
-            setCachedAddress(username, addressResult);
-            console.log(`[Grove Extension] Bio fetch: Found address for @${username}: ${addressResult.address}`);
-
-            // Inject buttons for all pending tweets from this user
-            injectPendingButtons(username);
-          } else {
-            // No valid address found
-            setCachedAddress(username, 'no-address');
-          }
-        } else {
-          // No address in bio/display name
-          setCachedAddress(username, 'no-address');
-        }
-      } else {
-        // Fetch failed - cache negative result to avoid retrying
-        console.log(`[Grove Extension] Bio fetch failed for @${username}: ${response?.error || 'unknown error'}`);
-        setCachedAddress(username, 'no-address');
-      }
-    } catch (error) {
-      bioFetchInProgress.delete(username);
-      console.error(`[Grove Extension] Bio fetch error for @${username}:`, error);
-      // Don't cache on error - allow retry later
-    }
-
-    // Clean up pending tweets for this user
-    pendingTweetButtons.delete(username);
-    bioFetchActiveCount--;
-
-    // Continue processing queue
-    scheduleNextBioFetch();
-  }
-
-  /**
-   * Schedule the next bio fetch from the queue
-   */
-  function scheduleNextBioFetch() {
-    // Don't schedule if already at max concurrent or queue is empty
-    if (bioFetchActiveCount >= BIO_FETCH_MAX_CONCURRENT) return;
-    if (bioFetchQueue.size === 0) return;
-    if (bioFetchTimer) return; // Already scheduled
-
-    bioFetchTimer = setTimeout(() => {
-      bioFetchTimer = null;
-      processBioFetchQueue();
-    }, BIO_FETCH_INTERVAL);
-  }
-
-  /**
-   * Process the bio fetch queue - fetches multiple users in parallel
-   */
-  function processBioFetchQueue() {
-    // Process up to MAX_CONCURRENT users
-    while (bioFetchActiveCount < BIO_FETCH_MAX_CONCURRENT && bioFetchQueue.size > 0) {
-      const username = bioFetchQueue.values().next().value;
-      if (!username) break;
-
-      bioFetchQueue.delete(username);
-      bioFetchInProgress.add(username);
-
-      // Start fetch (don't await - let it run in parallel)
-      processSingleBioFetch(username);
-    }
-
-    // Schedule more if queue still has items
-    if (bioFetchQueue.size > 0 && bioFetchActiveCount < BIO_FETCH_MAX_CONCURRENT) {
-      scheduleNextBioFetch();
+    // Queue fetch using BioFetcher module
+    if (typeof BioFetcher !== 'undefined') {
+      BioFetcher.queueFetch(username);
     }
   }
 
@@ -1762,14 +1122,14 @@
     }
 
     // Get settings from storage
-    let tipAmount = 0.10;
+    let tipAmount = 0.02;
     let confirmBeforeTipping = false;
     let hasTipped = false;
 
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         const result = await chrome.storage.local.get(['GROVE_TIP_AMOUNT', 'GROVE_CONFIRM_TIP', 'GROVE_HAS_TIPPED']);
-        tipAmount = result.GROVE_TIP_AMOUNT || 0.10;
+        tipAmount = result.GROVE_TIP_AMOUNT || 0.02;
         confirmBeforeTipping = result.GROVE_CONFIRM_TIP || false;
         hasTipped = result.GROVE_HAS_TIPPED || false;
       }
@@ -1838,26 +1198,12 @@
     );
   }
 
-  // Default auto-reply message template (must match popup.js)
-  const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I just sent you a tip on {chain} via #TipWithGrove!
-
-Tx: {tx_link}
-
-Tip creators you love → {grove_link}`;
+  // DEFAULT_AUTO_REPLY_MESSAGE is loaded from src/ui/constants.js
 
   /**
    * Build auto-reply message from template
-   * @param {string} template - Message template with placeholders
-   * @param {Object} values - Object containing placeholder values
-   * @returns {string} - Formatted message
+   * buildAutoReplyMessage is imported from src/content/xFeatures.js
    */
-  function buildAutoReplyMessage(template, values) {
-    return template
-      .replace(/\{username\}/g, values.username || '')
-      .replace(/\{chain\}/g, values.chain || '')
-      .replace(/\{tx_link\}/g, values.tx_link || '')
-      .replace(/\{grove_link\}/g, values.grove_link || 'grove.city');
-  }
 
   /**
    * Send tip for a tweet
@@ -1881,7 +1227,7 @@ Tip creators you love → {grove_link}`;
 
     // Get JWT and settings from storage
     let jwt = '';
-    let autoReplyEnabled = false;
+    let autoReplyEnabled = true; // Default to true
     let autoReplyMessage = DEFAULT_AUTO_REPLY_MESSAGE;
     let likeOnTipEnabled = true; // Default to true
     let chainName = 'Base Sepolia';
@@ -1895,8 +1241,8 @@ Tip creators you love → {grove_link}`;
 
       // Get other settings from storage
       const result = await chrome.storage.local.get(['GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'GROVE_LIKE_ON_TIP', 'groveChain']);
-      // Auto-reply defaults to false
-      autoReplyEnabled = result.GROVE_AUTO_REPLY === true;
+      // Auto-reply defaults to true (only false if explicitly set to false)
+      autoReplyEnabled = result.GROVE_AUTO_REPLY !== false;
       autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
       // Like on tip defaults to true
       likeOnTipEnabled = result.GROVE_LIKE_ON_TIP !== false;
@@ -1965,18 +1311,9 @@ Tip creators you love → {grove_link}`;
       context.recipient_profile_url = `https://x.com/${username}`;
     }
 
-    // Add sender info if X is authenticated with real username
-    if (typeof XAuth !== 'undefined') {
-      try {
-        const senderInfo = await XAuth.getStoredUserInfo();
-        // Only use if we have a real username (not the fallback 'Connected')
-        if (senderInfo && senderInfo.username && senderInfo.username !== 'Connected') {
-          context.sender_username = senderInfo.username;
-          context.sender_profile_url = `https://x.com/${senderInfo.username}`;
-        }
-      } catch (e) {
-        // Ignore - sender info is optional
-      }
+    // Add sender info if X is authenticated (from xFeatures.js)
+    if (typeof addXSenderInfo === 'function') {
+      await addXSenderInfo(context);
     }
 
     // Send tip via API with context
@@ -2001,14 +1338,21 @@ Tip creators you love → {grove_link}`;
           if (tweetId) {
             const isLoggedIn = await XAuth.isLoggedIn();
             if (isLoggedIn) {
+              let didLike = false;
+              let didReply = false;
+              let likeFailed = false;
+              let replyFailed = false;
+
               // Like the tweet if enabled
               if (likeOnTipEnabled) {
                 try {
                   await XAuth.likeTweet(tweetId);
                   console.log("[Grove Extension] Tweet liked successfully");
+                  didLike = true;
                 } catch (likeError) {
-                  // Don't fail if like fails (might already be liked)
+                  // Don't fail if like fails (might already be liked or rate limited)
                   console.error("[Grove Extension] Like failed:", likeError);
+                  likeFailed = true;
                 }
               }
 
@@ -2025,9 +1369,43 @@ Tip creators you love → {grove_link}`;
                   grove_link: 'grove.city'
                 });
 
-                await XAuth.postReply(tweetId, replyText);
-                console.log("[Grove Extension] Auto-reply posted successfully");
+                try {
+                  await XAuth.postReply(tweetId, replyText);
+                  console.log("[Grove Extension] Auto-reply posted successfully");
+                  didReply = true;
+                } catch (replyError) {
+                  console.error("[Grove Extension] Reply failed:", replyError);
+                  replyFailed = true;
+                }
               }
+
+              // Show feedback message based on what happened
+              // Delay slightly to let the success animation settle before positioning bubble
+              setTimeout(() => {
+                if (didLike || didReply) {
+                  // At least one action succeeded
+                  let message = '';
+                  if (didLike && didReply) {
+                    message = 'Liked & replied! Refresh to view.';
+                  } else if (didLike) {
+                    message = 'Post liked! Refresh to view.';
+                  } else if (didReply) {
+                    message = 'Reply sent! Refresh to view.';
+                  }
+                  showInlineTipError(buttonWrapper.button, { message, variant: 'success' });
+                } else if (likeFailed || replyFailed) {
+                  // All attempted actions failed - show warning
+                  let message = '';
+                  if (likeFailed && replyFailed) {
+                    message = 'Like & reply failed (rate limited?)';
+                  } else if (likeFailed) {
+                    message = 'Like failed (rate limited?)';
+                  } else if (replyFailed) {
+                    message = 'Reply failed (rate limited?)';
+                  }
+                  showInlineTipError(buttonWrapper.button, { message, variant: 'warning' });
+                }
+              }, 100);
             } else {
               console.log("[Grove Extension] X features skipped - not logged in to X");
             }
@@ -2046,23 +1424,8 @@ Tip creators you love → {grove_link}`;
     }
   }
 
-  /**
-   * Detect if page is in dark mode
-   * @returns {boolean}
-   */
-  function detectDarkMode() {
-    // Check Twitter's background color
-    const bg = document.body.style.backgroundColor ||
-               window.getComputedStyle(document.body).backgroundColor;
-    if (bg) {
-      const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-      if (match) {
-        const luminance = (0.299 * parseInt(match[1]) + 0.587 * parseInt(match[2]) + 0.114 * parseInt(match[3])) / 255;
-        return luminance < 0.5;
-      }
-    }
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  }
+  // Use shared detectDarkMode from src/utils/darkMode.js if available
+  // The shared module is loaded before content.js in manifest.json
 
   /**
    * Clean up when page changes
@@ -2077,9 +1440,8 @@ Tip creators you love → {grove_link}`;
     if (floatingContainer) {
       floatingContainer.remove();
     }
-    if (hoverCardObserver) {
-      hoverCardObserver.disconnect();
-      hoverCardObserver = null;
+    if (typeof HoverCardHandler !== 'undefined') {
+      HoverCardHandler.stopObserving();
     }
     if (tweetObserver) {
       tweetObserver.disconnect();

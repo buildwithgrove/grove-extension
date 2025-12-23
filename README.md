@@ -62,6 +62,9 @@ git clone --recurse-submodules https://github.com/buildwithgrove/grove-extension
 
 # Or initialize submodules after cloning
 git submodule update --init
+
+# Install dev dependencies (for testing)
+npm install
 ```
 
 ### Local Development
@@ -73,11 +76,20 @@ git submodule update --init
 
 To reload after changes: click the refresh icon on the extension card or use [Extensions Reloader](https://chromewebstore.google.com/detail/extensions-reloader/fimgfedafeadlieiabdeeaodndnlbhid).
 
+### Testing
+
+```bash
+npm test           # Run tests once
+npm run test:watch # Run tests in watch mode
+```
+
 ### Manifest Key
 
 The `manifest.json` includes a `key` field for local development. This ensures a consistent extension ID so `externally_connectable` works with the Grove web app. The build process automatically strips this key when creating zips for the Chrome Web Store.
 
 ## Build & Release
+
+Both build commands prompt for a version bump with options: **Major**, **Minor**, **Patch**, **Build**, or **Skip**.
 
 ### Chrome Web Store
 
@@ -85,28 +97,20 @@ The `manifest.json` includes a `key` field for local development. This ensures a
 make build_release
 ```
 
-This will:
+1. Prompt to bump version and optionally commit/push
+2. Create `build/grove-extension-vX.Y.Z-<sha>.zip` with the `key` field removed
+3. Display upload instructions for the [Chrome Web Store console](https://chrome.google.com/webstore/devconsole/21d27706-ef22-4f83-8ddc-9f6109acef7d/jheejecmpfgifgdodgipilpgfaiecndm/edit/package)
 
-1. Prompt to bump the version (updates `manifest.json` and `makefiles/build.mk`)
-2. Optionally commit and push the version bump
-3. Create `build/grove-extension-vX.Y.Z-<sha>.zip` with the `key` field removed
-4. Display upload instructions for the [Chrome Web Store console](https://chrome.google.com/webstore/devconsole/21d27706-ef22-4f83-8ddc-9f6109acef7d/jheejecmpfgifgdodgipilpgfaiecndm/edit/package)
-
-### Beta Side Loading (i.e. GitHub Release)
+### Beta (GitHub Release)
 
 ```bash
 make build_beta
 ```
 
-This will:
-
-1. Check existing releases and calculate the next version
-2. Prompt to choose between:
-   - **Patch release** - Auto-increments patch (e.g., `1.0.6` → `1.0.6.1` → `1.0.6.2`)
-   - **New version** - Bumps the base version (e.g., `1.0.6` → `1.0.7`)
-3. Build the zip with the public key for stable extension ID
-4. Create a git tag (e.g., `v1.0.6`) in this repo
-5. Upload to [grove-releases](https://github.com/buildwithgrove/grove-releases)
+1. Prompt to bump version and optionally commit/push
+2. Build zip with public key for stable extension ID
+3. Create git tag (e.g., `v1.0.8`) and push
+4. Upload to [grove-releases](https://github.com/buildwithgrove/grove-releases)
 
 Requires `gh` CLI (`brew install gh`).
 

@@ -15,7 +15,8 @@ describe('Bio Fetch - Address Caching', () => {
   let AddressParser;
 
   beforeEach(() => {
-    const context = loadBrowserScript('src/parsers/address.js');
+    const context = loadBrowserScript('src/parsers/addressMatchers.js');
+    loadBrowserScript('src/parsers/address.js', context);
     AddressParser = context.AddressParser;
   });
 

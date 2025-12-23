@@ -107,30 +107,7 @@ const tipIntroDots = document.querySelectorAll('.tip-intro-dot');
 // Initialize Previous Keys UI
 let prevKeysUI = null;
 
-// Storage Keys
-const STORAGE_KEYS = {
-  // Dual JWT slots
-  JWT_PRODUCTION: 'GROVE_JWT_PRODUCTION',
-  JWT_TESTNET: 'GROVE_JWT_TESTNET',
-  JWT: 'GROVE_API_JWT', // Legacy - for migration only
-  // Settings
-  TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
-  CONFIRM_TIP: 'GROVE_CONFIRM_TIP',
-  HAS_TIPPED: 'GROVE_HAS_TIPPED',
-  AUTO_REPLY: 'GROVE_AUTO_REPLY',
-  AUTO_REPLY_MESSAGE: 'GROVE_AUTO_REPLY_MESSAGE',
-  LIKE_ON_TIP: 'GROVE_LIKE_ON_TIP',
-  ENVIRONMENT: 'groveEnvironment',
-  CHAIN: 'groveChain',
-  ENDPOINT: 'groveEndpoint',
-  LAST_BALANCES: 'GROVE_LAST_BALANCES',
-  CLIENT_ADDRESS: 'GROVE_CLIENT_ADDRESS',
-  ENS_NAME: 'GROVE_ENS_NAME',
-  TIP_INTRO_SEEN: 'GROVE_TIP_INTRO_SEEN',
-  EARN_TAB_SEEN: 'GROVE_EARN_TAB_SEEN',
-  LAUNCH_COUNT: 'GROVE_LAUNCH_COUNT',
-  TWITTER_MODAL_SEEN: 'GROVE_TWITTER_MODAL_SEEN',
-};
+// STORAGE_KEYS is loaded from src/config/storageKeys.js
 
 /**
  * Check if developer mode is enabled
@@ -149,12 +126,7 @@ async function getActiveJWT() {
   return KeyManager.getActiveJWT();
 }
 
-// Default auto-reply message template
-const DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I just sent you a tip on {chain} via #TipWithGrove!
-
-Tx: {tx_link}
-
-Tip creators you love → {grove_link}`;
+// DEFAULT_AUTO_REPLY_MESSAGE is loaded from src/ui/constants.js
 
 // X Login Elements (now on home screen)
 const likeOnTipToggle = document.getElementById('homeLikeOnTipToggle');
@@ -165,14 +137,14 @@ const saveAutoReplyMessageBtn = document.getElementById('homeSaveAutoReplyMessag
 const resetAutoReplyMessageBtn = document.getElementById('homeResetAutoReplyMessageBtn');
 
 // Defaults
-const DEFAULT_TIP_AMOUNT = 0.10;
+const DEFAULT_TIP_AMOUNT = 0.02;
 const DEFAULT_CHAIN = 'base';
 const DEFAULT_ENV = 'prod';
 const DEFAULT_ENDPOINT = 'production';
-const DEFAULT_BALANCE_DISPLAY = '0.00';
+// FormatUtils.DEFAULT_BALANCE_DISPLAY is now in FormatUtils
 const TOP_UP_URLS = {
-  mainnet: 'https://app.grove.city/profile',
-  testnet: 'https://app.testnet.grove.city/profile'
+  mainnet: 'https://app.grove.city/profile?tab=tip',
+  testnet: 'https://app.testnet.grove.city/profile?tab=tip'
 };
 const MAINNET_CHAINS = ['base', 'solana'];
 const TESTNET_CHAINS = ['base-sepolia', 'solana-devnet'];
@@ -302,11 +274,12 @@ async function init() {
   // Increment launch count
   await incrementLaunchCount();
 
-  // Check if we should show the Twitter connect modal (after 3 launches and 1 tip)
+  // Check if we should show the Twitter connect modal (after 5 launches and 1 tip)
   await checkAndShowTwitterModal();
 
   // Check if we should open to X settings (from first tip modal)
   chrome.runtime.sendMessage({ type: 'CHECK_OPEN_TO_X_SETTINGS' }, (response) => {
+    if (chrome.runtime.lastError) return; // Service worker inactive
     if (response?.shouldOpen) {
       // Navigate to home tab first
       const homeTab = document.querySelector('[data-target="tab-home"]');
@@ -414,7 +387,9 @@ function showUpdateBanner(tag, displayVersion, downloadUrl) {
       await UpdateChecker.dismissUpdate(tag);
       hideUpdateBanner();
       // Clear the badge in background
-      chrome.runtime.sendMessage({ type: 'CLEAR_UPDATE_BADGE' });
+      chrome.runtime.sendMessage({ type: 'CLEAR_UPDATE_BADGE' }, () => {
+        void chrome.runtime.lastError; // Suppress warning if service worker inactive
+      });
     };
   }
 }
@@ -490,20 +465,11 @@ function setupEventListeners() {
     });
   }
   if (tipIntroConnectBtn) {
-    tipIntroConnectBtn.addEventListener('click', () => {
-      hideTipIntroModal();
-      // Open X settings panel
-      const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
-      const homeTwitterSettingsPanel = document.getElementById('homeTwitterSettingsPanel');
-      const homeXLoginBtn = document.getElementById('homeXLoginBtn');
-      if (homeTwitterSettingsBtn && homeTwitterSettingsPanel) {
-        homeTwitterSettingsBtn.classList.add('hidden');
-        homeTwitterSettingsPanel.classList.remove('hidden');
-        // Trigger the connect button after a brief delay for panel to render
-        if (homeXLoginBtn) {
-          setTimeout(() => homeXLoginBtn.click(), 100);
-        }
-      }
+    tipIntroConnectBtn.addEventListener('click', async () => {
+      // Set flag to open settings when user returns after auth
+      await chrome.storage.local.set({ openToXSettings: true });
+      await hideTipIntroModal();
+      handleXLogin();
     });
   }
   if (tipIntroSkipBtn) {
@@ -525,6 +491,9 @@ function setupEventListeners() {
     });
   }
 
+  // Onboarding Multi-step Navigation
+  setupOnboardingNavigation();
+
   // Tip Amount (Settings) - synced with Home
   if (settingsEditTipBtn) {
     settingsEditTipBtn.addEventListener('click', showSettingsTipEdit);
@@ -541,13 +510,15 @@ function setupEventListeners() {
     });
   }
 
-  // JWT
-  setupTokenBtn.addEventListener('click', () => {
-    // Navigate to settings -> Account and open edit
-    document.querySelector('[data-target="tab-settings"]').click();
-    showSettingsView('account');
-    showJwtEdit();
-  });
+  // JWT setup button (if present)
+  if (setupTokenBtn) {
+    setupTokenBtn.addEventListener('click', () => {
+      // Navigate to settings -> Account and open edit
+      document.querySelector('[data-target="tab-settings"]').click();
+      showSettingsView('account');
+      showJwtEdit();
+    });
+  }
 
   // Developer Mode Banner - click to go to developer settings
   const testModeBanner = document.getElementById('testModeBanner');
@@ -564,9 +535,16 @@ function setupEventListeners() {
   const homeTwitterSettingsBack = document.getElementById('homeTwitterSettingsBack');
 
   if (homeTwitterSettingsBtn && homeTwitterSettingsPanel) {
-    homeTwitterSettingsBtn.addEventListener('click', () => {
-      homeTwitterSettingsBtn.classList.add('hidden');
-      homeTwitterSettingsPanel.classList.remove('hidden');
+    homeTwitterSettingsBtn.addEventListener('click', async () => {
+      const isLoggedIn = await XAuth.isLoggedIn();
+      if (isLoggedIn) {
+        // Show settings panel when connected
+        homeTwitterSettingsBtn.classList.add('hidden');
+        homeTwitterSettingsPanel.classList.remove('hidden');
+      } else {
+        // Trigger login directly when not connected
+        handleXLogin();
+      }
     });
   }
 
@@ -577,16 +555,19 @@ function setupEventListeners() {
     });
   }
 
-  // Home X login button
-  const homeXLoginBtnEl = document.getElementById('homeXLoginBtn');
-  if (homeXLoginBtnEl) {
-    homeXLoginBtnEl.addEventListener('click', handleXLogin);
-  }
-
   // Home X disconnect button
   const homeXDisconnectBtnEl = document.getElementById('homeXDisconnectBtn');
   if (homeXDisconnectBtnEl) {
     homeXDisconnectBtnEl.addEventListener('click', handleXDisconnect);
+  }
+
+  // Home X connect button (on card header)
+  const homeXConnectBtnEl = document.getElementById('homeXConnectBtn');
+  if (homeXConnectBtnEl) {
+    homeXConnectBtnEl.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent card click
+      handleXLogin();
+    });
   }
 
   // Legacy manage button (kept for compatibility but hidden)
@@ -819,6 +800,67 @@ async function handleNavigation(e) {
   if (targetId === 'tab-settings') {
     showSettingsView('main');
   }
+}
+
+/**
+ * Onboarding Multi-step Navigation
+ */
+function setupOnboardingNavigation() {
+  const onboardingContainer = document.querySelector('.onboarding-container');
+  if (!onboardingContainer) return;
+
+  const steps = onboardingContainer.querySelectorAll('.onboarding-step');
+  const progressDots = onboardingContainer.querySelectorAll('.progress-dot');
+  const nextBtns = onboardingContainer.querySelectorAll('.onboarding-btn-next');
+  const backBtns = onboardingContainer.querySelectorAll('.onboarding-btn-back, .onboarding-btn-back-text');
+
+  function goToStep(stepNum) {
+    // Update steps
+    steps.forEach(step => {
+      const currentStep = parseInt(step.dataset.step);
+      if (currentStep === stepNum) {
+        step.classList.add('active');
+        step.style.animation = 'fadeSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+      } else {
+        step.classList.remove('active');
+      }
+    });
+
+    // Update progress dots
+    progressDots.forEach(dot => {
+      const dotStep = parseInt(dot.dataset.step);
+      dot.classList.remove('active', 'completed');
+      if (dotStep === stepNum) {
+        dot.classList.add('active');
+      } else if (dotStep < stepNum) {
+        dot.classList.add('completed');
+      }
+    });
+  }
+
+  // Next buttons
+  nextBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const nextStep = parseInt(btn.dataset.next);
+      goToStep(nextStep);
+    });
+  });
+
+  // Back buttons
+  backBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const prevStep = parseInt(btn.dataset.back);
+      goToStep(prevStep);
+    });
+  });
+
+  // Progress dot clicks
+  progressDots.forEach(dot => {
+    dot.addEventListener('click', () => {
+      const targetStep = parseInt(dot.dataset.step);
+      goToStep(targetStep);
+    });
+  });
 }
 
 /**
@@ -1310,8 +1352,8 @@ async function handleConfirmTipToggle() {
  */
 async function loadAutoReply() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.AUTO_REPLY]);
-  // Auto-reply defaults to false
-  const enabled = result[STORAGE_KEYS.AUTO_REPLY] === true;
+  // Auto-reply defaults to true (only false if explicitly set to false)
+  const enabled = result[STORAGE_KEYS.AUTO_REPLY] !== false;
   if (autoReplyToggle) {
     autoReplyToggle.checked = enabled;
   }
@@ -1383,8 +1425,8 @@ function updateAutoReplyMessageVisibility(enabled) {
 async function loadAutoReplyMessage() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.AUTO_REPLY_MESSAGE, STORAGE_KEYS.AUTO_REPLY]);
   const message = result[STORAGE_KEYS.AUTO_REPLY_MESSAGE] || DEFAULT_AUTO_REPLY_MESSAGE;
-  // Auto-reply defaults to false
-  const autoReplyEnabled = result[STORAGE_KEYS.AUTO_REPLY] === true;
+  // Auto-reply defaults to true (only false if explicitly set to false)
+  const autoReplyEnabled = result[STORAGE_KEYS.AUTO_REPLY] !== false;
 
   if (autoReplyMessageInput) {
     autoReplyMessageInput.value = message;
@@ -1425,80 +1467,17 @@ async function resetAutoReplyMessage() {
  */
 
 // Home screen X elements
-const homeXConnectGroup = document.getElementById('homeXConnectGroup');
-const homeXLoginBtn = document.getElementById('homeXLoginBtn');
 const homeXDisconnectBtn = document.getElementById('homeXDisconnectBtn');
-const homeXPostConnectOptions = document.getElementById('homeXPostConnectOptions');
 const homeXSettingsTitle = document.getElementById('homeXSettingsTitle');
+const homeXConnectBtn = document.getElementById('homeXConnectBtn');
+const homeXSettingsGear = document.getElementById('homeXSettingsGear');
 
-async function loadXLoginStatus() {
-  try {
-    const isLoggedIn = await XAuth.isLoggedIn();
-
-    if (isLoggedIn) {
-      if (homeXConnectGroup) homeXConnectGroup.classList.add('hidden');
-      if (homeXPostConnectOptions) homeXPostConnectOptions.classList.remove('hidden');
-      if (homeXLoginBtn) homeXLoginBtn.classList.add('hidden');
-      if (homeXDisconnectBtn) homeXDisconnectBtn.classList.remove('hidden');
-    } else {
-      if (homeXConnectGroup) homeXConnectGroup.classList.remove('hidden');
-      if (homeXPostConnectOptions) homeXPostConnectOptions.classList.add('hidden');
-      if (homeXLoginBtn) homeXLoginBtn.classList.remove('hidden');
-      if (homeXDisconnectBtn) homeXDisconnectBtn.classList.add('hidden');
-    }
-  } catch (error) {
-    console.error('[Grove Extension] X login status check failed:', error);
-  }
-}
-
-async function handleXDisconnect() {
-  await XAuth.logout();
-  await loadXLoginStatus();
-  showToast('Disconnected from 𝕏');
-}
-
-async function handleXLogin() {
-  try {
-    if (homeXLoginBtn) {
-      homeXLoginBtn.textContent = 'Connecting...';
-      homeXLoginBtn.disabled = true;
-    }
-
-    await XAuth.login();
-
-    // Re-enable button and refresh UI from stored state
-    if (homeXLoginBtn) {
-      homeXLoginBtn.textContent = 'Connect';
-      homeXLoginBtn.disabled = false;
-    }
-    await loadXLoginStatus();
-
-    showToast('Connected to 𝕏');
-  } catch (error) {
-    console.error('[Grove Extension] X login failed:', error);
-    if (homeXLoginBtn) {
-      homeXLoginBtn.textContent = 'Connect';
-      homeXLoginBtn.disabled = false;
-    }
-    // Truncate long error messages to prevent UI overflow
-    const errorMsg = error.message?.length > 50
-      ? error.message.substring(0, 50) + '...'
-      : error.message;
-    showToast('Login failed: ' + errorMsg);
-  }
-}
+// X OAuth functions are imported from src/auth/xOAuthPopup.js
+// loadXLoginStatus, handleXDisconnect, handleXLogin are available globally
 
 /**
  * Balance
  */
-function formatBalance(balance) {
-  const parsed = parseFloat(balance);
-  if (Number.isNaN(parsed)) {
-    return DEFAULT_BALANCE_DISPLAY;
-  }
-  return parsed.toFixed(2);
-}
-
 async function fetchBalance() {
   balanceDisplay.classList.add('loading');
 
@@ -1518,7 +1497,7 @@ async function fetchBalance() {
   if (cachedBalance !== undefined) {
     balanceAmount.textContent = cachedBalance;
   } else {
-    balanceAmount.textContent = DEFAULT_BALANCE_DISPLAY;
+    balanceAmount.textContent = FormatUtils.DEFAULT_BALANCE_DISPLAY;
   }
 
   try {
@@ -1555,7 +1534,7 @@ async function fetchBalance() {
         await prevKeysUI.updateCount();
         updateEarnAddressDisplay(null);
         updateEnsNameDisplay(null);
-        balanceAmount.textContent = DEFAULT_BALANCE_DISPLAY;
+        balanceAmount.textContent = FormatUtils.DEFAULT_BALANCE_DISPLAY;
 
         showToast('API key invalid or expired. Key archived.');
       }
@@ -1586,13 +1565,13 @@ async function fetchBalance() {
 
     if (chainBalance) {
       // Format balance (remove trailing zeros, max 2 decimal places for display)
-      const formattedBalance = formatBalance(chainBalance.balance);
+      const formattedBalance = FormatUtils.formatBalance(chainBalance.balance);
       balanceAmount.textContent = formattedBalance;
       cachedBalances[chain] = formattedBalance;
       await chrome.storage.local.set({ [STORAGE_KEYS.LAST_BALANCES]: cachedBalances });
     } else {
-      balanceAmount.textContent = DEFAULT_BALANCE_DISPLAY;
-      cachedBalances[chain] = DEFAULT_BALANCE_DISPLAY;
+      balanceAmount.textContent = FormatUtils.DEFAULT_BALANCE_DISPLAY;
+      cachedBalances[chain] = FormatUtils.DEFAULT_BALANCE_DISPLAY;
       await chrome.storage.local.set({ [STORAGE_KEYS.LAST_BALANCES]: cachedBalances });
     }
   } catch (e) {
@@ -2279,46 +2258,7 @@ async function loadTopTippers() {
     return;
   }
 
-  list.innerHTML = result.data.entries.map((entry, i) => {
-    const ctx = entry.lastTipContext || {};
-    const parsed = entry.lastTipDestination ? parseDestination(entry.lastTipDestination) : {};
-
-    // Icon with rank number
-    const rankIcon = `<span class="rank-number">${i + 1}</span>`;
-
-    // Label: wallet address or username
-    let labelHtml = formatAddress(entry.address);
-
-    // Description: latest tip recipient (prefer post/tweet URL over profile URL)
-    let descriptionHtml;
-    if (ctx.recipient_username) {
-      const postUrl = ctx.source_post_url || parsed.postUrl;
-      const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
-      const linkUrl = postUrl || profileUrl;
-      const linkText = postUrl ? `@${escapeHtml(ctx.recipient_username)}'s post` : `@${escapeHtml(ctx.recipient_username)}`;
-      descriptionHtml = `Latest tip: <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${linkText}</a>`;
-    } else if (parsed.profileHandle) {
-      const linkUrl = parsed.postUrl || parsed.profileUrl;
-      const linkText = parsed.postUrl ? `${parsed.profileHandle}'s post` : parsed.profileHandle;
-      descriptionHtml = `Latest tip: <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${linkText}</a>`;
-    } else {
-      descriptionHtml = `${entry.tipCount.toLocaleString()} tips sent`;
-    }
-
-    return `
-      <div class="transaction-item">
-        <div class="transaction-item-icon rank-icon">${rankIcon}</div>
-        <div class="transaction-item-details">
-          <div class="transaction-item-label">${labelHtml}</div>
-          <div class="transaction-item-description">${descriptionHtml}</div>
-        </div>
-        <div class="transaction-item-right">
-          <div class="transaction-item-amount received">${formatUSD(entry.totalUSD)}</div>
-          <div class="transaction-item-time">${entry.tipCount} tips</div>
-        </div>
-      </div>
-    `;
-  }).join('');
+  list.innerHTML = LeaderboardRenderer.renderTippersList(result.data.entries);
 }
 
 /**
@@ -2342,72 +2282,7 @@ async function loadTopEarners() {
     return;
   }
 
-  list.innerHTML = result.data.entries.map((entry, i) => {
-    const ctx = entry.lastTipContext || {};
-    const parsed = entry.lastTipDestination ? parseDestination(entry.lastTipDestination) : {};
-
-    // Icon with rank number
-    const rankIcon = `<span class="rank-number">${i + 1}</span>`;
-
-    // Label: show the earner's identity (recipient username or address)
-    let labelHtml;
-    if (ctx.recipient_username) {
-      const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
-      labelHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.recipient_username)}</a>`;
-    } else if (parsed.profileHandle && parsed.profileUrl) {
-      labelHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
-    } else {
-      labelHtml = formatAddress(entry.address);
-    }
-
-    // Description: tip count
-    const descriptionHtml = `${entry.tipCount.toLocaleString()} tips received`;
-
-    // Platform link icon (X icon for Twitter/X tips)
-    const isTwitter = (ctx.source_post_url && (ctx.source_post_url.includes('x.com') || ctx.source_post_url.includes('twitter.com'))) ||
-      (parsed.profileUrl && (parsed.profileUrl.includes('x.com') || parsed.profileUrl.includes('twitter.com'))) ||
-      (entry.lastTipSocialGraph && (entry.lastTipSocialGraph.includes('x.com') || entry.lastTipSocialGraph.includes('twitter.com')));
-
-    let platformUrl = ctx.source_post_url || parsed.postUrl || parsed.profileUrl ||
-      (entry.lastTipSocialGraph && (entry.lastTipSocialGraph.startsWith('http') ? entry.lastTipSocialGraph : `https://${entry.lastTipSocialGraph}`));
-
-    const platformLinkHtml = isTwitter && platformUrl
-      ? `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="View on X">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-          </svg>
-        </a>`
-      : `<span class="history-platform-link history-platform-link-empty"></span>`;
-
-    return `
-      <div class="transaction-item">
-        <div class="transaction-item-icon rank-icon">${rankIcon}</div>
-        <div class="transaction-item-details">
-          <div class="transaction-item-label">${labelHtml}</div>
-          <div class="transaction-item-description">${descriptionHtml}</div>
-        </div>
-        <div class="transaction-item-right">
-          <div class="transaction-item-amount received">${formatUSD(entry.totalUSD)}</div>
-          <div class="transaction-item-time">${entry.tipCount} tips</div>
-        </div>
-        <div class="transaction-item-links">
-          ${platformLinkHtml}
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-/**
- * Format USD for pool display (compact: $1.5K, $2.3M)
- */
-function formatPoolUSD(value) {
-  if (value >= 1000000) {
-    return `$${(value / 1000000).toFixed(1)}M`;
-  } else if (value >= 1000) {
-    return `$${(value / 1000).toFixed(1)}K`;
-  }
-  return `$${value.toFixed(2)}`;
+  list.innerHTML = LeaderboardRenderer.renderEarnersList(result.data.entries);
 }
 
 /**
@@ -2435,15 +2310,15 @@ async function loadPoolStats() {
     // Update DOM - Hero card
     const availableEl = document.getElementById('pool-available');
     if (availableEl) {
-      availableEl.textContent = formatPoolUSD(available);
+      availableEl.textContent = FormatUtils.formatPoolUSD(available);
       availableEl.classList.remove('loading');
     }
 
     const tippedEl = document.getElementById('pool-tipped');
-    if (tippedEl) tippedEl.textContent = `${formatPoolUSD(totalTipped)} earned`;
+    if (tippedEl) tippedEl.textContent = `${FormatUtils.formatPoolUSD(totalTipped)} earned`;
 
     const fundedEl = document.getElementById('pool-funded');
-    if (fundedEl) fundedEl.textContent = `${formatPoolUSD(totalFunded)} deposited`;
+    if (fundedEl) fundedEl.textContent = `${FormatUtils.formatPoolUSD(totalFunded)} deposited`;
 
     const barFillEl = document.getElementById('pool-bar-fill');
     if (barFillEl) barFillEl.style.width = `${Math.min(percentage, 100)}%`;
@@ -2455,10 +2330,10 @@ async function loadPoolStats() {
     // Update tippers and earners counts
     if (statsRes.success) {
       const tippersEl = document.getElementById('stat-tippers');
-      if (tippersEl) tippersEl.textContent = formatStatCount(statsRes.data.tippers);
+      if (tippersEl) tippersEl.textContent = FormatUtils.formatStatCount(statsRes.data.tippers);
 
       const recipientsEl = document.getElementById('stat-recipients');
-      if (recipientsEl) recipientsEl.textContent = formatStatCount(statsRes.data.recipients);
+      if (recipientsEl) recipientsEl.textContent = FormatUtils.formatStatCount(statsRes.data.recipients);
     }
   } catch (error) {
     console.error('[Grove Extension] Pool stats error:', error);
@@ -2490,76 +2365,20 @@ async function loadLiveTips(isRefresh = false) {
     return;
   }
 
-  const newEntries = result.data.entries.filter(e => !seenTxHashes.has(e.txHash));
+  // Track new entries for animation
+  const newTxHashes = new Set();
+  if (isRefresh) {
+    result.data.entries.forEach(e => {
+      if (!seenTxHashes.has(e.txHash)) {
+        newTxHashes.add(e.txHash);
+      }
+    });
+  }
 
   // Update seen hashes
   result.data.entries.forEach(e => seenTxHashes.add(e.txHash));
 
-  list.innerHTML = result.data.entries.map((entry) => {
-    const isNew = newEntries.some(n => n.txHash === entry.txHash) && isRefresh;
-    const parsed = parseDestination(entry.destination);
-    const ctx = entry.context || {};
-
-    // Dollar icon for tips
-    const icon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>';
-
-    // Label: recipient name (the main info)
-    let labelHtml;
-    if (ctx.recipient_username) {
-      const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
-      labelHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.recipient_username)}</a>`;
-    } else if (parsed.profileHandle) {
-      labelHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${escapeHtml(parsed.profileHandle)}</a>`;
-    } else {
-      const addressUrl = getAddressExplorerUrl(entry.network, entry.address);
-      labelHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(entry.address)}</a>`;
-    }
-
-    // Description: "Tip Received"
-    const descriptionHtml = 'Tip Received';
-
-    // Platform link (X icon) - show if it's a Twitter/X tip
-    const isTwitter = (ctx.source_post_url && (ctx.source_post_url.includes('x.com') || ctx.source_post_url.includes('twitter.com'))) ||
-      (parsed.profileUrl && (parsed.profileUrl.includes('x.com') || parsed.profileUrl.includes('twitter.com')));
-
-    let platformUrl = ctx.source_post_url || parsed.postUrl || parsed.profileUrl;
-    const platformLinkHtml = isTwitter && platformUrl
-      ? `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="View on X">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-          </svg>
-        </a>`
-      : `<span class="history-platform-link history-platform-link-empty"></span>`;
-
-    // TX link (chain icon)
-    const explorerUrl = getExplorerUrl(entry.network, entry.txHash);
-    const txLinkHtml = explorerUrl
-      ? `<a href="${explorerUrl}" target="_blank" rel="noopener noreferrer" class="history-tx-link" title="View transaction">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-          </svg>
-        </a>`
-      : `<span class="history-tx-link history-tx-link-empty"></span>`;
-
-    return `
-      <div class="transaction-item${isNew ? ' new' : ''}">
-        <div class="transaction-item-icon tip_received">${icon}</div>
-        <div class="transaction-item-details">
-          <div class="transaction-item-label">${labelHtml}</div>
-          <div class="transaction-item-description">${descriptionHtml}</div>
-        </div>
-        <div class="transaction-item-right">
-          <div class="transaction-item-amount received">${formatUSD(entry.amountUSD)}</div>
-          <div class="transaction-item-time">${formatTimeAgo(entry.confirmedAt)}</div>
-        </div>
-        <div class="transaction-item-links">
-          ${platformLinkHtml}
-          ${txLinkHtml}
-        </div>
-      </div>
-    `;
-  }).join('');
+  list.innerHTML = LeaderboardRenderer.renderLiveTipsList(result.data.entries, newTxHashes);
 }
 
 /**
@@ -2599,40 +2418,6 @@ function refreshLeaderboard() {
 }
 
 /**
- * Format USD value for stats display (compact)
- */
-function formatStatUSD(value) {
-  if (value >= 999500) {
-    // 999,500+ rounds to 1M or shows as X.XM
-    return '$' + (value / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  } else if (value >= 10000) {
-    return '$' + Math.round(value / 1000) + 'K';
-  } else if (value >= 1000) {
-    return '$' + (value / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-  } else if (value >= 100) {
-    return '$' + Math.round(value);
-  } else {
-    return '$' + value.toFixed(2);
-  }
-}
-
-/**
- * Format count value for stats display (compact)
- */
-function formatStatCount(value) {
-  if (value >= 999500) {
-    // 999,500+ rounds to 1M or shows as X.XM
-    return (value / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  } else if (value >= 10000) {
-    return Math.round(value / 1000) + 'K';
-  } else if (value >= 1000) {
-    return (value / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-  } else {
-    return value.toString();
-  }
-}
-
-/**
  * Load leaderboard stats
  */
 async function loadLeaderboardStats() {
@@ -2654,19 +2439,19 @@ async function loadLeaderboardStats() {
 
     if (result.success) {
       if (depositsEl) {
-        depositsEl.textContent = formatStatUSD(result.data.deposits);
+        depositsEl.textContent = FormatUtils.formatStatUSD(result.data.deposits);
         depositsEl.classList.remove('loading');
       }
       if (tipsEl) {
-        tipsEl.textContent = formatStatUSD(result.data.tips);
+        tipsEl.textContent = FormatUtils.formatStatUSD(result.data.tips);
         tipsEl.classList.remove('loading');
       }
       if (tippersEl) {
-        tippersEl.textContent = formatStatCount(result.data.tippers);
+        tippersEl.textContent = FormatUtils.formatStatCount(result.data.tippers);
         tippersEl.classList.remove('loading');
       }
       if (recipientsEl) {
-        recipientsEl.textContent = formatStatCount(result.data.recipients);
+        recipientsEl.textContent = FormatUtils.formatStatCount(result.data.recipients);
         recipientsEl.classList.remove('loading');
       }
     }
@@ -2870,121 +2655,8 @@ function renderHistoryList() {
   const start = historyCurrentPage * HISTORY_PAGE_SIZE;
   const pageItems = filtered.slice(start, start + HISTORY_PAGE_SIZE);
 
-  // Render items
-  list.innerHTML = pageItems.map(tx => {
-    const isFailed = tx.status === 'failed';
-    const icon = isFailed ? getTransactionIcon('failed') : getTransactionIcon(tx.type);
-    const label = isFailed ? 'Tip Failed' : getTransactionLabel(tx.type);
-    const amount = formatHistoryAmount(tx);
-    const time = formatRelativeTime(tx.created_at);
-    const amountClass = isFailed ? 'failed' : (tx.type === 'tip_sent' ? 'sent' : 'received');
-
-    const explorerUrl = getExplorerUrl(tx.network, tx.tx_hash);
-    const parsed = parseDestination(tx.destination);
-    const ctx = tx.context || {};
-
-    // Build description with links - prefer context data when available
-    let descriptionHtml;
-
-    if (tx.type === 'tip_sent') {
-      // For sent tips: show recipient
-      if (ctx.recipient_username) {
-        const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
-        descriptionHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.recipient_username)}</a>`;
-      } else if (parsed.profileHandle && parsed.profileUrl) {
-        descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
-      } else if (parsed.postUrl) {
-        descriptionHtml = `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${truncateDestination(tx.destination)}</a>`;
-      } else if (tx.counterparty_address) {
-        const addressUrl = getAddressExplorerUrl(tx.network, tx.counterparty_address);
-        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(tx.counterparty_address)}</a>`;
-      } else {
-        descriptionHtml = formatNetwork(tx.network);
-      }
-    } else if (tx.type === 'tip_received') {
-      // For received tips: show sender if available
-      if (ctx.sender_username) {
-        const profileUrl = ctx.sender_profile_url || `https://x.com/${ctx.sender_username}`;
-        descriptionHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${escapeHtml(ctx.sender_username)}</a>`;
-      } else if (tx.counterparty_address) {
-        const addressUrl = getAddressExplorerUrl(tx.network, tx.counterparty_address);
-        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(tx.counterparty_address)}</a>`;
-      } else if (parsed.profileHandle && parsed.profileUrl) {
-        descriptionHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
-      } else {
-        descriptionHtml = formatNetwork(tx.network);
-      }
-    } else {
-      // Deposits and other types
-      if (tx.counterparty_address) {
-        const addressUrl = getAddressExplorerUrl(tx.network, tx.counterparty_address);
-        descriptionHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${formatAddress(tx.counterparty_address)}</a>`;
-      } else {
-        descriptionHtml = formatNetwork(tx.network);
-      }
-    }
-
-
-    // Platform link icon (X icon for Twitter/X tips)
-    // Check context, destination, and social_graph for Twitter/X
-    // Note: sender_platform can be 'x' or 'twitter' - both are valid and map to X/Twitter
-    const isTwitterFromContext = ctx.sender_platform === 'twitter' || ctx.sender_platform === 'x' ||
-      (ctx.source_post_url && (ctx.source_post_url.includes('x.com') || ctx.source_post_url.includes('twitter.com')));
-    const isTwitterFromDestination = parsed.profileUrl && (parsed.profileUrl.includes('x.com') || parsed.profileUrl.includes('twitter.com'));
-    const isTwitterFromSocialGraph = tx.social_graph && (tx.social_graph.includes('x.com') || tx.social_graph.includes('twitter.com'));
-    const isTwitter = isTwitterFromContext || isTwitterFromDestination || isTwitterFromSocialGraph;
-
-    // Use source_post_url from context first, then destination URL, then social_graph
-    let platformUrl = null;
-    let platformTitle = 'View on X';
-    if (ctx.source_post_url) {
-      platformUrl = ctx.source_post_url;
-      platformTitle = ctx.source_post_url.includes('/status/') ? 'View post' : 'View profile';
-    } else if (isTwitterFromDestination) {
-      platformUrl = parsed.postUrl || parsed.profileUrl;
-      platformTitle = parsed.postUrl ? 'View post' : 'View profile';
-    } else if (isTwitterFromSocialGraph) {
-      platformUrl = tx.social_graph.startsWith('http') ? tx.social_graph : `https://${tx.social_graph}`;
-      platformTitle = 'View source';
-    }
-
-    // Always render platform icon slot for alignment, but only make it clickable if there's a URL
-    const platformLinkHtml = isTwitter && platformUrl
-      ? `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="${platformTitle}">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-          </svg>
-        </a>`
-      : `<span class="history-platform-link history-platform-link-empty"></span>`;
-
-    // TX link icon (chain icon)
-    const txLinkHtml = explorerUrl
-      ? `<a href="${explorerUrl}" target="_blank" rel="noopener noreferrer" class="history-tx-link" title="View transaction">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-          </svg>
-        </a>`
-      : `<span class="history-tx-link history-tx-link-empty"></span>`;
-
-    return `
-      <div class="transaction-item">
-        <div class="transaction-item-icon ${isFailed ? 'failed' : tx.type}">${icon}</div>
-        <div class="transaction-item-details">
-          <div class="transaction-item-label">${descriptionHtml}</div>
-          <div class="transaction-item-description">${label}</div>
-        </div>
-        <div class="transaction-item-right">
-          <div class="transaction-item-amount ${amountClass}">${amount}</div>
-          <div class="transaction-item-time">${time}</div>
-        </div>
-        <div class="transaction-item-links">
-          ${platformLinkHtml}
-          ${txLinkHtml}
-        </div>
-      </div>
-    `;
-  }).join('');
+  // Render items using HistoryRenderer
+  list.innerHTML = HistoryRenderer.renderHistoryList(pageItems);
 
   // Update pagination
   if (totalPages > 1) {
@@ -2997,282 +2669,10 @@ function renderHistoryList() {
   }
 }
 
-/**
- * Get transaction icon based on type
- */
-function getTransactionIcon(type) {
-  switch (type) {
-    case 'tip_sent':
-      return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5m0 0l-7 7m7-7l7 7"/></svg>';
-    case 'tip_received':
-      return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m0 0l7-7m-7 7l-7-7"/></svg>';
-    case 'deposit':
-      return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>';
-    case 'failed':
-      return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>';
-    default:
-      return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>';
-  }
-}
-
-/**
- * Get transaction label based on type
- */
-function getTransactionLabel(type) {
-  switch (type) {
-    case 'tip_sent': return 'Tip Sent';
-    case 'tip_received': return 'Tip Received';
-    case 'deposit': return 'Deposit';
-    default: return 'Transaction';
-  }
-}
-
-/**
- * Get transaction description
- */
-function getTransactionDescription(tx) {
-  if (tx.type === 'tip_sent' || tx.type === 'tip_received') {
-    if (tx.destination) {
-      // Show destination (twitter.com/username)
-      return truncateDestination(tx.destination);
-    }
-    if (tx.counterparty_address) {
-      return formatAddress(tx.counterparty_address);
-    }
-    return formatNetwork(tx.network);
-  }
-  return formatNetwork(tx.network);
-}
-
-/**
- * Get block explorer URL for a transaction
- */
-function getExplorerUrl(network, txHash) {
-  if (!txHash) return null;
-
-  // Normalize: lowercase and replace underscores with hyphens
-  const normalized = (network || '').toLowerCase().replace(/_/g, '-');
-
-  if (normalized.includes('base')) {
-    const isTestnet = normalized.includes('sepolia') || normalized.includes('testnet');
-    const baseUrl = isTestnet ? 'https://sepolia.basescan.org' : 'https://basescan.org';
-    return `${baseUrl}/tx/${txHash}`;
-  }
-
-  if (normalized.includes('solana') || normalized.includes('sol')) {
-    const isDevnet = normalized.includes('devnet') || normalized.includes('testnet');
-    const cluster = isDevnet ? '?cluster=devnet' : '';
-    return `https://solscan.io/tx/${txHash}${cluster}`;
-  }
-
-  // Default to Base mainnet if network unknown but tx_hash exists
-  return `https://basescan.org/tx/${txHash}`;
-}
-
-/**
- * Get block explorer URL for an address
- */
-function getAddressExplorerUrl(network, address) {
-  if (!address) return null;
-
-  const normalized = (network || '').toLowerCase().replace(/_/g, '-');
-
-  if (normalized.includes('base')) {
-    const isTestnet = normalized.includes('sepolia') || normalized.includes('testnet');
-    const baseUrl = isTestnet ? 'https://sepolia.basescan.org' : 'https://basescan.org';
-    return `${baseUrl}/address/${address}`;
-  }
-
-  if (normalized.includes('solana') || normalized.includes('sol')) {
-    const isDevnet = normalized.includes('devnet') || normalized.includes('testnet');
-    const cluster = isDevnet ? '?cluster=devnet' : '';
-    return `https://solscan.io/account/${address}${cluster}`;
-  }
-
-  // Default to Base mainnet
-  return `https://basescan.org/address/${address}`;
-}
-
-/**
- * Get URL for the tipped content (tweet, etc)
- */
-function getDestinationUrl(destination) {
-  if (!destination) return null;
-
-  // If it already has a protocol, return as-is
-  if (destination.startsWith('http://') || destination.startsWith('https://')) {
-    return destination;
-  }
-
-  // Construct full URL from destination (e.g., "x.com/user/status/123" -> "https://x.com/user/status/123")
-  return `https://${destination}`;
-}
-
-/**
- * Parse destination to extract profile URL and check if it's a specific post
- * Returns { profileUrl, postUrl, profileHandle }
- */
-function parseDestination(destination) {
-  if (!destination) return { profileUrl: null, postUrl: null, profileHandle: null };
-
-  // Check if it's a .base.eth name
-  if (destination.endsWith('.base.eth')) {
-    const name = destination.replace('.base.eth', '');
-    return {
-      profileUrl: `https://www.base.org/name/${encodeURIComponent(name)}`,
-      postUrl: null,
-      profileHandle: destination
-    };
-  }
-
-  // Check if it's a .eth name (but not .base.eth)
-  if (destination.endsWith('.eth')) {
-    return {
-      profileUrl: `https://app.ens.domains/${encodeURIComponent(destination)}`,
-      postUrl: null,
-      profileHandle: destination
-    };
-  }
-
-  // Normalize: add https if needed
-  const fullUrl = destination.startsWith('http') ? destination : `https://${destination}`;
-
-  // Check if it's a Twitter/X status URL
-  const statusMatch = destination.match(/^(x\.com|twitter\.com)\/([^\/]+)\/status\/(\d+)/i);
-  if (statusMatch) {
-    const domain = statusMatch[1];
-    const username = statusMatch[2];
-    return {
-      profileUrl: `https://${domain}/${username}`,
-      postUrl: fullUrl,
-      profileHandle: `@${username}`
-    };
-  }
-
-  // Check if it's just a Twitter/X profile
-  const profileMatch = destination.match(/^(x\.com|twitter\.com)\/([^\/]+)\/?$/i);
-  if (profileMatch) {
-    const username = profileMatch[2];
-    return {
-      profileUrl: fullUrl,
-      postUrl: null,
-      profileHandle: `@${username}`
-    };
-  }
-
-  // For other URLs, just return the destination as-is
-  return {
-    profileUrl: null,
-    postUrl: fullUrl,
-    profileHandle: null
-  };
-}
-
-/**
- * Truncate destination string
- */
-function truncateDestination(dest) {
-  if (!dest) return '';
-  if (dest.length <= 24) return dest;
-  return dest.slice(0, 24) + '...';
-}
-
-/**
- * Format network name
- */
-function formatNetwork(network) {
-  if (!network) return '';
-  if (network.includes('base')) return 'Base';
-  if (network.includes('solana')) return 'Solana';
-  return network.charAt(0).toUpperCase() + network.slice(1);
-}
-
-/**
- * Format history amount with sign
- */
-function formatHistoryAmount(tx) {
-  const amount = parseFloat(tx.amount_usd) || 0;
-  const formatted = formatUSD(amount);
-  if (tx.type === 'tip_sent') {
-    return '-' + formatted;
-  }
-  return '+' + formatted;
-}
-
-/**
- * Format relative time (enhanced version)
- */
-function formatRelativeTime(dateString) {
-  if (!dateString) return '';
-  const now = new Date();
-  const then = new Date(dateString);
-  const seconds = Math.floor((now - then) / 1000);
-
-  if (seconds < 60) return 'Just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-
-  const days = Math.floor(seconds / 86400);
-  if (days === 1) return 'Yesterday';
-  if (days < 7) return `${days}d ago`;
-
-  // Format as date for older items
-  return then.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-/**
- * Format Address (shorten)
- */
-function formatAddress(address) {
-  if (!address) return 'Unknown';
-  if (address.length <= 12) return address;
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
-
-/**
- * Format USD Amount (always at least 2 decimals, up to 6 when needed)
- */
-function formatUSD(amount) {
-  if (amount >= 1000) {
-    return '$' + amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-  if (amount >= 0.01) {
-    return '$' + amount.toFixed(2);
-  }
-  // For very small amounts, show up to 6 decimals but keep at least 2
-  const formatted = amount.toFixed(6).replace(/0+$/, '');
-  // Ensure at least 2 decimal places
-  const decimalPart = formatted.split('.')[1] || '';
-  if (decimalPart.length < 2) {
-    return '$' + amount.toFixed(2);
-  }
-  return '$' + formatted;
-}
-
-/**
- * Format Time Ago
- */
-function formatTimeAgo(timestamp) {
-  if (!timestamp) return '';
-  const now = new Date();
-  const then = new Date(timestamp);
-  const seconds = Math.floor((now - then) / 1000);
-
-  if (seconds < 60) return 'just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  return `${Math.floor(seconds / 86400)}d ago`;
-}
-
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(str) {
-  if (!str) return '';
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
+// parseDestination is loaded from src/parsers/destination.js
+// Format utilities are loaded from src/utils/formatUtils.js
+// Leaderboard renderer is loaded from src/ui/leaderboardRenderer.js
+// History renderer is loaded from src/ui/historyRenderer.js
 
 /**
  * Tip Button Intro Modal
@@ -3313,7 +2713,7 @@ function showIntroModalPage1Only() {
 
 /**
  * Shows page 2 (Twitter connect) directly
- * Called when conditions are met: 3+ launches and 1+ tips
+ * Called when conditions are met: 5+ launches and 1+ tips
  */
 function showTwitterConnectModal() {
   introModalMode = 'twitter';
@@ -3413,56 +2813,8 @@ async function checkAndShowTwitterModal() {
   }
 }
 
-/**
- * Toast Notification
- */
-function showToast(msg) {
-  // Remove any existing toast
-  const existing = document.querySelector('.grove-toast');
-  if (existing) {
-    existing.remove();
-  }
-
-  const testBanner = document.getElementById('testModeBanner');
-  const bannerVisible = testBanner && testBanner.classList.contains('visible');
-  let topPos;
-  if (bannerVisible) {
-    const bannerRect = testBanner.getBoundingClientRect();
-    topPos = (bannerRect.bottom + 8) + 'px';
-  } else {
-    const header = document.querySelector('.header');
-    const headerRect = header.getBoundingClientRect();
-    topPos = (headerRect.bottom + 8) + 'px';
-  }
-
-  const div = document.createElement('div');
-  div.className = 'grove-toast';
-  div.style.position = 'fixed';
-  div.style.top = topPos;
-  div.style.right = '8px';
-  div.style.transform = 'translateX(120%)';
-  div.style.background = '#22c55e';
-  div.style.color = '#000';
-  div.style.padding = '8px 16px';
-  div.style.borderRadius = '20px';
-  div.style.fontSize = '12px';
-  div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-  div.style.zIndex = '2000';
-  div.style.transition = 'transform 0.3s ease-out';
-  div.style.whiteSpace = 'nowrap';
-  div.textContent = msg;
-
-  document.body.appendChild(div);
-
-  requestAnimationFrame(() => {
-    div.style.transform = 'translateX(0)';
-  });
-
-  setTimeout(() => {
-    div.style.transform = 'translateX(120%)';
-    setTimeout(() => div.remove(), 300);
-  }, 2000);
-}
+// Toast notification: uses shared showToast from src/ui/toast.js
+// Loaded via popup.html script tag before popup.js
 
 /**
  * Toggle Password Visibility

@@ -4,6 +4,16 @@
  * Using var to ensure global scope in content scripts
  */
 
+/**
+ * Default auto-reply message template for tips
+ * Placeholders: {username}, {chain}, {tx_link}, {grove_link}
+ */
+var DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I just sent you a tip on {chain} via #TipWithGrove!
+
+Tx: {tx_link}
+
+Tip creators you love → {grove_link}`;
+
 var GROVE_COLORS = {
   primary: 'var(--grove-primary)',
   primaryHover: 'var(--grove-primary-hover)',

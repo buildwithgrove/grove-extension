@@ -1,9 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { loadBrowserScript } from './helpers/load-script.js';
 
-const { AddressParser } = loadBrowserScript('src/parsers/address.js');
+const context = loadBrowserScript('src/parsers/addressMatchers.js');
+const { AddressParser, AddressMatchers } = loadBrowserScript('src/parsers/address.js', context);
 
 describe('AddressParser', () => {
+  // Manual smoke test URLs:
+  // https://claude.ai/
+  // https://vitalik.eth.limo/
+  // https://x.com/olshansky
+  // https://olshansky.info/
+  // https://www.grove.city/
   describe('ENS_PATTERN', () => {
     describe('valid ENS names', () => {
       const validNames = [
@@ -50,6 +57,9 @@ describe('AddressParser', () => {
         ['notens', 'no .eth suffix'],
         ['.eth', 'empty name'],
         ['', 'empty string'],
+        ['optimistic.etherscan.io', 'domain containing .eth substring'],
+        ['vitalik.ether', 'extension starting with eth'],
+        ['vitalik.ethers', '.eth inside a larger word'],
       ];
 
       it.each(invalidPatterns)('should not match "%s" (%s)', (pattern) => {
@@ -101,6 +111,10 @@ describe('AddressParser', () => {
       expect(AddressParser.extractENS('Contact café.eth')).toBe('café.eth');
     });
 
+    it('should allow emoji after ENS names', () => {
+      expect(AddressParser.extractENS('vitalik.eth🔥')).toBe('vitalik.eth');
+    });
+
     it('should return null when no ENS found', () => {
       expect(AddressParser.extractENS('No address here')).toBe(null);
       expect(AddressParser.extractENS('')).toBe(null);
@@ -109,6 +123,96 @@ describe('AddressParser', () => {
 
     it('should extract only the first ENS name', () => {
       expect(AddressParser.extractENS('foo.eth and bar.eth')).toBe('foo.eth');
+    });
+  });
+
+  describe('ENS exclusions', () => {
+    const originalList = [...AddressMatchers.DOMAIN_EXCLUSION_LIST];
+
+    afterEach(() => {
+      AddressMatchers.DOMAIN_EXCLUSION_LIST.splice(0, AddressMatchers.DOMAIN_EXCLUSION_LIST.length, ...originalList);
+    });
+
+    it('should exclude ENS names in the exclusion list', () => {
+      AddressMatchers.DOMAIN_EXCLUSION_LIST.push('blocked.eth');
+      expect(AddressParser.hasAddresses('blocked.eth')).toBe(false);
+      expect(AddressParser.extractENS('blocked.eth')).toBe(null);
+    });
+
+    it('should exclude ENS matches that are part of excluded sites', () => {
+      AddressMatchers.DOMAIN_EXCLUSION_LIST.push('etherscan.io');
+      expect(AddressParser.hasAddresses('optimistic.etherscan.io')).toBe(false);
+    });
+
+    it('should exclude ENS matches inside claude.ai URLs and subdomains', () => {
+      const samples = [
+        'https://claude.ai/vitalik.eth',
+        'claude.ai/vitalik.eth',
+        'https://support.claude.ai/user/jesse.base.eth',
+        'support.claude.ai/profile/🔥.eth',
+      ];
+
+      for (const sample of samples) {
+        expect(AddressParser.hasAddresses(sample)).toBe(false);
+        expect(AddressParser.extractENS(sample)).toBe(null);
+      }
+    });
+  });
+
+  describe('exclusion helpers', () => {
+    it('should allow emoji immediately after matches', () => {
+      const base = 'x.eth';
+      const withEmoji = `${base}🔥`;
+
+      expect(AddressMatchers.isExcludedAddressMatch(base, withEmoji, 0)).toBe(false);
+    });
+
+    it('should exclude matches with trailing letters', () => {
+      const base = 'x.eth';
+      const withLetters = `${base}ers`;
+
+      expect(AddressMatchers.isExcludedAddressMatch(base, withLetters, 0)).toBe(true);
+    });
+
+    it('should exclude matches with trailing numbers', () => {
+      const base = 'x.eth';
+      const withNumbers = `${base}123`;
+
+      expect(AddressMatchers.isExcludedAddressMatch(base, withNumbers, 0)).toBe(true);
+    });
+
+    it('should exclude matches with trailing underscores', () => {
+      const base = 'x.eth';
+      const withUnderscore = `${base}_name`;
+
+      expect(AddressMatchers.isExcludedAddressMatch(base, withUnderscore, 0)).toBe(true);
+    });
+
+    it('should return the whitespace-delimited token containing the match', () => {
+      const text = 'find me at https://claude.ai/x.eth?ref=profile today';
+      const index = text.indexOf('x.eth');
+
+      expect(AddressMatchers.getToken(text, index)).toBe('https://claude.ai/x.eth?ref=profile');
+    });
+  });
+
+  describe('x.eth identified in different contexts', () => {
+    const samples = [
+      ['x.eth', 'standalone'],
+      ['x.eth is my address', 'start of sentence'],
+      ['send tips to x.eth today', 'middle of sentence'],
+      ['find me at x.eth', 'end of sentence'],
+      ['x.eth🔥', 'with emoji'],
+    ];
+
+    it.each(samples)('should match %s (%s)', (sample) => {
+      expect(AddressParser.hasAddresses(sample)).toBe(true);
+      expect(AddressParser.extractENS(sample)).toBe('x.eth');
+    });
+
+    it('should avoid false positives inside longer words', () => {
+      expect(AddressParser.hasAddresses('x.ethers')).toBe(false);
+      expect(AddressParser.extractENS('x.ethers')).toBe(null);
     });
   });
 

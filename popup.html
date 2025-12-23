@@ -10,13 +10,18 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="popup.css">
+  <script src="src/config/storageKeys.js"></script>
   <script src="src/config/networks.js"></script>
+  <script src="src/ui/toast.js"></script>
   <script src="src/utils/api.js"></script>
   <script src="src/utils/balance.js"></script>
   <script src="src/utils/updateChecker.js"></script>
   <script src="src/storage/keyManager.js"></script>
   <script src="src/ui/prevKeysUI.js"></script>
   <script src="src/auth/xAuth.js"></script>
+  <script src="src/auth/xOAuthPopup.js"></script>
+  <script src="src/parsers/destination.js"></script>
+  <script src="src/ui/constants.js"></script>
 </head>
 
 <body class="theme-dark">
@@ -191,12 +196,107 @@
 
       <!-- Onboarding / No Token State -->
       <div id="onboardingState" class="hidden">
-        <div class="onboarding-card">
-          <div class="onboarding-icon">👋</div>
-          <h3>Welcome to Grove</h3>
-          <p>Connect your account to start tipping.</p>
-          <button class="btn-primary btn-full" id="setupTokenBtn">Connect existing account</button>
-          <a class="btn-accent btn-full" href="https://app.grove.city/" target="_blank" rel="noopener noreferrer">Create a new account</a>
+        <div class="onboarding-container">
+          <!-- Step 1: Welcome -->
+          <div class="onboarding-step active" data-step="1">
+            <div class="onboarding-visual">
+              <div class="welcome-glow"></div>
+              <div class="welcome-logo">
+                <img src="icons/logomark.png" alt="Grove" class="welcome-logo-img">
+              </div>
+            </div>
+            <div class="onboarding-content">
+              <h2 class="onboarding-title">Welcome to Grove</h2>
+              <p class="onboarding-subtitle">Tip creators you love</p>
+            </div>
+            <button class="onboarding-btn-next" data-next="2">
+              <span>Get Started</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+
+          <!-- Step 2: How it works -->
+          <div class="onboarding-step" data-step="2">
+            <div class="onboarding-content">
+              <h2 class="onboarding-title">How it works</h2>
+              <div class="feature-cards">
+                <div class="feature-card">
+                  <div class="feature-card-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 2L11 13"></path>
+                      <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+                    </svg>
+                  </div>
+                  <div class="feature-card-content">
+                    <h3>Send USDC tips</h3>
+                    <p>One click on any post</p>
+                  </div>
+                </div>
+                <div class="feature-card">
+                  <div class="feature-card-icon earn-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="12" y1="1" x2="12" y2="23"></line>
+                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                  </div>
+                  <div class="feature-card-content">
+                    <h3>Earn from your posts</h3>
+                    <p>Add wallet to bio to receive</p>
+                  </div>
+                </div>
+                <div class="feature-card">
+                  <div class="feature-card-icon free-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                  </div>
+                  <div class="feature-card-content">
+                    <h3>Zero gas fees</h3>
+                    <p>We cover all costs</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button class="onboarding-btn-next" data-next="3">
+              <span>Continue</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+
+          <!-- Step 3: Connect -->
+          <div class="onboarding-step" data-step="3">
+            <div class="onboarding-visual">
+              <div class="connect-visual">
+                <div class="connect-ring"></div>
+                <div class="connect-icon">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 2L11 13"></path>
+                    <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div class="onboarding-content">
+              <h2 class="onboarding-title">Ready to tip?</h2>
+              <p class="onboarding-subtitle">Create an account to tip anyone, anywhere on the internet</p>
+            </div>
+            <a class="onboarding-btn-primary" href="https://app.grove.city/" target="_blank" rel="noopener noreferrer">
+              <span>Create Account</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
+          </div>
+
+          <!-- Progress Dots (at bottom) -->
+          <div class="onboarding-progress">
+            <div class="progress-dot active" data-step="1"></div>
+            <div class="progress-dot" data-step="2"></div>
+            <div class="progress-dot" data-step="3"></div>
+          </div>
         </div>
       </div>
 
@@ -213,7 +313,7 @@
                 <div class="balance-spinner"></div>
               </div>
             </div>
-            <a href="https://app.grove.city/profile" target="_blank" class="card-action-btn primary" id="topUpBtn">
+            <a href="https://app.grove.city/profile?tab=tip" target="_blank" class="card-action-btn primary" id="topUpBtn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 2v20m0-20L5 9m7-7l7 7" />
@@ -232,7 +332,7 @@
               <div class="card-label">Default Tip</div>
               <div class="amount-display" id="tipAmountDisplay">
                 <span class="currency-symbol">$</span>
-                <span class="amount-value">0.10</span>
+                <span class="amount-value">0.02</span>
               </div>
             </div>
             <button class="card-action-btn primary" id="editDefaultTipBtn">
@@ -255,7 +355,7 @@
           <div class="tip-edit-form">
             <div class="input-group">
               <span class="input-prefix">$</span>
-              <input type="number" id="tipAmountInput" step="0.01" min="0.01" value="0.10" placeholder="0.00">
+              <input type="number" id="tipAmountInput" step="0.01" min="0.01" value="0.02" placeholder="0.00">
             </div>
             <div class="form-actions">
               <button class="btn-secondary btn-sm" id="cancelTipAmount">Cancel</button>
@@ -270,10 +370,12 @@
             <div class="x-connect-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
             </div>
-            <div class="x-connect-title" id="homeXSettingsTitle">Connect to 𝕏</div>
-            <div class="x-connect-chevron">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
+            <div class="x-connect-title" id="homeXSettingsTitle">Setup</div>
+            <span class="x-connect-btn" id="homeXConnectBtn">Connect</span>
+            <div class="x-connect-chevron hidden" id="homeXSettingsGear">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
               </svg>
             </div>
           </div>
@@ -293,17 +395,11 @@
               </svg>
             </button>
             <h3 class="settings-panel-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle; margin-right: 8px;"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>Settings</h3>
-            <button class="btn-success-text" id="homeXLoginBtn" style="margin-left: auto;">Connect</button>
-            <button class="btn-danger-text hidden" id="homeXDisconnectBtn" style="margin-left: auto;">Disconnect</button>
+            <button class="btn-danger-text" id="homeXDisconnectBtn" style="margin-left: auto;">Disconnect</button>
           </div>
 
-          <!-- Connect hint (shown when not connected) -->
-          <div class="home-settings-group" id="homeXConnectGroup">
-            <p class="connect-hint" style="margin: 0;">A popup will appear to log you into <svg class="x-logo-inline" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>.<br>It may appear in front of or behind your current browser window.</p>
-          </div>
-
-          <!-- Post-connect options (shown when connected) -->
-          <div class="home-settings-group hidden" id="homeXPostConnectOptions">
+          <!-- Post-connect options -->
+          <div class="home-settings-group" id="homeXPostConnectOptions">
             <div class="settings-row">
               <div class="settings-info">
                 <div class="settings-name">Like on tip</div>
@@ -328,11 +424,9 @@
               <div class="settings-info" style="margin-bottom: 8px;">
                 <div class="settings-name">Custom Message</div>
               </div>
-              <div class="placeholder-hint">
-                <div class="placeholder-hint-title">This message is posted as a reply after you tip someone.</div>
-                <div class="placeholder-hint-vars"><strong>Variables:</strong> <code>{username}</code> <code>{chain}</code> <code>{tx_link}</code> <code>{grove_link}</code></div>
-              </div>
+              <div class="placeholder-hint-title">This message is posted as a reply after you tip someone.</div>
               <textarea id="homeAutoReplyMessageInput" class="message-textarea" rows="4" placeholder="Enter your custom auto-reply message..."></textarea>
+              <div class="placeholder-hint-vars"><strong>Variables:</strong> <code>{username}</code> <code>{chain}</code> <code>{tx_link}</code> <code>{grove_link}</code></div>
               <div class="form-actions" style="margin-top: 8px;">
                 <button class="btn-secondary btn-sm" id="homeResetAutoReplyMessageBtn">Reset</button>
                 <button class="btn-primary btn-sm" id="homeSaveAutoReplyMessageBtn">Save</button>
@@ -824,7 +918,7 @@
               <div class="settings-desc">Amount to tip by default</div>
             </div>
             <div class="settings-tip-value" id="settingsTipAmountDisplay">
-              <span class="currency-symbol">$</span><span class="amount-value">0.10</span>
+              <span class="currency-symbol">$</span><span class="amount-value">0.02</span>
             </div>
             <button class="btn-text" id="settingsEditTipBtn">Edit</button>
           </div>
@@ -839,7 +933,7 @@
             </div>
             <div class="input-group">
               <span class="input-prefix">$</span>
-              <input type="number" id="settingsTipAmountInput" step="0.01" min="0.01" value="0.10" placeholder="0.00">
+              <input type="number" id="settingsTipAmountInput" step="0.01" min="0.01" value="0.02" placeholder="0.00">
             </div>
             <div class="form-actions">
               <button class="btn-secondary btn-sm" id="settingsCancelTipAmount">Cancel</button>
@@ -1104,6 +1198,9 @@
     </div>
   </div>
 
+  <script src="src/utils/formatUtils.js"></script>
+  <script src="src/ui/leaderboardRenderer.js"></script>
+  <script src="src/ui/historyRenderer.js"></script>
   <script src="popup.js"></script>
 </body>
 

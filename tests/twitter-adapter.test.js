@@ -35,6 +35,13 @@ beforeEach(() => {
 });
 
 describe('TwitterAdapter', () => {
+  describe('getApiPlatformName', () => {
+    it('should return "x"', () => {
+      const adapter = new TwitterAdapter();
+      expect(adapter.getApiPlatformName()).toBe('x');
+    });
+  });
+
   describe('isRetweet', () => {
     it('should return true for tweets with retweet social context', () => {
       const adapter = new TwitterAdapter();
