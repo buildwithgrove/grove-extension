@@ -459,6 +459,14 @@ class TwitterAdapter extends BaseAdapter {
   }
 
   /**
+   * Get platform name for API
+   * @returns {string}
+   */
+  getApiPlatformName() {
+    return 'x';
+  }
+
+  /**
    * Wait for profile to fully load
    * @returns {Promise<boolean>}
    */

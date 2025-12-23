@@ -506,8 +506,7 @@
     const username = extractUsernameFromUrl(window.location.href);
     
     // Determine platform name from adapter, default to generic
-    const platformName = currentAdapter ? currentAdapter.getPlatformName() : 'generic';
-    const senderPlatform = platformName === 'twitter' ? 'x' : platformName;
+    const senderPlatform = currentAdapter ? currentAdapter.getApiPlatformName() : 'generic';
 
     const context = {
       source_post_url: window.location.href,
