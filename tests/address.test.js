@@ -5,6 +5,12 @@ const context = loadBrowserScript('src/parsers/addressMatchers.js');
 const { AddressParser, AddressMatchers } = loadBrowserScript('src/parsers/address.js', context);
 
 describe('AddressParser', () => {
+  // Manual smoke test URLs:
+  // https://claude.ai/
+  // https://vitalik.eth.limo/
+  // https://x.com/olshansky
+  // https://olshansky.info/
+  // https://www.grove.city/
   describe('ENS_PATTERN', () => {
     describe('valid ENS names', () => {
       const validNames = [
