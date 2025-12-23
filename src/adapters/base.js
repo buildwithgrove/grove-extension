@@ -37,6 +37,15 @@ class BaseAdapter {
   }
 
   /**
+   * Get platform name for API (defaults to internal platform name)
+   * Can be overridden by subclasses if API expects a different name
+   * @returns {string} - API Platform name
+   */
+  getApiPlatformName() {
+    return this.getPlatformName();
+  }
+
+  /**
    * Wait for an element to appear in the DOM
    * @param {string} selector - CSS selector
    * @param {number} timeout - Timeout in milliseconds
