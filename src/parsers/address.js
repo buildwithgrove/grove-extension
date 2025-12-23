@@ -8,12 +8,8 @@ class AddressParser {
   // ENS name pattern: supports subdomains, ending in .eth
   // Valid characters per ENSIP-15: alphanumeric, $, _, hyphens, unicode letters, emoji
   // Matches: vitalik.eth, $$$$$.base.eth, 🔥.eth, café.eth, jesse.base.eth
-  static ENS_PATTERN = (typeof AddressMatchers !== 'undefined' && AddressMatchers.ENS_PATTERN)
-    ? AddressMatchers.ENS_PATTERN
-    : /(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*(?:\.(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*)*\.eth\b/iu;
-  static ENS_PATTERN_GLOBAL = (typeof AddressMatchers !== 'undefined' && AddressMatchers.ENS_PATTERN_GLOBAL)
-    ? AddressMatchers.ENS_PATTERN_GLOBAL
-    : /(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*(?:\.(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*)*\.eth\b/giu;
+  static ENS_PATTERN = AddressMatchers.ENS_PATTERN;
+  static ENS_PATTERN_GLOBAL = AddressMatchers.ENS_PATTERN_GLOBAL;
 
   // Solana address pattern commented out - Base/Base Sepolia only for now
   // Solana address pattern: base58 encoded, 32-44 chars

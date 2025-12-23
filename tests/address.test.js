@@ -154,28 +154,43 @@ describe('AddressParser', () => {
   });
 
   describe('exclusion helpers', () => {
-    it('should treat word continuation and emoji correctly', () => {
+    it('should allow emoji immediately after matches', () => {
       const base = 'x.eth';
       const withEmoji = `${base}🔥`;
+
+      expect(AddressMatchers.isExcludedAddressMatch(base, withEmoji, 0)).toBe(false);
+    });
+
+    it('should exclude matches with trailing letters', () => {
+      const base = 'x.eth';
       const withLetters = `${base}ers`;
+
+      expect(AddressMatchers.isExcludedAddressMatch(base, withLetters, 0)).toBe(true);
+    });
+
+    it('should exclude matches with trailing numbers', () => {
+      const base = 'x.eth';
       const withNumbers = `${base}123`;
+
+      expect(AddressMatchers.isExcludedAddressMatch(base, withNumbers, 0)).toBe(true);
+    });
+
+    it('should exclude matches with trailing underscores', () => {
+      const base = 'x.eth';
       const withUnderscore = `${base}_name`;
 
-      expect(AddressMatchers.isExcludedAddressMatch(base, base, 0)).toBe(false);
-      expect(AddressMatchers.isExcludedAddressMatch(base, withEmoji, 0)).toBe(false);
-      expect(AddressMatchers.isExcludedAddressMatch(base, withLetters, 0)).toBe(true);
-      expect(AddressMatchers.isExcludedAddressMatch(base, withNumbers, 0)).toBe(true);
       expect(AddressMatchers.isExcludedAddressMatch(base, withUnderscore, 0)).toBe(true);
     });
 
     it('should return the whitespace-delimited token containing the match', () => {
       const text = 'find me at https://claude.ai/x.eth?ref=profile today';
       const index = text.indexOf('x.eth');
+
       expect(AddressMatchers.getToken(text, index)).toBe('https://claude.ai/x.eth?ref=profile');
     });
   });
 
-  describe('x.eth contexts', () => {
+  describe('x.eth identified in different contexts', () => {
     const samples = [
       ['x.eth', 'standalone'],
       ['x.eth is my address', 'start of sentence'],
