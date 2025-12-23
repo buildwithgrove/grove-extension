@@ -5,13 +5,6 @@
  */
 
 class AddressParser {
-  // Excluded ENS-like sites or names that should not be treated as tippable.
-  // Add entries here as special cases arise.
-  static ENS_EXCLUSION_LIST = ['claude.ai'];
-
-  // Word characters that would indicate ".eth" is inside a larger word.
-  static WORD_CONTINUATION_PATTERN = /[\p{L}\p{N}_]/u;
-
   // ENS name pattern: supports subdomains, ending in .eth
   // Valid characters per ENSIP-15: alphanumeric, $, _, hyphens, unicode letters, emoji
   // Matches: vitalik.eth, $$$$$.base.eth, 🔥.eth, café.eth, jesse.base.eth
@@ -114,13 +107,14 @@ class AddressParser {
     if (!text) return [];
 
     const pattern = this.getEnsPatternGlobal();
+    const exclusions = this.getExclusions();
     const matches = [];
 
     for (const match of text.matchAll(pattern)) {
       const candidate = match[0];
       const startIndex = match.index ?? 0;
 
-      if (this.isExcludedEnsMatch(candidate, text, startIndex)) {
+      if (exclusions.isExcludedAddressMatch(candidate, text, startIndex)) {
         continue;
       }
 
@@ -130,59 +124,25 @@ class AddressParser {
     return matches;
   }
 
-  /**
-   * Determine if an ENS candidate should be ignored.
-   * @param {string} candidate - ENS match
-   * @param {string} text - Source text
-   * @param {number} startIndex - Index of the match
-   * @returns {boolean} - True if excluded
-   */
-  static isExcludedEnsMatch(candidate, text, startIndex) {
-    const lowerCandidate = candidate.toLowerCase();
-
-    if (this.ENS_EXCLUSION_LIST.includes(lowerCandidate)) {
-      return true;
-    }
-
-    const nextChar = text[startIndex + candidate.length];
-    if (nextChar && this.WORD_CONTINUATION_PATTERN.test(nextChar)) {
-      return true;
-    }
-
-    const token = this.getToken(text, startIndex);
-    const lowerToken = token.toLowerCase();
-
-    if (lowerToken !== lowerCandidate) {
-      for (const exclusion of this.ENS_EXCLUSION_LIST) {
-        if (lowerToken.includes(exclusion)) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  static getToken(text, startIndex) {
-    let start = startIndex;
-    let end = startIndex;
-
-    while (start > 0 && !/\s/.test(text[start - 1])) {
-      start -= 1;
-    }
-
-    while (end < text.length && !/\s/.test(text[end])) {
-      end += 1;
-    }
-
-    return text.slice(start, end);
-  }
-
   static getEnsPatternGlobal() {
     const flags = this.ENS_PATTERN.flags.includes('g')
       ? this.ENS_PATTERN.flags
       : `${this.ENS_PATTERN.flags}g`;
     return new RegExp(this.ENS_PATTERN.source, flags);
+  }
+
+  static getExclusions() {
+    if (typeof AddressExclusions !== 'undefined') {
+      return AddressExclusions;
+    }
+
+    if (typeof window !== 'undefined' && window.AddressExclusions) {
+      return window.AddressExclusions;
+    }
+
+    return {
+      isExcludedAddressMatch: () => false,
+    };
   }
 }
 

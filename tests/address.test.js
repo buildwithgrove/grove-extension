@@ -1,7 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { loadBrowserScript } from './helpers/load-script.js';
 
-const { AddressParser } = loadBrowserScript('src/parsers/address.js');
+const context = loadBrowserScript('src/parsers/exclusions.js');
+const { AddressParser, AddressExclusions } = loadBrowserScript('src/parsers/address.js', context);
 
 describe('AddressParser', () => {
   describe('ENS_PATTERN', () => {
@@ -120,20 +121,20 @@ describe('AddressParser', () => {
   });
 
   describe('ENS exclusions', () => {
-    const originalList = [...AddressParser.ENS_EXCLUSION_LIST];
+    const originalList = [...AddressExclusions.DOMAIN_EXCLUSION_LIST];
 
     afterEach(() => {
-      AddressParser.ENS_EXCLUSION_LIST = [...originalList];
+      AddressExclusions.DOMAIN_EXCLUSION_LIST.splice(0, AddressExclusions.DOMAIN_EXCLUSION_LIST.length, ...originalList);
     });
 
     it('should exclude ENS names in the exclusion list', () => {
-      AddressParser.ENS_EXCLUSION_LIST.push('blocked.eth');
+      AddressExclusions.DOMAIN_EXCLUSION_LIST.push('blocked.eth');
       expect(AddressParser.hasAddresses('blocked.eth')).toBe(false);
       expect(AddressParser.extractENS('blocked.eth')).toBe(null);
     });
 
     it('should exclude ENS matches that are part of excluded sites', () => {
-      AddressParser.ENS_EXCLUSION_LIST.push('etherscan.io');
+      AddressExclusions.DOMAIN_EXCLUSION_LIST.push('etherscan.io');
       expect(AddressParser.hasAddresses('optimistic.etherscan.io')).toBe(false);
     });
 
@@ -149,6 +150,26 @@ describe('AddressParser', () => {
         expect(AddressParser.hasAddresses(sample)).toBe(false);
         expect(AddressParser.extractENS(sample)).toBe(null);
       }
+    });
+  });
+
+  describe('x.eth contexts', () => {
+    const samples = [
+      ['x.eth', 'standalone'],
+      ['x.eth is my address', 'start of sentence'],
+      ['send tips to x.eth today', 'middle of sentence'],
+      ['find me at x.eth', 'end of sentence'],
+      ['x.eth🔥', 'with emoji'],
+    ];
+
+    it.each(samples)('should match %s (%s)', (sample) => {
+      expect(AddressParser.hasAddresses(sample)).toBe(true);
+      expect(AddressParser.extractENS(sample)).toBe('x.eth');
+    });
+
+    it('should avoid false positives inside longer words', () => {
+      expect(AddressParser.hasAddresses('x.ethers')).toBe(false);
+      expect(AddressParser.extractENS('x.ethers')).toBe(null);
     });
   });
 
