@@ -85,7 +85,8 @@ function getEnsMatches(text) {
   return matches;
 }
 
-const AddressMatchers = {
+// Use var instead of const to make it globally accessible for static class initializers
+var AddressMatchers = {
   ENS_PATTERN,
   ENS_PATTERN_GLOBAL,
   ADDRESS_SUFFIXES,

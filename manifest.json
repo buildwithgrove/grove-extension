@@ -60,6 +60,7 @@
         "src/config/storageKeys.js",
         "src/utils/darkMode.js",
         "src/utils/addressCache.js",
+        "src/parsers/addressMatchers.js",
         "src/parsers/address.js",
         "src/adapters/base.js",
         "src/adapters/soundcloud.js",
@@ -70,6 +71,7 @@
         "src/ui/button.js",
         "src/utils/api.js",
         "src/utils/tipErrors.js",
+        "src/content/profilePageHandler.js",
         "src/content/content.js"
       ],
       "css": ["src/ui/styles.css"],
