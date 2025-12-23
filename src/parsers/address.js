@@ -5,6 +5,13 @@
  */
 
 class AddressParser {
+  // Excluded ENS-like sites or names that should not be treated as tippable.
+  // Add entries here as special cases arise.
+  static ENS_EXCLUSION_LIST = ['claude.ai'];
+
+  // Word characters that would indicate ".eth" is inside a larger word.
+  static WORD_CONTINUATION_PATTERN = /[\p{L}\p{N}_]/u;
+
   // ENS name pattern: supports subdomains, ending in .eth
   // Valid characters per ENSIP-15: alphanumeric, $, _, hyphens, unicode letters, emoji
   // Matches: vitalik.eth, $$$$$.base.eth, 🔥.eth, café.eth, jesse.base.eth
@@ -29,7 +36,7 @@ class AddressParser {
   static hasAddresses(text) {
     if (!text) return false;
 
-    return this.ETH_ADDRESS_PATTERN.test(text) || this.ENS_PATTERN.test(text);
+    return this.ETH_ADDRESS_PATTERN.test(text) || this.getEnsMatches(text).length > 0;
   }
 
   /**
@@ -39,8 +46,8 @@ class AddressParser {
    */
   static extractENS(text) {
     if (!text) return null;
-    const match = text.match(this.ENS_PATTERN);
-    return match ? match[0].toLowerCase() : null;
+    const matches = this.getEnsMatches(text);
+    return matches.length > 0 ? matches[0].toLowerCase() : null;
   }
 
   // Solana address extraction commented out - Base/Base Sepolia only for now
@@ -96,6 +103,86 @@ class AddressParser {
     // }
 
     return { address: null, type: null, original: null };
+  }
+
+  /**
+   * Get ENS matches while applying exclusion rules.
+   * @param {string} text - Text to search
+   * @returns {string[]} - Matching ENS names
+   */
+  static getEnsMatches(text) {
+    if (!text) return [];
+
+    const pattern = this.getEnsPatternGlobal();
+    const matches = [];
+
+    for (const match of text.matchAll(pattern)) {
+      const candidate = match[0];
+      const startIndex = match.index ?? 0;
+
+      if (this.isExcludedEnsMatch(candidate, text, startIndex)) {
+        continue;
+      }
+
+      matches.push(candidate);
+    }
+
+    return matches;
+  }
+
+  /**
+   * Determine if an ENS candidate should be ignored.
+   * @param {string} candidate - ENS match
+   * @param {string} text - Source text
+   * @param {number} startIndex - Index of the match
+   * @returns {boolean} - True if excluded
+   */
+  static isExcludedEnsMatch(candidate, text, startIndex) {
+    const lowerCandidate = candidate.toLowerCase();
+
+    if (this.ENS_EXCLUSION_LIST.includes(lowerCandidate)) {
+      return true;
+    }
+
+    const nextChar = text[startIndex + candidate.length];
+    if (nextChar && this.WORD_CONTINUATION_PATTERN.test(nextChar)) {
+      return true;
+    }
+
+    const token = this.getToken(text, startIndex);
+    const lowerToken = token.toLowerCase();
+
+    if (lowerToken !== lowerCandidate) {
+      for (const exclusion of this.ENS_EXCLUSION_LIST) {
+        if (lowerToken.includes(exclusion)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  static getToken(text, startIndex) {
+    let start = startIndex;
+    let end = startIndex;
+
+    while (start > 0 && !/\s/.test(text[start - 1])) {
+      start -= 1;
+    }
+
+    while (end < text.length && !/\s/.test(text[end])) {
+      end += 1;
+    }
+
+    return text.slice(start, end);
+  }
+
+  static getEnsPatternGlobal() {
+    const flags = this.ENS_PATTERN.flags.includes('g')
+      ? this.ENS_PATTERN.flags
+      : `${this.ENS_PATTERN.flags}g`;
+    return new RegExp(this.ENS_PATTERN.source, flags);
   }
 }
 

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { loadBrowserScript } from './helpers/load-script.js';
 
 const { AddressParser } = loadBrowserScript('src/parsers/address.js');
@@ -52,6 +52,7 @@ describe('AddressParser', () => {
         ['', 'empty string'],
         ['optimistic.etherscan.io', 'domain containing .eth substring'],
         ['vitalik.ether', 'extension starting with eth'],
+        ['vitalik.ethers', '.eth inside a larger word'],
       ];
 
       it.each(invalidPatterns)('should not match "%s" (%s)', (pattern) => {
@@ -103,6 +104,10 @@ describe('AddressParser', () => {
       expect(AddressParser.extractENS('Contact café.eth')).toBe('café.eth');
     });
 
+    it('should allow emoji after ENS names', () => {
+      expect(AddressParser.extractENS('vitalik.eth🔥')).toBe('vitalik.eth');
+    });
+
     it('should return null when no ENS found', () => {
       expect(AddressParser.extractENS('No address here')).toBe(null);
       expect(AddressParser.extractENS('')).toBe(null);
@@ -111,6 +116,39 @@ describe('AddressParser', () => {
 
     it('should extract only the first ENS name', () => {
       expect(AddressParser.extractENS('foo.eth and bar.eth')).toBe('foo.eth');
+    });
+  });
+
+  describe('ENS exclusions', () => {
+    const originalList = [...AddressParser.ENS_EXCLUSION_LIST];
+
+    afterEach(() => {
+      AddressParser.ENS_EXCLUSION_LIST = [...originalList];
+    });
+
+    it('should exclude ENS names in the exclusion list', () => {
+      AddressParser.ENS_EXCLUSION_LIST.push('blocked.eth');
+      expect(AddressParser.hasAddresses('blocked.eth')).toBe(false);
+      expect(AddressParser.extractENS('blocked.eth')).toBe(null);
+    });
+
+    it('should exclude ENS matches that are part of excluded sites', () => {
+      AddressParser.ENS_EXCLUSION_LIST.push('etherscan.io');
+      expect(AddressParser.hasAddresses('optimistic.etherscan.io')).toBe(false);
+    });
+
+    it('should exclude ENS matches inside claude.ai URLs and subdomains', () => {
+      const samples = [
+        'https://claude.ai/vitalik.eth',
+        'claude.ai/vitalik.eth',
+        'https://support.claude.ai/user/jesse.base.eth',
+        'support.claude.ai/profile/🔥.eth',
+      ];
+
+      for (const sample of samples) {
+        expect(AddressParser.hasAddresses(sample)).toBe(false);
+        expect(AddressParser.extractENS(sample)).toBe(null);
+      }
     });
   });
 
