@@ -341,7 +341,5 @@
 
   if (typeof window !== 'undefined') {
     window.TipErrorHandler = TipErrorHandler;
-    // Initialize cleanup listener on load
-    TipErrorHandler._initVisibilityCleanup();
   }
 })();

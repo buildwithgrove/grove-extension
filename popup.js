@@ -279,6 +279,7 @@ async function init() {
 
   // Check if we should open to X settings (from first tip modal)
   chrome.runtime.sendMessage({ type: 'CHECK_OPEN_TO_X_SETTINGS' }, (response) => {
+    if (chrome.runtime.lastError) return; // Service worker inactive
     if (response?.shouldOpen) {
       // Navigate to home tab first
       const homeTab = document.querySelector('[data-target="tab-home"]');
