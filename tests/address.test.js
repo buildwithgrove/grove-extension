@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { loadBrowserScript } from './helpers/load-script.js';
 
-const context = loadBrowserScript('src/parsers/exclusions.js');
-const { AddressParser, AddressExclusions } = loadBrowserScript('src/parsers/address.js', context);
+const context = loadBrowserScript('src/parsers/addressMatchers.js');
+const { AddressParser, AddressMatchers } = loadBrowserScript('src/parsers/address.js', context);
 
 describe('AddressParser', () => {
   describe('ENS_PATTERN', () => {
@@ -121,20 +121,20 @@ describe('AddressParser', () => {
   });
 
   describe('ENS exclusions', () => {
-    const originalList = [...AddressExclusions.DOMAIN_EXCLUSION_LIST];
+    const originalList = [...AddressMatchers.DOMAIN_EXCLUSION_LIST];
 
     afterEach(() => {
-      AddressExclusions.DOMAIN_EXCLUSION_LIST.splice(0, AddressExclusions.DOMAIN_EXCLUSION_LIST.length, ...originalList);
+      AddressMatchers.DOMAIN_EXCLUSION_LIST.splice(0, AddressMatchers.DOMAIN_EXCLUSION_LIST.length, ...originalList);
     });
 
     it('should exclude ENS names in the exclusion list', () => {
-      AddressExclusions.DOMAIN_EXCLUSION_LIST.push('blocked.eth');
+      AddressMatchers.DOMAIN_EXCLUSION_LIST.push('blocked.eth');
       expect(AddressParser.hasAddresses('blocked.eth')).toBe(false);
       expect(AddressParser.extractENS('blocked.eth')).toBe(null);
     });
 
     it('should exclude ENS matches that are part of excluded sites', () => {
-      AddressExclusions.DOMAIN_EXCLUSION_LIST.push('etherscan.io');
+      AddressMatchers.DOMAIN_EXCLUSION_LIST.push('etherscan.io');
       expect(AddressParser.hasAddresses('optimistic.etherscan.io')).toBe(false);
     });
 
@@ -161,17 +161,17 @@ describe('AddressParser', () => {
       const withNumbers = `${base}123`;
       const withUnderscore = `${base}_name`;
 
-      expect(AddressExclusions.isExcludedAddressMatch(base, base, 0)).toBe(false);
-      expect(AddressExclusions.isExcludedAddressMatch(base, withEmoji, 0)).toBe(false);
-      expect(AddressExclusions.isExcludedAddressMatch(base, withLetters, 0)).toBe(true);
-      expect(AddressExclusions.isExcludedAddressMatch(base, withNumbers, 0)).toBe(true);
-      expect(AddressExclusions.isExcludedAddressMatch(base, withUnderscore, 0)).toBe(true);
+      expect(AddressMatchers.isExcludedAddressMatch(base, base, 0)).toBe(false);
+      expect(AddressMatchers.isExcludedAddressMatch(base, withEmoji, 0)).toBe(false);
+      expect(AddressMatchers.isExcludedAddressMatch(base, withLetters, 0)).toBe(true);
+      expect(AddressMatchers.isExcludedAddressMatch(base, withNumbers, 0)).toBe(true);
+      expect(AddressMatchers.isExcludedAddressMatch(base, withUnderscore, 0)).toBe(true);
     });
 
     it('should return the whitespace-delimited token containing the match', () => {
       const text = 'find me at https://claude.ai/x.eth?ref=profile today';
       const index = text.indexOf('x.eth');
-      expect(AddressExclusions.getToken(text, index)).toBe('https://claude.ai/x.eth?ref=profile');
+      expect(AddressMatchers.getToken(text, index)).toBe('https://claude.ai/x.eth?ref=profile');
     });
   });
 

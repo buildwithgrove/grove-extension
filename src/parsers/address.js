@@ -8,8 +8,12 @@ class AddressParser {
   // ENS name pattern: supports subdomains, ending in .eth
   // Valid characters per ENSIP-15: alphanumeric, $, _, hyphens, unicode letters, emoji
   // Matches: vitalik.eth, $$$$$.base.eth, 🔥.eth, café.eth, jesse.base.eth
-  static ENS_PATTERN = /(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*(?:\.(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*)*\.eth\b/iu;
-  static ENS_PATTERN_GLOBAL = /(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*(?:\.(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*)*\.eth\b/giu;
+  static ENS_PATTERN = (typeof AddressMatchers !== 'undefined' && AddressMatchers.ENS_PATTERN)
+    ? AddressMatchers.ENS_PATTERN
+    : /(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*(?:\.(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*)*\.eth\b/iu;
+  static ENS_PATTERN_GLOBAL = (typeof AddressMatchers !== 'undefined' && AddressMatchers.ENS_PATTERN_GLOBAL)
+    ? AddressMatchers.ENS_PATTERN_GLOBAL
+    : /(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*(?:\.(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*)*\.eth\b/giu;
 
   // Solana address pattern commented out - Base/Base Sepolia only for now
   // Solana address pattern: base58 encoded, 32-44 chars
@@ -107,40 +111,17 @@ class AddressParser {
   static getEnsMatches(text) {
     if (!text) return [];
 
-    const pattern = this.ENS_PATTERN_GLOBAL;
-    const exclusions = this.getExclusions();
+    if (typeof AddressMatchers !== 'undefined' && AddressMatchers.getEnsMatches) {
+      return AddressMatchers.getEnsMatches(text);
+    }
+
     const matches = [];
 
-    for (const match of text.matchAll(pattern)) {
-      const candidate = match[0];
-      const startIndex = match.index ?? 0;
-
-      if (exclusions.isExcludedAddressMatch(candidate, text, startIndex)) {
-        continue;
-      }
-
-      matches.push(candidate);
+    for (const match of text.matchAll(this.ENS_PATTERN_GLOBAL)) {
+      matches.push(match[0]);
     }
 
     return matches;
-  }
-
-  static getEnsPatternGlobal() {
-    return this.ENS_PATTERN_GLOBAL;
-  }
-
-  static getExclusions() {
-    if (typeof AddressExclusions !== 'undefined') {
-      return AddressExclusions;
-    }
-
-    if (typeof window !== 'undefined' && window.AddressExclusions) {
-      return window.AddressExclusions;
-    }
-
-    return {
-      isExcludedAddressMatch: () => false,
-    };
   }
 }
 
