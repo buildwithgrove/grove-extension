@@ -509,9 +509,12 @@
     const senderPlatform = currentAdapter ? currentAdapter.getApiPlatformName() : 'generic';
 
     const context = {
-      source_post_url: window.location.href,
-      sender_platform: senderPlatform
+      source_post_url: window.location.href
     };
+    
+    if (senderPlatform && senderPlatform !== 'generic') {
+      context.sender_platform = senderPlatform;
+    }
     if (username) {
       context.recipient_username = username;
       context.recipient_profile_url = `https://x.com/${username}`;
