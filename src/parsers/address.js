@@ -8,7 +8,8 @@ class AddressParser {
   // ENS name pattern: supports subdomains, ending in .eth
   // Valid characters per ENSIP-15: alphanumeric, $, _, hyphens, unicode letters, emoji
   // Matches: vitalik.eth, $$$$$.base.eth, 🔥.eth, café.eth, jesse.base.eth
-  static ENS_PATTERN = /(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*(?:\.(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*)*\.eth\b/iu;
+  static ENS_PATTERN = AddressMatchers.ENS_PATTERN;
+  static ENS_PATTERN_GLOBAL = AddressMatchers.ENS_PATTERN_GLOBAL;
 
   // Solana address pattern commented out - Base/Base Sepolia only for now
   // Solana address pattern: base58 encoded, 32-44 chars
@@ -29,7 +30,7 @@ class AddressParser {
   static hasAddresses(text) {
     if (!text) return false;
 
-    return this.ETH_ADDRESS_PATTERN.test(text) || this.ENS_PATTERN.test(text);
+    return this.ETH_ADDRESS_PATTERN.test(text) || this.getEnsMatches(text).length > 0;
   }
 
   /**
@@ -39,8 +40,8 @@ class AddressParser {
    */
   static extractENS(text) {
     if (!text) return null;
-    const match = text.match(this.ENS_PATTERN);
-    return match ? match[0].toLowerCase() : null;
+    const matches = this.getEnsMatches(text);
+    return matches.length > 0 ? matches[0].toLowerCase() : null;
   }
 
   // Solana address extraction commented out - Base/Base Sepolia only for now
@@ -96,6 +97,17 @@ class AddressParser {
     // }
 
     return { address: null, type: null, original: null };
+  }
+
+  /**
+   * Get ENS matches while applying exclusion rules.
+   * @param {string} text - Text to search
+   * @returns {string[]} - Matching ENS names
+   */
+  static getEnsMatches(text) {
+    if (!text) return [];
+
+    return AddressMatchers.getEnsMatches(text);
   }
 }
 
