@@ -50,6 +50,8 @@ describe('AddressParser', () => {
         ['notens', 'no .eth suffix'],
         ['.eth', 'empty name'],
         ['', 'empty string'],
+        ['optimistic.etherscan.io', 'domain containing .eth substring'],
+        ['vitalik.ether', 'extension starting with eth'],
       ];
 
       it.each(invalidPatterns)('should not match "%s" (%s)', (pattern) => {

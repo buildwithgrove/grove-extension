@@ -8,7 +8,7 @@ class AddressParser {
   // ENS name pattern: supports subdomains, ending in .eth
   // Valid characters per ENSIP-15: alphanumeric, $, _, hyphens, unicode letters, emoji
   // Matches: vitalik.eth, $$$$$.base.eth, 🔥.eth, café.eth, jesse.base.eth
-  static ENS_PATTERN = /(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*(?:\.(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*)*\.eth/iu;
+  static ENS_PATTERN = /(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*(?:\.(?:[\w$\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])(?:[\w$\-\u00C0-\u024F\u1E00-\u1EFF]|[\u{1F300}-\u{1F9FF}])*)*\.eth\b/iu;
 
   // Solana address pattern commented out - Base/Base Sepolia only for now
   // Solana address pattern: base58 encoded, 32-44 chars

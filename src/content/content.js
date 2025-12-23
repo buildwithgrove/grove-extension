@@ -504,9 +504,14 @@
     // Build context metadata for the tip
     // Note: sender_platform can be 'x' or 'twitter' - both map to X/Twitter
     const username = extractUsernameFromUrl(window.location.href);
+    
+    // Determine platform name from adapter, default to generic
+    const platformName = currentAdapter ? currentAdapter.getPlatformName() : 'generic';
+    const senderPlatform = platformName === 'twitter' ? 'x' : platformName;
+
     const context = {
       source_post_url: window.location.href,
-      sender_platform: 'x'
+      sender_platform: senderPlatform
     };
     if (username) {
       context.recipient_username = username;
