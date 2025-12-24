@@ -2,6 +2,8 @@
  * Address matching helpers and lists.
  */
 
+console.log('[Grove Extension] Loading addressMatchers.js...');
+
 // TODO: add more address suffixes as we support them.
 const ADDRESS_SUFFIXES = ['.eth', '.base.eth', '.sol', '.near'];
 
@@ -85,7 +87,8 @@ function getEnsMatches(text) {
   return matches;
 }
 
-const AddressMatchers = {
+// Use var instead of const to make it globally accessible for static class initializers
+var AddressMatchers = {
   ENS_PATTERN,
   ENS_PATTERN_GLOBAL,
   ADDRESS_SUFFIXES,
@@ -101,3 +104,5 @@ const AddressMatchers = {
 if (typeof window !== 'undefined') {
   window.AddressMatchers = AddressMatchers;
 }
+
+console.log('[Grove Extension] addressMatchers.js loaded. window.AddressMatchers =', typeof window.AddressMatchers);

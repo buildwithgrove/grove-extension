@@ -3,7 +3,10 @@
  * Abstract interface for social platform adapters
  */
 
-class BaseAdapter {
+console.log('[Grove Extension] Loading base.js...');
+
+// Assign directly to window to ensure global availability
+window.BaseAdapter = class BaseAdapter {
   /**
    * Check if current page is a profile page for this platform
    * @returns {boolean} - True if on a profile page
@@ -78,8 +81,6 @@ class BaseAdapter {
       }, timeout);
     });
   }
-}
+};
 
-if (typeof window !== 'undefined') {
-  window.BaseAdapter = BaseAdapter;
-}
+console.log('[Grove Extension] base.js loaded. window.BaseAdapter =', typeof window.BaseAdapter);

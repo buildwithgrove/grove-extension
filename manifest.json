@@ -55,12 +55,37 @@
       "run_at": "document_idle"
     },
     {
+      "matches": ["https://soundcloud.com/*"],
+      "js": [
+        "src/config/storageKeys.js",
+        "src/utils/darkMode.js",
+        "src/utils/addressCache.js",
+        "src/parsers/addressMatchers.js",
+        "src/parsers/address.js",
+        "src/adapters/base.js",
+        "src/adapters/soundcloud.js",
+        "src/ui/constants.js",
+        "src/ui/popover.js",
+        "src/ui/firstTipModal.js",
+        "src/ui/errorBubble.js",
+        "src/ui/button.js",
+        "src/utils/api.js",
+        "src/utils/tipErrors.js",
+        "src/content/profilePageHandler.js",
+        "src/content/content.js"
+      ],
+      "css": ["src/ui/styles.css"],
+      "run_at": "document_idle"
+    },
+    {
       "matches": ["https://*/*", "http://*/*"],
       "exclude_matches": [
         "https://twitter.com/*",
         "https://www.twitter.com/*",
         "https://x.com/*",
-        "https://www.x.com/*"
+        "https://www.x.com/*",
+        "https://soundcloud.com/*",
+        "https://www.soundcloud.com/*"
       ],
       "js": [
         "src/config/storageKeys.js",

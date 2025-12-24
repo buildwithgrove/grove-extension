@@ -36,6 +36,10 @@ function detectDarkMode(platform) {
     }
   }
 
+  if (platform === 'soundcloud') {
+    return document.body.classList.contains('theme-dark');
+  }
+
   // Fallback: check system preference
   if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
     return true;

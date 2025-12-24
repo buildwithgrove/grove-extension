@@ -65,15 +65,18 @@ class TipButton {
     this.bgColor = bgColor;
     this.bgHoverColor = bgHoverColor;
 
+    // Adjust height for SoundCloud to match their medium buttons
+    const buttonHeight = this.platform === 'soundcloud' ? '32px' : '36px';
+
     // Apply inline styles
     this.button.style.cssText = `
       background: ${bgColor} !important;
       border: 2px solid ${GROVE_COLORS.primary} !important;
       border-radius: 9999px !important;
       padding: 0 16px !important;
-      height: 36px !important;
-      min-height: 36px !important;
-      max-height: 36px !important;
+      height: ${buttonHeight} !important;
+      min-height: ${buttonHeight} !important;
+      max-height: ${buttonHeight} !important;
       min-width: 32px !important;
       position: relative !important;
       overflow: hidden !important;
@@ -569,35 +572,72 @@ class TipButton {
         spans[1].textContent = '🌿';
       }
     } else {
-      // Default case
-      textElement = this.button.querySelector('span') || this.button;
-      textElement.textContent = 'Tip 🌿';
+      // Default case (SoundCloud, etc.)
+      const textElement = this.button.querySelector('span') || this.button;
+      if (textElement) {
+        textElement.textContent = 'Tip';
+        // Find or create emoji span
+        let emojiSpan = textElement.querySelector('span');
+        if (!emojiSpan) {
+          emojiSpan = document.createElement('span');
+          emojiSpan.style.cssText = `
+            font-size: 15px !important;
+            margin-left: 4px !important;
+            position: relative !important;
+            z-index: 2 !important;
+          `;
+        }
+        emojiSpan.textContent = '🌿';
+        textElement.appendChild(emojiSpan);
+      }
     }
   }
 
   /**
    * Inject button into the DOM at target location
    * @param {Element} targetElement - Element to append button to
+   * @param {Object} [options] - Injection options
+   * @param {string} [options.position] - 'start', 'end', or 'before-more' (default)
    * @returns {boolean} - True if injection successful
    */
-  inject(targetElement) {
+  inject(targetElement, options = {}) {
 
     if (!targetElement || !this.button) {
       return false;
     }
 
-    // Check if button already exists
-    if (document.getElementById(this.button.id)) {
+    // Check if button already exists (skip check if ID is empty for track buttons)
+    if (this.button.id && document.getElementById(this.button.id)) {
       return false;
     }
 
-    // Style the button to match Twitter's spacing and ensure proper alignment
-    this.button.style.marginLeft = '8px';
-    this.button.style.marginRight = '8px';
+    // Style the button to match platform spacing and ensure proper alignment
+    const margin = this.platform === 'twitter' ? '8px' : '5px';
+    this.button.style.marginLeft = margin;
+    this.button.style.marginRight = margin;
     this.button.style.alignSelf = 'flex-start';
     this.button.style.flexShrink = '0';
     this.button.style.marginTop = '0px';
     this.button.style.marginBottom = '0px';
+
+    // For SoundCloud, use CSS order to force button to appear first visually
+    if (this.platform === 'soundcloud') {
+      this.button.style.order = '-1';
+    }
+
+    // For SoundCloud, always insert at start (before Station button)
+    // Also handle explicit position: 'start' option
+    if (this.platform === 'soundcloud' || options.position === 'start') {
+      console.log('[Grove Extension] Inserting button at START for platform:', this.platform);
+      // Insert at the beginning (use firstElementChild to skip text nodes)
+      const firstElement = targetElement.firstElementChild;
+      if (firstElement) {
+        targetElement.insertBefore(this.button, firstElement);
+      } else {
+        targetElement.appendChild(this.button);
+      }
+      return true;
+    }
 
     // Get all children of the target container
     const children = Array.from(targetElement.children);

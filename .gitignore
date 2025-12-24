@@ -2,3 +2,5 @@
 build/
 *.zip
 node_modules/
+.gemini/
+test-results/
