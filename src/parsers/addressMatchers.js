@@ -2,6 +2,8 @@
  * Address matching helpers and lists.
  */
 
+console.log('[Grove Extension] Loading addressMatchers.js...');
+
 // TODO: add more address suffixes as we support them.
 const ADDRESS_SUFFIXES = ['.eth', '.base.eth', '.sol', '.near'];
 
@@ -102,3 +104,5 @@ var AddressMatchers = {
 if (typeof window !== 'undefined') {
   window.AddressMatchers = AddressMatchers;
 }
+
+console.log('[Grove Extension] addressMatchers.js loaded. window.AddressMatchers =', typeof window.AddressMatchers);

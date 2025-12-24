@@ -1,0 +1,124 @@
+import { test, expect, chromium } from '@playwright/test';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+test.describe('Extension Smoke Tests', () => {
+  let browserContext;
+  let extensionPath;
+
+  test.beforeAll(async () => {
+    extensionPath = path.resolve(__dirname, '../../'); // Root of the repo
+  });
+
+  test.beforeEach(async ({ }, testInfo) => {
+    // Create a unique user data dir for each test to ensure clean state
+    const userDataDir = path.resolve(__dirname, `../../.gemini/tmp/playwright-user-data-${testInfo.workerIndex}-${testInfo.testId}`);
+
+    browserContext = await chromium.launchPersistentContext(userDataDir, {
+      headless: false, // Set to false to allow extension loading mechanism (or use new headless)
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      args: [
+        `--headless=new`, // Use new headless mode which supports extensions
+        `--disable-extensions-except=${extensionPath}`,
+        `--load-extension=${extensionPath}`
+      ],
+    });
+  });
+
+  test.afterEach(async () => {
+    await browserContext.close();
+  });
+
+  test('Should NOT inject on claude.ai', async () => {
+    const page = await browserContext.newPage();
+    await page.goto('https://claude.ai/login', { waitUntil: 'domcontentloaded' }); // Redirects to login usually
+    
+    // Give it a moment to potentially erroneously inject
+    await page.waitForTimeout(2000);
+    
+    const tipButton = page.locator('#grove-tip-button');
+    await expect(tipButton).toHaveCount(0);
+  });
+
+  test('Should NOT inject on vitalik.eth.limo', async () => {
+    const page = await browserContext.newPage();
+    await page.goto('https://vitalik.eth.limo/', { waitUntil: 'domcontentloaded' });
+    
+    await page.waitForTimeout(2000);
+    
+    const tipButton = page.locator('#grove-tip-button');
+    await expect(tipButton).toHaveCount(0);
+  });
+
+  test('Should inject on olshansky.info', async () => {
+    const page = await browserContext.newPage();
+    await page.goto('https://olshansky.info/', { waitUntil: 'domcontentloaded' });
+    
+    // This is a generic site, so it should look for metadata and inject a floating button
+    // Assuming olshansky.info has the required metadata
+    
+    const tipButton = page.locator('#grove-tip-button');
+    await expect(tipButton).toBeVisible({ timeout: 10000 });
+  });
+
+  test('Should inject on grove.city', async () => {
+    const page = await browserContext.newPage();
+    await page.goto('https://www.grove.city/', { waitUntil: 'domcontentloaded' });
+    
+    const tipButton = page.locator('#grove-tip-button');
+    await expect(tipButton).toBeVisible({ timeout: 20000 });
+  });
+
+  test('Should inject on soundcloud.com/olshansk', async () => {
+    const page = await browserContext.newPage();
+    await page.goto('https://soundcloud.com/olshansk', { waitUntil: 'domcontentloaded' });
+    
+    // SoundCloud is an SPA, wait for the profile to load
+    const tipButton = page.locator('#grove-tip-button');
+    await expect(tipButton).toBeVisible({ timeout: 20000 });
+  });
+
+  test('Should inject on soundcloud.com/ciabrad', async () => {
+    const page = await browserContext.newPage();
+    await page.goto('https://soundcloud.com/ciabrad', { waitUntil: 'domcontentloaded' });
+    
+    const tipButton = page.locator('#grove-tip-button');
+    await expect(tipButton).toBeVisible({ timeout: 20000 });
+  });
+
+  test('Should inject on x.com/olshansky', async () => {
+    const page = await browserContext.newPage();
+    await page.goto('https://x.com/olshansky', { waitUntil: 'domcontentloaded' });
+    
+    // X is heavy, give it some time to load the shell
+    // Note: If X redirects to login, we might not see the profile, and thus no button.
+    // We check if we are on the profile page or if we got redirected.
+    
+    const loginInput = page.locator('input[autocomplete="username"]');
+    if (await loginInput.count() > 0) {
+        console.log('Redirected to X login page. Skipping assertion as extension needs profile view.');
+        test.skip();
+        return;
+    }
+
+    // Attempt to wait for the button if we are on the profile
+    const tipButton = page.locator('#grove-tip-button');
+    // We use a soft assertion or try/catch because X might be flaky without auth
+    try {
+        await expect(tipButton).toBeVisible({ timeout: 10000 });
+    } catch (e) {
+        // Double check if we are on a rate limit or restricted page
+        const restricted = page.locator('span:has-text("Restricted")');
+        if (await restricted.count() > 0) {
+             console.log('X Profile restricted. Skipping.');
+             test.skip();
+        } else {
+            throw e;
+        }
+    }
+  });
+
+});

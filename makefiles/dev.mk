@@ -25,6 +25,11 @@ dev_test_coverage: ## Run tests with coverage
 	$(call print_info_section,Running tests with coverage)
 	$(Q)$(NPM) run test:coverage
 
+.PHONY: dev_test_e2e
+dev_test_e2e: ## Run Playwright E2E tests
+	$(call print_info_section,Running E2E tests)
+	$(Q)$(NPM) run test:e2e
+
 .PHONY: dev_lint
 dev_lint: ## Run ESLint (not yet configured)
 	$(call print_warning,ESLint not yet configured in package.json)

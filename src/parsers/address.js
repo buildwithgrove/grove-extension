@@ -4,12 +4,14 @@
  * Note: Only used for showing button - backend handles actual extraction
  */
 
+console.log('[Grove Extension] Loading address.js... window.AddressMatchers =', typeof window.AddressMatchers);
+
 class AddressParser {
   // ENS name pattern: supports subdomains, ending in .eth
   // Valid characters per ENSIP-15: alphanumeric, $, _, hyphens, unicode letters, emoji
   // Matches: vitalik.eth, $$$$$.base.eth, 🔥.eth, café.eth, jesse.base.eth
-  static ENS_PATTERN = AddressMatchers.ENS_PATTERN;
-  static ENS_PATTERN_GLOBAL = AddressMatchers.ENS_PATTERN_GLOBAL;
+  static ENS_PATTERN = window.AddressMatchers.ENS_PATTERN;
+  static ENS_PATTERN_GLOBAL = window.AddressMatchers.ENS_PATTERN_GLOBAL;
 
   // Solana address pattern commented out - Base/Base Sepolia only for now
   // Solana address pattern: base58 encoded, 32-44 chars
@@ -107,10 +109,12 @@ class AddressParser {
   static getEnsMatches(text) {
     if (!text) return [];
 
-    return AddressMatchers.getEnsMatches(text);
+    return window.AddressMatchers.getEnsMatches(text);
   }
 }
 
 if (typeof window !== 'undefined') {
   window.AddressParser = AddressParser;
 }
+
+console.log('[Grove Extension] address.js loaded. window.AddressParser =', typeof window.AddressParser);

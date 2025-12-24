@@ -331,17 +331,17 @@
     const hostname = window.location.hostname;
 
     if (hostname.includes("twitter.com") || hostname.includes("x.com")) {
-      return new TwitterAdapter();
+      return new window.TwitterAdapter();
     }
 
     if (hostname.includes("soundcloud.com")) {
-      return new SoundCloudAdapter();
+      return new window.SoundCloudAdapter();
     }
 
     // Return GenericAdapter for all other websites
     // Only if GenericAdapter is available (loaded via manifest)
-    if (typeof GenericAdapter !== 'undefined') {
-      return new GenericAdapter();
+    if (typeof window.GenericAdapter !== 'undefined') {
+      return new window.GenericAdapter();
     }
 
     return null;

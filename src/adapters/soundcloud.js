@@ -5,7 +5,10 @@
  * Requires: src/adapters/base.js (BaseAdapter)
  */
 
-class SoundCloudAdapter extends BaseAdapter {
+console.log('[Grove Extension] Loading soundcloud.js... window.BaseAdapter =', typeof window.BaseAdapter);
+
+// Assign directly to window to ensure global availability
+window.SoundCloudAdapter = class SoundCloudAdapter extends window.BaseAdapter {
   /**
    * Check if current page is a SoundCloud profile page
    * @returns {boolean}
@@ -22,7 +25,7 @@ class SoundCloudAdapter extends BaseAdapter {
 
       // Non-profile top-level routes
       const systemRoutes = [
-        'discover', 'feed', 'notifications', 'messages', 'upload', 
+        'discover', 'feed', 'notifications', 'messages', 'upload',
         'settings', 'you', 'artists', 'search', 'terms-of-use', 'pages'
       ];
       if (systemRoutes.includes(username.toLowerCase())) return false;
@@ -43,16 +46,21 @@ class SoundCloudAdapter extends BaseAdapter {
     const descriptionElement = document.querySelector('.infoStats__description') ||
                                document.querySelector('.truncatedAudioInfo__content') ||
                                document.querySelector('.profileHeaderInfo__additional');
-    
-    const bio = descriptionElement ? descriptionElement.textContent : '';
+
+    let bio = descriptionElement ? descriptionElement.textContent : '';
+
+    // SoundCloud sometimes concatenates text without spaces (e.g., "foo.ethbar.eth")
+    // Add spaces before potential ENS names to help the parser
+    bio = bio.replace(/\.eth([a-zA-Z0-9])/g, '.eth $1');
+
     const displayName = this.extractDisplayName() || '';
-    
+
     // Combine display name and bio for address detection
     const result = [displayName, bio].filter(Boolean).join(' ');
-    
-    // TODO_IN_THIS_PR: Ensure we return a string for testing even if empty, 
-    // so content.js bypass can work.
-    return result || " "; 
+
+    console.log('[Grove Extension] SoundCloud extractBio result:', result);
+
+    return result || null;
   }
 
   /**
@@ -72,7 +80,7 @@ class SoundCloudAdapter extends BaseAdapter {
     // Try to get the specific button group first (visually better)
     const group = document.querySelector('.userInfoBar__buttons .sc-button-group');
     if (group) return group;
-    
+
     // Fallback to the main container
     return document.querySelector('.userInfoBar__buttons');
   }
@@ -93,10 +101,13 @@ class SoundCloudAdapter extends BaseAdapter {
     // Wait for username AND button container to appear
     const nameElement = await this.waitForElement('.profileHeaderInfo__userName', 8000);
     const buttons = await this.waitForElement('.userInfoBar__buttons', 8000);
+
+    // Also wait for description/stats section (loads via AJAX)
+    // This is where the bio with addresses would be
+    await this.waitForElement('.infoStats__description', 5000);
+
     return nameElement !== null && buttons !== null;
   }
-}
+};
 
-if (typeof window !== 'undefined') {
-  window.SoundCloudAdapter = SoundCloudAdapter;
-}
+console.log('[Grove Extension] soundcloud.js loaded. window.SoundCloudAdapter =', typeof window.SoundCloudAdapter);
