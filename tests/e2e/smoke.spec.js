@@ -70,6 +70,12 @@ test.describe('Extension Smoke Tests', () => {
     
     const tipButton = page.locator('#grove-tip-button');
     await expect(tipButton).toBeVisible({ timeout: 20000 });
+
+    // Interaction check: Click button and verify First Tip Modal appears
+    await tipButton.click();
+    const modal = page.locator('.grove-first-tip-modal');
+    await expect(modal).toBeVisible();
+    await expect(modal).toContainText('Your First Tip!');
   });
 
   test('Should inject on soundcloud.com/olshansk', async () => {

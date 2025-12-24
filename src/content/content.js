@@ -115,6 +115,7 @@
   let currentAdapter = null;
   let navigationObserver = null;
   let tweetObserver = null;
+  let soundCloudTrackObserver = null;
   let tipPopover = null;
   let firstTipModal = null;
   let resolvedAddress = null; // Stores address info (0x address or ENS name)
@@ -127,6 +128,9 @@
 
   // Track which tweets already have buttons to avoid duplicates
   const processedTweets = new WeakSet();
+
+  // Track which SoundCloud tracks already have buttons to avoid duplicates
+  const processedSoundCloudTracks = new WeakSet();
 
   // Track tweet elements by username for button injection after bio fetch
   // Maps username -> Set of { tweetElement, tweetUrl, dateElement, isQuotedTweet }
@@ -263,6 +267,24 @@
       // Also set up hover card observer for profile popups
       if (typeof HoverCardHandler !== 'undefined') {
         HoverCardHandler.startObserving();
+      }
+      return;
+    }
+
+    // For SoundCloud, handle profile page and track tip buttons
+    if (currentAdapter.getPlatformName() === "soundcloud") {
+      // If on a profile page, initialize profile button first (this caches the address)
+      if (currentAdapter.detectProfilePage()) {
+        if (typeof ProfilePageHandler !== 'undefined') {
+          const result = await ProfilePageHandler.initialize(currentAdapter);
+          if (result) {
+            resolvedAddress = result;
+            currentButton = ProfilePageHandler.getButton();
+
+            // Set up track observer to add tip buttons to individual tracks
+            setupSoundCloudTrackObserver();
+          }
+        }
       }
       return;
     }
@@ -611,6 +633,98 @@
     console.log(`[Grove Extension] Found ${tweets.length} existing tweets`);
     tweets.forEach(processTweet);
   }
+
+  // ============= SoundCloud Track Handling =============
+
+  /**
+   * Setup observer for SoundCloud tracks
+   * Watches for new tracks and injects tip buttons
+   */
+  function setupSoundCloudTrackObserver() {
+    // Clean up existing observer
+    if (soundCloudTrackObserver) {
+      soundCloudTrackObserver.disconnect();
+    }
+
+    console.log("[Grove Extension] Setting up SoundCloud track observer");
+
+    // Process existing tracks first
+    processExistingSoundCloudTracks();
+
+    // Watch for new tracks being added to the DOM (SoundCloud uses infinite scroll)
+    soundCloudTrackObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            // Check if the added node contains like buttons
+            if (node.querySelectorAll) {
+              const likeButtons = node.querySelectorAll('.sc-button-like');
+              likeButtons.forEach(processSoundCloudTrackLikeButton);
+            }
+            // Also check if the node itself is a like button
+            if (node.classList && node.classList.contains('sc-button-like')) {
+              processSoundCloudTrackLikeButton(node);
+            }
+          }
+        }
+      }
+    });
+
+    soundCloudTrackObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+  }
+
+  /**
+   * Process all existing SoundCloud tracks on the page
+   */
+  function processExistingSoundCloudTracks() {
+    if (!currentAdapter || currentAdapter.getPlatformName() !== 'soundcloud') return;
+
+    const likeButtons = currentAdapter.getAllTrackLikeButtons();
+    console.log(`[Grove Extension] Found ${likeButtons.length} existing SoundCloud track like buttons`);
+    likeButtons.forEach(processSoundCloudTrackLikeButton);
+  }
+
+  /**
+   * Process a single SoundCloud track by its like button and inject tip button before it
+   * @param {Element} likeButton - The track's like button element
+   */
+  function processSoundCloudTrackLikeButton(likeButton) {
+    // Skip if already processed
+    if (processedSoundCloudTracks.has(likeButton)) return;
+    processedSoundCloudTracks.add(likeButton);
+
+    // Skip if tip button already exists next to this like button
+    if (currentAdapter.hasTrackTipButton(likeButton)) return;
+
+    // Get the parent button group
+    const buttonGroup = currentAdapter.getTrackButtonGroup(likeButton);
+    if (!buttonGroup) return;
+
+    // Create tip button using the same TipButton class as the profile button
+    const tipButtonInstance = new TipButton(
+      (buttonInstance) => handleTipClick(buttonInstance),
+      'soundcloud'
+    );
+
+    const tipButton = tipButtonInstance.create();
+    tipButton.classList.add('grove-track-tip-button');
+    tipButton.id = ''; // Remove ID to allow multiple track buttons
+
+    // SoundCloud button groups rely on floats; float left to match native buttons.
+    tipButton.style.setProperty('float', 'left', 'important');
+    tipButton.style.setProperty('margin-right', '16px', 'important');
+    // Keep order for any flex-based layouts.
+    tipButton.style.setProperty('order', '-999', 'important');
+
+    // Insert before the like button in DOM (order CSS will handle visual positioning)
+    buttonGroup.insertBefore(tipButton, likeButton);
+    console.log('[Grove Extension] Inserted tip button with float/spacing + order: -999 !important');
+  }
+
+  // ============= End SoundCloud Track Handling =============
 
   /**
    * Check if a user has a tippable address (from cache or display name)

@@ -86,6 +86,27 @@ window.SoundCloudAdapter = class SoundCloudAdapter extends window.BaseAdapter {
   }
 
   /**
+   * Get the Station button element (to insert tip button before it)
+   * @returns {Element|null}
+   */
+  getStationButton() {
+    // Station button has title="Start listening from this profile"
+    const stationBtn = document.querySelector('.userInfoBar__buttons button[title*="Station"], .userInfoBar__buttons button[title*="listening"]');
+    if (stationBtn) return stationBtn;
+
+    // Fallback: look for button with "Station" text
+    const buttons = document.querySelectorAll('.userInfoBar__buttons .sc-button-group button');
+    for (const btn of buttons) {
+      if (btn.textContent.toLowerCase().includes('station')) {
+        return btn;
+      }
+    }
+
+    // Last fallback: first button in the group
+    return document.querySelector('.userInfoBar__buttons .sc-button-group button');
+  }
+
+  /**
    * Get platform name
    * @returns {string}
    */
@@ -107,6 +128,61 @@ window.SoundCloudAdapter = class SoundCloudAdapter extends window.BaseAdapter {
     await this.waitForElement('.infoStats__description', 5000);
 
     return nameElement !== null && buttons !== null;
+  }
+
+  /**
+   * Get all track like buttons on the page (we'll use these to find insertion points)
+   * @returns {Element[]}
+   */
+  getAllTrackLikeButtons() {
+    // Find all like buttons in track action areas (not the profile header)
+    const selectors = [
+      '.sound__footer .sc-button-like',
+      '.soundBadge__actions .sc-button-like',
+      '.trackItem__actions .sc-button-like'
+    ];
+
+    const allLikeButtons = [];
+    selectors.forEach(selector => {
+      const buttons = document.querySelectorAll(selector);
+      allLikeButtons.push(...buttons);
+    });
+
+    return allLikeButtons;
+  }
+
+  /**
+   * Check if a like button's button group already has a tip button
+   * @param {Element} likeButton - The like button element
+   * @returns {boolean}
+   */
+  hasTrackTipButton(likeButton) {
+    // Check if the parent button group already contains a tip button
+    const buttonGroup = likeButton.parentElement;
+    return buttonGroup && buttonGroup.querySelector('.grove-track-tip-button') !== null;
+  }
+
+  /**
+   * Get the parent button group for a like button
+   * @param {Element} likeButton - The like button element
+   * @returns {Element|null}
+   */
+  getTrackButtonGroup(likeButton) {
+    return likeButton.parentElement;
+  }
+
+  /**
+   * Get the profile username from the page URL
+   * @returns {string|null}
+   */
+  getProfileUsername() {
+    try {
+      const url = new URL(window.location.href);
+      const segments = url.pathname.split('/').filter(Boolean);
+      return segments.length > 0 ? segments[0] : null;
+    } catch (err) {
+      return null;
+    }
   }
 };
 
