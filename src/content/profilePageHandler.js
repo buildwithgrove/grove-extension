@@ -121,11 +121,19 @@ const ProfilePageHandler = {
               margin-right: 16px !important;
               order: -999 !important;
             }
+            .playbackSoundBadge__actions > .grove-track-tip-button {
+              margin-right: 8px !important;
+            }
+            @media (max-width: 1079px) {
+              .sc-button-group > .grove-tip-button,
+              .sc-button-group > .grove-track-tip-button {
+                margin-right: 8px !important;
+              }
+            }
           `;
           document.head.appendChild(style);
         }
         button.style.setProperty('float', 'left', 'important');
-        button.style.setProperty('margin-right', '16px', 'important');
         button.style.setProperty('order', '-999', 'important');
         placement.insertBefore(button, placement.firstElementChild);
         console.log('[Grove Extension] Inserted tip button with float/spacing + order: -999 !important + CSS rule');

@@ -139,7 +139,8 @@ window.SoundCloudAdapter = class SoundCloudAdapter extends window.BaseAdapter {
     const selectors = [
       '.sound__footer .sc-button-like',
       '.soundBadge__actions .sc-button-like',
-      '.trackItem__actions .sc-button-like'
+      '.trackItem__actions .sc-button-like',
+      '.playbackSoundBadge__actions .sc-button-like'
     ];
 
     const allLikeButtons = [];

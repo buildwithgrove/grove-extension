@@ -703,6 +703,29 @@
     const buttonGroup = currentAdapter.getTrackButtonGroup(likeButton);
     if (!buttonGroup) return;
 
+    if (!document.querySelector('#grove-soundcloud-order-fix')) {
+      const style = document.createElement('style');
+      style.id = 'grove-soundcloud-order-fix';
+      style.textContent = `
+        .sc-button-group > .grove-tip-button,
+        .sc-button-group > .grove-track-tip-button {
+          float: left !important;
+          margin-right: 16px !important;
+          order: -999 !important;
+        }
+        .playbackSoundBadge__actions > .grove-track-tip-button {
+          margin-right: 8px !important;
+        }
+        @media (max-width: 1079px) {
+          .sc-button-group > .grove-tip-button,
+          .sc-button-group > .grove-track-tip-button {
+            margin-right: 8px !important;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
     // Create tip button using the same TipButton class as the profile button
     const tipButtonInstance = new TipButton(
       (buttonInstance) => handleTipClick(buttonInstance),
@@ -713,11 +736,15 @@
     tipButton.classList.add('grove-track-tip-button');
     tipButton.id = ''; // Remove ID to allow multiple track buttons
 
-    // SoundCloud button groups rely on floats; float left to match native buttons.
-    tipButton.style.setProperty('float', 'left', 'important');
-    tipButton.style.setProperty('margin-right', '16px', 'important');
+    // SoundCloud button groups rely on floats; apply only to matching groups.
+    if (buttonGroup.classList.contains('sc-button-group')) {
+      tipButton.style.setProperty('float', 'left', 'important');
+    }
     // Keep order for any flex-based layouts.
     tipButton.style.setProperty('order', '-999', 'important');
+    if (buttonGroup.classList.contains('playbackSoundBadge__actions')) {
+      tipButton.classList.add('sc-mr-1x');
+    }
 
     // Insert before the like button in DOM (order CSS will handle visual positioning)
     buttonGroup.insertBefore(tipButton, likeButton);
