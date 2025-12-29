@@ -3,6 +3,25 @@ importScripts('src/config/storageKeys.js');
 importScripts('src/utils/updateChecker.js');
 importScripts('src/auth/xOAuthBackground.js');
 
+// Side panel setup: Use side panel for Chrome, fallback to popup for Arc/other browsers
+(async () => {
+  // Check if side panel API is available and functional
+  if (chrome.sidePanel && chrome.sidePanel.open) {
+    try {
+      // Test if setPanelBehavior works (Arc doesn't support this)
+      await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+      // Clear popup so side panel opens on click
+      await chrome.action.setPopup({ popup: '' });
+      console.log('[Grove Background] Side panel enabled (Chrome detected)');
+    } catch (error) {
+      // Side panel API exists but doesn't work properly (Arc)
+      console.log('[Grove Background] Side panel not supported, using popup (Arc detected)');
+    }
+  } else {
+    console.log('[Grove Background] Side panel API not available, using popup');
+  }
+})();
+
 // Listen for internal messages from popup/content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Clear update badge when user dismisses update notification
@@ -137,31 +156,61 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
   }
 
   if (message.type === 'OPEN_POPUP') {
-    const chromeVersion = parseInt(navigator.userAgent.match(/Chrome\/(\d+)/)?.[1] || '0');
-
-    if (chromeVersion >= 127 && chrome.action.openPopup) {
-      chrome.action.openPopup()
-        .then(() => sendResponse({ success: true, opened: true }))
-        .catch(() => sendResponse({ success: true, opened: false, reason: 'popup_blocked' }));
-    } else {
-      sendResponse({ success: true, opened: false, reason: 'unsupported_version', chromeVersion });
-    }
+    // Try side panel first, fall back to popup
+    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+      if (tabs[0]?.id && chrome.sidePanel?.open) {
+        try {
+          await chrome.sidePanel.open({ tabId: tabs[0].id });
+          sendResponse({ success: true, opened: true, type: 'sidepanel' });
+        } catch {
+          // Side panel failed, try popup
+          if (chrome.action.openPopup) {
+            chrome.action.openPopup()
+              .then(() => sendResponse({ success: true, opened: true, type: 'popup' }))
+              .catch(() => sendResponse({ success: true, opened: false, reason: 'popup_blocked' }));
+          } else {
+            sendResponse({ success: true, opened: false, reason: 'no_open_method' });
+          }
+        }
+      } else if (chrome.action.openPopup) {
+        chrome.action.openPopup()
+          .then(() => sendResponse({ success: true, opened: true, type: 'popup' }))
+          .catch(() => sendResponse({ success: true, opened: false, reason: 'popup_blocked' }));
+      } else {
+        sendResponse({ success: true, opened: false, reason: 'no_active_tab' });
+      }
+    });
     return true;
   }
 
   if (message.type === 'OPEN_POPUP_TO_X_SETTINGS') {
-    // Store flag to open X settings when popup opens
+    // Store flag to open X settings when panel opens
     chrome.storage.local.set({ openToXSettings: true });
 
-    const chromeVersion = parseInt(navigator.userAgent.match(/Chrome\/(\d+)/)?.[1] || '0');
-
-    if (chromeVersion >= 127 && chrome.action.openPopup) {
-      chrome.action.openPopup()
-        .then(() => sendResponse({ success: true, opened: true }))
-        .catch(() => sendResponse({ success: true, opened: false, reason: 'popup_blocked' }));
-    } else {
-      sendResponse({ success: true, opened: false, reason: 'unsupported_version', chromeVersion });
-    }
+    // Try side panel first, fall back to popup
+    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+      if (tabs[0]?.id && chrome.sidePanel?.open) {
+        try {
+          await chrome.sidePanel.open({ tabId: tabs[0].id });
+          sendResponse({ success: true, opened: true, type: 'sidepanel' });
+        } catch {
+          // Side panel failed, try popup
+          if (chrome.action.openPopup) {
+            chrome.action.openPopup()
+              .then(() => sendResponse({ success: true, opened: true, type: 'popup' }))
+              .catch(() => sendResponse({ success: true, opened: false, reason: 'popup_blocked' }));
+          } else {
+            sendResponse({ success: true, opened: false, reason: 'no_open_method' });
+          }
+        }
+      } else if (chrome.action.openPopup) {
+        chrome.action.openPopup()
+          .then(() => sendResponse({ success: true, opened: true, type: 'popup' }))
+          .catch(() => sendResponse({ success: true, opened: false, reason: 'popup_blocked' }));
+      } else {
+        sendResponse({ success: true, opened: false, reason: 'no_active_tab' });
+      }
+    });
     return true;
   }
 
@@ -214,8 +263,11 @@ async function checkForUpdatesBackground() {
 }
 
 // Check for updates on extension install/update
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener(async () => {
   checkForUpdatesBackground();
+
+  // Enable side panel to open on action click
+  await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
 });
 
 // Check for updates on browser startup
@@ -225,3 +277,4 @@ chrome.runtime.onStartup.addListener(() => {
 
 // Also check when service worker loads
 checkForUpdatesBackground();
+
