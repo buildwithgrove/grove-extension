@@ -13,7 +13,7 @@
 function buildAutoReplyMessage(template, data) {
   let message = template;
   if (data.username) {
-    message = message.replace(/{username}/g, `@${data.username}`);
+    message = message.replace(/{username}/g, data.username);
   }
   if (data.chain) {
     message = message.replace(/{chain}/g, data.chain);
