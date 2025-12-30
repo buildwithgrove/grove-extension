@@ -206,6 +206,38 @@ class XAuth {
   }
 
   /**
+   * Post a new tweet (not a reply)
+   * Used for profile tips where there's no tweet to reply to
+   * @param {string} text - The tweet text
+   * @returns {Promise<Object>} - The created tweet data
+   */
+  static async postTweet(text) {
+    const accessToken = await this.getAccessToken();
+
+    if (!accessToken) {
+      throw new Error('Not logged in to X');
+    }
+
+    const response = await fetch('https://api.twitter.com/2/tweets', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: text,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || error.title || 'Failed to post tweet');
+    }
+
+    return response.json();
+  }
+
+  /**
    * Post a reply to a tweet
    * @param {string} tweetId - The ID of the tweet to reply to
    * @param {string} text - The reply text
