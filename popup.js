@@ -161,7 +161,8 @@ async function init() {
   // Set up side panel button - opens side panel if supported (Chrome/Brave)
   // Note: Arc has the API but it doesn't work - button will be visible but non-functional
   const sidePanelBtn = document.getElementById('sidePanelBtn');
-  if (sidePanelBtn && chrome.sidePanel?.open) {
+  const canUseSidePanel = typeof BrowserDetection !== 'undefined' && BrowserDetection.supportsSidePanel();
+  if (sidePanelBtn && canUseSidePanel) {
     sidePanelBtn.addEventListener('click', async () => {
       try {
         const currentWindow = await chrome.windows.getCurrent();

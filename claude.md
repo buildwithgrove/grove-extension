@@ -35,28 +35,20 @@ When a browser/platform API exists but doesn't work as expected:
 1. **Don't assume detection is impossible** - There's usually a way
 2. **Probe the ENTIRE API surface** - Test every method, not just the main one
 3. **Check for behavioral differences** - Different browsers may return different errors or values
-4. **Use those differences as feature detection** - An API method that fails differently in Arc vs Chrome can be used to detect Arc
+4. **Use those differences as feature detection** - An API method that fails differently can be used to detect the environment
 
-### Example: Side Panel Detection
+### Example: Side Panel API (Chrome vs Arc)
 
-The `chrome.sidePanel` API exists in both Chrome and Arc, but Arc's implementation is incomplete:
+The `chrome.sidePanel` API exists in Chrome, Brave, and Arc, but Arc's implementation is non-functional:
 
-```javascript
-// This fails in Arc with "Unexpected property: windowId" but works in Chrome
-await chrome.sidePanel.getOptions({ windowId: currentWindow.id });
-```
+| Method | Chrome/Brave | Arc |
+|--------|--------------|-----|
+| `sidePanel.open()` | Works | Silently fails |
+| `sidePanel.getOptions({})` | Works | Works |
+| `sidePanel.getLayout()` | Works | **Crashes browser** |
+| `sidePanel.getPanelBehavior()` | Works | Works |
 
-Use this behavioral difference to detect Arc and hide the side panel button:
-
-```javascript
-try {
-  await chrome.sidePanel.getOptions({ windowId: currentWindow.id });
-  // Works - Chrome/Brave, show button
-} catch (error) {
-  // Fails - Arc, hide button
-  sidePanelBtn.style.display = 'none';
-}
-```
+**Lesson learned:** Sometimes reliable detection isn't possible. In this case, the button shows in all browsers with the API but only functions in Chrome/Brave. Arc users see a non-functional button - acceptable UX trade-off vs crashing.
 
 ## Color Palette
 

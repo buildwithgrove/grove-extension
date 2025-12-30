@@ -1,7 +1,37 @@
 // Import shared modules
 importScripts('src/config/storageKeys.js');
 importScripts('src/utils/updateChecker.js');
+importScripts('src/utils/browserDetection.js');
 importScripts('src/auth/xOAuthBackground.js');
+
+const supportsSidePanel = () => typeof BrowserDetection !== 'undefined' && BrowserDetection.supportsSidePanel();
+
+// Helper: Open side panel if supported, fall back to popup
+function openSidePanelOrPopup(sendResponse) {
+  chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+    if (tabs[0]?.id && supportsSidePanel()) {
+      try {
+        await chrome.sidePanel.open({ tabId: tabs[0].id });
+        sendResponse({ success: true, opened: true, type: 'sidepanel' });
+      } catch {
+        // Side panel failed, try popup
+        if (chrome.action.openPopup) {
+          chrome.action.openPopup()
+            .then(() => sendResponse({ success: true, opened: true, type: 'popup' }))
+            .catch(() => sendResponse({ success: true, opened: false, reason: 'popup_blocked' }));
+        } else {
+          sendResponse({ success: true, opened: false, reason: 'no_open_method' });
+        }
+      }
+    } else if (chrome.action.openPopup) {
+      chrome.action.openPopup()
+        .then(() => sendResponse({ success: true, opened: true, type: 'popup' }))
+        .catch(() => sendResponse({ success: true, opened: false, reason: 'popup_blocked' }));
+    } else {
+      sendResponse({ success: true, opened: false, reason: 'no_active_tab' });
+    }
+  });
+}
 
 // Listen for internal messages from popup/content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -137,61 +167,14 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
   }
 
   if (message.type === 'OPEN_POPUP') {
-    // Try side panel first, fall back to popup
-    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-      if (tabs[0]?.id && chrome.sidePanel?.open) {
-        try {
-          await chrome.sidePanel.open({ tabId: tabs[0].id });
-          sendResponse({ success: true, opened: true, type: 'sidepanel' });
-        } catch {
-          // Side panel failed, try popup
-          if (chrome.action.openPopup) {
-            chrome.action.openPopup()
-              .then(() => sendResponse({ success: true, opened: true, type: 'popup' }))
-              .catch(() => sendResponse({ success: true, opened: false, reason: 'popup_blocked' }));
-          } else {
-            sendResponse({ success: true, opened: false, reason: 'no_open_method' });
-          }
-        }
-      } else if (chrome.action.openPopup) {
-        chrome.action.openPopup()
-          .then(() => sendResponse({ success: true, opened: true, type: 'popup' }))
-          .catch(() => sendResponse({ success: true, opened: false, reason: 'popup_blocked' }));
-      } else {
-        sendResponse({ success: true, opened: false, reason: 'no_active_tab' });
-      }
-    });
+    openSidePanelOrPopup(sendResponse);
     return true;
   }
 
   if (message.type === 'OPEN_POPUP_TO_X_SETTINGS') {
     // Store flag to open X settings when panel opens
     chrome.storage.local.set({ openToXSettings: true });
-
-    // Try side panel first, fall back to popup
-    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-      if (tabs[0]?.id && chrome.sidePanel?.open) {
-        try {
-          await chrome.sidePanel.open({ tabId: tabs[0].id });
-          sendResponse({ success: true, opened: true, type: 'sidepanel' });
-        } catch {
-          // Side panel failed, try popup
-          if (chrome.action.openPopup) {
-            chrome.action.openPopup()
-              .then(() => sendResponse({ success: true, opened: true, type: 'popup' }))
-              .catch(() => sendResponse({ success: true, opened: false, reason: 'popup_blocked' }));
-          } else {
-            sendResponse({ success: true, opened: false, reason: 'no_open_method' });
-          }
-        }
-      } else if (chrome.action.openPopup) {
-        chrome.action.openPopup()
-          .then(() => sendResponse({ success: true, opened: true, type: 'popup' }))
-          .catch(() => sendResponse({ success: true, opened: false, reason: 'popup_blocked' }));
-      } else {
-        sendResponse({ success: true, opened: false, reason: 'no_active_tab' });
-      }
-    });
+    openSidePanelOrPopup(sendResponse);
     return true;
   }
 
@@ -255,4 +238,3 @@ chrome.runtime.onStartup.addListener(() => {
 
 // Also check when service worker loads
 checkForUpdatesBackground();
-
