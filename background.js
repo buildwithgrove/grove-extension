@@ -3,25 +3,6 @@ importScripts('src/config/storageKeys.js');
 importScripts('src/utils/updateChecker.js');
 importScripts('src/auth/xOAuthBackground.js');
 
-// Side panel setup: Use side panel for Chrome, fallback to popup for Arc/other browsers
-(async () => {
-  // Check if side panel API is available and functional
-  if (chrome.sidePanel && chrome.sidePanel.open) {
-    try {
-      // Test if setPanelBehavior works (Arc doesn't support this)
-      await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
-      // Clear popup so side panel opens on click
-      await chrome.action.setPopup({ popup: '' });
-      console.log('[Grove Background] Side panel enabled (Chrome detected)');
-    } catch (error) {
-      // Side panel API exists but doesn't work properly (Arc)
-      console.log('[Grove Background] Side panel not supported, using popup (Arc detected)');
-    }
-  } else {
-    console.log('[Grove Background] Side panel API not available, using popup');
-  }
-})();
-
 // Listen for internal messages from popup/content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Clear update badge when user dismisses update notification
@@ -263,11 +244,8 @@ async function checkForUpdatesBackground() {
 }
 
 // Check for updates on extension install/update
-chrome.runtime.onInstalled.addListener(async () => {
+chrome.runtime.onInstalled.addListener(() => {
   checkForUpdatesBackground();
-
-  // Enable side panel to open on action click
-  await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
 });
 
 // Check for updates on browser startup

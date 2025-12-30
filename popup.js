@@ -158,6 +158,19 @@ const ENDPOINT_LABELS = {
  * Initialize Popup
  */
 async function init() {
+  // Set up side panel button - opens side panel if supported
+  const sidePanelBtn = document.getElementById('sidePanelBtn');
+  if (sidePanelBtn && chrome.sidePanel?.open) {
+    sidePanelBtn.addEventListener('click', async () => {
+      try {
+        const currentWindow = await chrome.windows.getCurrent();
+        await chrome.sidePanel.open({ windowId: currentWindow.id });
+      } catch (error) {
+        // Silently ignore if it doesn't work
+      }
+    });
+  }
+
   // Migrate from legacy single-JWT storage (runs once)
   await KeyManager.migrateFromLegacy();
 
