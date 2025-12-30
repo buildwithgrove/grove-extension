@@ -1,5 +1,6 @@
 # Grove Extension - Development Guidelines <!-- omit in toc -->
 
+- [Debugging & Problem Solving](#debugging--problem-solving)
 - [Color Palette](#color-palette)
   - [Brand Colors](#brand-colors)
   - [Semantic Colors](#semantic-colors)
@@ -26,6 +27,36 @@
   - [Step 1: Capture Platform Structure](#step-1-capture-platform-structure)
   - [Step 2: Use AI to Generate the Adapter](#step-2-use-ai-to-generate-the-adapter)
   - [Step 3: Integration Checklist](#step-3-integration-checklist)
+
+## Debugging & Problem Solving
+
+When a browser/platform API exists but doesn't work as expected:
+
+1. **Don't assume detection is impossible** - There's usually a way
+2. **Probe the ENTIRE API surface** - Test every method, not just the main one
+3. **Check for behavioral differences** - Different browsers may return different errors or values
+4. **Use those differences as feature detection** - An API method that fails differently in Arc vs Chrome can be used to detect Arc
+
+### Example: Side Panel Detection
+
+The `chrome.sidePanel` API exists in both Chrome and Arc, but Arc's implementation is incomplete:
+
+```javascript
+// This fails in Arc with "Unexpected property: windowId" but works in Chrome
+await chrome.sidePanel.getOptions({ windowId: currentWindow.id });
+```
+
+Use this behavioral difference to detect Arc and hide the side panel button:
+
+```javascript
+try {
+  await chrome.sidePanel.getOptions({ windowId: currentWindow.id });
+  // Works - Chrome/Brave, show button
+} catch (error) {
+  // Fails - Arc, hide button
+  sidePanelBtn.style.display = 'none';
+}
+```
 
 ## Color Palette
 

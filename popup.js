@@ -161,14 +161,25 @@ async function init() {
   // Set up side panel button - opens side panel if supported
   const sidePanelBtn = document.getElementById('sidePanelBtn');
   if (sidePanelBtn && chrome.sidePanel?.open) {
-    sidePanelBtn.addEventListener('click', async () => {
-      try {
-        const currentWindow = await chrome.windows.getCurrent();
-        await chrome.sidePanel.open({ windowId: currentWindow.id });
-      } catch (error) {
-        // Silently ignore if it doesn't work
-      }
-    });
+    // Test if side panel actually works (Arc has API but it fails on getOptions with windowId)
+    try {
+      const currentWindow = await chrome.windows.getCurrent();
+      await chrome.sidePanel.getOptions({ windowId: currentWindow.id });
+      // Test passed - side panel works, set up click handler
+      sidePanelBtn.addEventListener('click', async () => {
+        try {
+          await chrome.sidePanel.open({ windowId: currentWindow.id });
+        } catch (error) {
+          // Silently ignore if it doesn't work
+        }
+      });
+    } catch (error) {
+      // getOptions failed (Arc) - hide the button
+      sidePanelBtn.style.display = 'none';
+    }
+  } else if (sidePanelBtn) {
+    // No side panel API - hide button
+    sidePanelBtn.style.display = 'none';
   }
 
   // Migrate from legacy single-JWT storage (runs once)
