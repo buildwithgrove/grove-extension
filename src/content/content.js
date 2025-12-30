@@ -572,6 +572,62 @@
       if (button) {
         button.setSuccess();
       }
+
+      // For X profile tips, send a tweet mentioning the user
+      if (platformName === 'twitter' && typeof XAuth !== 'undefined') {
+        try {
+          // Get X feature settings
+          const xSettings = await chrome.storage.local.get(['GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'groveChain']);
+          const autoReplyEnabled = xSettings.GROVE_AUTO_REPLY !== false;
+
+          if (autoReplyEnabled) {
+            const isLoggedIn = await XAuth.isLoggedIn();
+            if (isLoggedIn && username) {
+              // Get chain config for the message
+              const rawChain = xSettings.groveChain || 'base';
+              const chain = rawChain.toLowerCase().replace(/_/g, '-');
+              const chainConfig = {
+                'base': { name: 'Base', explorer: 'https://basescan.org/tx/' },
+                'base-sepolia': { name: 'Base Sepolia', explorer: 'https://sepolia.basescan.org/tx/' }
+              };
+              const config = chainConfig[chain] || chainConfig['base'];
+              const chainName = config.name;
+              const explorerBaseUrl = config.explorer;
+
+              const txHash = response.data?.tx_hash || '';
+              const txLink = `${explorerBaseUrl}${txHash}`;
+
+              // Build tweet text from template
+              const autoReplyMessage = xSettings.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
+              const tweetText = buildAutoReplyMessage(autoReplyMessage, {
+                username: username,
+                chain: chainName,
+                tx_link: txLink,
+                grove_link: 'grove.city'
+              });
+
+              try {
+                await XAuth.postTweet(tweetText);
+                console.log("[Grove Extension] Profile tip tweet posted successfully");
+                // Show success feedback
+                setTimeout(() => {
+                  showInlineTipError(button.button, { message: 'Tweet sent!', variant: 'success' });
+                }, 100);
+              } catch (tweetError) {
+                console.error("[Grove Extension] Profile tip tweet failed:", tweetError);
+                setTimeout(() => {
+                  showInlineTipError(button.button, { message: 'Tweet failed (rate limited?)', variant: 'warning' });
+                }, 100);
+              }
+            } else {
+              console.log("[Grove Extension] Skipping profile tweet - not logged in or no username");
+            }
+          }
+        } catch (error) {
+          // Don't fail the whole tip if X features fail
+          console.error("[Grove Extension] X features failed for profile tip:", error);
+        }
+      }
     } else {
       console.error("[Grove Extension] Tip failed:", response.error, response.data);
       if (button) {
