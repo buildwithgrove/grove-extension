@@ -1,17 +1,15 @@
 // Import shared modules
 importScripts('src/config/storageKeys.js');
 importScripts('src/utils/updateChecker.js');
-importScripts('src/utils/browserDetection.js');
 importScripts('src/auth/xOAuthBackground.js');
 
-const supportsSidePanel = () => typeof BrowserDetection !== 'undefined' && BrowserDetection.supportsSidePanel();
-
-// Helper: Open side panel if supported, fall back to popup
 function openSidePanelOrPopup(sendResponse) {
   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-    if (tabs[0]?.id && supportsSidePanel()) {
+    const activeTab = tabs[0];
+
+    if (activeTab?.id && chrome.sidePanel?.open) {
       try {
-        await chrome.sidePanel.open({ tabId: tabs[0].id });
+        await chrome.sidePanel.open({ tabId: activeTab.id });
         sendResponse({ success: true, opened: true, type: 'sidepanel' });
       } catch {
         // Side panel failed, try popup

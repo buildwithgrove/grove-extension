@@ -158,22 +158,21 @@ const ENDPOINT_LABELS = {
  * Initialize Popup
  */
 async function init() {
-  // Set up side panel button - opens side panel if supported (Chrome/Brave)
-  // Note: Arc has the API but it doesn't work - button will be visible but non-functional
+  // Set up side panel button - show if API exists, handle errors on click
   const sidePanelBtn = document.getElementById('sidePanelBtn');
-  const canUseSidePanel = typeof BrowserDetection !== 'undefined' && BrowserDetection.supportsSidePanel();
-  if (sidePanelBtn && canUseSidePanel) {
+  if (sidePanelBtn && chrome.sidePanel?.open) {
+    sidePanelBtn.classList.remove('hidden');
     sidePanelBtn.addEventListener('click', async () => {
       try {
         const currentWindow = await chrome.windows.getCurrent();
         await chrome.sidePanel.open({ windowId: currentWindow.id });
+        console.log('[SidePanel] Opened successfully');
       } catch (error) {
-        // Silently ignore if it doesn't work (Arc)
+        console.error('[SidePanel] Failed:', error.name, '-', error.message);
       }
     });
   } else if (sidePanelBtn) {
-    // No side panel API - hide button
-    sidePanelBtn.style.display = 'none';
+    sidePanelBtn.classList.add('hidden');
   }
 
   // Migrate from legacy single-JWT storage (runs once)
