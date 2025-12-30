@@ -158,25 +158,18 @@ const ENDPOINT_LABELS = {
  * Initialize Popup
  */
 async function init() {
-  // Set up side panel button - opens side panel if supported
+  // Set up side panel button - opens side panel if supported (Chrome/Brave)
+  // Note: Arc has the API but it doesn't work - button will be visible but non-functional
   const sidePanelBtn = document.getElementById('sidePanelBtn');
   if (sidePanelBtn && chrome.sidePanel?.open) {
-    // Test if side panel actually works (Arc has API but it fails on getOptions with windowId)
-    try {
-      const currentWindow = await chrome.windows.getCurrent();
-      await chrome.sidePanel.getOptions({ windowId: currentWindow.id });
-      // Test passed - side panel works, set up click handler
-      sidePanelBtn.addEventListener('click', async () => {
-        try {
-          await chrome.sidePanel.open({ windowId: currentWindow.id });
-        } catch (error) {
-          // Silently ignore if it doesn't work
-        }
-      });
-    } catch (error) {
-      // getOptions failed (Arc) - hide the button
-      sidePanelBtn.style.display = 'none';
-    }
+    sidePanelBtn.addEventListener('click', async () => {
+      try {
+        const currentWindow = await chrome.windows.getCurrent();
+        await chrome.sidePanel.open({ windowId: currentWindow.id });
+      } catch (error) {
+        // Silently ignore if it doesn't work (Arc)
+      }
+    });
   } else if (sidePanelBtn) {
     // No side panel API - hide button
     sidePanelBtn.style.display = 'none';
