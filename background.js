@@ -225,8 +225,19 @@ async function checkForUpdatesBackground() {
 }
 
 // Check for updates on extension install/update
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener(async () => {
   checkForUpdatesBackground();
+
+  // Enable side panel to open on action click (Chrome/Brave)
+  // Falls back to popup in browsers where this fails
+  if (chrome.sidePanel?.setPanelBehavior) {
+    try {
+      await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+      console.log('[Grove] Side panel enabled on action click');
+    } catch (error) {
+      console.log('[Grove] Side panel behavior not supported:', error.message);
+    }
+  }
 });
 
 // Check for updates on browser startup
