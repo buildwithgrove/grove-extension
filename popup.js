@@ -158,8 +158,9 @@ const ENDPOINT_LABELS = {
  * Initialize Popup
  */
 async function init() {
-  // Detect if running in side panel mode (via URL parameter from manifest)
-  const isInSidePanel = new URLSearchParams(window.location.search).has('sidepanel');
+  // Detect if running in side panel mode (window taller than popup's fixed height)
+  const popupHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--popup-height'));
+  const isInSidePanel = window.innerHeight > popupHeight + 50; // 50px buffer
   if (isInSidePanel) {
     document.body.classList.add('sidepanel-mode');
     console.log('[Grove] Running in side panel mode');

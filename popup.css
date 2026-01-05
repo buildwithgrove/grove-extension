@@ -50,6 +50,10 @@
   --font-sans: var(--grove-font-body);
   --header-height: 64px;
   --nav-height: 64px;
+
+  /* Popup dimensions - used for side panel detection in JS */
+  --popup-width: 360px;
+  --popup-height: 600px;
 }
 
 * {
@@ -60,8 +64,8 @@
 }
 
 body {
-  width: 360px;
-  height: 600px;
+  width: var(--popup-width);
+  height: var(--popup-height);
   background-color: var(--color-bg);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
