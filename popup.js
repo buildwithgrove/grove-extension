@@ -177,6 +177,7 @@ async function init() {
         const currentWindow = await chrome.windows.getCurrent();
         await chrome.sidePanel.open({ windowId: currentWindow.id });
         console.log('[SidePanel] Opened successfully');
+        window.close(); // Close popup after side panel opens
       } catch (error) {
         console.error('[SidePanel] Failed:', error.name, '-', error.message);
       }
