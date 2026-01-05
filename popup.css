@@ -71,6 +71,12 @@ body {
   overflow: hidden;
 }
 
+/* Side panel mode: fill height, scroll when needed */
+body.sidepanel-mode {
+  height: 100vh;
+  overflow-y: auto;
+}
+
 /* Header */
 .header {
   height: var(--header-height);
