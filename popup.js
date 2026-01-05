@@ -158,9 +158,19 @@ const ENDPOINT_LABELS = {
  * Initialize Popup
  */
 async function init() {
-  // Set up side panel button - show if API exists, handle errors on click
+  // Detect if running in side panel mode (taller than popup's 600px)
+  const isInSidePanel = window.innerHeight > 650;
+  if (isInSidePanel) {
+    document.body.classList.add('sidepanel-mode');
+    console.log('[Grove] Running in side panel mode');
+  }
+
+  // Set up side panel button - show if API exists and not already in side panel
   const sidePanelBtn = document.getElementById('sidePanelBtn');
-  if (sidePanelBtn && chrome.sidePanel?.open) {
+  if (isInSidePanel) {
+    // Already in side panel, hide the button
+    sidePanelBtn?.classList.add('hidden');
+  } else if (sidePanelBtn && chrome.sidePanel?.open) {
     sidePanelBtn.classList.remove('hidden');
     sidePanelBtn.addEventListener('click', async () => {
       try {
