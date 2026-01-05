@@ -159,31 +159,9 @@ const ENDPOINT_LABELS = {
  */
 async function init() {
   // Detect if running in side panel mode (taller than popup's 600px)
-  const isInSidePanel = window.innerHeight > 650;
-  if (isInSidePanel) {
+  if (window.innerHeight > 650) {
     document.body.classList.add('sidepanel-mode');
     console.log('[Grove] Running in side panel mode');
-  }
-
-  // Set up side panel button - show if API exists and not already in side panel
-  const sidePanelBtn = document.getElementById('sidePanelBtn');
-  if (isInSidePanel) {
-    // Already in side panel, hide the button
-    sidePanelBtn?.classList.add('hidden');
-  } else if (sidePanelBtn && chrome.sidePanel?.open) {
-    sidePanelBtn.classList.remove('hidden');
-    sidePanelBtn.addEventListener('click', async () => {
-      try {
-        const currentWindow = await chrome.windows.getCurrent();
-        await chrome.sidePanel.open({ windowId: currentWindow.id });
-        console.log('[SidePanel] Opened successfully');
-        window.close(); // Close popup after side panel opens
-      } catch (error) {
-        console.error('[SidePanel] Failed:', error.name, '-', error.message);
-      }
-    });
-  } else if (sidePanelBtn) {
-    sidePanelBtn.classList.add('hidden');
   }
 
   // Migrate from legacy single-JWT storage (runs once)
