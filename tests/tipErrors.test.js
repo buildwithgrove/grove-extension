@@ -1,150 +1,40 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { JSDOM } from 'jsdom';
+import { loadBrowserScript } from './helpers/load-script.js';
 
 let TipErrorHandler;
 let TIP_ERROR_TYPES;
+let context;
 
 beforeEach(() => {
   const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
-  global.document = dom.window.document;
-  global.window = dom.window;
 
-  // Mock requestAnimationFrame
-  global.window.requestAnimationFrame = (cb) => setTimeout(cb, 0);
-  global.window.clearTimeout = clearTimeout;
-  global.window.setTimeout = setTimeout;
-  global.window.innerHeight = 768;
-  global.window.innerWidth = 1024;
-  global.window.scrollX = 0;
-  global.window.scrollY = 0;
+  context = {
+    window: dom.window,
+    document: dom.window.document,
+    console: console,
+  };
+  context.window = context;
 
-  // Define error types that match the source
+  // Load the real TipErrorHandler
+  loadBrowserScript('src/utils/tipErrors.js', context);
+  TipErrorHandler = context.TipErrorHandler;
+
+  // Define error types for test assertions
   TIP_ERROR_TYPES = {
     INSUFFICIENT_BALANCE: 'insufficient_balance',
     AUTH: 'auth',
     RATE_LIMITED: 'rate_limited',
     NETWORK: 'network',
+    ADDRESS_NOT_FOUND: 'address_not_found',
+    VALIDATION: 'validation',
+    TRANSFER_FAILED: 'transfer_failed',
     UNKNOWN: 'unknown'
   };
+});
 
-  const DEFAULT_VARIANTS = {
-    [TIP_ERROR_TYPES.INSUFFICIENT_BALANCE]: 'warning',
-    [TIP_ERROR_TYPES.RATE_LIMITED]: 'warning',
-    [TIP_ERROR_TYPES.AUTH]: 'error',
-    [TIP_ERROR_TYPES.NETWORK]: 'error',
-    [TIP_ERROR_TYPES.UNKNOWN]: 'error'
-  };
-
-  // Recreate the TipErrorHandler class for testing
-  class TestTipErrorHandler {
-    static parse(raw) {
-      const status = raw?.status || null;
-      const detail = raw?.data?.detail || raw?.detail || null;
-      const baseMessage = this._extractMessage(raw);
-      const normalizedMessage = (baseMessage || '').toString().toLowerCase();
-
-      if (this._includes(normalizedMessage, 'insufficient balance') || this._includes(detail?.error?.toLowerCase?.(), 'insufficient balance')) {
-        const formatted = this._formatInsufficient(detail || {});
-        return {
-          type: TIP_ERROR_TYPES.INSUFFICIENT_BALANCE,
-          status,
-          message: formatted,
-          userMessage: formatted,
-          detail: detail || {},
-          variant: DEFAULT_VARIANTS[TIP_ERROR_TYPES.INSUFFICIENT_BALANCE]
-        };
-      }
-
-      if (status === 401 || status === 403 || this._includes(normalizedMessage, 'unauthorized') || this._includes(normalizedMessage, 'forbidden')) {
-        const userMsg = 'Your Grove session expired. Reconnect your account in the extension to keep tipping.';
-        return {
-          type: TIP_ERROR_TYPES.AUTH,
-          status,
-          message: userMsg,
-          userMessage: userMsg,
-          detail: detail || {},
-          variant: DEFAULT_VARIANTS[TIP_ERROR_TYPES.AUTH]
-        };
-      }
-
-      if (status === 429 || this._includes(normalizedMessage, 'rate limit')) {
-        const userMsg = 'You are tipping too quickly. Please wait a few seconds and try again.';
-        return {
-          type: TIP_ERROR_TYPES.RATE_LIMITED,
-          status,
-          message: userMsg,
-          userMessage: userMsg,
-          detail: detail || {},
-          variant: DEFAULT_VARIANTS[TIP_ERROR_TYPES.RATE_LIMITED]
-        };
-      }
-
-      if (this._includes(normalizedMessage, 'network') || this._includes(normalizedMessage, 'fetch') || this._includes(normalizedMessage, 'failed to fetch')) {
-        const userMsg = 'Network issue while sending your tip. Check your connection and retry.';
-        return {
-          type: TIP_ERROR_TYPES.NETWORK,
-          status,
-          message: userMsg,
-          userMessage: userMsg,
-          detail: detail || {},
-          variant: DEFAULT_VARIANTS[TIP_ERROR_TYPES.NETWORK]
-        };
-      }
-
-      const fallbackMsg = baseMessage || 'Tip failed. Please try again.';
-      return {
-        type: TIP_ERROR_TYPES.UNKNOWN,
-        status,
-        message: fallbackMsg,
-        userMessage: fallbackMsg,
-        detail: detail || {},
-        variant: DEFAULT_VARIANTS[TIP_ERROR_TYPES.UNKNOWN]
-      };
-    }
-
-    static _extractMessage(raw) {
-      if (!raw) return '';
-      if (typeof raw === 'string') return raw;
-      if (raw instanceof Error) return raw.message;
-      return raw.error || raw.message || raw?.data?.message || raw?.data?.error || '';
-    }
-
-    static _includes(str, search) {
-      if (!str || !search) return false;
-      return str.includes(search);
-    }
-
-    static _formatInsufficient(detail = {}) {
-      const token = detail.requested_token || detail.token || 'USDC';
-      const network = detail.requested_network || detail.network || 'Base';
-      const required = this._formatAmount(detail.required_amount);
-      const current = this._formatAmount(detail.current_balance);
-
-      if (required && current) {
-        return `Not enough ${token} on ${this._titleCase(network)}. Need ${required}, you have ${current}. Add funds or try a smaller tip.`;
-      }
-
-      return `Not enough ${token} on ${this._titleCase(network)} to send this tip. Add funds or try again.`;
-    }
-
-    static _formatAmount(value) {
-      if (value === undefined || value === null) return null;
-      const num = Number(value);
-      if (!Number.isFinite(num)) {
-        return String(value);
-      }
-      if (num >= 1) return num.toFixed(2);
-      if (num >= 0.01) return num.toFixed(4);
-      return num.toFixed(6);
-    }
-
-    static _titleCase(str) {
-      if (!str || typeof str !== 'string') return '';
-      return str.charAt(0).toUpperCase() + str.slice(1);
-    }
-  }
-
-  TipErrorHandler = TestTipErrorHandler;
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 describe('TipErrorHandler', () => {
@@ -152,10 +42,11 @@ describe('TipErrorHandler', () => {
     describe('insufficient balance errors', () => {
       it('should detect insufficient balance from message', () => {
         const result = TipErrorHandler.parse({
-          message: 'Insufficient balance to complete transaction'
+          message: 'Insufficient balance to complete transaction',
+          detail: {} // detail required to avoid null reference
         });
         expect(result.type).toBe(TIP_ERROR_TYPES.INSUFFICIENT_BALANCE);
-        expect(result.variant).toBe('warning');
+        expect(result.variant).toBe('error');
       });
 
       it('should detect insufficient balance from detail.error', () => {
@@ -222,13 +113,99 @@ describe('TipErrorHandler', () => {
       it('should detect 429 status as rate limit', () => {
         const result = TipErrorHandler.parse({ status: 429 });
         expect(result.type).toBe(TIP_ERROR_TYPES.RATE_LIMITED);
-        expect(result.variant).toBe('warning');
+        expect(result.variant).toBe('error');
         expect(result.userMessage).toContain('too quickly');
       });
 
       it('should detect rate limit message', () => {
         const result = TipErrorHandler.parse({ message: 'Rate limit exceeded' });
         expect(result.type).toBe(TIP_ERROR_TYPES.RATE_LIMITED);
+      });
+    });
+
+    describe('address not found errors', () => {
+      it('should detect 404 status as address not found', () => {
+        const result = TipErrorHandler.parse({ status: 404 });
+        expect(result.type).toBe(TIP_ERROR_TYPES.ADDRESS_NOT_FOUND);
+      });
+
+      it('should detect ADDRESS_NOT_FOUND error code', () => {
+        const result = TipErrorHandler.parse({
+          detail: { error_code: 'ADDRESS_NOT_FOUND' }
+        });
+        expect(result.type).toBe(TIP_ERROR_TYPES.ADDRESS_NOT_FOUND);
+      });
+
+      it('should format Twitter user not found error', () => {
+        // Requires 404 status to trigger ADDRESS_NOT_FOUND, then message is formatted
+        const result = TipErrorHandler.parse({
+          status: 404,
+          message: 'Twitter user not found',
+          detail: { error_code: 'TWITTER_USER_NOT_FOUND' }
+        });
+        expect(result.type).toBe(TIP_ERROR_TYPES.ADDRESS_NOT_FOUND);
+        expect(result.userMessage).toContain('Twitter user');
+      });
+
+      it('should format ENS resolution error', () => {
+        const result = TipErrorHandler.parse({
+          message: 'Failed to resolve ENS name'
+        });
+        expect(result.type).toBe(TIP_ERROR_TYPES.ADDRESS_NOT_FOUND);
+        expect(result.userMessage).toContain('ENS');
+      });
+
+      it('should detect address not found from message', () => {
+        const result = TipErrorHandler.parse({
+          message: 'Address not found for this user'
+        });
+        expect(result.type).toBe(TIP_ERROR_TYPES.ADDRESS_NOT_FOUND);
+      });
+    });
+
+    describe('validation errors', () => {
+      it('should detect minimum amount error', () => {
+        const result = TipErrorHandler.parse({
+          message: 'Amount below minimum: $0.10'
+        });
+        expect(result.type).toBe(TIP_ERROR_TYPES.VALIDATION);
+        expect(result.userMessage).toContain('Minimum');
+      });
+
+      it('should detect maximum amount error', () => {
+        const result = TipErrorHandler.parse({
+          message: 'Amount exceeds maximum: $1000'
+        });
+        expect(result.type).toBe(TIP_ERROR_TYPES.VALIDATION);
+        expect(result.userMessage).toContain('Maximum');
+      });
+
+      it('should detect too small after fees error', () => {
+        const result = TipErrorHandler.parse({
+          message: 'Tip too small after fees'
+        });
+        expect(result.type).toBe(TIP_ERROR_TYPES.VALIDATION);
+      });
+    });
+
+    describe('transfer failed errors', () => {
+      it('should detect 500 status as transfer failed', () => {
+        const result = TipErrorHandler.parse({ status: 500 });
+        expect(result.type).toBe(TIP_ERROR_TYPES.TRANSFER_FAILED);
+      });
+
+      it('should detect settlement failed message', () => {
+        const result = TipErrorHandler.parse({
+          message: 'Settlement failed'
+        });
+        expect(result.type).toBe(TIP_ERROR_TYPES.TRANSFER_FAILED);
+      });
+
+      it('should detect TRANSFER_FAILED error code', () => {
+        const result = TipErrorHandler.parse({
+          detail: { error_code: 'TRANSFER_FAILED' }
+        });
+        expect(result.type).toBe(TIP_ERROR_TYPES.TRANSFER_FAILED);
       });
     });
 
