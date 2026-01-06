@@ -196,3 +196,8 @@ const FormatUtils = {
     return div.innerHTML;
   }
 };
+
+// Make globally available
+if (typeof window !== 'undefined') {
+  window.FormatUtils = FormatUtils;
+}

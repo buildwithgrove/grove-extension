@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { setupChromeMock, resetChromeMock } from './mocks/chrome.js';
+import { loadBrowserScript } from './helpers/load-script.js';
 
 let KeyManager;
 let ENV_CONFIG;
 let mockChrome;
+let context;
 
 const STORAGE_KEY_PREV = 'GROVE_PREV_JWTS';
 const LEGACY_JWT_KEY = 'GROVE_API_JWT';
@@ -12,139 +14,17 @@ const MAX_KEYS = 10;
 beforeEach(() => {
   mockChrome = setupChromeMock();
 
-  ENV_CONFIG = {
-    production: {
-      label: 'Mainnet',
-      storageKey: 'GROVE_JWT_PRODUCTION',
-      appUrl: 'https://app.grove.city',
-      isDevMode: false,
-    },
-    testnet: {
-      label: 'Testnet',
-      storageKey: 'GROVE_JWT_TESTNET',
-      appUrl: 'https://app.testnet.grove.city',
-      isDevMode: true,
-    },
-    localhost: {
-      label: 'Localhost',
-      storageKey: 'GROVE_JWT_LOCALHOST',
-      appUrl: 'http://localhost:3000',
-      isDevMode: true,
-    },
+  context = {
+    window: {},
+    console: console,
+    chrome: mockChrome,
   };
+  context.window = context;
 
-  // Create KeyManager class for testing
-  class TestKeyManager {
-    static getEnvConfig(slotId) {
-      return ENV_CONFIG[slotId] || null;
-    }
-
-    static async getJWT(slotId) {
-      const config = ENV_CONFIG[slotId];
-      if (!config) return null;
-      const result = await chrome.storage.local.get([config.storageKey]);
-      return result[config.storageKey] || null;
-    }
-
-    static async setJWT(slotId, jwt) {
-      const config = ENV_CONFIG[slotId];
-      if (!config) return;
-      await chrome.storage.local.set({ [config.storageKey]: jwt });
-    }
-
-    static async clearJWT(slotId) {
-      const config = ENV_CONFIG[slotId];
-      if (!config) return;
-      await chrome.storage.local.remove([config.storageKey]);
-    }
-
-    static async getActiveSlotId() {
-      const result = await chrome.storage.local.get(['groveEndpoint', 'groveEnvironment']);
-      const endpoint = result['groveEndpoint'] || 'production';
-      const env = result['groveEnvironment'] || 'prod';
-      const isDevMode = env === 'local';
-
-      if (!isDevMode) return 'production';
-      if (endpoint === 'localhost') return 'localhost';
-      if (endpoint === 'testnet') return 'testnet';
-      return 'production';
-    }
-
-    static async getActiveJWT() {
-      const slotId = await this.getActiveSlotId();
-      return this.getJWT(slotId);
-    }
-
-    static async migrateFromLegacy() {
-      const storageKeys = Object.values(ENV_CONFIG).map(c => c.storageKey);
-      const result = await chrome.storage.local.get([LEGACY_JWT_KEY, 'groveEndpoint', ...storageKeys]);
-      const legacyJwt = result[LEGACY_JWT_KEY];
-      const endpoint = result['groveEndpoint'];
-
-      const hasNewKeys = storageKeys.some(key => result[key]);
-      if (!legacyJwt || hasNewKeys) {
-        return false;
-      }
-
-      const targetSlot = (endpoint === 'localhost' || endpoint === 'testnet') ? endpoint : 'production';
-      await this.setJWT(targetSlot, legacyJwt);
-      await chrome.storage.local.remove([LEGACY_JWT_KEY]);
-
-      return true;
-    }
-
-    static async archiveCurrentKey(currentJwt, environment = null) {
-      if (!currentJwt) return;
-
-      const result = await chrome.storage.local.get([STORAGE_KEY_PREV]);
-      let prevJwts = result[STORAGE_KEY_PREV] || [];
-
-      prevJwts = prevJwts.filter(item => item.key !== currentJwt);
-
-      prevJwts.unshift({
-        key: currentJwt,
-        timestamp: new Date().toISOString(),
-        environment: environment
-      });
-
-      if (prevJwts.length > MAX_KEYS) {
-        prevJwts = prevJwts.slice(0, MAX_KEYS);
-      }
-
-      await chrome.storage.local.set({ [STORAGE_KEY_PREV]: prevJwts });
-    }
-
-    static async getPreviousKeys() {
-      const result = await chrome.storage.local.get([STORAGE_KEY_PREV]);
-      return result[STORAGE_KEY_PREV] || [];
-    }
-
-    static async getKeyCount() {
-      const keys = await this.getPreviousKeys();
-      return keys.length;
-    }
-
-    static async clearAll() {
-      await chrome.storage.local.remove(STORAGE_KEY_PREV);
-    }
-
-    static async deleteKey(index) {
-      const result = await chrome.storage.local.get([STORAGE_KEY_PREV]);
-      let prevJwts = result[STORAGE_KEY_PREV] || [];
-
-      if (index >= 0 && index < prevJwts.length) {
-        prevJwts.splice(index, 1);
-        await chrome.storage.local.set({ [STORAGE_KEY_PREV]: prevJwts });
-      }
-    }
-
-    static async getKey(index) {
-      const keys = await this.getPreviousKeys();
-      return keys[index] || null;
-    }
-  }
-
-  KeyManager = TestKeyManager;
+  // Load the real KeyManager
+  loadBrowserScript('src/storage/keyManager.js', context);
+  KeyManager = context.KeyManager;
+  ENV_CONFIG = context.ENV_CONFIG;
 });
 
 afterEach(() => {

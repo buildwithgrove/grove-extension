@@ -1,17 +1,28 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { JSDOM } from 'jsdom';
+import { loadBrowserScript } from './helpers/load-script.js';
 import { setupFetchMock } from './mocks/fetch.js';
 
 let MetadataFetcher;
-let AddressParser;
+let context;
 let mockFetch;
 
 beforeEach(() => {
+  const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
   mockFetch = setupFetchMock();
 
-  // Mock AddressParser
-  AddressParser = {
+  context = {
+    window: dom.window,
+    document: dom.window.document,
+    console: console,
+    fetch: global.fetch,
+    AbortSignal: { timeout: vi.fn(() => ({})) },
+  };
+  context.window = context;
+
+  // Mock AddressParser dependency
+  context.AddressParser = {
     hasAddresses: vi.fn((content) => {
-      // Check for ETH addresses or ENS names
       return /0x[a-fA-F0-9]{40}/.test(content) || /[\w-]+\.eth/.test(content);
     }),
     resolveAddress: vi.fn((content) => {
@@ -27,113 +38,15 @@ beforeEach(() => {
     })
   };
 
-  global.AddressParser = AddressParser;
-
-  // Create MetadataFetcher class for testing
-  class TestMetadataFetcher {
-    static cache = new Map();
-    static CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-    static async fetchAndCheck(origin) {
-      if (!origin) {
-        origin = window?.location?.origin || '';
-      }
-
-      const cached = this.getCached(origin);
-      if (cached !== null) {
-        return cached;
-      }
-
-      const filesToTry = [
-        '/llms.txt',
-        '/ai.txt',
-        '/.well-known/llms.txt',
-        '/.well-known/ai.txt'
-      ];
-
-      for (const file of filesToTry) {
-        try {
-          const url = origin + file;
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: { 'Accept': 'text/plain' },
-            signal: AbortSignal.timeout(3000)
-          });
-
-          if (response.ok) {
-            const content = await response.text();
-
-            if (AddressParser.hasAddresses(content)) {
-              const addressResult = AddressParser.resolveAddress(content);
-
-              if (addressResult.address) {
-                const result = {
-                  found: true,
-                  source: file,
-                  content: content,
-                  address: addressResult
-                };
-                this.setCache(origin, result);
-                return result;
-              }
-            }
-          }
-        } catch (error) {
-          continue;
-        }
-      }
-
-      const result = {
-        found: false,
-        source: null,
-        content: null,
-        address: null
-      };
-      this.setCache(origin, result);
-      return result;
-    }
-
-    static getCached(origin) {
-      const cached = this.cache.get(origin);
-      if (!cached) return null;
-
-      if (Date.now() - cached.timestamp > this.CACHE_TTL) {
-        this.cache.delete(origin);
-        return null;
-      }
-
-      return cached.data;
-    }
-
-    static setCache(origin, data) {
-      this.cache.set(origin, {
-        data,
-        timestamp: Date.now()
-      });
-    }
-
-    static clearCache(origin) {
-      if (origin) {
-        this.cache.delete(origin);
-      } else {
-        this.cache.clear();
-      }
-    }
-  }
-
-  MetadataFetcher = TestMetadataFetcher;
-
-  // Mock AbortSignal.timeout
-  global.AbortSignal = {
-    timeout: vi.fn(() => ({}))
-  };
+  // Load the real MetadataFetcher
+  loadBrowserScript('src/utils/metadata.js', context);
+  MetadataFetcher = context.MetadataFetcher;
 });
 
 afterEach(() => {
   mockFetch.reset();
   MetadataFetcher.clearCache();
-  delete global.AddressParser;
-  delete global.AbortSignal;
+  vi.restoreAllMocks();
 });
 
 describe('MetadataFetcher', () => {
@@ -210,8 +123,8 @@ describe('MetadataFetcher', () => {
 
     it('should skip files with addresses that cannot be resolved', async () => {
       const contentWithFakeAddress = 'Contact us';
-      AddressParser.hasAddresses.mockReturnValueOnce(true);
-      AddressParser.resolveAddress.mockReturnValueOnce({ address: null });
+      context.AddressParser.hasAddresses.mockReturnValueOnce(true);
+      context.AddressParser.resolveAddress.mockReturnValueOnce({ address: null });
       mockFetch.mockResponse('GET', `${testOrigin}/llms.txt`, contentWithFakeAddress);
 
       // Second file has real address

@@ -209,3 +209,8 @@ const HistoryRenderer = {
     return transactions.map(tx => this.renderHistoryEntry(tx)).join('');
   }
 };
+
+// Make globally available
+if (typeof window !== 'undefined') {
+  window.HistoryRenderer = HistoryRenderer;
+}
