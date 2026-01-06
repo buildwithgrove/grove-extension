@@ -48,6 +48,7 @@
         "src/content/hoverCardHandler.js",
         "src/content/profilePageHandler.js",
         "src/content/tweetTipHandler.js",
+        "src/content/tweetProcessor.js",
         "src/auth/xAuth.js",
         "src/content/xFeatures.js",
         "src/content/content.js"

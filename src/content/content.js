@@ -114,7 +114,6 @@
   let currentButton = null;
   let currentAdapter = null;
   let navigationObserver = null;
-  let tweetObserver = null;
   let soundCloudTrackObserver = null;
   let tipPopover = null;
   let firstTipModal = null;
@@ -126,15 +125,11 @@
     ? new AddressCache()
     : new Map(); // Fallback for backwards compatibility
 
-  // Track which tweets already have buttons to avoid duplicates
-  const processedTweets = new WeakSet();
-
   // Track which SoundCloud tracks already have buttons to avoid duplicates
   const processedSoundCloudTracks = new WeakSet();
 
-  // Track tweet elements by username for button injection after bio fetch
-  // Maps username -> Set of { tweetElement, tweetUrl, dateElement, isQuotedTweet }
-  const pendingTweetButtons = new Map();
+  // Tweet processing state (processedTweets, pendingTweetButtons, tweetObserver)
+  // is now managed by TweetProcessor module
 
   // Initialize BioFetcher with callbacks
   if (typeof BioFetcher !== 'undefined') {
@@ -151,23 +146,30 @@
             console.log(`[Grove Extension] Bio fetch: Found address for @${username}: ${addressResult.address}`);
 
             // Inject buttons for all pending tweets from this user
-            injectPendingButtons(username);
+            if (typeof TweetProcessor !== 'undefined') {
+              TweetProcessor.injectPendingButtons(username);
+            }
           } else {
             // No valid address found
             setCachedAddress(username, 'no-address');
+            if (typeof TweetProcessor !== 'undefined') {
+              TweetProcessor.clearPendingButtons(username);
+            }
           }
         } else {
           // No address in bio/display name
           setCachedAddress(username, 'no-address');
+          if (typeof TweetProcessor !== 'undefined') {
+            TweetProcessor.clearPendingButtons(username);
+          }
         }
-
-        // Clean up pending tweets
-        pendingTweetButtons.delete(username);
       },
       onFetchError: (username, error) => {
         console.log(`[Grove Extension] Bio fetch failed for @${username}: ${error}`);
         // Don't cache on error - allow retry later
-        pendingTweetButtons.delete(username);
+        if (typeof TweetProcessor !== 'undefined') {
+          TweetProcessor.clearPendingButtons(username);
+        }
       }
     });
   }
@@ -222,6 +224,23 @@
       },
       typeof GROVE_COLORS !== 'undefined' ? GROVE_COLORS : null
     );
+  }
+
+  // Initialize TweetProcessor with callbacks
+  if (typeof TweetProcessor !== 'undefined') {
+    TweetProcessor.init({
+      getAdapter: () => currentAdapter,
+      getCachedAddress: getCachedAddress,
+      setCachedAddress: setCachedAddress,
+      hasAddresses: (text) => AddressParser.hasAddresses(text),
+      resolveAddress: (text) => AddressParser.resolveAddress(text),
+      injectTipButton: (tweetEl, dateEl, url, isQuoted) => TweetTipHandler.injectButton(tweetEl, dateEl, url, isQuoted),
+      queueBioFetch: (username) => {
+        if (typeof BioFetcher !== 'undefined') {
+          BioFetcher.queueFetch(username);
+        }
+      }
+    });
   }
 
   /**
@@ -282,7 +301,9 @@
       }
 
       // Always set up tweet observer on Twitter (after profile init so cache is populated)
-      setupTwitterTweetObserver();
+      if (typeof TweetProcessor !== 'undefined') {
+        TweetProcessor.startObserving();
+      }
 
       // Also set up hover card observer for profile popups
       if (typeof HoverCardHandler !== 'undefined') {
@@ -660,55 +681,7 @@
   }
 
   // Hover card handling is now in src/content/hoverCardHandler.js
-
-  /**
-   * Setup observer for Twitter tweets
-   * Watches for new tweets and injects tip buttons for tippable authors
-   */
-  function setupTwitterTweetObserver() {
-    // Clean up existing observer
-    if (tweetObserver) {
-      tweetObserver.disconnect();
-    }
-
-    console.log("[Grove Extension] Setting up tweet observer");
-
-    // Process existing tweets first
-    processExistingTweets();
-
-    // Watch for new tweets being added to the DOM
-    tweetObserver = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        for (const node of mutation.addedNodes) {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            // Check if the added node is a tweet or contains tweets
-            if (node.matches && node.matches('article[data-testid="tweet"]')) {
-              processTweet(node);
-            } else if (node.querySelectorAll) {
-              const tweets = node.querySelectorAll('article[data-testid="tweet"]');
-              tweets.forEach(processTweet);
-            }
-          }
-        }
-      }
-    });
-
-    tweetObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-  }
-
-  /**
-   * Process all existing tweets on the page
-   */
-  function processExistingTweets() {
-    if (!currentAdapter || currentAdapter.getPlatformName() !== 'twitter') return;
-
-    const tweets = currentAdapter.findTweets();
-    console.log(`[Grove Extension] Found ${tweets.length} existing tweets`);
-    tweets.forEach(processTweet);
-  }
+  // Tweet processing is now handled by TweetProcessor module
 
   // ============= SoundCloud Track Handling =============
 
@@ -830,191 +803,6 @@
   // ============= End SoundCloud Track Handling =============
 
   /**
-   * Check if a user has a tippable address (from cache or display name)
-   * @param {string} username - Twitter username
-   * @param {string|null} displayName - Display name to check for addresses
-   * @returns {boolean}
-   */
-  function checkTippableAddress(username, displayName) {
-    // Check cache first
-    const cached = getCachedAddress(username);
-
-    if (cached === 'no-address') return false;
-    if (cached && cached.address) return true;
-
-    // Check display name for addresses
-    if (displayName) {
-      const hasAddress = AddressParser.hasAddresses(displayName);
-      if (hasAddress) {
-        const addressResult = AddressParser.resolveAddress(displayName);
-        if (addressResult.address) {
-          setCachedAddress(username, addressResult);
-          console.log(`[Grove Extension] Tweet: Found address for @${username}: ${addressResult.address}`);
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  /**
-   * Process a single tweet and inject tip button only if author has tippable address
-   * Also handles quote tweets - shows button for quoted author if they have a tippable address
-   * If no address found in display name, queues a background bio fetch
-   * @param {Element} tweetElement - The tweet article element
-   */
-  async function processTweet(tweetElement) {
-    // Skip if already processed
-    if (processedTweets.has(tweetElement)) return;
-    processedTweets.add(tweetElement);
-
-    // Skip if button already exists on the main tweet
-    if (tweetElement.querySelector('.grove-tweet-tip-button')) return;
-
-    // Extract main author info (for RTs this is the original author, for QTs this is the quoter)
-    const authorInfo = currentAdapter.extractTweetAuthor(tweetElement);
-
-    // Process main tweet author
-    if (authorInfo.username) {
-      const hasTippableAddress = checkTippableAddress(authorInfo.username, authorInfo.displayName);
-
-      if (hasTippableAddress) {
-        const tweetUrl = currentAdapter.getTweetUrl(tweetElement);
-        const dateElement = currentAdapter.getTweetDateElement(tweetElement);
-
-        if (tweetUrl && dateElement) {
-          TweetTipHandler.injectButton(tweetElement, dateElement, tweetUrl);
-        }
-      } else {
-        // No address found in display name - queue background bio fetch
-        const cached = getCachedAddress(authorInfo.username);
-        if (cached === null) {
-          // Not cached yet - queue for bio fetch
-          const tweetUrl = currentAdapter.getTweetUrl(tweetElement);
-          const dateElement = currentAdapter.getTweetDateElement(tweetElement);
-          if (tweetUrl && dateElement) {
-            console.log(`[Grove Extension] Queueing bio fetch for @${authorInfo.username}`);
-            queueBioFetch(authorInfo.username, tweetElement, tweetUrl, dateElement, false);
-          } else {
-            console.log(`[Grove Extension] Cannot queue @${authorInfo.username}: missing tweetUrl=${!!tweetUrl} dateElement=${!!dateElement}`);
-          }
-        } else {
-          console.log(`[Grove Extension] Skipping @${authorInfo.username}: cached=${cached}`);
-        }
-      }
-    }
-
-    // For quote tweets, also check the quoted tweet's author
-    if (currentAdapter.hasQuotedTweet && currentAdapter.hasQuotedTweet(tweetElement)) {
-      const quotedAuthor = currentAdapter.extractQuotedTweetAuthor(tweetElement);
-
-      if (quotedAuthor && quotedAuthor.username) {
-        const quotedHasTippable = checkTippableAddress(quotedAuthor.username, quotedAuthor.displayName);
-
-        if (quotedHasTippable) {
-          // Find the quoted tweet element to inject button into
-          const quotedTweetEl = currentAdapter.getQuotedTweetElement(tweetElement);
-          if (quotedTweetEl && !quotedTweetEl.querySelector('.grove-tweet-tip-button')) {
-            // Build URL for the quoted tweet
-            let quotedTweetUrl = null;
-
-            // Method 1: Look for status link in quoted area
-            const quotedStatusLink = quotedTweetEl.querySelector('a[href*="/status/"]');
-            if (quotedStatusLink) {
-              const href = quotedStatusLink.getAttribute('href');
-              quotedTweetUrl = href.startsWith('/') ? `https://x.com${href}` : href;
-            }
-
-            // Method 2: If no status link, use the author's profile URL
-            // (tipping to profile is valid when we can't get the specific tweet)
-            if (!quotedTweetUrl && quotedAuthor.profileUrl) {
-              quotedTweetUrl = quotedAuthor.profileUrl;
-            }
-
-            // Find placement - try multiple options
-            // 1. Time element's parent (next to timestamp like "1h")
-            // 2. User-Name container
-            // 3. Any span containing the time text
-            // 4. First row/line of the quoted tweet
-            let placement = null;
-
-            const quotedTimeLink = quotedTweetEl.querySelector('time');
-            if (quotedTimeLink?.parentElement) {
-              placement = quotedTimeLink.parentElement;
-            }
-
-            if (!placement) {
-              const quotedNameContainer = quotedTweetEl.querySelector('[data-testid="User-Name"]');
-              if (quotedNameContainer) {
-                placement = quotedNameContainer;
-              }
-            }
-
-            // Fallback: find the row containing author info (usually first child div with text)
-            if (!placement) {
-              // Look for a container that has the username link
-              const usernameLink = quotedTweetEl.querySelector('a[href^="/"][role="link"]');
-              if (usernameLink) {
-                // Go up to find a reasonable container
-                let container = usernameLink.parentElement;
-                while (container && container !== quotedTweetEl) {
-                  if (container.parentElement === quotedTweetEl ||
-                      container.parentElement?.parentElement === quotedTweetEl) {
-                    placement = container;
-                    break;
-                  }
-                  container = container.parentElement;
-                }
-              }
-            }
-
-            // If we have a URL and a place to put the button, inject it
-            if (quotedTweetUrl && placement) {
-              TweetTipHandler.injectButton(quotedTweetEl, placement, quotedTweetUrl, true);
-            }
-          }
-        } else {
-          // No address found in quoted author's display name - queue background bio fetch
-          const cached = getCachedAddress(quotedAuthor.username);
-          if (cached === null) {
-            // Not cached yet - queue for bio fetch
-            const quotedTweetEl = currentAdapter.getQuotedTweetElement(tweetElement);
-            if (quotedTweetEl) {
-              let quotedTweetUrl = null;
-              const quotedStatusLink = quotedTweetEl.querySelector('a[href*="/status/"]');
-              if (quotedStatusLink) {
-                const href = quotedStatusLink.getAttribute('href');
-                quotedTweetUrl = href.startsWith('/') ? `https://x.com${href}` : href;
-              }
-              if (!quotedTweetUrl && quotedAuthor.profileUrl) {
-                quotedTweetUrl = quotedAuthor.profileUrl;
-              }
-
-              // Find placement for quoted tweet button
-              let placement = null;
-              const quotedTimeLink = quotedTweetEl.querySelector('time');
-              if (quotedTimeLink?.parentElement) {
-                placement = quotedTimeLink.parentElement;
-              }
-              if (!placement) {
-                const quotedNameContainer = quotedTweetEl.querySelector('[data-testid="User-Name"]');
-                if (quotedNameContainer) {
-                  placement = quotedNameContainer;
-                }
-              }
-
-              if (quotedTweetUrl && placement) {
-                queueBioFetch(quotedAuthor.username, tweetElement, quotedTweetUrl, placement, true);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  /**
    * Extract username from Twitter profile URL
    * @param {string} url - The URL to parse
    * @returns {string|null} - Username or null
@@ -1076,60 +864,8 @@
     });
   }
 
-  /**
-   * Queue a username for background bio fetch
-   * Uses BioFetcher module for the actual fetching
-   * @param {string} username - Twitter username
-   * @param {Element} tweetElement - The tweet element to inject button into
-   * @param {string} tweetUrl - The tweet URL
-   * @param {Element} dateElement - The date element for button placement
-   * @param {boolean} isQuotedTweet - Whether this is a quoted tweet
-   */
-  function queueBioFetch(username, tweetElement, tweetUrl, dateElement, isQuotedTweet = false) {
-    // Track the tweet element so we can inject button when bio returns
-    if (!pendingTweetButtons.has(username)) {
-      pendingTweetButtons.set(username, new Set());
-    }
-    pendingTweetButtons.get(username).add({
-      tweetElement,
-      tweetUrl,
-      dateElement,
-      isQuotedTweet
-    });
-
-    // Queue fetch using BioFetcher module
-    if (typeof BioFetcher !== 'undefined') {
-      BioFetcher.queueFetch(username);
-    }
-  }
-
-  /**
-   * Inject buttons for all pending tweets from a user after bio fetch
-   * @param {string} username - Twitter username
-   */
-  function injectPendingButtons(username) {
-    const pending = pendingTweetButtons.get(username);
-    if (!pending) return;
-
-    for (const { tweetElement, tweetUrl, dateElement, isQuotedTweet } of pending) {
-      // Check if element is still in DOM and doesn't already have a button
-      if (!document.contains(tweetElement)) continue;
-      if (tweetElement.querySelector('.grove-tweet-tip-button')) continue;
-
-      if (isQuotedTweet) {
-        // For quoted tweets, find the quoted element
-        const quotedTweetEl = currentAdapter.getQuotedTweetElement(tweetElement);
-        if (quotedTweetEl && !quotedTweetEl.querySelector('.grove-tweet-tip-button')) {
-          TweetTipHandler.injectButton(quotedTweetEl, dateElement, tweetUrl, true);
-        }
-      } else {
-        TweetTipHandler.injectButton(tweetElement, dateElement, tweetUrl, false);
-      }
-    }
-  }
-
-  // Tweet tip button injection and tip flow is now handled by TweetTipHandler
-  // (src/content/tweetTipHandler.js)
+  // Tweet processing (queueBioFetch, injectPendingButtons) is now handled by TweetProcessor
+  // Tweet tip button injection and tip flow is handled by TweetTipHandler
 
   /**
    * Clean up when page changes
@@ -1150,9 +886,8 @@
     if (typeof TweetTipHandler !== 'undefined') {
       TweetTipHandler.reset();
     }
-    if (tweetObserver) {
-      tweetObserver.disconnect();
-      tweetObserver = null;
+    if (typeof TweetProcessor !== 'undefined') {
+      TweetProcessor.reset();
     }
     if (tipPopover) {
       tipPopover.hide();
