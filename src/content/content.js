@@ -185,7 +185,7 @@
           return null;
         },
         detectDarkMode: detectDarkMode,
-        onTipClick: handleTweetTipClick,
+        onTipClick: (buttonWrapper, tweetUrl) => TweetTipHandler.handleTipClick(buttonWrapper, tweetUrl),
         formatTipAmount: formatTipAmount,
         ensureEllipsisStyles: ensureEllipsisAnimationStyles
       },
@@ -202,6 +202,26 @@
       onTipClick: handleTipClick,
       extractUsernameFromUrl: extractUsernameFromUrl
     });
+  }
+
+  // Initialize TweetTipHandler with callbacks
+  if (typeof TweetTipHandler !== 'undefined') {
+    TweetTipHandler.init(
+      {
+        detectDarkMode: detectDarkMode,
+        ensureEllipsisStyles: ensureEllipsisAnimationStyles,
+        formatTipAmount: formatTipAmount,
+        isExtensionContextValid: isExtensionContextValid,
+        showInlineTipError: showInlineTipError,
+        getActiveJWT: getActiveJWT,
+        getCachedAddress: getCachedAddress,
+        extractUsernameFromUrl: extractUsernameFromUrl,
+        addXSenderInfo: typeof addXSenderInfo === 'function' ? addXSenderInfo : null,
+        buildAutoReplyMessage: typeof buildAutoReplyMessage === 'function' ? buildAutoReplyMessage : null,
+        getDefaultAutoReplyMessage: () => DEFAULT_AUTO_REPLY_MESSAGE
+      },
+      typeof GROVE_COLORS !== 'undefined' ? GROVE_COLORS : null
+    );
   }
 
   /**
@@ -864,7 +884,7 @@
         const dateElement = currentAdapter.getTweetDateElement(tweetElement);
 
         if (tweetUrl && dateElement) {
-          injectTweetTipButton(tweetElement, dateElement, tweetUrl);
+          TweetTipHandler.injectButton(tweetElement, dateElement, tweetUrl);
         }
       } else {
         // No address found in display name - queue background bio fetch
@@ -951,7 +971,7 @@
 
             // If we have a URL and a place to put the button, inject it
             if (quotedTweetUrl && placement) {
-              injectTweetTipButton(quotedTweetEl, placement, quotedTweetUrl, true);
+              TweetTipHandler.injectButton(quotedTweetEl, placement, quotedTweetUrl, true);
             }
           }
         } else {
@@ -1100,529 +1120,16 @@
         // For quoted tweets, find the quoted element
         const quotedTweetEl = currentAdapter.getQuotedTweetElement(tweetElement);
         if (quotedTweetEl && !quotedTweetEl.querySelector('.grove-tweet-tip-button')) {
-          injectTweetTipButton(quotedTweetEl, dateElement, tweetUrl, true);
+          TweetTipHandler.injectButton(quotedTweetEl, dateElement, tweetUrl, true);
         }
       } else {
-        injectTweetTipButton(tweetElement, dateElement, tweetUrl, false);
+        TweetTipHandler.injectButton(tweetElement, dateElement, tweetUrl, false);
       }
     }
   }
 
-  /**
-   * Inject tip button next to tweet date
-   * @param {Element} tweetElement - The tweet article element
-   * @param {Element} dateElement - The date link element
-   * @param {string} tweetUrl - The tweet URL for tipping
-   * @param {boolean} isQuotedTweet - Whether this is a button for a quoted tweet (smaller styling)
-   */
-  function injectTweetTipButton(tweetElement, dateElement, tweetUrl, isQuotedTweet = false) {
-    // Detect dark mode
-    const isDarkMode = detectDarkMode();
-    const bgColor = isDarkMode ? '#1a1a1a' : '#ffffff';
-    const bgHoverColor = isDarkMode ? '#252525' : '#f0f0f0';
-    const textColor = isDarkMode ? '#ffffff' : '#1a1a1a';
-
-    // Adjust sizing for quoted tweets (smaller to fit the compact layout)
-    const buttonHeight = isQuotedTweet ? '24px' : '28px';
-    const buttonPadding = isQuotedTweet ? '0 8px' : '0 12px';
-    const fontSize = isQuotedTweet ? '11px' : '13px';
-    const emojiFontSize = isQuotedTweet ? '12px' : '14px';
-
-    // Create the full tip button (matching profile button style)
-    const button = document.createElement('button');
-    button.className = 'grove-tweet-tip-button';
-    if (isQuotedTweet) button.classList.add('grove-quoted-tweet-tip-button');
-    button.setAttribute('aria-label', 'Send a tip');
-    button.setAttribute('type', 'button');
-
-    button.style.cssText = `
-      background: ${bgColor} !important;
-      border: 2px solid ${GROVE_COLORS.primary} !important;
-      border-radius: 9999px !important;
-      padding: ${buttonPadding} !important;
-      height: ${buttonHeight} !important;
-      min-height: ${buttonHeight} !important;
-      max-height: ${buttonHeight} !important;
-      min-width: 32px !important;
-      position: relative !important;
-      overflow: hidden !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      gap: 4px !important;
-      cursor: pointer !important;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-      box-shadow: 0 2px 8px ${GROVE_COLORS.shadow} !important;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-      vertical-align: middle !important;
-      margin-left: 8px !important;
-      line-height: 1 !important;
-    `;
-
-    // Create text span
-    const textSpan = document.createElement('span');
-    textSpan.textContent = 'Tip';
-    textSpan.style.cssText = `
-      color: ${textColor} !important;
-      font-weight: 600 !important;
-      font-size: ${fontSize} !important;
-      position: relative !important;
-      z-index: 2 !important;
-      display: flex !important;
-      align-items: center !important;
-    `;
-
-    // Create emoji span
-    const emojiSpan = document.createElement('span');
-    emojiSpan.textContent = '🌿';
-    emojiSpan.style.cssText = `
-      font-size: ${emojiFontSize} !important;
-      margin-left: 4px !important;
-      position: relative !important;
-      z-index: 2 !important;
-    `;
-
-    // Create animated sheen overlay
-    const sheenOverlay = document.createElement('div');
-    sheenOverlay.style.cssText = `
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      background: linear-gradient(90deg,
-        transparent,
-        rgba(255, 255, 255, 0.2),
-        transparent) !important;
-      pointer-events: none !important;
-      z-index: 1 !important;
-      animation: grove-sheen-slide 3s ease-in-out infinite !important;
-    `;
-    const defaultSheenBackground = sheenOverlay.style.background;
-
-    // Assemble the structure
-    textSpan.appendChild(emojiSpan);
-    button.appendChild(sheenOverlay);
-    button.appendChild(textSpan);
-
-    // Hover effects
-    button.addEventListener('mouseenter', () => {
-      button.style.background = `${bgHoverColor} !important`;
-      button.style.transform = 'translateY(-1px)';
-      button.style.boxShadow = `0 4px 12px ${GROVE_COLORS.shadowHover} !important`;
-    });
-
-    button.addEventListener('mouseleave', () => {
-      button.style.background = `${bgColor} !important`;
-      button.style.transform = 'translateY(0)';
-      button.style.boxShadow = `0 2px 8px ${GROVE_COLORS.shadow} !important`;
-    });
-
-    // Click handler
-    button.addEventListener('click', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const buttonWrapper = {
-        button: button,
-        textSpan: textSpan,
-        emojiSpan: emojiSpan,
-        setLoading: (amount) => {
-          ensureEllipsisAnimationStyles();
-          button.disabled = true;
-          button.style.pointerEvents = 'none';
-          // Update button text to show sending state
-          const formattedAmount = formatTipAmount(amount);
-          const sendingText = formattedAmount ? `Sending $${formattedAmount}` : 'Sending';
-          textSpan.textContent = sendingText;
-          textSpan.classList.add('grove-ellipsis');
-          // Color cycling animation
-          const colors = [
-            { border: '#389f58', shadow: '0 0 12px #389f58' },
-            { border: '#4fb76d', shadow: '0 0 12px #4fb76d' },
-            { border: '#f0ad4e', shadow: '0 0 12px #f0ad4e' },
-            { border: '#4fb76d', shadow: '0 0 12px #4fb76d' },
-          ];
-          let colorIndex = 0;
-          button._loadingInterval = setInterval(() => {
-            colorIndex++;
-            const color = colors[colorIndex % colors.length];
-            button.style.setProperty('border-color', color.border, 'important');
-            button.style.setProperty('box-shadow', color.shadow, 'important');
-          }, 150);
-        },
-        setSuccess: () => {
-          if (button._loadingInterval) {
-            clearInterval(button._loadingInterval);
-          }
-          button.disabled = false;
-          button.style.pointerEvents = '';
-          button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
-          button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
-          sheenOverlay.style.background = defaultSheenBackground;
-          textSpan.classList.remove('grove-ellipsis');
-          textSpan.textContent = 'Sent! ✓';
-          button.classList.add('animate__animated', 'animate__bounceIn');
-          setTimeout(() => {
-            textSpan.textContent = 'Tip';
-            textSpan.appendChild(emojiSpan);
-            button.classList.remove('animate__animated', 'animate__bounceIn');
-          }, 2000);
-        },
-        setError: () => {
-          if (button._loadingInterval) {
-            clearInterval(button._loadingInterval);
-          }
-          button.disabled = false;
-          button.style.pointerEvents = '';
-          button.style.setProperty('border', `2px solid ${GROVE_COLORS.error || '#ef4444'}`, 'important');
-          button.style.setProperty('box-shadow', `0 0 12px ${GROVE_COLORS.errorShadow || 'rgba(239, 68, 68, 0.55)'}`, 'important');
-          sheenOverlay.style.background = 'linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.35), transparent)';
-          textSpan.classList.remove('grove-ellipsis');
-          textSpan.textContent = 'Failed ✗';
-          button.classList.add('animate__animated', 'animate__shakeX');
-          setTimeout(() => {
-            textSpan.textContent = 'Tip';
-            textSpan.appendChild(emojiSpan);
-            button.classList.remove('animate__animated', 'animate__shakeX');
-            button.style.setProperty('border', `2px solid ${GROVE_COLORS.primary}`, 'important');
-            button.style.setProperty('box-shadow', `0 2px 8px ${GROVE_COLORS.shadow}`, 'important');
-            sheenOverlay.style.background = defaultSheenBackground;
-          }, 2000);
-        }
-      };
-
-      await handleTweetTipClick(buttonWrapper, tweetUrl);
-    });
-
-    // Insert after the date element
-    if (dateElement.parentElement) {
-      dateElement.parentElement.insertBefore(button, dateElement.nextSibling);
-    }
-  }
-
-  /**
-   * Handle tip click for a tweet
-   * @param {Object} buttonWrapper - Button wrapper with state methods
-   * @param {string} tweetUrl - The tweet URL to tip
-   */
-  async function handleTweetTipClick(buttonWrapper, tweetUrl) {
-    // Check if extension context is valid
-    if (!isExtensionContextValid()) {
-      console.error("[Grove Extension] Extension context invalidated");
-      buttonWrapper.setError();
-      showInlineTipError(buttonWrapper.button, {
-        message: 'Extension was reloaded. Please refresh the page.',
-        variant: 'error'
-      });
-      return;
-    }
-
-    // Get settings from storage
-    let tipAmount = 0.02;
-    let confirmBeforeTipping = false;
-    let hasTipped = false;
-
-    try {
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        const result = await chrome.storage.local.get(['GROVE_TIP_AMOUNT', 'GROVE_CONFIRM_TIP', 'GROVE_HAS_TIPPED']);
-        tipAmount = result.GROVE_TIP_AMOUNT || 0.02;
-        confirmBeforeTipping = result.GROVE_CONFIRM_TIP || false;
-        hasTipped = result.GROVE_HAS_TIPPED || false;
-      }
-    } catch (error) {
-      console.error("[Grove Extension] Settings load failed:", error);
-      buttonWrapper.setError();
-      showInlineTipError(buttonWrapper.button, {
-        message: 'Extension was reloaded. Please refresh the page.',
-        variant: 'error'
-      });
-      return;
-    }
-
-    // If this is the user's first tip, show the first tip modal
-    if (!hasTipped) {
-      if (!firstTipModal) {
-        firstTipModal = new FirstTipModal();
-      }
-
-      firstTipModal.show(
-        buttonWrapper.button,
-        tipAmount,
-        confirmBeforeTipping,
-        async ({ amount, confirmBeforeTipping: newConfirmSetting }) => {
-          // Save preferences and mark as having tipped
-          try {
-            await chrome.storage.local.set({
-              'GROVE_TIP_AMOUNT': amount,
-              'GROVE_CONFIRM_TIP': newConfirmSetting,
-              'GROVE_HAS_TIPPED': true
-            });
-          } catch (e) {
-            console.error("[Grove Extension] Failed to save first tip preferences:", e);
-          }
-          // Send the tip
-          sendTweetTip(amount, buttonWrapper, tweetUrl);
-        },
-        () => {
-          console.log("[Grove Extension] First tip cancelled");
-        }
-      );
-      return;
-    }
-
-    // If confirmation disabled, send tip directly
-    if (!confirmBeforeTipping) {
-      sendTweetTip(tipAmount, buttonWrapper, tweetUrl);
-      return;
-    }
-
-    // Create popover if needed
-    if (!tipPopover) {
-      tipPopover = new TipPopover();
-    }
-
-    // Show popover with amount confirmation
-    tipPopover.show(
-      buttonWrapper.button,
-      tipAmount,
-      (confirmedAmount) => {
-        sendTweetTip(confirmedAmount, buttonWrapper, tweetUrl);
-      },
-      () => {
-        console.log("[Grove Extension] Tweet tip cancelled");
-      }
-    );
-  }
-
-  // DEFAULT_AUTO_REPLY_MESSAGE is loaded from src/ui/constants.js
-
-  /**
-   * Build auto-reply message from template
-   * buildAutoReplyMessage is imported from src/content/xFeatures.js
-   */
-
-  /**
-   * Send tip for a tweet
-   * @param {number} tipAmount - The amount to tip
-   * @param {Object} buttonWrapper - Button wrapper with state methods
-   * @param {string} tweetUrl - The tweet URL to tip
-   */
-  async function sendTweetTip(tipAmount, buttonWrapper, tweetUrl) {
-    buttonWrapper.setLoading(tipAmount);
-
-    // Check if extension context is valid before making API calls
-    if (!isExtensionContextValid()) {
-      console.error("[Grove Extension] Extension context invalidated");
-      buttonWrapper.setError();
-      showInlineTipError(buttonWrapper.button, {
-        message: 'Extension was reloaded. Please refresh the page.',
-        variant: 'error'
-      });
-      return;
-    }
-
-    // Get JWT and settings from storage
-    let jwt = '';
-    let autoReplyEnabled = true; // Default to true
-    let autoReplyMessage = DEFAULT_AUTO_REPLY_MESSAGE;
-    let likeOnTipEnabled = true; // Default to true
-    let chainName = 'Base Sepolia';
-    let explorerBaseUrl = 'https://sepolia.basescan.org/tx/';
-    let explorerSuffix = '';
-
-    try {
-
-      // Get JWT using dev mode-aware getter
-      jwt = await getActiveJWT() || '';
-
-      // Get other settings from storage
-      const result = await chrome.storage.local.get(['GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'GROVE_LIKE_ON_TIP', 'groveChain']);
-      // Auto-reply defaults to true (only false if explicitly set to false)
-      autoReplyEnabled = result.GROVE_AUTO_REPLY !== false;
-      autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
-      // Like on tip defaults to true
-      likeOnTipEnabled = result.GROVE_LIKE_ON_TIP !== false;
-      console.log('[Grove Extension] Storage loaded:', { hasJwt: !!jwt, autoReply: autoReplyEnabled, likeOnTip: likeOnTipEnabled, chain: result.groveChain });
-
-      // Get friendly chain name and explorer URL
-      // Normalize chain: replace underscores with hyphens, default to mainnet
-      const rawChain = result.groveChain || 'base';
-      const chain = rawChain.toLowerCase().replace(/_/g, '-');
-      const chainConfig = {
-        'base': { name: 'Base', explorer: 'https://basescan.org/tx/' },
-        'base-sepolia': { name: 'Base Sepolia', explorer: 'https://sepolia.basescan.org/tx/' }
-        // Solana chains commented out - Base/Base Sepolia only for now
-        // 'solana': { name: 'Solana', explorer: 'https://solscan.io/tx/' },
-        // 'solana-devnet': { name: 'Solana Devnet', explorer: 'https://solscan.io/tx/' }
-      };
-      const config = chainConfig[chain] || chainConfig['base'];
-      chainName = config.name;
-      explorerBaseUrl = config.explorer;
-      // Solana devnet cluster param commented out - Base/Base Sepolia only for now
-      // if (chain === 'solana-devnet') {
-      //   explorerBaseUrl = 'https://solscan.io/tx/';
-      //   explorerSuffix = '?cluster=devnet';
-      // }
-
-      if (!jwt) {
-        console.error("[Grove Extension] No API key configured. Try refreshing the page if you just reloaded the extension.");
-        buttonWrapper.setError();
-        showInlineTipError(buttonWrapper.button, {
-          message: 'Missing tipping key in the extension settings.',
-          variant: 'error'
-        });
-        return;
-      }
-    } catch (error) {
-      console.error("[Grove Extension] Settings load failed:", error);
-      buttonWrapper.setError();
-      showInlineTipError(buttonWrapper.button, {
-        message: error.message || 'Could not read settings. Refresh and try again.',
-        variant: 'error'
-      });
-      return;
-    }
-
-    // Determine tip destination: use cached address if available (from bio fetch)
-    // This is important because the backend won't know to look in the user's bio
-    let tipDestination = tweetUrl;
-    const username = extractUsernameFromUrl(tweetUrl);
-    if (username) {
-      const cached = getCachedAddress(username);
-      if (cached && cached.address) {
-        // Use the cached address directly (ENS name or 0x address)
-        tipDestination = cached.address;
-        console.log(`[Grove Extension] Tipping to ${cached.type} address: ${tipDestination} (from @${username})`);
-      }
-    }
-
-    // Build context metadata for the tip
-    // Note: sender_platform can be 'x' or 'twitter' - both map to X/Twitter
-    const context = {
-      source_post_url: tweetUrl,
-      sender_platform: 'x'
-    };
-    if (username) {
-      context.recipient_username = username;
-      context.recipient_profile_url = `https://x.com/${username}`;
-    }
-
-    // Add sender info if X is authenticated (from xFeatures.js)
-    if (typeof addXSenderInfo === 'function') {
-      await addXSenderInfo(context);
-    }
-
-    // Send tip via API with context
-    const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt, context);
-
-    let parsedError = null;
-    if (!response.success && typeof TipErrorHandler !== 'undefined') {
-      try {
-        parsedError = TipErrorHandler.parse(response);
-      } catch (e) {
-        console.error("[Grove Extension] Error parsing tip error:", e);
-      }
-    }
-
-    if (response.success) {
-      buttonWrapper.setSuccess();
-
-      // Like and/or reply if X features are enabled
-      if ((likeOnTipEnabled || autoReplyEnabled) && typeof XAuth !== 'undefined') {
-        try {
-          const tweetId = XAuth.extractTweetId(tweetUrl);
-          if (tweetId) {
-            const isLoggedIn = await XAuth.isLoggedIn();
-            if (isLoggedIn) {
-              let didLike = false;
-              let didReply = false;
-              let likeFailed = false;
-              let replyFailed = false;
-
-              // Like the tweet if enabled
-              if (likeOnTipEnabled) {
-                try {
-                  await XAuth.likeTweet(tweetId);
-                  console.log("[Grove Extension] Tweet liked successfully");
-                  didLike = true;
-                } catch (likeError) {
-                  // Don't fail if like fails (might already be liked or rate limited)
-                  console.error("[Grove Extension] Like failed:", likeError);
-                  likeFailed = true;
-                }
-              }
-
-              // Post auto-reply if enabled
-              if (autoReplyEnabled) {
-                const txHash = response.data?.tx_hash || '';
-                const txLink = `${explorerBaseUrl}${txHash}${explorerSuffix}`;
-
-                // Build reply text from template
-                const replyText = buildAutoReplyMessage(autoReplyMessage, {
-                  username: username,
-                  chain: chainName,
-                  tx_link: txLink,
-                  grove_link: 'grove.city'
-                });
-
-                try {
-                  await XAuth.postReply(tweetId, replyText);
-                  console.log("[Grove Extension] Auto-reply posted successfully");
-                  didReply = true;
-                } catch (replyError) {
-                  console.error("[Grove Extension] Reply failed:", replyError);
-                  replyFailed = true;
-                }
-              }
-
-              // Show feedback message based on what happened
-              // Delay slightly to let the success animation settle before positioning bubble
-              setTimeout(() => {
-                if (didLike || didReply) {
-                  // At least one action succeeded
-                  let message = '';
-                  if (didLike && didReply) {
-                    message = 'Liked & replied! Refresh to view.';
-                  } else if (didLike) {
-                    message = 'Post liked! Refresh to view.';
-                  } else if (didReply) {
-                    message = 'Reply sent! Refresh to view.';
-                  }
-                  showInlineTipError(buttonWrapper.button, { message, variant: 'success' });
-                } else if (likeFailed || replyFailed) {
-                  // All attempted actions failed - show warning
-                  let message = '';
-                  if (likeFailed && replyFailed) {
-                    message = 'Like & reply failed (rate limited?)';
-                  } else if (likeFailed) {
-                    message = 'Like failed (rate limited?)';
-                  } else if (replyFailed) {
-                    message = 'Reply failed (rate limited?)';
-                  }
-                  showInlineTipError(buttonWrapper.button, { message, variant: 'warning' });
-                }
-              }, 100);
-            } else {
-              console.log("[Grove Extension] X features skipped - not logged in to X");
-            }
-          }
-        } catch (error) {
-          // Don't fail the whole tip if X features fail
-          console.error("[Grove Extension] X features failed:", error);
-        }
-      }
-    } else {
-      console.error("[Grove Extension] Tweet tip failed:", response.error, response.data);
-      buttonWrapper.setError();
-      // Ensure we always have a message to show
-      const errorMessage = parsedError?.userMessage || parsedError?.message || response.error || 'Tip failed. Please try again.';
-      showInlineTipError(buttonWrapper.button, errorMessage);
-    }
-  }
-
-  // Use shared detectDarkMode from src/utils/darkMode.js if available
-  // The shared module is loaded before content.js in manifest.json
+  // Tweet tip button injection and tip flow is now handled by TweetTipHandler
+  // (src/content/tweetTipHandler.js)
 
   /**
    * Clean up when page changes
@@ -1639,6 +1146,9 @@
     }
     if (typeof HoverCardHandler !== 'undefined') {
       HoverCardHandler.stopObserving();
+    }
+    if (typeof TweetTipHandler !== 'undefined') {
+      TweetTipHandler.reset();
     }
     if (tweetObserver) {
       tweetObserver.disconnect();
