@@ -281,3 +281,8 @@ const LeaderboardRenderer = {
     return entries.map(entry => this.renderLiveTipEntry(entry, newTxHashes.has(entry.txHash))).join('');
   }
 };
+
+// Make globally available
+if (typeof window !== 'undefined') {
+  window.LeaderboardRenderer = LeaderboardRenderer;
+}
