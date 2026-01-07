@@ -20,7 +20,7 @@ var STORAGE_KEYS = {
   // User preferences
   TIP_AMOUNT: 'GROVE_TIP_AMOUNT',
   CONFIRM_TIP: 'GROVE_CONFIRM_TIP',
-  CONFIRM_TIP_V2: 'GROVE_CONFIRM_TIP_V2', // Migration flag to reset confirm default to true
+  CONFIRM_TIP_V3: 'GROVE_CONFIRM_TIP_V3', // Migration flag to reset confirm default to true
   AUTO_REPLY: 'GROVE_AUTO_REPLY',
   AUTO_REPLY_MESSAGE: 'GROVE_AUTO_REPLY_MESSAGE',
   LIKE_ON_TIP: 'GROVE_LIKE_ON_TIP',
