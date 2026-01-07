@@ -434,15 +434,42 @@
 
     // Get settings from storage
     let tipAmount = 0.02; // default
-    let confirmBeforeTipping = false; // default off
+    let confirmBeforeTipping = true; // default on
     let hasTipped = false; // whether user has tipped before
+    let likeOnTip = true;
+    let autoReply = true;
+    let isXConnected = false;
 
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        const result = await chrome.storage.local.get(['GROVE_TIP_AMOUNT', 'GROVE_CONFIRM_TIP', 'GROVE_HAS_TIPPED']);
+        const result = await chrome.storage.local.get([
+          'GROVE_TIP_AMOUNT',
+          'GROVE_CONFIRM_TIP',
+          'GROVE_CONFIRM_TIP_V2',
+          'GROVE_HAS_TIPPED',
+          'GROVE_LIKE_ON_TIP',
+          'GROVE_AUTO_REPLY'
+        ]);
         tipAmount = result.GROVE_TIP_AMOUNT || 0.02;
-        confirmBeforeTipping = result.GROVE_CONFIRM_TIP || false;
         hasTipped = result.GROVE_HAS_TIPPED || false;
+        likeOnTip = result.GROVE_LIKE_ON_TIP !== false;
+        autoReply = result.GROVE_AUTO_REPLY !== false;
+
+        // Migration logic: if V2 flag not set, reset confirm to true (new default)
+        if (!result.GROVE_CONFIRM_TIP_V2) {
+          confirmBeforeTipping = true;
+          await chrome.storage.local.set({
+            'GROVE_CONFIRM_TIP': true,
+            'GROVE_CONFIRM_TIP_V2': true
+          });
+        } else {
+          confirmBeforeTipping = result.GROVE_CONFIRM_TIP !== false;
+        }
+
+        // Check X connection status
+        if (typeof XAuth !== 'undefined') {
+          isXConnected = await XAuth.isLoggedIn();
+        }
       }
     } catch (error) {
       console.error("[Grove Extension] Settings load failed:", error);
@@ -482,6 +509,13 @@
       tipModal = new TipModal();
     }
 
+    // Build X options for modal
+    const xOptions = isXConnected ? {
+      isConnected: true,
+      likeOnTip: likeOnTip,
+      autoReply: autoReply
+    } : null;
+
     if (tipModal) {
       // Configure display based on whether this is the first tip
       const displayOptions = hasTipped
@@ -492,14 +526,22 @@
         buttonElement,
         tipAmount,
         true, // confirmBeforeTipping is always true here
-        async ({ amount, confirmBeforeTipping: newConfirmSetting }) => {
+        async ({ amount, confirmBeforeTipping: newConfirmSetting, likeOnTip: newLikeOnTip, autoReply: newAutoReply }) => {
           // Save preferences
           try {
-            await chrome.storage.local.set({
+            const saveData = {
               'GROVE_TIP_AMOUNT': amount,
               'GROVE_CONFIRM_TIP': newConfirmSetting,
               'GROVE_HAS_TIPPED': true
-            });
+            };
+            // Save X preferences if they were set (X is connected)
+            if (newLikeOnTip !== null) {
+              saveData['GROVE_LIKE_ON_TIP'] = newLikeOnTip;
+            }
+            if (newAutoReply !== null) {
+              saveData['GROVE_AUTO_REPLY'] = newAutoReply;
+            }
+            await chrome.storage.local.set(saveData);
           } catch (e) {
             console.error("[Grove Extension] Failed to save tip preferences:", e);
           }
@@ -509,7 +551,7 @@
         () => {
           console.log("[Grove Extension] Tip cancelled");
         },
-        null, // xOptions - not used for profile tips
+        xOptions,
         displayOptions
       );
     } else {
