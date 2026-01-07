@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { JSDOM } from 'jsdom';
 import { loadBrowserScript } from './helpers/load-script.js';
 
-let FirstTipModal;
+let TipModal;
 let context;
 let dom;
 
@@ -31,20 +31,20 @@ beforeEach(() => {
   // Load constants first (defines GROVE_COLORS)
   loadBrowserScript('src/ui/constants.js', context);
 
-  // Load firstTipModal (defines FirstTipModal)
-  loadBrowserScript('src/ui/firstTipModal.js', context);
+  // Load tipModal (defines TipModal)
+  loadBrowserScript('src/ui/tipModal.js', context);
 
-  FirstTipModal = context.FirstTipModal;
+  TipModal = context.TipModal;
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('FirstTipModal', () => {
+describe('TipModal', () => {
   describe('constructor', () => {
     it('should initialize with null values', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       expect(modal.modal).toBeNull();
       expect(modal.overlay).toBeNull();
       expect(modal.onConfirm).toBeNull();
@@ -54,7 +54,7 @@ describe('FirstTipModal', () => {
 
   describe('show', () => {
     it('should create modal and overlay elements', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
@@ -65,7 +65,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should display "Your First Tip!" title', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
@@ -75,7 +75,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should set default amount in input', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
@@ -85,30 +85,21 @@ describe('FirstTipModal', () => {
       expect(input.value).toBe('0.50');
     });
 
-    it('should set checkbox based on currentConfirmSetting true', () => {
-      const modal = new FirstTipModal();
+    it('should always have checkbox checked (modal only shows when confirmation enabled)', () => {
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
-      modal.show(anchor, 0.10, true, () => {}, () => {});
+      // Checkbox is always checked regardless of currentConfirmSetting
+      // because this modal only appears when confirmation is enabled
+      modal.show(anchor, 0.10, false, () => {}, () => {});
 
       const checkbox = context.document.querySelector('input[type="checkbox"]');
       expect(checkbox.checked).toBe(true);
     });
 
-    it('should not check checkbox when currentConfirmSetting is false', () => {
-      const modal = new FirstTipModal();
-      const anchor = context.document.createElement('button');
-      context.document.body.appendChild(anchor);
-
-      modal.show(anchor, 0.10, false, () => {}, () => {});
-
-      const checkbox = context.document.querySelector('input[type="checkbox"]');
-      expect(checkbox.checked).toBe(false);
-    });
-
     it('should display helper text about default amount', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
@@ -119,7 +110,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should store callbacks', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       const confirmCb = vi.fn();
       const cancelCb = vi.fn();
@@ -132,7 +123,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should remove existing modal before creating new one', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
@@ -146,7 +137,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should add animation keyframes to document', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
@@ -156,7 +147,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should have overlay with semi-transparent background', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
@@ -167,32 +158,59 @@ describe('FirstTipModal', () => {
   });
 
   describe('confirm', () => {
-    it('should call onConfirm with amount and confirmBeforeTipping', () => {
-      const modal = new FirstTipModal();
+    it('should call onConfirm with amount, confirmBeforeTipping, and X actions', () => {
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       const confirmCb = vi.fn();
       context.document.body.appendChild(anchor);
 
       modal.show(anchor, 0.10, false, confirmCb, () => {});
-      modal.confirm(0.25, true);
+      modal.confirm(0.25, true, null, null);
 
-      expect(confirmCb).toHaveBeenCalledWith({ amount: 0.25, confirmBeforeTipping: true });
+      expect(confirmCb).toHaveBeenCalledWith({
+        amount: 0.25,
+        confirmBeforeTipping: true,
+        likeOnTip: null,
+        autoReply: null,
+      });
     });
 
     it('should pass false for confirmBeforeTipping when checkbox unchecked', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       const confirmCb = vi.fn();
       context.document.body.appendChild(anchor);
 
       modal.show(anchor, 0.10, false, confirmCb, () => {});
-      modal.confirm(0.10, false);
+      modal.confirm(0.10, false, null, null);
 
-      expect(confirmCb).toHaveBeenCalledWith({ amount: 0.10, confirmBeforeTipping: false });
+      expect(confirmCb).toHaveBeenCalledWith({
+        amount: 0.10,
+        confirmBeforeTipping: false,
+        likeOnTip: null,
+        autoReply: null,
+      });
+    });
+
+    it('should include X actions in callback when provided', () => {
+      const modal = new TipModal();
+      const anchor = context.document.createElement('button');
+      const confirmCb = vi.fn();
+      context.document.body.appendChild(anchor);
+
+      modal.show(anchor, 0.10, false, confirmCb, () => {});
+      modal.confirm(0.50, true, true, false);
+
+      expect(confirmCb).toHaveBeenCalledWith({
+        amount: 0.50,
+        confirmBeforeTipping: true,
+        likeOnTip: true,
+        autoReply: false,
+      });
     });
 
     it('should hide modal after confirm', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
@@ -203,7 +221,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should enforce minimum amount of 0.01', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       const confirmCb = vi.fn();
       context.document.body.appendChild(anchor);
@@ -211,11 +229,16 @@ describe('FirstTipModal', () => {
       modal.show(anchor, 0.10, false, confirmCb, () => {});
       modal.confirm(0, false);
 
-      expect(confirmCb).toHaveBeenCalledWith({ amount: 0.01, confirmBeforeTipping: false });
+      expect(confirmCb).toHaveBeenCalledWith({
+        amount: 0.01,
+        confirmBeforeTipping: false,
+        likeOnTip: null,
+        autoReply: null,
+      });
     });
 
     it('should enforce minimum for negative amounts', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       const confirmCb = vi.fn();
       context.document.body.appendChild(anchor);
@@ -223,13 +246,18 @@ describe('FirstTipModal', () => {
       modal.show(anchor, 0.10, false, confirmCb, () => {});
       modal.confirm(-5, true);
 
-      expect(confirmCb).toHaveBeenCalledWith({ amount: 0.01, confirmBeforeTipping: true });
+      expect(confirmCb).toHaveBeenCalledWith({
+        amount: 0.01,
+        confirmBeforeTipping: true,
+        likeOnTip: null,
+        autoReply: null,
+      });
     });
   });
 
   describe('cancel', () => {
     it('should call onCancel callback', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       const cancelCb = vi.fn();
       context.document.body.appendChild(anchor);
@@ -241,7 +269,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should hide modal after cancel', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
@@ -254,7 +282,7 @@ describe('FirstTipModal', () => {
 
   describe('hide', () => {
     it('should remove modal from DOM', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
@@ -265,7 +293,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should remove overlay from DOM', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
@@ -276,7 +304,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should clear callbacks', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
@@ -288,7 +316,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should set references to null', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
@@ -300,7 +328,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should handle being called when not shown', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
 
       expect(() => modal.hide()).not.toThrow();
     });
@@ -308,7 +336,7 @@ describe('FirstTipModal', () => {
 
   describe('overlay click', () => {
     it('should cancel modal when overlay clicked', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       const cancelCb = vi.fn();
       context.document.body.appendChild(anchor);
@@ -322,7 +350,7 @@ describe('FirstTipModal', () => {
 
   describe('input keyboard events', () => {
     it('should confirm on Enter key', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       const confirmCb = vi.fn();
       context.document.body.appendChild(anchor);
@@ -337,7 +365,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should cancel on Escape key', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       const cancelCb = vi.fn();
       context.document.body.appendChild(anchor);
@@ -352,7 +380,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should use input value and checkbox state when confirming via Enter', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       const confirmCb = vi.fn();
       context.document.body.appendChild(anchor);
@@ -367,13 +395,18 @@ describe('FirstTipModal', () => {
       const event = new dom.window.KeyboardEvent('keydown', { key: 'Enter' });
       input.dispatchEvent(event);
 
-      expect(confirmCb).toHaveBeenCalledWith({ amount: 0.75, confirmBeforeTipping: true });
+      expect(confirmCb).toHaveBeenCalledWith({
+        amount: 0.75,
+        confirmBeforeTipping: true,
+        likeOnTip: null,
+        autoReply: null,
+      });
     });
   });
 
   describe('position', () => {
     it('should position modal below and centered on anchor', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       anchor.getBoundingClientRect = vi.fn(() => ({
         top: 100,
@@ -397,7 +430,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should handle missing anchor gracefully', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
       modal.show(anchor, 0.10, false, () => {}, () => {});
@@ -406,7 +439,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should adjust when near right edge', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       anchor.getBoundingClientRect = vi.fn(() => ({
         top: 100,
@@ -431,7 +464,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should position above anchor when near bottom', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       anchor.getBoundingClientRect = vi.fn(() => ({
         top: 600,
@@ -456,7 +489,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should ensure modal stays on screen to the left', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       anchor.getBoundingClientRect = vi.fn(() => ({
         top: 100,
@@ -480,7 +513,7 @@ describe('FirstTipModal', () => {
     });
 
     it('should ensure modal stays on screen at the top', () => {
-      const modal = new FirstTipModal();
+      const modal = new TipModal();
       const anchor = context.document.createElement('button');
       anchor.getBoundingClientRect = vi.fn(() => ({
         top: 50,
@@ -504,6 +537,171 @@ describe('FirstTipModal', () => {
       // Since bottom positioning would overflow and top positioning would go negative,
       // it should clamp to minimum 16
       expect(parseInt(modal.modal.style.top)).toBeGreaterThanOrEqual(16);
+    });
+  });
+
+  describe('xOptions', () => {
+    it('should show X actions section when X is connected', () => {
+      const modal = new TipModal();
+      const anchor = context.document.createElement('button');
+      context.document.body.appendChild(anchor);
+
+      modal.show(anchor, 0.10, false, () => {}, () => {}, {
+        isConnected: true,
+        likeOnTip: true,
+        autoReply: true,
+      });
+
+      expect(modal.modal.textContent).toContain('𝕏 Actions');
+      expect(modal.modal.textContent).toContain('Like this post');
+      expect(modal.modal.textContent).toContain('Reply to this post');
+    });
+
+    it('should not show X actions section when X is not connected', () => {
+      const modal = new TipModal();
+      const anchor = context.document.createElement('button');
+      context.document.body.appendChild(anchor);
+
+      modal.show(anchor, 0.10, false, () => {}, () => {}, {
+        isConnected: false,
+        likeOnTip: true,
+        autoReply: true,
+      });
+
+      expect(modal.modal.textContent).not.toContain('𝕏 Actions');
+    });
+
+    it('should not show X actions section when xOptions is null', () => {
+      const modal = new TipModal();
+      const anchor = context.document.createElement('button');
+      context.document.body.appendChild(anchor);
+
+      modal.show(anchor, 0.10, false, () => {}, () => {}, null);
+
+      expect(modal.modal.textContent).not.toContain('𝕏 Actions');
+    });
+
+    it('should check like checkbox based on likeOnTip setting', () => {
+      const modal = new TipModal();
+      const anchor = context.document.createElement('button');
+      context.document.body.appendChild(anchor);
+
+      modal.show(anchor, 0.10, false, () => {}, () => {}, {
+        isConnected: true,
+        likeOnTip: false,
+        autoReply: true,
+      });
+
+      // Find all checkboxes - first is confirm, second is like, third is reply
+      const checkboxes = context.document.querySelectorAll('input[type="checkbox"]');
+      // Like checkbox is the second one (index 1)
+      expect(checkboxes[1].checked).toBe(false);
+    });
+
+    it('should check reply checkbox based on autoReply setting', () => {
+      const modal = new TipModal();
+      const anchor = context.document.createElement('button');
+      context.document.body.appendChild(anchor);
+
+      modal.show(anchor, 0.10, false, () => {}, () => {}, {
+        isConnected: true,
+        likeOnTip: true,
+        autoReply: false,
+      });
+
+      // Find all checkboxes - first is confirm, second is like, third is reply
+      const checkboxes = context.document.querySelectorAll('input[type="checkbox"]');
+      // Reply checkbox is the third one (index 2)
+      expect(checkboxes[2].checked).toBe(false);
+    });
+  });
+
+  describe('displayOptions', () => {
+    it('should show custom title when provided', () => {
+      const modal = new TipModal();
+      const anchor = context.document.createElement('button');
+      context.document.body.appendChild(anchor);
+
+      modal.show(anchor, 0.10, false, () => {}, () => {}, null, {
+        title: 'Confirm Tip',
+      });
+
+      expect(modal.modal.textContent).toContain('Confirm Tip');
+      expect(modal.modal.textContent).not.toContain('Your First Tip!');
+    });
+
+    it('should hide confirm checkbox when showConfirmCheckbox is false', () => {
+      const modal = new TipModal();
+      const anchor = context.document.createElement('button');
+      context.document.body.appendChild(anchor);
+
+      modal.show(anchor, 0.10, false, () => {}, () => {}, null, {
+        showConfirmCheckbox: false,
+      });
+
+      expect(modal.modal.textContent).not.toContain('Always confirm before tipping');
+    });
+
+    it('should show confirm checkbox by default', () => {
+      const modal = new TipModal();
+      const anchor = context.document.createElement('button');
+      context.document.body.appendChild(anchor);
+
+      modal.show(anchor, 0.10, false, () => {}, () => {});
+
+      expect(modal.modal.textContent).toContain('Always confirm before tipping');
+    });
+
+    it('should hide like checkbox for profile tips', () => {
+      const modal = new TipModal();
+      const anchor = context.document.createElement('button');
+      context.document.body.appendChild(anchor);
+
+      modal.show(anchor, 0.10, false, () => {}, () => {}, {
+        isConnected: true,
+        likeOnTip: true,
+        autoReply: true,
+      }, {
+        isProfileTip: true,
+      });
+
+      expect(modal.modal.textContent).not.toContain('Like this post');
+      // Reply option should still be shown
+      expect(modal.modal.textContent).toContain('Let them know');
+    });
+
+    it('should show "Let @username know" for profile tips with username', () => {
+      const modal = new TipModal();
+      const anchor = context.document.createElement('button');
+      context.document.body.appendChild(anchor);
+
+      modal.show(anchor, 0.10, false, () => {}, () => {}, {
+        isConnected: true,
+        likeOnTip: true,
+        autoReply: true,
+      }, {
+        isProfileTip: true,
+        recipientUsername: 'vitalik',
+      });
+
+      expect(modal.modal.textContent).toContain('Let @vitalik know');
+    });
+
+    it('should show "Let @username know" for tweet tips with username', () => {
+      const modal = new TipModal();
+      const anchor = context.document.createElement('button');
+      context.document.body.appendChild(anchor);
+
+      modal.show(anchor, 0.10, false, () => {}, () => {}, {
+        isConnected: true,
+        likeOnTip: true,
+        autoReply: true,
+      }, {
+        isProfileTip: false,
+        recipientUsername: 'sassal',
+      });
+
+      expect(modal.modal.textContent).toContain('Let @sassal know');
     });
   });
 });

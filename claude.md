@@ -371,3 +371,40 @@ After generating the adapter code:
 - [ ] Add platform-specific styles in `src/ui/styles.css`
 - [ ] Update `manifest.json` with URL patterns and content scripts
 - [ ] Test on multiple pages/profiles on the platform
+
+## Testing
+
+Tests are located in the `tests/` directory and use Vitest.
+
+### Running Tests
+
+```bash
+npm test
+```
+
+### Testing Requirements
+
+**Every PR should include appropriate test changes:**
+
+- When adding new features: Add tests for the new functionality
+- When modifying existing code: Update relevant tests to match new behavior
+- When removing code: Remove or update tests that depended on the removed code
+- When fixing bugs: Add a test that would have caught the bug
+
+### Test File Naming
+
+Test files should match their source files:
+- `src/ui/tipModal.js` → `tests/tipModal.test.js`
+- `src/parsers/address.js` → `tests/address.test.js`
+
+### Browser Script Testing
+
+Since content scripts run in a browser context, tests use a helper to load scripts into a simulated DOM environment:
+
+```javascript
+import { loadBrowserScript } from './helpers/load-script.js';
+
+// Load dependencies first, then the script under test
+loadBrowserScript('src/ui/constants.js', context);
+loadBrowserScript('src/ui/tipModal.js', context);
+```
