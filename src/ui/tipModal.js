@@ -296,7 +296,7 @@ class TipModal {
         text-transform: uppercase;
         letter-spacing: 0.5px;
       `;
-      xHeader.textContent = 'X Actions';
+      xHeader.textContent = '𝕏 Actions';
       xActionsContainer.appendChild(xHeader);
 
       // Like checkbox
