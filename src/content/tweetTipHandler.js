@@ -6,8 +6,7 @@
 
 const TweetTipHandler = {
   // UI instances
-  tipPopover: null,
-  firstTipModal: null,
+  tipModal: null,
 
   // Colors (set from GROVE_COLORS)
   colors: {
@@ -50,13 +49,9 @@ const TweetTipHandler = {
    * Reset state (useful for cleanup)
    */
   reset() {
-    if (this.tipPopover) {
-      this.tipPopover.hide();
-      this.tipPopover = null;
-    }
-    if (this.firstTipModal) {
-      this.firstTipModal.hide();
-      this.firstTipModal = null;
+    if (this.tipModal) {
+      this.tipModal.hide();
+      this.tipModal = null;
     }
   },
 
@@ -362,18 +357,18 @@ const TweetTipHandler = {
       return;
     }
 
-    // Show confirmation modal (FirstTipModal for all confirmed tips)
-    if (!this.firstTipModal && typeof FirstTipModal !== 'undefined') {
-      this.firstTipModal = new FirstTipModal();
+    // Show confirmation modal
+    if (!this.tipModal && typeof TipModal !== 'undefined') {
+      this.tipModal = new TipModal();
     }
 
-    if (this.firstTipModal) {
+    if (this.tipModal) {
       // Configure display based on whether this is the first tip
       const displayOptions = hasTipped
         ? { title: 'Confirm Tip', showConfirmCheckbox: true }
         : { title: 'Your First Tip!', showConfirmCheckbox: true };
 
-      this.firstTipModal.show(
+      this.tipModal.show(
         buttonWrapper.button,
         tipAmount,
         confirmBeforeTipping,

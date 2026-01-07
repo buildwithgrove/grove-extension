@@ -1,30 +1,37 @@
 /**
- * Tip Popover UI
- * Shows a confirmation popover with editable tip amount
+ * Tip Modal UI
+ * Shows a confirmation modal for tips, allowing users to:
+ * - Set/edit the tip amount
+ * - Choose whether to always confirm before tipping
+ * - Select X actions (like/reply) when X is connected
  * Requires: src/ui/constants.js
  */
 
-class TipPopover {
+class TipModal {
   constructor() {
-    this.popover = null;
+    this.modal = null;
     this.overlay = null;
     this.onConfirm = null;
     this.onCancel = null;
   }
 
   /**
-   * Show the popover near the button
+   * Show the tip modal
    * @param {HTMLElement} anchorElement - The button to position near
    * @param {number} defaultAmount - The default tip amount
-   * @param {Function} onConfirm - Callback when tip is confirmed, receives { amount, likeOnTip, autoReply }
+   * @param {boolean} currentConfirmSetting - Current confirm before tipping setting
+   * @param {Function} onConfirm - Callback when confirmed, receives { amount, confirmBeforeTipping, likeOnTip, autoReply }
    * @param {Function} onCancel - Callback when cancelled
    * @param {Object} xOptions - X integration options
    * @param {boolean} xOptions.isConnected - Whether X is connected
    * @param {boolean} xOptions.likeOnTip - Current like on tip setting
    * @param {boolean} xOptions.autoReply - Current auto reply setting
+   * @param {Object} displayOptions - Display options
+   * @param {string} displayOptions.title - Modal title (default: "Your First Tip!")
+   * @param {boolean} displayOptions.showConfirmCheckbox - Whether to show the confirm checkbox (default: true)
    */
-  show(anchorElement, defaultAmount, onConfirm, onCancel, xOptions = null) {
-    // Remove any existing popover
+  show(anchorElement, defaultAmount, currentConfirmSetting, onConfirm, onCancel, xOptions = null, displayOptions = null) {
+    // Remove any existing modal
     this.hide();
 
     this.onConfirm = onConfirm;
@@ -32,7 +39,7 @@ class TipPopover {
 
     // Create overlay for clicking outside to close
     this.overlay = document.createElement('div');
-    this.overlay.className = 'grove-popover-overlay';
+    this.overlay.className = 'grove-first-tip-overlay';
     this.overlay.style.cssText = `
       position: fixed;
       top: 0;
@@ -40,6 +47,7 @@ class TipPopover {
       right: 0;
       bottom: 0;
       z-index: 999998;
+      background: rgba(0, 0, 0, 0.5);
     `;
     this.overlay.addEventListener('click', (e) => {
       e.preventDefault();
@@ -47,30 +55,31 @@ class TipPopover {
       this.cancel();
     });
 
-    // Create popover container
-    this.popover = document.createElement('div');
-    this.popover.className = 'grove-tip-popover';
-    this.popover.style.cssText = `
+    // Create modal container
+    this.modal = document.createElement('div');
+    this.modal.className = 'grove-first-tip-modal';
+    this.modal.style.cssText = `
       position: fixed;
       z-index: 999999;
       background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
       border: 2px solid ${GROVE_COLORS.primary};
-      border-radius: 12px;
-      padding: 12px;
+      border-radius: 16px;
+      padding: 20px 24px;
+      width: 320px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(56, 159, 88, 0.1);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      animation: grove-popover-in 0.15s ease-out;
+      animation: grove-modal-in 0.2s ease-out;
     `;
 
     // Add keyframe animation
-    if (!document.querySelector('#grove-popover-animation')) {
+    if (!document.querySelector('#grove-first-tip-animation')) {
       const style = document.createElement('style');
-      style.id = 'grove-popover-animation';
+      style.id = 'grove-first-tip-animation';
       style.textContent = `
-        @keyframes grove-popover-in {
+        @keyframes grove-modal-in {
           from {
             opacity: 0;
-            transform: translateY(-8px) scale(0.95);
+            transform: translateY(-12px) scale(0.95);
           }
           to {
             opacity: 1;
@@ -81,21 +90,25 @@ class TipPopover {
       document.head.appendChild(style);
     }
 
+    // Parse display options
+    const modalTitle = displayOptions?.title || 'Your First Tip!';
+    const showConfirmCheckbox = displayOptions?.showConfirmCheckbox !== false;
+
     // Create header
     const header = document.createElement('div');
     header.style.cssText = `
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 8px;
+      margin-bottom: 16px;
     `;
 
     const title = document.createElement('span');
-    title.textContent = 'Send Tip';
+    title.textContent = modalTitle;
     title.style.cssText = `
       color: #ffffff;
-      font-weight: 600;
-      font-size: 14px;
+      font-weight: 700;
+      font-size: 16px;
     `;
 
     const closeBtn = document.createElement('button');
@@ -104,7 +117,7 @@ class TipPopover {
       background: none;
       border: none;
       color: rgba(255, 255, 255, 0.5);
-      font-size: 20px;
+      font-size: 22px;
       cursor: pointer;
       padding: 0;
       line-height: 1;
@@ -125,6 +138,19 @@ class TipPopover {
     header.appendChild(title);
     header.appendChild(closeBtn);
 
+    // Create amount label
+    const amountLabel = document.createElement('label');
+    amountLabel.textContent = 'Tip Amount';
+    amountLabel.style.cssText = `
+      display: block;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    `;
+
     // Create amount input group
     const inputGroup = document.createElement('div');
     inputGroup.style.cssText = `
@@ -133,8 +159,8 @@ class TipPopover {
       background: #000;
       border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 8px;
-      padding: 6px 10px;
-      margin-bottom: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
       transition: border-color 0.2s;
     `;
 
@@ -142,9 +168,9 @@ class TipPopover {
     currencySymbol.textContent = '$';
     currencySymbol.style.cssText = `
       color: rgba(255, 255, 255, 0.5);
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 500;
-      margin-right: 4px;
+      margin-right: 6px;
     `;
 
     const input = document.createElement('input');
@@ -156,13 +182,13 @@ class TipPopover {
       background: transparent;
       border: none;
       color: #fff;
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 500;
-      width: 80px;
+      width: 100%;
       outline: none;
       -moz-appearance: textfield;
     `;
-    // Remove spinner buttons
+
     input.addEventListener('focus', () => {
       inputGroup.style.borderColor = GROVE_COLORS.primary;
       input.select();
@@ -175,6 +201,7 @@ class TipPopover {
         e.preventDefault();
         this.confirm(
           parseFloat(input.value) || defaultAmount,
+          confirmCheckbox.checked,
           likeCheckbox ? likeCheckbox.checked : null,
           replyCheckbox ? replyCheckbox.checked : null
         );
@@ -187,6 +214,57 @@ class TipPopover {
     inputGroup.appendChild(currencySymbol);
     inputGroup.appendChild(input);
 
+    // Create helper text
+    const helperText = document.createElement('p');
+    helperText.style.cssText = `
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 12px;
+      margin: 0 0 18px 0;
+      line-height: 1.4;
+    `;
+    helperText.textContent = 'This will be your default tip amount. You can change it anytime in the extension settings.';
+
+    // Create checkbox container
+    const checkboxContainer = document.createElement('label');
+    checkboxContainer.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      transition: background 0.2s;
+    `;
+    checkboxContainer.addEventListener('mouseenter', () => {
+      checkboxContainer.style.background = 'rgba(255, 255, 255, 0.06)';
+    });
+    checkboxContainer.addEventListener('mouseleave', () => {
+      checkboxContainer.style.background = 'rgba(255, 255, 255, 0.03)';
+    });
+
+    const confirmCheckbox = document.createElement('input');
+    confirmCheckbox.type = 'checkbox';
+    confirmCheckbox.checked = currentConfirmSetting;
+    confirmCheckbox.style.cssText = `
+      width: 16px;
+      height: 16px;
+      accent-color: ${GROVE_COLORS.primary};
+      cursor: pointer;
+      flex-shrink: 0;
+    `;
+
+    const checkboxLabel = document.createElement('span');
+    checkboxLabel.textContent = 'Always confirm before tipping';
+    checkboxLabel.style.cssText = `
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 13px;
+    `;
+
+    checkboxContainer.appendChild(confirmCheckbox);
+    checkboxContainer.appendChild(checkboxLabel);
+
     // Create X actions section (only if X is connected)
     let likeCheckbox = null;
     let replyCheckbox = null;
@@ -195,8 +273,8 @@ class TipPopover {
     if (xOptions && xOptions.isConnected) {
       xActionsContainer = document.createElement('div');
       xActionsContainer.style.cssText = `
-        margin-bottom: 10px;
-        padding: 10px 12px;
+        margin-bottom: 20px;
+        padding: 12px 14px;
         background: rgba(255, 255, 255, 0.03);
         border-radius: 8px;
         border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -208,9 +286,9 @@ class TipPopover {
         display: flex;
         align-items: center;
         gap: 6px;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         color: rgba(255, 255, 255, 0.5);
-        font-size: 10px;
+        font-size: 11px;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -223,17 +301,17 @@ class TipPopover {
       likeContainer.style.cssText = `
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         cursor: pointer;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
       `;
 
       likeCheckbox = document.createElement('input');
       likeCheckbox.type = 'checkbox';
       likeCheckbox.checked = xOptions.likeOnTip !== false;
       likeCheckbox.style.cssText = `
-        width: 14px;
-        height: 14px;
+        width: 16px;
+        height: 16px;
         accent-color: ${GROVE_COLORS.primary};
         cursor: pointer;
         flex-shrink: 0;
@@ -243,7 +321,7 @@ class TipPopover {
       likeLabel.textContent = 'Like this post';
       likeLabel.style.cssText = `
         color: rgba(255, 255, 255, 0.85);
-        font-size: 12px;
+        font-size: 13px;
       `;
 
       likeContainer.appendChild(likeCheckbox);
@@ -255,7 +333,7 @@ class TipPopover {
       replyContainer.style.cssText = `
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         cursor: pointer;
       `;
 
@@ -263,8 +341,8 @@ class TipPopover {
       replyCheckbox.type = 'checkbox';
       replyCheckbox.checked = xOptions.autoReply !== false;
       replyCheckbox.style.cssText = `
-        width: 14px;
-        height: 14px;
+        width: 16px;
+        height: 16px;
         accent-color: ${GROVE_COLORS.primary};
         cursor: pointer;
         flex-shrink: 0;
@@ -274,7 +352,7 @@ class TipPopover {
       replyLabel.textContent = 'Reply to this post';
       replyLabel.style.cssText = `
         color: rgba(255, 255, 255, 0.85);
-        font-size: 12px;
+        font-size: 13px;
       `;
 
       replyContainer.appendChild(replyCheckbox);
@@ -296,9 +374,9 @@ class TipPopover {
       border: 2px solid ${GROVE_COLORS.primary};
       border-radius: 9999px;
       color: #fff;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
-      padding: 8px 20px;
+      padding: 12px 32px;
       cursor: pointer;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       box-shadow: 0 2px 8px ${GROVE_COLORS.shadow};
@@ -306,7 +384,7 @@ class TipPopover {
       overflow: hidden;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
     `;
 
     // Create text span
@@ -359,6 +437,7 @@ class TipPopover {
       e.stopPropagation();
       this.confirm(
         parseFloat(input.value) || defaultAmount,
+        confirmCheckbox.checked,
         likeCheckbox ? likeCheckbox.checked : null,
         replyCheckbox ? replyCheckbox.checked : null
       );
@@ -366,19 +445,24 @@ class TipPopover {
 
     sendBtnContainer.appendChild(sendBtn);
 
-    // Assemble popover
-    this.popover.appendChild(header);
-    this.popover.appendChild(inputGroup);
-    if (xActionsContainer) {
-      this.popover.appendChild(xActionsContainer);
+    // Assemble modal
+    this.modal.appendChild(header);
+    this.modal.appendChild(amountLabel);
+    this.modal.appendChild(inputGroup);
+    this.modal.appendChild(helperText);
+    if (showConfirmCheckbox) {
+      this.modal.appendChild(checkboxContainer);
     }
-    this.popover.appendChild(sendBtnContainer);
+    if (xActionsContainer) {
+      this.modal.appendChild(xActionsContainer);
+    }
+    this.modal.appendChild(sendBtnContainer);
 
     // Add to DOM
     document.body.appendChild(this.overlay);
-    document.body.appendChild(this.popover);
+    document.body.appendChild(this.modal);
 
-    // Position popover near anchor element
+    // Position modal near anchor element
     this.position(anchorElement);
 
     // Focus the input
@@ -386,28 +470,28 @@ class TipPopover {
   }
 
   /**
-   * Position the popover near the anchor element
+   * Position the modal near the anchor element
    * @param {HTMLElement} anchorElement
    */
   position(anchorElement) {
-    if (!this.popover || !anchorElement) return;
+    if (!this.modal || !anchorElement) return;
 
     const rect = anchorElement.getBoundingClientRect();
-    const popoverRect = this.popover.getBoundingClientRect();
+    const modalRect = this.modal.getBoundingClientRect();
 
-    // Default: position below and aligned to the left of the button
-    let top = rect.bottom + 8;
-    let left = rect.left;
+    // Default: position below and centered on the button
+    let top = rect.bottom + 12;
+    let left = rect.left + (rect.width / 2) - (modalRect.width / 2);
 
-    // Adjust if popover would go off-screen to the right
-    if (left + popoverRect.width > window.innerWidth - 16) {
-      left = window.innerWidth - popoverRect.width - 16;
+    // Adjust if modal would go off-screen to the right
+    if (left + modalRect.width > window.innerWidth - 16) {
+      left = window.innerWidth - modalRect.width - 16;
     }
 
-    // Adjust if popover would go off-screen at the bottom
-    if (top + popoverRect.height > window.innerHeight - 16) {
+    // Adjust if modal would go off-screen at the bottom
+    if (top + modalRect.height > window.innerHeight - 16) {
       // Position above the button instead
-      top = rect.top - popoverRect.height - 8;
+      top = rect.top - modalRect.height - 12;
     }
 
     // Ensure not off-screen to the left
@@ -415,29 +499,35 @@ class TipPopover {
       left = 16;
     }
 
-    this.popover.style.top = `${top}px`;
-    this.popover.style.left = `${left}px`;
+    // Ensure not off-screen at the top
+    if (top < 16) {
+      top = 16;
+    }
+
+    this.modal.style.top = `${top}px`;
+    this.modal.style.left = `${left}px`;
   }
 
   /**
-   * Confirm the tip with the given amount and X options
+   * Confirm the first tip with settings
    * @param {number} amount - The tip amount
+   * @param {boolean} confirmBeforeTipping - Whether to always confirm
    * @param {boolean|null} likeOnTip - Whether to like the post (null if X not connected)
    * @param {boolean|null} autoReply - Whether to reply to the post (null if X not connected)
    */
-  confirm(amount, likeOnTip = null, autoReply = null) {
+  confirm(amount, confirmBeforeTipping, likeOnTip = null, autoReply = null) {
     if (amount <= 0) {
       amount = 0.01;
     }
     const callback = this.onConfirm;
     this.hide();
     if (callback) {
-      callback({ amount, likeOnTip, autoReply });
+      callback({ amount, confirmBeforeTipping, likeOnTip, autoReply });
     }
   }
 
   /**
-   * Cancel and close the popover
+   * Cancel and close the modal
    */
   cancel() {
     const callback = this.onCancel;
@@ -448,16 +538,16 @@ class TipPopover {
   }
 
   /**
-   * Hide and remove the popover
+   * Hide and remove the modal
    */
   hide() {
     if (this.overlay) {
       this.overlay.remove();
       this.overlay = null;
     }
-    if (this.popover) {
-      this.popover.remove();
-      this.popover = null;
+    if (this.modal) {
+      this.modal.remove();
+      this.modal = null;
     }
     this.onConfirm = null;
     this.onCancel = null;
@@ -466,5 +556,7 @@ class TipPopover {
 
 // Make globally available
 if (typeof window !== 'undefined') {
-  window.TipPopover = TipPopover;
+  window.TipModal = TipModal;
+  // Alias for backward compatibility
+  window.FirstTipModal = TipModal;
 }
