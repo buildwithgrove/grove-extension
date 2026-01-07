@@ -29,6 +29,7 @@ class TipModal {
    * @param {Object} displayOptions - Display options
    * @param {string} displayOptions.title - Modal title (default: "Your First Tip!")
    * @param {boolean} displayOptions.showConfirmCheckbox - Whether to show the confirm checkbox (default: true)
+   * @param {boolean} displayOptions.isProfileTip - Whether this is a profile tip (changes X action labels)
    */
   show(anchorElement, defaultAmount, currentConfirmSetting, onConfirm, onCancel, xOptions = null, displayOptions = null) {
     // Remove any existing modal
@@ -93,6 +94,7 @@ class TipModal {
     // Parse display options
     const modalTitle = displayOptions?.title || 'Your First Tip!';
     const showConfirmCheckbox = displayOptions?.showConfirmCheckbox !== false;
+    const isProfileTip = displayOptions?.isProfileTip || false;
 
     // Create header
     const header = document.createElement('div');
@@ -327,9 +329,12 @@ class TipModal {
 
       likeContainer.appendChild(likeCheckbox);
       likeContainer.appendChild(likeLabel);
-      xActionsContainer.appendChild(likeContainer);
+      // Only show like option for tweet tips (not profile tips)
+      if (!isProfileTip) {
+        xActionsContainer.appendChild(likeContainer);
+      }
 
-      // Reply checkbox
+      // Reply/Tweet checkbox
       const replyContainer = document.createElement('label');
       replyContainer.style.cssText = `
         display: flex;
@@ -350,7 +355,8 @@ class TipModal {
       `;
 
       const replyLabel = document.createElement('span');
-      replyLabel.textContent = 'Reply to this post';
+      // Different label for profile tips vs tweet tips
+      replyLabel.textContent = isProfileTip ? 'Post a tweet' : 'Reply to this post';
       replyLabel.style.cssText = `
         color: rgba(255, 255, 255, 0.85);
         font-size: 13px;

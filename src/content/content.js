@@ -519,8 +519,8 @@
     if (tipModal) {
       // Configure display based on whether this is the first tip
       const displayOptions = hasTipped
-        ? { title: 'Confirm Tip', showConfirmCheckbox: true }
-        : { title: 'Your First Tip!', showConfirmCheckbox: true };
+        ? { title: 'Confirm Tip', showConfirmCheckbox: true, isProfileTip: true }
+        : { title: 'Your First Tip!', showConfirmCheckbox: true, isProfileTip: true };
 
       tipModal.show(
         buttonElement,
