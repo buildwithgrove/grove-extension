@@ -15,7 +15,7 @@ class FirstTipModal {
   }
 
   /**
-   * Show the first tip modal
+   * Show the tip modal
    * @param {HTMLElement} anchorElement - The button to position near
    * @param {number} defaultAmount - The default tip amount
    * @param {boolean} currentConfirmSetting - Current confirm before tipping setting
@@ -25,8 +25,11 @@ class FirstTipModal {
    * @param {boolean} xOptions.isConnected - Whether X is connected
    * @param {boolean} xOptions.likeOnTip - Current like on tip setting
    * @param {boolean} xOptions.autoReply - Current auto reply setting
+   * @param {Object} displayOptions - Display options
+   * @param {string} displayOptions.title - Modal title (default: "Your First Tip!")
+   * @param {boolean} displayOptions.showConfirmCheckbox - Whether to show the confirm checkbox (default: true)
    */
-  show(anchorElement, defaultAmount, currentConfirmSetting, onConfirm, onCancel, xOptions = null) {
+  show(anchorElement, defaultAmount, currentConfirmSetting, onConfirm, onCancel, xOptions = null, displayOptions = null) {
     // Remove any existing modal
     this.hide();
 
@@ -86,6 +89,10 @@ class FirstTipModal {
       document.head.appendChild(style);
     }
 
+    // Parse display options
+    const modalTitle = displayOptions?.title || 'Your First Tip!';
+    const showConfirmCheckbox = displayOptions?.showConfirmCheckbox !== false;
+
     // Create header
     const header = document.createElement('div');
     header.style.cssText = `
@@ -96,7 +103,7 @@ class FirstTipModal {
     `;
 
     const title = document.createElement('span');
-    title.textContent = 'Your First Tip!';
+    title.textContent = modalTitle;
     title.style.cssText = `
       color: #ffffff;
       font-weight: 700;
@@ -442,7 +449,9 @@ class FirstTipModal {
     this.modal.appendChild(amountLabel);
     this.modal.appendChild(inputGroup);
     this.modal.appendChild(helperText);
-    this.modal.appendChild(checkboxContainer);
+    if (showConfirmCheckbox) {
+      this.modal.appendChild(checkboxContainer);
+    }
     if (xActionsContainer) {
       this.modal.appendChild(xActionsContainer);
     }
