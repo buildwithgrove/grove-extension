@@ -246,7 +246,8 @@ class TipModal {
 
     const confirmCheckbox = document.createElement('input');
     confirmCheckbox.type = 'checkbox';
-    confirmCheckbox.checked = currentConfirmSetting;
+    // Default to true since we only show this modal when confirmation is enabled
+    confirmCheckbox.checked = currentConfirmSetting !== false;
     confirmCheckbox.style.cssText = `
       width: 16px;
       height: 16px;
