@@ -6,8 +6,7 @@
 
 const TweetTipHandler = {
   // UI instances
-  tipPopover: null,
-  firstTipModal: null,
+  tipModal: null,
 
   // Colors (set from GROVE_COLORS)
   colors: {
@@ -50,13 +49,9 @@ const TweetTipHandler = {
    * Reset state (useful for cleanup)
    */
   reset() {
-    if (this.tipPopover) {
-      this.tipPopover.hide();
-      this.tipPopover = null;
-    }
-    if (this.firstTipModal) {
-      this.firstTipModal.hide();
-      this.firstTipModal = null;
+    if (this.tipModal) {
+      this.tipModal.hide();
+      this.tipModal = null;
     }
   },
 
@@ -291,15 +286,43 @@ const TweetTipHandler = {
 
     // Get settings from storage
     let tipAmount = 0.02;
-    let confirmBeforeTipping = false;
+    let confirmBeforeTipping = true; // New default is true
     let hasTipped = false;
+    let likeOnTip = true;
+    let autoReply = true;
+    let isXConnected = false;
 
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        const result = await chrome.storage.local.get(['GROVE_TIP_AMOUNT', 'GROVE_CONFIRM_TIP', 'GROVE_HAS_TIPPED']);
+        const result = await chrome.storage.local.get([
+          'GROVE_TIP_AMOUNT',
+          'GROVE_CONFIRM_TIP',
+          'GROVE_CONFIRM_TIP_V2',
+          'GROVE_HAS_TIPPED',
+          'GROVE_LIKE_ON_TIP',
+          'GROVE_AUTO_REPLY'
+        ]);
         tipAmount = result.GROVE_TIP_AMOUNT || 0.02;
-        confirmBeforeTipping = result.GROVE_CONFIRM_TIP || false;
         hasTipped = result.GROVE_HAS_TIPPED || false;
+        likeOnTip = result.GROVE_LIKE_ON_TIP !== false;
+        autoReply = result.GROVE_AUTO_REPLY !== false;
+
+        // Migration logic: if V2 flag not set, reset confirm to true (new default)
+        if (!result.GROVE_CONFIRM_TIP_V2) {
+          confirmBeforeTipping = true;
+          await chrome.storage.local.set({
+            'GROVE_CONFIRM_TIP': true,
+            'GROVE_CONFIRM_TIP_V2': true
+          });
+          console.log("[Grove TweetTipHandler] Migrated to V2: confirm before tipping set to true");
+        } else {
+          confirmBeforeTipping = result.GROVE_CONFIRM_TIP !== false;
+        }
+
+        // Check X connection status
+        if (typeof XAuth !== 'undefined') {
+          isXConnected = await XAuth.isLoggedIn();
+        }
       }
     } catch (error) {
       console.error("[Grove TweetTipHandler] Settings load failed:", error);
@@ -313,64 +336,81 @@ const TweetTipHandler = {
       return;
     }
 
-    // If this is the user's first tip, show the first tip modal
-    if (!hasTipped) {
-      if (!this.firstTipModal && typeof FirstTipModal !== 'undefined') {
-        this.firstTipModal = new FirstTipModal();
-      }
-
-      if (this.firstTipModal) {
-        this.firstTipModal.show(
-          buttonWrapper.button,
-          tipAmount,
-          confirmBeforeTipping,
-          async ({ amount, confirmBeforeTipping: newConfirmSetting }) => {
-            // Save preferences and mark as having tipped
-            try {
-              await chrome.storage.local.set({
-                'GROVE_TIP_AMOUNT': amount,
-                'GROVE_CONFIRM_TIP': newConfirmSetting,
-                'GROVE_HAS_TIPPED': true
-              });
-            } catch (e) {
-              console.error("[Grove TweetTipHandler] Failed to save first tip preferences:", e);
-            }
-            // Send the tip
-            this.sendTip(amount, buttonWrapper, tweetUrl);
-          },
-          () => {
-            console.log("[Grove TweetTipHandler] First tip cancelled");
-          }
-        );
-        return;
-      }
-    }
+    // Build X options for modals
+    const xOptions = isXConnected ? {
+      isConnected: true,
+      likeOnTip: likeOnTip,
+      autoReply: autoReply
+    } : null;
 
     // If confirmation disabled, send tip directly
     if (!confirmBeforeTipping) {
+      // Mark as having tipped if this is the first tip
+      if (!hasTipped) {
+        try {
+          await chrome.storage.local.set({ 'GROVE_HAS_TIPPED': true });
+        } catch (e) {
+          console.error("[Grove TweetTipHandler] Failed to mark first tip:", e);
+        }
+      }
       this.sendTip(tipAmount, buttonWrapper, tweetUrl);
       return;
     }
 
-    // Create popover if needed
-    if (!this.tipPopover && typeof TipPopover !== 'undefined') {
-      this.tipPopover = new TipPopover();
+    // Show confirmation modal
+    if (!this.tipModal && typeof TipModal !== 'undefined') {
+      this.tipModal = new TipModal();
     }
 
-    if (this.tipPopover) {
-      // Show popover with amount confirmation
-      this.tipPopover.show(
+    if (this.tipModal) {
+      // Get username from tweet URL
+      const recipientUsername = this.callbacks.extractUsernameFromUrl
+        ? this.callbacks.extractUsernameFromUrl(tweetUrl)
+        : null;
+
+      // Configure display based on whether this is the first tip
+      const displayOptions = hasTipped
+        ? { title: 'Confirm Tip', showConfirmCheckbox: true, recipientUsername }
+        : { title: 'Your First Tip!', showConfirmCheckbox: true, recipientUsername };
+
+      this.tipModal.show(
         buttonWrapper.button,
         tipAmount,
-        (confirmedAmount) => {
-          this.sendTip(confirmedAmount, buttonWrapper, tweetUrl);
+        confirmBeforeTipping,
+        async ({ amount, confirmBeforeTipping: newConfirmSetting, likeOnTip: newLikeOnTip, autoReply: newAutoReply }) => {
+          // Save preferences
+          try {
+            const saveData = {
+              'GROVE_TIP_AMOUNT': amount,
+              'GROVE_CONFIRM_TIP': newConfirmSetting,
+              'GROVE_HAS_TIPPED': true
+            };
+            // Save X preferences if they were set (X is connected)
+            if (newLikeOnTip !== null) {
+              saveData['GROVE_LIKE_ON_TIP'] = newLikeOnTip;
+            }
+            if (newAutoReply !== null) {
+              saveData['GROVE_AUTO_REPLY'] = newAutoReply;
+            }
+            await chrome.storage.local.set(saveData);
+          } catch (e) {
+            console.error("[Grove TweetTipHandler] Failed to save tip preferences:", e);
+          }
+          // Build xActions if X options were provided
+          const xActions = (newLikeOnTip !== null || newAutoReply !== null)
+            ? { likeOnTip: newLikeOnTip, autoReply: newAutoReply }
+            : null;
+          // Send the tip
+          this.sendTip(amount, buttonWrapper, tweetUrl, xActions);
         },
         () => {
-          console.log("[Grove TweetTipHandler] Tweet tip cancelled");
-        }
+          console.log("[Grove TweetTipHandler] Tip cancelled");
+        },
+        xOptions,
+        displayOptions
       );
     } else {
-      // Fallback: send tip directly if popover not available
+      // Fallback: send tip directly if modal not available
       this.sendTip(tipAmount, buttonWrapper, tweetUrl);
     }
   },
@@ -380,8 +420,9 @@ const TweetTipHandler = {
    * @param {number} tipAmount - The amount to tip
    * @param {Object} buttonWrapper - Button wrapper with state methods
    * @param {string} tweetUrl - The tweet URL to tip
+   * @param {Object|null} xActions - X actions from modal { likeOnTip, autoReply }, or null to read from storage
    */
-  async sendTip(tipAmount, buttonWrapper, tweetUrl) {
+  async sendTip(tipAmount, buttonWrapper, tweetUrl, xActions = null) {
     buttonWrapper.setLoading(tipAmount);
 
     // Check if extension context is valid before making API calls
@@ -413,10 +454,17 @@ const TweetTipHandler = {
 
       // Get other settings from storage
       const result = await chrome.storage.local.get(['GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'GROVE_LIKE_ON_TIP', 'groveChain']);
-      autoReplyEnabled = result.GROVE_AUTO_REPLY !== false;
+
+      // Use xActions from modal if provided, otherwise read from storage
+      if (xActions) {
+        likeOnTipEnabled = xActions.likeOnTip !== false;
+        autoReplyEnabled = xActions.autoReply !== false;
+      } else {
+        autoReplyEnabled = result.GROVE_AUTO_REPLY !== false;
+        likeOnTipEnabled = result.GROVE_LIKE_ON_TIP !== false;
+      }
       autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || autoReplyMessage;
-      likeOnTipEnabled = result.GROVE_LIKE_ON_TIP !== false;
-      console.log('[Grove TweetTipHandler] Storage loaded:', { hasJwt: !!jwt, autoReply: autoReplyEnabled, likeOnTip: likeOnTipEnabled, chain: result.groveChain });
+      console.log('[Grove TweetTipHandler] Storage loaded:', { hasJwt: !!jwt, autoReply: autoReplyEnabled, likeOnTip: likeOnTipEnabled, chain: result.groveChain, fromModal: !!xActions });
 
       // Get friendly chain name and explorer URL
       const rawChain = result.groveChain || 'base';

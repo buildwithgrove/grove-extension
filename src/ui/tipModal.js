@@ -1,12 +1,13 @@
 /**
- * First Tip Modal UI
- * Shows an onboarding modal for the user's first tip, allowing them to:
- * - Set their default tip amount
+ * Tip Modal UI
+ * Shows a confirmation modal for tips, allowing users to:
+ * - Set/edit the tip amount
  * - Choose whether to always confirm before tipping
+ * - Select X actions (like/reply) when X is connected
  * Requires: src/ui/constants.js
  */
 
-class FirstTipModal {
+class TipModal {
   constructor() {
     this.modal = null;
     this.overlay = null;
@@ -15,14 +16,23 @@ class FirstTipModal {
   }
 
   /**
-   * Show the first tip modal
+   * Show the tip modal
    * @param {HTMLElement} anchorElement - The button to position near
    * @param {number} defaultAmount - The default tip amount
    * @param {boolean} currentConfirmSetting - Current confirm before tipping setting
-   * @param {Function} onConfirm - Callback when confirmed, receives { amount, confirmBeforeTipping }
+   * @param {Function} onConfirm - Callback when confirmed, receives { amount, confirmBeforeTipping, likeOnTip, autoReply }
    * @param {Function} onCancel - Callback when cancelled
+   * @param {Object} xOptions - X integration options
+   * @param {boolean} xOptions.isConnected - Whether X is connected
+   * @param {boolean} xOptions.likeOnTip - Current like on tip setting
+   * @param {boolean} xOptions.autoReply - Current auto reply setting
+   * @param {Object} displayOptions - Display options
+   * @param {string} displayOptions.title - Modal title (default: "Your First Tip!")
+   * @param {boolean} displayOptions.showConfirmCheckbox - Whether to show the confirm checkbox (default: true)
+   * @param {boolean} displayOptions.isProfileTip - Whether this is a profile tip (changes X action labels)
+   * @param {string} displayOptions.recipientUsername - Username for profile tips (e.g., "vitalik")
    */
-  show(anchorElement, defaultAmount, currentConfirmSetting, onConfirm, onCancel) {
+  show(anchorElement, defaultAmount, currentConfirmSetting, onConfirm, onCancel, xOptions = null, displayOptions = null) {
     // Remove any existing modal
     this.hide();
 
@@ -82,6 +92,12 @@ class FirstTipModal {
       document.head.appendChild(style);
     }
 
+    // Parse display options
+    const modalTitle = displayOptions?.title || 'Your First Tip!';
+    const showConfirmCheckbox = displayOptions?.showConfirmCheckbox !== false;
+    const isProfileTip = displayOptions?.isProfileTip || false;
+    const recipientUsername = displayOptions?.recipientUsername || null;
+
     // Create header
     const header = document.createElement('div');
     header.style.cssText = `
@@ -92,7 +108,7 @@ class FirstTipModal {
     `;
 
     const title = document.createElement('span');
-    title.textContent = 'Your First Tip!';
+    title.textContent = modalTitle;
     title.style.cssText = `
       color: #ffffff;
       font-weight: 700;
@@ -187,7 +203,12 @@ class FirstTipModal {
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        this.confirm(parseFloat(input.value) || defaultAmount, confirmCheckbox.checked);
+        this.confirm(
+          parseFloat(input.value) || defaultAmount,
+          confirmCheckbox.checked,
+          likeCheckbox ? likeCheckbox.checked : null,
+          replyCheckbox ? replyCheckbox.checked : null
+        );
       } else if (e.key === 'Escape') {
         e.preventDefault();
         this.cancel();
@@ -229,7 +250,8 @@ class FirstTipModal {
 
     const confirmCheckbox = document.createElement('input');
     confirmCheckbox.type = 'checkbox';
-    confirmCheckbox.checked = currentConfirmSetting;
+    // Always checked since we only show this modal when confirmation is enabled
+    confirmCheckbox.checked = true;
     confirmCheckbox.style.cssText = `
       width: 16px;
       height: 16px;
@@ -247,6 +269,109 @@ class FirstTipModal {
 
     checkboxContainer.appendChild(confirmCheckbox);
     checkboxContainer.appendChild(checkboxLabel);
+
+    // Create X actions section (only if X is connected)
+    let likeCheckbox = null;
+    let replyCheckbox = null;
+    let xActionsContainer = null;
+
+    if (xOptions && xOptions.isConnected) {
+      xActionsContainer = document.createElement('div');
+      xActionsContainer.style.cssText = `
+        margin-bottom: 20px;
+        padding: 12px 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      `;
+
+      // X actions header
+      const xHeader = document.createElement('div');
+      xHeader.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 10px;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      `;
+      xHeader.textContent = '𝕏 Actions';
+      xActionsContainer.appendChild(xHeader);
+
+      // Like checkbox
+      const likeContainer = document.createElement('label');
+      likeContainer.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        margin-bottom: 8px;
+      `;
+
+      likeCheckbox = document.createElement('input');
+      likeCheckbox.type = 'checkbox';
+      likeCheckbox.checked = xOptions.likeOnTip !== false;
+      likeCheckbox.style.cssText = `
+        width: 16px;
+        height: 16px;
+        accent-color: ${GROVE_COLORS.primary};
+        cursor: pointer;
+        flex-shrink: 0;
+      `;
+
+      const likeLabel = document.createElement('span');
+      likeLabel.textContent = 'Like this post';
+      likeLabel.style.cssText = `
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 13px;
+      `;
+
+      likeContainer.appendChild(likeCheckbox);
+      likeContainer.appendChild(likeLabel);
+      // Only show like option for tweet tips (not profile tips)
+      if (!isProfileTip) {
+        xActionsContainer.appendChild(likeContainer);
+      }
+
+      // Reply/Tweet checkbox
+      const replyContainer = document.createElement('label');
+      replyContainer.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+      `;
+
+      replyCheckbox = document.createElement('input');
+      replyCheckbox.type = 'checkbox';
+      replyCheckbox.checked = xOptions.autoReply !== false;
+      replyCheckbox.style.cssText = `
+        width: 16px;
+        height: 16px;
+        accent-color: ${GROVE_COLORS.primary};
+        cursor: pointer;
+        flex-shrink: 0;
+      `;
+
+      const replyLabel = document.createElement('span');
+      // Use username in label if available
+      if (recipientUsername) {
+        replyLabel.textContent = `Let @${recipientUsername} know`;
+      } else {
+        replyLabel.textContent = isProfileTip ? 'Let them know' : 'Reply to this post';
+      }
+      replyLabel.style.cssText = `
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 13px;
+      `;
+
+      replyContainer.appendChild(replyCheckbox);
+      replyContainer.appendChild(replyLabel);
+      xActionsContainer.appendChild(replyContainer);
+    }
 
     // Create send button container for centering
     const sendBtnContainer = document.createElement('div');
@@ -323,7 +448,12 @@ class FirstTipModal {
     sendBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.confirm(parseFloat(input.value) || defaultAmount, confirmCheckbox.checked);
+      this.confirm(
+        parseFloat(input.value) || defaultAmount,
+        confirmCheckbox.checked,
+        likeCheckbox ? likeCheckbox.checked : null,
+        replyCheckbox ? replyCheckbox.checked : null
+      );
     });
 
     sendBtnContainer.appendChild(sendBtn);
@@ -333,7 +463,12 @@ class FirstTipModal {
     this.modal.appendChild(amountLabel);
     this.modal.appendChild(inputGroup);
     this.modal.appendChild(helperText);
-    this.modal.appendChild(checkboxContainer);
+    if (showConfirmCheckbox) {
+      this.modal.appendChild(checkboxContainer);
+    }
+    if (xActionsContainer) {
+      this.modal.appendChild(xActionsContainer);
+    }
     this.modal.appendChild(sendBtnContainer);
 
     // Add to DOM
@@ -390,15 +525,17 @@ class FirstTipModal {
    * Confirm the first tip with settings
    * @param {number} amount - The tip amount
    * @param {boolean} confirmBeforeTipping - Whether to always confirm
+   * @param {boolean|null} likeOnTip - Whether to like the post (null if X not connected)
+   * @param {boolean|null} autoReply - Whether to reply to the post (null if X not connected)
    */
-  confirm(amount, confirmBeforeTipping) {
+  confirm(amount, confirmBeforeTipping, likeOnTip = null, autoReply = null) {
     if (amount <= 0) {
       amount = 0.01;
     }
     const callback = this.onConfirm;
     this.hide();
     if (callback) {
-      callback({ amount, confirmBeforeTipping });
+      callback({ amount, confirmBeforeTipping, likeOnTip, autoReply });
     }
   }
 
@@ -432,5 +569,7 @@ class FirstTipModal {
 
 // Make globally available
 if (typeof window !== 'undefined') {
-  window.FirstTipModal = FirstTipModal;
+  window.TipModal = TipModal;
+  // Alias for backward compatibility
+  window.FirstTipModal = TipModal;
 }

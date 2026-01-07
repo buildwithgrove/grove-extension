@@ -115,8 +115,7 @@
   let currentAdapter = null;
   let navigationObserver = null;
   let soundCloudTrackObserver = null;
-  let tipPopover = null;
-  let firstTipModal = null;
+  let tipModal = null;
   let resolvedAddress = null; // Stores address info (0x address or ENS name)
 
   // Address cache: uses shared AddressCache class from src/utils/addressCache.js
@@ -435,15 +434,42 @@
 
     // Get settings from storage
     let tipAmount = 0.02; // default
-    let confirmBeforeTipping = false; // default off
+    let confirmBeforeTipping = true; // default on
     let hasTipped = false; // whether user has tipped before
+    let likeOnTip = true;
+    let autoReply = true;
+    let isXConnected = false;
 
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        const result = await chrome.storage.local.get(['GROVE_TIP_AMOUNT', 'GROVE_CONFIRM_TIP', 'GROVE_HAS_TIPPED']);
+        const result = await chrome.storage.local.get([
+          'GROVE_TIP_AMOUNT',
+          'GROVE_CONFIRM_TIP',
+          'GROVE_CONFIRM_TIP_V2',
+          'GROVE_HAS_TIPPED',
+          'GROVE_LIKE_ON_TIP',
+          'GROVE_AUTO_REPLY'
+        ]);
         tipAmount = result.GROVE_TIP_AMOUNT || 0.02;
-        confirmBeforeTipping = result.GROVE_CONFIRM_TIP || false;
         hasTipped = result.GROVE_HAS_TIPPED || false;
+        likeOnTip = result.GROVE_LIKE_ON_TIP !== false;
+        autoReply = result.GROVE_AUTO_REPLY !== false;
+
+        // Migration logic: if V2 flag not set, reset confirm to true (new default)
+        if (!result.GROVE_CONFIRM_TIP_V2) {
+          confirmBeforeTipping = true;
+          await chrome.storage.local.set({
+            'GROVE_CONFIRM_TIP': true,
+            'GROVE_CONFIRM_TIP_V2': true
+          });
+        } else {
+          confirmBeforeTipping = result.GROVE_CONFIRM_TIP !== false;
+        }
+
+        // Check X connection status
+        if (typeof XAuth !== 'undefined') {
+          isXConnected = await XAuth.isLoggedIn();
+        }
       }
     } catch (error) {
       console.error("[Grove Extension] Settings load failed:", error);
@@ -464,61 +490,77 @@
       return;
     }
 
-    // If this is the user's first tip, show the first tip modal
-    if (!hasTipped) {
-      if (!firstTipModal) {
-        firstTipModal = new FirstTipModal();
+    // If confirmation disabled, send tip directly
+    if (!confirmBeforeTipping) {
+      // Mark as having tipped if this is the first tip
+      if (!hasTipped) {
+        try {
+          await chrome.storage.local.set({ 'GROVE_HAS_TIPPED': true });
+        } catch (e) {
+          console.error("[Grove Extension] Failed to mark first tip:", e);
+        }
       }
+      sendTip(tipAmount, button);
+      return;
+    }
 
-      firstTipModal.show(
+    // Show confirmation modal
+    if (!tipModal && typeof TipModal !== 'undefined') {
+      tipModal = new TipModal();
+    }
+
+    // Build X options for modal
+    const xOptions = isXConnected ? {
+      isConnected: true,
+      likeOnTip: likeOnTip,
+      autoReply: autoReply
+    } : null;
+
+    if (tipModal) {
+      // Get username for profile tips
+      const recipientUsername = extractUsernameFromUrl(window.location.href);
+
+      // Configure display based on whether this is the first tip
+      const displayOptions = hasTipped
+        ? { title: 'Confirm Tip', showConfirmCheckbox: true, isProfileTip: true, recipientUsername }
+        : { title: 'Your First Tip!', showConfirmCheckbox: true, isProfileTip: true, recipientUsername };
+
+      tipModal.show(
         buttonElement,
         tipAmount,
-        confirmBeforeTipping,
-        async ({ amount, confirmBeforeTipping: newConfirmSetting }) => {
-          // Save preferences and mark as having tipped
+        true, // confirmBeforeTipping is always true here
+        async ({ amount, confirmBeforeTipping: newConfirmSetting, likeOnTip: newLikeOnTip, autoReply: newAutoReply }) => {
+          // Save preferences
           try {
-            await chrome.storage.local.set({
+            const saveData = {
               'GROVE_TIP_AMOUNT': amount,
               'GROVE_CONFIRM_TIP': newConfirmSetting,
               'GROVE_HAS_TIPPED': true
-            });
+            };
+            // Save X preferences if they were set (X is connected)
+            if (newLikeOnTip !== null) {
+              saveData['GROVE_LIKE_ON_TIP'] = newLikeOnTip;
+            }
+            if (newAutoReply !== null) {
+              saveData['GROVE_AUTO_REPLY'] = newAutoReply;
+            }
+            await chrome.storage.local.set(saveData);
           } catch (e) {
-            console.error("[Grove Extension] Failed to save first tip preferences:", e);
+            console.error("[Grove Extension] Failed to save tip preferences:", e);
           }
           // Send the tip
           sendTip(amount, button);
         },
         () => {
-          console.log("[Grove Extension] First tip cancelled");
-        }
+          console.log("[Grove Extension] Tip cancelled");
+        },
+        xOptions,
+        displayOptions
       );
-      return;
-    }
-
-    // If confirmation disabled, send tip directly
-    if (!confirmBeforeTipping) {
+    } else {
+      // Fallback: send tip directly if modal not available
       sendTip(tipAmount, button);
-      return;
     }
-
-    // Create popover if needed
-    if (!tipPopover) {
-      tipPopover = new TipPopover();
-    }
-
-    // Show popover with amount confirmation
-    tipPopover.show(
-      buttonElement,
-      tipAmount,
-      (confirmedAmount) => {
-        // User confirmed - send the tip
-        sendTip(confirmedAmount, button);
-      },
-      () => {
-        // User cancelled - do nothing
-        console.log("[Grove Extension] Tip cancelled");
-      }
-    );
   }
 
   /**

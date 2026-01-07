@@ -1337,8 +1337,20 @@ async function saveTipFromSettings() {
  * Confirm tip toggle
  */
 async function loadConfirmTip() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CONFIRM_TIP]);
-  const enabled = result[STORAGE_KEYS.CONFIRM_TIP] || false;
+  const result = await chrome.storage.local.get([STORAGE_KEYS.CONFIRM_TIP, STORAGE_KEYS.CONFIRM_TIP_V2]);
+
+  // Migration logic: if V2 flag not set, reset confirm to true (new default)
+  if (!result[STORAGE_KEYS.CONFIRM_TIP_V2]) {
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.CONFIRM_TIP]: true,
+      [STORAGE_KEYS.CONFIRM_TIP_V2]: true
+    });
+    confirmTipToggle.checked = true;
+    return;
+  }
+
+  // V2 already set, use stored value (default to true if not set)
+  const enabled = result[STORAGE_KEYS.CONFIRM_TIP] !== false;
   confirmTipToggle.checked = enabled;
 }
 
