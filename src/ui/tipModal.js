@@ -357,11 +357,11 @@ class TipModal {
       `;
 
       const replyLabel = document.createElement('span');
-      // Different label for profile tips vs tweet tips
-      if (isProfileTip) {
-        replyLabel.textContent = recipientUsername ? `Let @${recipientUsername} know` : 'Let them know';
+      // Use username in label if available
+      if (recipientUsername) {
+        replyLabel.textContent = `Let @${recipientUsername} know`;
       } else {
-        replyLabel.textContent = 'Reply to this post';
+        replyLabel.textContent = isProfileTip ? 'Let them know' : 'Reply to this post';
       }
       replyLabel.style.cssText = `
         color: rgba(255, 255, 255, 0.85);

@@ -363,10 +363,15 @@ const TweetTipHandler = {
     }
 
     if (this.tipModal) {
+      // Get username from tweet URL
+      const recipientUsername = this.callbacks.extractUsernameFromUrl
+        ? this.callbacks.extractUsernameFromUrl(tweetUrl)
+        : null;
+
       // Configure display based on whether this is the first tip
       const displayOptions = hasTipped
-        ? { title: 'Confirm Tip', showConfirmCheckbox: true }
-        : { title: 'Your First Tip!', showConfirmCheckbox: true };
+        ? { title: 'Confirm Tip', showConfirmCheckbox: true, recipientUsername }
+        : { title: 'Your First Tip!', showConfirmCheckbox: true, recipientUsername };
 
       this.tipModal.show(
         buttonWrapper.button,
