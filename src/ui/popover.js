@@ -16,10 +16,14 @@ class TipPopover {
    * Show the popover near the button
    * @param {HTMLElement} anchorElement - The button to position near
    * @param {number} defaultAmount - The default tip amount
-   * @param {Function} onConfirm - Callback when tip is confirmed, receives amount
+   * @param {Function} onConfirm - Callback when tip is confirmed, receives { amount, likeOnTip, autoReply }
    * @param {Function} onCancel - Callback when cancelled
+   * @param {Object} xOptions - X integration options
+   * @param {boolean} xOptions.isConnected - Whether X is connected
+   * @param {boolean} xOptions.likeOnTip - Current like on tip setting
+   * @param {boolean} xOptions.autoReply - Current auto reply setting
    */
-  show(anchorElement, defaultAmount, onConfirm, onCancel) {
+  show(anchorElement, defaultAmount, onConfirm, onCancel, xOptions = null) {
     // Remove any existing popover
     this.hide();
 
@@ -169,7 +173,11 @@ class TipPopover {
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        this.confirm(parseFloat(input.value) || defaultAmount);
+        this.confirm(
+          parseFloat(input.value) || defaultAmount,
+          likeCheckbox ? likeCheckbox.checked : null,
+          replyCheckbox ? replyCheckbox.checked : null
+        );
       } else if (e.key === 'Escape') {
         e.preventDefault();
         this.cancel();
@@ -178,6 +186,101 @@ class TipPopover {
 
     inputGroup.appendChild(currencySymbol);
     inputGroup.appendChild(input);
+
+    // Create X actions section (only if X is connected)
+    let likeCheckbox = null;
+    let replyCheckbox = null;
+    let xActionsContainer = null;
+
+    if (xOptions && xOptions.isConnected) {
+      xActionsContainer = document.createElement('div');
+      xActionsContainer.style.cssText = `
+        margin-bottom: 10px;
+        padding: 10px 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      `;
+
+      // X actions header
+      const xHeader = document.createElement('div');
+      xHeader.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 8px;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      `;
+      xHeader.textContent = 'X Actions';
+      xActionsContainer.appendChild(xHeader);
+
+      // Like checkbox
+      const likeContainer = document.createElement('label');
+      likeContainer.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        margin-bottom: 6px;
+      `;
+
+      likeCheckbox = document.createElement('input');
+      likeCheckbox.type = 'checkbox';
+      likeCheckbox.checked = xOptions.likeOnTip !== false;
+      likeCheckbox.style.cssText = `
+        width: 14px;
+        height: 14px;
+        accent-color: ${GROVE_COLORS.primary};
+        cursor: pointer;
+        flex-shrink: 0;
+      `;
+
+      const likeLabel = document.createElement('span');
+      likeLabel.textContent = 'Like this post';
+      likeLabel.style.cssText = `
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 12px;
+      `;
+
+      likeContainer.appendChild(likeCheckbox);
+      likeContainer.appendChild(likeLabel);
+      xActionsContainer.appendChild(likeContainer);
+
+      // Reply checkbox
+      const replyContainer = document.createElement('label');
+      replyContainer.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+      `;
+
+      replyCheckbox = document.createElement('input');
+      replyCheckbox.type = 'checkbox';
+      replyCheckbox.checked = xOptions.autoReply !== false;
+      replyCheckbox.style.cssText = `
+        width: 14px;
+        height: 14px;
+        accent-color: ${GROVE_COLORS.primary};
+        cursor: pointer;
+        flex-shrink: 0;
+      `;
+
+      const replyLabel = document.createElement('span');
+      replyLabel.textContent = 'Reply to this post';
+      replyLabel.style.cssText = `
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 12px;
+      `;
+
+      replyContainer.appendChild(replyCheckbox);
+      replyContainer.appendChild(replyLabel);
+      xActionsContainer.appendChild(replyContainer);
+    }
 
     // Create send button container for centering
     const sendBtnContainer = document.createElement('div');
@@ -254,7 +357,11 @@ class TipPopover {
     sendBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.confirm(parseFloat(input.value) || defaultAmount);
+      this.confirm(
+        parseFloat(input.value) || defaultAmount,
+        likeCheckbox ? likeCheckbox.checked : null,
+        replyCheckbox ? replyCheckbox.checked : null
+      );
     });
 
     sendBtnContainer.appendChild(sendBtn);
@@ -262,6 +369,9 @@ class TipPopover {
     // Assemble popover
     this.popover.appendChild(header);
     this.popover.appendChild(inputGroup);
+    if (xActionsContainer) {
+      this.popover.appendChild(xActionsContainer);
+    }
     this.popover.appendChild(sendBtnContainer);
 
     // Add to DOM
@@ -310,17 +420,19 @@ class TipPopover {
   }
 
   /**
-   * Confirm the tip with the given amount
-   * @param {number} amount
+   * Confirm the tip with the given amount and X options
+   * @param {number} amount - The tip amount
+   * @param {boolean|null} likeOnTip - Whether to like the post (null if X not connected)
+   * @param {boolean|null} autoReply - Whether to reply to the post (null if X not connected)
    */
-  confirm(amount) {
+  confirm(amount, likeOnTip = null, autoReply = null) {
     if (amount <= 0) {
       amount = 0.01;
     }
     const callback = this.onConfirm;
     this.hide();
     if (callback) {
-      callback(amount);
+      callback({ amount, likeOnTip, autoReply });
     }
   }
 

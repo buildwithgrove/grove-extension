@@ -121,9 +121,8 @@ Requires `gh` CLI (`brew install gh`).
 - **Tip on X (Twitter)** - Tip buttons on tweets, profiles, and hover cards
 - **Tip on any website** - Floating tip button for sites with `llms.txt` or `ai.txt` containing a crypto address
 - **ENS support** - Resolves `.eth` and `.base.eth` names to addresses
-- **Tip confirmation** - Optional popover to edit tip amount before sending
-- **Like on tip** - Automatically like tweets when you tip them (requires X connection)
-- **Auto-reply** - Post a customizable reply when you tip a tweet
+- **Tip confirmation** - Confirm amount before sending (on by default, can be disabled in settings)
+- **Like & reply on tip** - When X is connected, the confirmation modal lets you like and/or reply to the tweet
 
 ### How Tip Buttons Appear on X/Twitter
 
@@ -149,9 +148,8 @@ For feed tweets, the extension fetches user bios in the background using Twitter
 ### X (Twitter) Integration
 
 - **OAuth login** - Connect your X account for enhanced features
-- **Auto-like** - Automatically like tweets you tip
-- **Auto-reply** - Post a reply with tip details and transaction link
-- **Custom message** - Customize the auto-reply with placeholders: `{username}`, `{amount}`, `{chain}`, `{tx_link}`, `{grove_link}`
+- **Like & reply** - Choose to like and/or reply when tipping (shown in confirmation modal)
+- **Custom reply message** - Customize the reply template with placeholders: `{username}`, `{chain}`, `{tx_link}`, `{grove_link}`
 
 ### Developer Features
 
