@@ -30,6 +30,7 @@ class TipModal {
    * @param {string} displayOptions.title - Modal title (default: "Your First Tip!")
    * @param {boolean} displayOptions.showConfirmCheckbox - Whether to show the confirm checkbox (default: true)
    * @param {boolean} displayOptions.isProfileTip - Whether this is a profile tip (changes X action labels)
+   * @param {string} displayOptions.recipientUsername - Username for profile tips (e.g., "vitalik")
    */
   show(anchorElement, defaultAmount, currentConfirmSetting, onConfirm, onCancel, xOptions = null, displayOptions = null) {
     // Remove any existing modal
@@ -95,6 +96,7 @@ class TipModal {
     const modalTitle = displayOptions?.title || 'Your First Tip!';
     const showConfirmCheckbox = displayOptions?.showConfirmCheckbox !== false;
     const isProfileTip = displayOptions?.isProfileTip || false;
+    const recipientUsername = displayOptions?.recipientUsername || null;
 
     // Create header
     const header = document.createElement('div');
@@ -356,7 +358,11 @@ class TipModal {
 
       const replyLabel = document.createElement('span');
       // Different label for profile tips vs tweet tips
-      replyLabel.textContent = isProfileTip ? 'Post a tweet' : 'Reply to this post';
+      if (isProfileTip) {
+        replyLabel.textContent = recipientUsername ? `Let @${recipientUsername} know` : 'Let them know';
+      } else {
+        replyLabel.textContent = 'Reply to this post';
+      }
       replyLabel.style.cssText = `
         color: rgba(255, 255, 255, 0.85);
         font-size: 13px;

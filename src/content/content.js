@@ -517,10 +517,13 @@
     } : null;
 
     if (tipModal) {
+      // Get username for profile tips
+      const recipientUsername = extractUsernameFromUrl(window.location.href);
+
       // Configure display based on whether this is the first tip
       const displayOptions = hasTipped
-        ? { title: 'Confirm Tip', showConfirmCheckbox: true, isProfileTip: true }
-        : { title: 'Your First Tip!', showConfirmCheckbox: true, isProfileTip: true };
+        ? { title: 'Confirm Tip', showConfirmCheckbox: true, isProfileTip: true, recipientUsername }
+        : { title: 'Your First Tip!', showConfirmCheckbox: true, isProfileTip: true, recipientUsername };
 
       tipModal.show(
         buttonElement,
