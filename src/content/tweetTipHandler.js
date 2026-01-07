@@ -297,7 +297,7 @@ const TweetTipHandler = {
         const result = await chrome.storage.local.get([
           'GROVE_TIP_AMOUNT',
           'GROVE_CONFIRM_TIP',
-          'GROVE_CONFIRM_TIP_V3',
+          'GROVE_CONFIRM_TIP_V2',
           'GROVE_HAS_TIPPED',
           'GROVE_LIKE_ON_TIP',
           'GROVE_AUTO_REPLY'
@@ -307,14 +307,14 @@ const TweetTipHandler = {
         likeOnTip = result.GROVE_LIKE_ON_TIP !== false;
         autoReply = result.GROVE_AUTO_REPLY !== false;
 
-        // Migration logic: if V3 flag not set, reset confirm to true (new default)
-        if (!result.GROVE_CONFIRM_TIP_V3) {
+        // Migration logic: if V2 flag not set, reset confirm to true (new default)
+        if (!result.GROVE_CONFIRM_TIP_V2) {
           confirmBeforeTipping = true;
           await chrome.storage.local.set({
             'GROVE_CONFIRM_TIP': true,
-            'GROVE_CONFIRM_TIP_V3': true
+            'GROVE_CONFIRM_TIP_V2': true
           });
-          console.log("[Grove TweetTipHandler] Migrated to V3: confirm before tipping set to true");
+          console.log("[Grove TweetTipHandler] Migrated to V2: confirm before tipping set to true");
         } else {
           confirmBeforeTipping = result.GROVE_CONFIRM_TIP !== false;
         }
