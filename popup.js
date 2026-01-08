@@ -136,6 +136,33 @@ const autoReplyMessageInput = document.getElementById('homeAutoReplyMessageInput
 const saveAutoReplyMessageBtn = document.getElementById('homeSaveAutoReplyMessageBtn');
 const resetAutoReplyMessageBtn = document.getElementById('homeResetAutoReplyMessageBtn');
 
+// CDP Auth Elements
+const cdpAuthSection = document.getElementById('cdpAuthSection');
+const cdpEmailAuthBtn = document.getElementById('cdpEmailAuthBtn');
+const cdpPhoneAuthBtn = document.getElementById('cdpPhoneAuthBtn');
+const cdpIdentityModal = document.getElementById('cdpIdentityModal');
+const cdpIdentityInput = document.getElementById('cdpIdentityInput');
+const cdpIdentityLabel = document.getElementById('cdpIdentityLabel');
+const cdpSendCodeBtn = document.getElementById('cdpSendCodeBtn');
+const cdpCancelIdentityBtn = document.getElementById('cdpCancelIdentityBtn');
+const cdpOtpModal = document.getElementById('cdpOtpModal');
+const cdpOtpDestination = document.getElementById('cdpOtpDestination');
+const cdpOtpInput = document.getElementById('cdpOtpInput');
+const cdpVerifyOtpBtn = document.getElementById('cdpVerifyOtpBtn');
+const cdpResendCodeBtn = document.getElementById('cdpResendCodeBtn');
+const cdpCancelOtpBtn = document.getElementById('cdpCancelOtpBtn');
+const cdpLoadingModal = document.getElementById('cdpLoadingModal');
+const cdpLoadingMessage = document.getElementById('cdpLoadingMessage');
+
+// CDP Auth State
+let cdpAuthState = {
+  method: null,       // 'email' or 'sms'
+  flowId: null,       // Flow ID from CDP SDK
+  destination: null,  // Email or phone number
+  resendTimer: null,  // Timer for resend cooldown
+  resendCountdown: 0, // Seconds until resend allowed
+};
+
 // Defaults
 const DEFAULT_TIP_AMOUNT = 0.02;
 const DEFAULT_CHAIN = 'base';
@@ -249,6 +276,7 @@ async function init() {
   loadExtensionVersion();
   checkForUpdates();
   setupEventListeners();
+  initCDPAuth();
 
   // Ensure chain dropdown options match current endpoint on init
   const endpointInit = await GroveAPI.getBaseURL().then(() => {
@@ -2854,6 +2882,328 @@ function togglePasswordVisibility() {
       path.classList.add('hidden');
     }
   });
+}
+
+// =============================================================================
+// CDP Auth Handlers
+// =============================================================================
+
+/**
+ * Initialize CDP Auth event handlers
+ */
+function initCDPAuth() {
+  // Only initialize if CDP auth elements exist
+  if (!cdpEmailAuthBtn || !cdpPhoneAuthBtn) {
+    console.log('[CDPAuth] CDP auth elements not found, skipping initialization');
+    return;
+  }
+
+  // Email auth button
+  cdpEmailAuthBtn.addEventListener('click', () => {
+    showCDPIdentityModal('email');
+  });
+
+  // Phone auth button
+  cdpPhoneAuthBtn.addEventListener('click', () => {
+    showCDPIdentityModal('sms');
+  });
+
+  // Send code button
+  cdpSendCodeBtn?.addEventListener('click', handleSendCode);
+
+  // Cancel identity modal
+  cdpCancelIdentityBtn?.addEventListener('click', () => {
+    hideCDPModal(cdpIdentityModal);
+    resetCDPAuthState();
+  });
+
+  // Verify OTP button
+  cdpVerifyOtpBtn?.addEventListener('click', handleVerifyOTP);
+
+  // Resend code button
+  cdpResendCodeBtn?.addEventListener('click', handleResendCode);
+
+  // Cancel OTP modal
+  cdpCancelOtpBtn?.addEventListener('click', () => {
+    hideCDPModal(cdpOtpModal);
+    resetCDPAuthState();
+  });
+
+  // Enter key handlers
+  cdpIdentityInput?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleSendCode();
+  });
+
+  cdpOtpInput?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleVerifyOTP();
+  });
+
+  // Auto-format OTP input (numbers only, max 6 digits)
+  cdpOtpInput?.addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+  });
+
+  console.log('[CDPAuth] Event handlers initialized');
+}
+
+/**
+ * Show CDP identity modal for email or SMS
+ */
+function showCDPIdentityModal(method) {
+  cdpAuthState.method = method;
+
+  if (method === 'email') {
+    cdpIdentityLabel.textContent = 'Enter your email address';
+    cdpIdentityInput.type = 'email';
+    cdpIdentityInput.placeholder = 'you@example.com';
+  } else {
+    cdpIdentityLabel.textContent = 'Enter your phone number';
+    cdpIdentityInput.type = 'tel';
+    cdpIdentityInput.placeholder = '+1 (555) 123-4567';
+  }
+
+  cdpIdentityInput.value = '';
+  showCDPModal(cdpIdentityModal);
+  cdpIdentityInput.focus();
+}
+
+/**
+ * Handle sending verification code
+ */
+async function handleSendCode() {
+  const destination = cdpIdentityInput.value.trim();
+
+  if (!destination) {
+    showToast('Please enter your ' + (cdpAuthState.method === 'email' ? 'email' : 'phone number'), 'error');
+    return;
+  }
+
+  // Basic validation
+  if (cdpAuthState.method === 'email' && !destination.includes('@')) {
+    showToast('Please enter a valid email address', 'error');
+    return;
+  }
+
+  cdpAuthState.destination = destination;
+
+  // Show loading
+  showCDPLoading('Sending verification code...');
+
+  try {
+    // Check if CDPAuth is available (loaded from bundle)
+    if (typeof window.CDPAuth === 'undefined') {
+      throw new Error('CDP Auth not loaded. Please refresh the extension.');
+    }
+
+    let result;
+    if (cdpAuthState.method === 'email') {
+      result = await window.CDPAuth.startEmailAuth(destination);
+    } else {
+      result = await window.CDPAuth.startSmsAuth(destination);
+    }
+
+    cdpAuthState.flowId = result.flowId;
+
+    hideCDPModal(cdpLoadingModal);
+    hideCDPModal(cdpIdentityModal);
+
+    // Show OTP modal
+    cdpOtpDestination.textContent = destination;
+    cdpOtpInput.value = '';
+    showCDPModal(cdpOtpModal);
+    cdpOtpInput.focus();
+
+    // Start resend cooldown
+    startResendCooldown();
+
+    showToast('Verification code sent!', 'success');
+  } catch (error) {
+    hideCDPModal(cdpLoadingModal);
+    console.error('[CDPAuth] Error sending code:', error);
+    showToast(error.message || 'Failed to send verification code', 'error');
+  }
+}
+
+/**
+ * Handle OTP verification
+ */
+async function handleVerifyOTP() {
+  const otp = cdpOtpInput.value.trim();
+
+  if (otp.length !== 6) {
+    showToast('Please enter the 6-digit code', 'error');
+    return;
+  }
+
+  showCDPLoading('Verifying code...');
+
+  try {
+    // Verify OTP and get CDP token
+    const cdpToken = await window.CDPAuth.verifyOTP(
+      cdpAuthState.flowId,
+      otp,
+      cdpAuthState.method
+    );
+
+    showCDPLoading('Creating your account...');
+
+    // Get the active endpoint for token exchange
+    const endpoint = await getActiveEndpoint();
+
+    // Exchange CDP token for Grove JWT
+    const result = await window.CDPAuth.exchangeForGroveJWT(cdpToken, endpoint);
+
+    // Store the JWT in the appropriate slot
+    const slotId = await getSlotForEndpoint(endpoint);
+    await KeyManager.setJWT(slotId, result.api_key);
+
+    // Close all modals
+    hideCDPModal(cdpLoadingModal);
+    hideCDPModal(cdpOtpModal);
+    resetCDPAuthState();
+
+    // Refresh the UI to show connected state
+    await refreshUIState();
+
+    const welcomeMsg = result.is_new_account ? 'Account created!' : 'Welcome back!';
+    showToast(welcomeMsg + ' You can now send tips.', 'success');
+
+  } catch (error) {
+    hideCDPModal(cdpLoadingModal);
+    console.error('[CDPAuth] Error verifying OTP:', error);
+    showToast(error.message || 'Verification failed', 'error');
+  }
+}
+
+/**
+ * Handle resending verification code
+ */
+async function handleResendCode() {
+  if (cdpAuthState.resendCountdown > 0) return;
+
+  showCDPLoading('Resending code...');
+
+  try {
+    let result;
+    if (cdpAuthState.method === 'email') {
+      result = await window.CDPAuth.startEmailAuth(cdpAuthState.destination);
+    } else {
+      result = await window.CDPAuth.startSmsAuth(cdpAuthState.destination);
+    }
+
+    cdpAuthState.flowId = result.flowId;
+    hideCDPModal(cdpLoadingModal);
+
+    startResendCooldown();
+    showToast('Code resent!', 'success');
+  } catch (error) {
+    hideCDPModal(cdpLoadingModal);
+    console.error('[CDPAuth] Error resending code:', error);
+    showToast(error.message || 'Failed to resend code', 'error');
+  }
+}
+
+/**
+ * Start the resend cooldown timer
+ */
+function startResendCooldown() {
+  cdpAuthState.resendCountdown = 60; // 60 seconds cooldown
+  updateResendButton();
+
+  cdpAuthState.resendTimer = setInterval(() => {
+    cdpAuthState.resendCountdown--;
+    updateResendButton();
+
+    if (cdpAuthState.resendCountdown <= 0) {
+      clearInterval(cdpAuthState.resendTimer);
+      cdpAuthState.resendTimer = null;
+    }
+  }, 1000);
+}
+
+/**
+ * Update the resend button text
+ */
+function updateResendButton() {
+  if (!cdpResendCodeBtn) return;
+
+  if (cdpAuthState.resendCountdown > 0) {
+    cdpResendCodeBtn.textContent = `Resend code (${cdpAuthState.resendCountdown}s)`;
+    cdpResendCodeBtn.disabled = true;
+  } else {
+    cdpResendCodeBtn.textContent = 'Resend code';
+    cdpResendCodeBtn.disabled = false;
+  }
+}
+
+/**
+ * Reset CDP auth state
+ */
+function resetCDPAuthState() {
+  if (cdpAuthState.resendTimer) {
+    clearInterval(cdpAuthState.resendTimer);
+  }
+  cdpAuthState = {
+    method: null,
+    flowId: null,
+    destination: null,
+    resendTimer: null,
+    resendCountdown: 0,
+  };
+}
+
+/**
+ * Show a CDP modal
+ */
+function showCDPModal(modal) {
+  if (modal) {
+    modal.classList.remove('hidden');
+  }
+}
+
+/**
+ * Hide a CDP modal
+ */
+function hideCDPModal(modal) {
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+}
+
+/**
+ * Show CDP loading modal with message
+ */
+function showCDPLoading(message) {
+  if (cdpLoadingMessage) {
+    cdpLoadingMessage.textContent = message;
+  }
+  showCDPModal(cdpLoadingModal);
+}
+
+/**
+ * Get the active API endpoint URL
+ */
+async function getActiveEndpoint() {
+  const slotId = await KeyManager.getActiveSlotId();
+  const config = KeyManager.getEnvConfig(slotId);
+  return config?.apiUrl || 'https://api.grove.city';
+}
+
+/**
+ * Get the slot ID for a given endpoint URL
+ */
+async function getSlotForEndpoint(endpoint) {
+  if (endpoint.includes('localhost')) return 'localhost';
+  if (endpoint.includes('testnet')) return 'testnet';
+  return 'production';
+}
+
+/**
+ * Refresh the UI state after successful authentication
+ */
+async function refreshUIState() {
+  // Re-check JWT status and update UI
+  await checkJwtAndUpdateUI();
 }
 
 // Init
