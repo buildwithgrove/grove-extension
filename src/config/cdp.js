@@ -8,8 +8,7 @@
  */
 
 // CDP Project ID from portal.cdp.coinbase.com
-// TODO: Replace with actual project ID from CDP Portal
-export const CDP_PROJECT_ID = 'grove-tipping';
+export const CDP_PROJECT_ID = '0ca188ff-6163-4db6-bd37-50df53dc2b08';
 
 // Supported OAuth providers for social login
 export const OAUTH_PROVIDERS = ['google', 'apple', 'x'];

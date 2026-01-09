@@ -20,7 +20,6 @@
   <script src="src/ui/prevKeysUI.js"></script>
   <script src="src/auth/xAuth.js"></script>
   <script src="src/auth/xOAuthPopup.js"></script>
-  <script src="src/config/cdp.js"></script>
   <script src="dist/cdp-auth-bundle.js"></script>
   <script src="src/parsers/destination.js"></script>
   <script src="src/ui/constants.js"></script>
@@ -1221,12 +1220,12 @@
   <div class="modal-overlay hidden" id="cdpIdentityModal">
     <div class="modal-content cdp-modal">
       <div class="cdp-modal-header">
-        <button class="cdp-modal-back" id="cdpIdentityBackBtn">
+        <button class="cdp-modal-back" id="cdpCancelIdentityBtn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
         </button>
-        <h3 id="cdpIdentityTitle">Enter your email</h3>
+        <h3 id="cdpIdentityLabel">Enter your email</h3>
       </div>
       <div class="cdp-modal-body">
         <div class="cdp-input-group">
@@ -1246,7 +1245,7 @@
   <div class="modal-overlay hidden" id="cdpOtpModal">
     <div class="modal-content cdp-modal">
       <div class="cdp-modal-header">
-        <button class="cdp-modal-back" id="cdpOtpBackBtn">
+        <button class="cdp-modal-back" id="cdpCancelOtpBtn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
@@ -1254,7 +1253,7 @@
         <h3>Enter verification code</h3>
       </div>
       <div class="cdp-modal-body">
-        <p class="cdp-modal-subtitle" id="cdpOtpSubtitle">We sent a code to your email</p>
+        <p class="cdp-modal-subtitle" id="cdpOtpDestination">We sent a code to your email</p>
         <div class="cdp-otp-input-group">
           <input type="text" id="cdpOtpInput" class="cdp-otp-input" maxlength="6" placeholder="000000" inputmode="numeric" autocomplete="one-time-code">
         </div>
@@ -1275,7 +1274,7 @@
   <div class="modal-overlay hidden" id="cdpLoadingModal">
     <div class="modal-content cdp-modal cdp-loading-modal">
       <div class="cdp-loading-spinner"></div>
-      <p id="cdpLoadingText">Creating your account...</p>
+      <p id="cdpLoadingMessage">Creating your account...</p>
     </div>
   </div>
 

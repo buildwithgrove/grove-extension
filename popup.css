@@ -4358,8 +4358,8 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 .cdp-otp-input {
-  width: 160px;
-  padding: 16px;
+  width: 200px;
+  padding: 14px 16px;
   background: var(--color-bg);
   border: 2px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -4369,6 +4369,7 @@ button.quick-access-item:hover .quick-access-icon {
   font-family: var(--grove-font-body);
   text-align: center;
   letter-spacing: 8px;
+  line-height: 1.4;
   transition: border-color 0.2s;
 }
 

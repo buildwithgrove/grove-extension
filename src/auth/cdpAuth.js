@@ -20,6 +20,7 @@ import {
   verifyEmailOTP,
   verifySmsOTP,
   getAccessToken,
+  signOut,
 } from '@coinbase/cdp-core';
 
 import { CDP_PROJECT_ID } from '../config/cdp.js';
@@ -50,12 +51,30 @@ export async function initializeCDP() {
 }
 
 /**
+ * Sign out current CDP session
+ * Call this to clear any existing auth state before starting a new flow
+ */
+export async function signOutCDP() {
+  try {
+    await initializeCDP();
+    await signOut();
+    console.log('[CDPAuth] Signed out successfully');
+  } catch (error) {
+    // Ignore errors - user might not be signed in
+    console.log('[CDPAuth] Sign out (may not have been signed in):', error.message);
+  }
+}
+
+/**
  * Start email OTP authentication flow
  * @param {string} email - User's email address
  * @returns {Promise<{flowId: string, method: 'email'}>}
  */
 export async function startEmailAuth(email) {
   await initializeCDP();
+
+  // Clear any existing session first
+  await signOutCDP();
 
   console.log('[CDPAuth] Starting email auth for:', email);
   const result = await signInWithEmail({ email });
@@ -74,6 +93,9 @@ export async function startEmailAuth(email) {
  */
 export async function startSmsAuth(phoneNumber) {
   await initializeCDP();
+
+  // Clear any existing session first
+  await signOutCDP();
 
   // Normalize phone number (remove spaces, dashes)
   const normalizedPhone = phoneNumber.replace(/[\s\-()]/g, '');
@@ -232,6 +254,7 @@ export async function authenticateWithOTP({ destination, endpoint, onOtpRequired
 if (typeof window !== 'undefined') {
   window.CDPAuth = {
     initializeCDP,
+    signOutCDP,
     startEmailAuth,
     startSmsAuth,
     verifyOTP,

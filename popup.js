@@ -138,8 +138,8 @@ const resetAutoReplyMessageBtn = document.getElementById('homeResetAutoReplyMess
 
 // CDP Auth Elements
 const cdpAuthSection = document.getElementById('cdpAuthSection');
-const cdpEmailAuthBtn = document.getElementById('cdpEmailAuthBtn');
-const cdpPhoneAuthBtn = document.getElementById('cdpPhoneAuthBtn');
+const cdpEmailAuthBtn = document.getElementById('emailAuthBtn');
+const cdpPhoneAuthBtn = document.getElementById('smsAuthBtn');
 const cdpIdentityModal = document.getElementById('cdpIdentityModal');
 const cdpIdentityInput = document.getElementById('cdpIdentityInput');
 const cdpIdentityLabel = document.getElementById('cdpIdentityLabel');

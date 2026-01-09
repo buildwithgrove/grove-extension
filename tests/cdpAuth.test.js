@@ -9,6 +9,7 @@ vi.mock('@coinbase/cdp-core', () => ({
   verifyEmailOTP: vi.fn(),
   verifySmsOTP: vi.fn(),
   getAccessToken: vi.fn(),
+  signOut: vi.fn(),
 }));
 
 // Import the mocked module
@@ -42,7 +43,7 @@ describe('CDP Auth Module', () => {
       await initializeCDP();
 
       expect(cdpCore.initialize).toHaveBeenCalledWith({
-        projectId: 'grove-tipping',
+        projectId: '0ca188ff-6163-4db6-bd37-50df53dc2b08',
         disableAnalytics: true,
       });
     });
