@@ -17,8 +17,34 @@ const BioFetcher = {
   MAX_CONCURRENT: 3, // Max parallel fetches
 
   // Twitter API configuration
-  // Bearer token is public and used by Twitter's web client
-  BEARER_TOKEN: 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA',
+  // Bearer tokens used by Twitter's web client (public, not secret)
+  // Primary token with fallback in case Twitter rotates it
+  BEARER_TOKENS: [
+    'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA',
+    'AAAAAAAAAAAAAAAAAAAAAFQODgEAAAAAVHTp76lzh3rFzcHbmHVvQxYYpTw%3DckAlMINMjmCwxUcaXbAN4XqJVdgMJaHqNOFgPMK0zN1qLqLQCF'
+  ],
+  currentTokenIndex: 0,
+
+  /**
+   * Get the current bearer token, with automatic fallback on failure
+   * @returns {string}
+   */
+  getBearerToken() {
+    return this.BEARER_TOKENS[this.currentTokenIndex] || this.BEARER_TOKENS[0];
+  },
+
+  /**
+   * Switch to the next bearer token (called on auth failures)
+   * @returns {boolean} - Whether there was another token to try
+   */
+  rotateToken() {
+    if (this.currentTokenIndex < this.BEARER_TOKENS.length - 1) {
+      this.currentTokenIndex++;
+      console.log(`[Grove BioFetcher] Rotating to fallback bearer token (index: ${this.currentTokenIndex})`);
+      return true;
+    }
+    return false;
+  },
 
   // Callbacks set by content.js
   callbacks: {
@@ -47,6 +73,7 @@ const BioFetcher = {
       this.timer = null;
     }
     this.csrfToken = null;
+    this.currentTokenIndex = 0; // Reset token rotation
   },
 
   /**
@@ -135,7 +162,7 @@ const BioFetcher = {
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'authorization': `Bearer ${decodeURIComponent(this.BEARER_TOKEN)}`,
+          'authorization': `Bearer ${decodeURIComponent(this.getBearerToken())}`,
           'x-csrf-token': csrfToken,
           'x-twitter-active-user': 'yes',
           'x-twitter-auth-type': 'OAuth2Session',
@@ -148,6 +175,13 @@ const BioFetcher = {
       if (!response.ok) {
         const errorText = await response.text().catch(() => '');
         console.log(`[Grove BioFetcher] API response for @${username}: ${response.status} - ${errorText.substring(0, 200)}`);
+
+        // On auth failure, try rotating to fallback token
+        if ((response.status === 401 || response.status === 403) && this.rotateToken()) {
+          console.log(`[Grove BioFetcher] Retrying @${username} with fallback token`);
+          return this.fetchUserBio(username); // Retry with new token
+        }
+
         throw new Error(`HTTP ${response.status}`);
       }
 
@@ -172,12 +206,59 @@ const BioFetcher = {
   },
 
   /**
-   * Process a single bio fetch
-   * @param {string} username - Twitter username to fetch
+   * Schedule the next bio fetch from the queue
    */
-  async processSingleFetch(username) {
-    this.activeCount++;
+  scheduleNextFetch() {
+    if (this.activeCount >= this.MAX_CONCURRENT) return;
+    if (this.queue.size === 0) return;
+    if (this.timer) return;
 
+    this.timer = setTimeout(() => {
+      this.timer = null;
+      this.processQueue();
+    }, this.INTERVAL);
+  },
+
+  /**
+   * Process the bio fetch queue
+   * Guards against race conditions by re-checking activeCount before each fetch
+   */
+  processQueue() {
+    // Process queue items up to MAX_CONCURRENT limit
+    // Re-check activeCount each iteration to handle concurrent calls safely
+    while (this.activeCount < this.MAX_CONCURRENT && this.queue.size > 0) {
+      const username = this.queue.values().next().value;
+      if (!username) break;
+
+      // Double-check we haven't exceeded the limit (defensive against race conditions)
+      if (this.activeCount >= this.MAX_CONCURRENT) {
+        console.log('[Grove BioFetcher] Concurrency limit reached, deferring remaining fetches');
+        break;
+      }
+
+      this.queue.delete(username);
+      this.inProgress.add(username);
+
+      // Increment activeCount synchronously before starting the async fetch
+      // This ensures the count is accurate for the next iteration
+      this.activeCount++;
+
+      // Start fetch (don't await - let it run in parallel)
+      this._executeFetch(username);
+    }
+
+    // Schedule next batch if there are more items and we have capacity
+    if (this.queue.size > 0 && this.activeCount < this.MAX_CONCURRENT) {
+      this.scheduleNextFetch();
+    }
+  },
+
+  /**
+   * Execute a single bio fetch (separated from processSingleFetch for cleaner activeCount management)
+   * @param {string} username - Twitter username to fetch
+   * @private
+   */
+  async _executeFetch(username) {
     try {
       const response = await this.fetchUserBio(username);
       this.inProgress.delete(username);
@@ -204,40 +285,6 @@ const BioFetcher = {
 
     this.activeCount--;
     this.scheduleNextFetch();
-  },
-
-  /**
-   * Schedule the next bio fetch from the queue
-   */
-  scheduleNextFetch() {
-    if (this.activeCount >= this.MAX_CONCURRENT) return;
-    if (this.queue.size === 0) return;
-    if (this.timer) return;
-
-    this.timer = setTimeout(() => {
-      this.timer = null;
-      this.processQueue();
-    }, this.INTERVAL);
-  },
-
-  /**
-   * Process the bio fetch queue
-   */
-  processQueue() {
-    while (this.activeCount < this.MAX_CONCURRENT && this.queue.size > 0) {
-      const username = this.queue.values().next().value;
-      if (!username) break;
-
-      this.queue.delete(username);
-      this.inProgress.add(username);
-
-      // Start fetch (don't await - let it run in parallel)
-      this.processSingleFetch(username);
-    }
-
-    if (this.queue.size > 0 && this.activeCount < this.MAX_CONCURRENT) {
-      this.scheduleNextFetch();
-    }
   },
 
   /**

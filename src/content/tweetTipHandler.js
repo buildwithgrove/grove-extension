@@ -466,16 +466,13 @@ const TweetTipHandler = {
       autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || autoReplyMessage;
       console.log('[Grove TweetTipHandler] Storage loaded:', { hasJwt: !!jwt, autoReply: autoReplyEnabled, likeOnTip: likeOnTipEnabled, chain: result.groveChain, fromModal: !!xActions });
 
-      // Get friendly chain name and explorer URL
+      // Get friendly chain name and explorer URL from centralized config
       const rawChain = result.groveChain || 'base';
-      const chain = rawChain.toLowerCase().replace(/_/g, '-');
-      const chainConfig = {
-        'base': { name: 'Base', explorer: 'https://basescan.org/tx/' },
-        'base-sepolia': { name: 'Base Sepolia', explorer: 'https://sepolia.basescan.org/tx/' }
-      };
-      const config = chainConfig[chain] || chainConfig['base'];
+      const config = typeof getChainConfig === 'function'
+        ? getChainConfig(rawChain)
+        : { name: 'Base', explorerUrl: 'https://basescan.org' }; // Fallback
       chainName = config.name;
-      explorerBaseUrl = config.explorer;
+      explorerBaseUrl = `${config.explorerUrl}/tx/`;
 
       if (!jwt) {
         console.error("[Grove TweetTipHandler] No API key configured.");

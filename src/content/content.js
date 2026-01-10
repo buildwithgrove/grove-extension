@@ -666,16 +666,13 @@
           if (autoReplyEnabled) {
             const isLoggedIn = await XAuth.isLoggedIn();
             if (isLoggedIn && username) {
-              // Get chain config for the message
+              // Get chain config for the message from centralized config
               const rawChain = xSettings.groveChain || 'base';
-              const chain = rawChain.toLowerCase().replace(/_/g, '-');
-              const chainConfig = {
-                'base': { name: 'Base', explorer: 'https://basescan.org/tx/' },
-                'base-sepolia': { name: 'Base Sepolia', explorer: 'https://sepolia.basescan.org/tx/' }
-              };
-              const config = chainConfig[chain] || chainConfig['base'];
+              const config = typeof getChainConfig === 'function'
+                ? getChainConfig(rawChain)
+                : { name: 'Base', explorerUrl: 'https://basescan.org' }; // Fallback
               const chainName = config.name;
-              const explorerBaseUrl = config.explorer;
+              const explorerBaseUrl = `${config.explorerUrl}/tx/`;
 
               const txHash = response.data?.tx_hash || '';
               const txLink = `${explorerBaseUrl}${txHash}`;
