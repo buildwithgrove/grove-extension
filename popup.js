@@ -1525,6 +1525,11 @@ async function fetchBalance() {
         // Resolve in background
         loadAndResolveEnsName();
       }
+    } else {
+      // No client_address in response - clear cached data and show setup card
+      await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
+      await updateEarnAddressDisplay(null);
+      updateEnsNameDisplay(null);
     }
 
     // Find balance for current chain (USDC)

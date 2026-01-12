@@ -2179,7 +2179,7 @@ button.quick-access-item:hover .quick-access-icon {
 
 /* Your Address Section (Earn Tab) */
 .your-address-section {
-  margin: 0 16px 12px;
+  margin: 0 8px 12px;
   padding: 16px;
   border-color: rgba(56, 159, 88, 0.2);
   background: linear-gradient(135deg, var(--color-surface) 0%, rgba(56, 159, 88, 0.03) 100%);
@@ -2195,7 +2195,7 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 .address-display-container {
-  margin-bottom: 0;
+  margin-bottom: 16px;
 }
 
 .address-display {
@@ -2279,7 +2279,8 @@ button.quick-access-item:hover .quick-access-icon {
   background: var(--color-primary-hover);
 }
 
-.earn-setup-card .ens-links {
+.earn-setup-card .ens-links,
+.your-address-section .ens-links {
   justify-content: flex-start;
 }
 
