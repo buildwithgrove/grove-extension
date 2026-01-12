@@ -342,17 +342,31 @@
             </div>
             <div class="tipping-row-content">
               <div class="tipping-row-label">Default Tip</div>
+              <!-- Display mode -->
               <div class="tipping-row-value" id="tipAmountDisplay">
                 <span class="currency-symbol">$</span>
                 <span class="amount-value">0.02</span>
               </div>
+              <!-- Edit mode (hidden by default) -->
+              <div class="tipping-inline-edit hidden" id="tipAmountEditInline">
+                <span class="inline-edit-prefix">$</span>
+                <input type="number" id="tipAmountInput" class="inline-edit-input" step="0.01" min="0.01" value="0.02">
+              </div>
             </div>
+            <!-- Display mode button -->
             <button class="card-action-btn secondary" id="editDefaultTipBtn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
                 <path d="m15 5 4 4"></path>
               </svg>
               <span>Edit</span>
+            </button>
+            <!-- Edit mode button -->
+            <button class="card-action-btn primary hidden" id="saveTipAmount">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>Save</span>
             </button>
           </div>
 
@@ -374,25 +388,6 @@
               <input type="checkbox" id="confirmTipToggle">
               <span class="slider"></span>
             </label>
-          </div>
-        </div>
-
-        <!-- Tip Amount Edit Form (shown when editing) -->
-        <div class="section-card hidden" id="tipAmountEdit">
-          <div class="tip-edit-form">
-            <div class="settings-item" style="border-bottom: none; padding: 8px 0;">
-              <div class="settings-info">
-                <div class="settings-name">Default Amount</div>
-              </div>
-              <div class="input-group" style="width: 100px;">
-                <span class="input-prefix">$</span>
-                <input type="number" id="tipAmountInput" step="0.01" min="0.01" value="0.02" placeholder="0.00">
-              </div>
-            </div>
-            <div class="form-actions">
-              <button class="btn-secondary btn-sm" id="cancelTipAmount">Cancel</button>
-              <button class="btn-primary btn-sm" id="saveTipAmount">Save</button>
-            </div>
           </div>
         </div>
 

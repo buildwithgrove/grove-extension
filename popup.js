@@ -24,11 +24,9 @@ const setupTokenBtn = document.getElementById('setupTokenBtn');
 
 // Tip amount (Home)
 const tipAmountDisplay = document.getElementById('tipAmountDisplay');
-const tipAmountEdit = document.getElementById('tipAmountEdit');
+const tipAmountEditInline = document.getElementById('tipAmountEditInline');
 const tipAmountInput = document.getElementById('tipAmountInput');
 const saveTipAmount = document.getElementById('saveTipAmount');
-const cancelTipAmount = document.getElementById('cancelTipAmount');
-const tippingCard = document.getElementById('tippingCard');
 const editDefaultTipBtn = document.getElementById('editDefaultTipBtn');
 const confirmTipToggle = document.getElementById('confirmTipToggle');
 
@@ -441,7 +439,6 @@ function setupEventListeners() {
 
   // Tip Amount (Home) - Edit button triggers edit mode
   editDefaultTipBtn.addEventListener('click', showTipEdit);
-  cancelTipAmount.addEventListener('click', hideTipEdit);
   saveTipAmount.addEventListener('click', saveTip);
   confirmTipToggle.addEventListener('change', handleConfirmTipToggle);
 
@@ -1244,22 +1241,22 @@ function updateTipUI(amount) {
 }
 
 function showTipEdit() {
-  // Hide the tipping card
-  if (tippingCard) {
-    tippingCard.classList.add('hidden');
-  }
-  tipAmountEdit.classList.remove('hidden');
+  // Switch to inline edit mode
+  if (tipAmountDisplay) tipAmountDisplay.classList.add('hidden');
+  if (tipAmountEditInline) tipAmountEditInline.classList.remove('hidden');
+  if (editDefaultTipBtn) editDefaultTipBtn.classList.add('hidden');
+  if (saveTipAmount) saveTipAmount.classList.remove('hidden');
   // Focus the input for quick editing
   tipAmountInput.focus();
   tipAmountInput.select();
 }
 
 function hideTipEdit() {
-  // Show the tipping card
-  if (tippingCard) {
-    tippingCard.classList.remove('hidden');
-  }
-  tipAmountEdit.classList.add('hidden');
+  // Switch back to display mode
+  if (tipAmountDisplay) tipAmountDisplay.classList.remove('hidden');
+  if (tipAmountEditInline) tipAmountEditInline.classList.add('hidden');
+  if (editDefaultTipBtn) editDefaultTipBtn.classList.remove('hidden');
+  if (saveTipAmount) saveTipAmount.classList.add('hidden');
 }
 
 async function saveTip() {
