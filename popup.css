@@ -569,6 +569,9 @@ body {
 
 .tipping-row .card-action-btn {
   flex-shrink: 0;
+  padding: 8px 14px;
+  font-size: 13px;
+  gap: 6px;
 }
 
 .card-action-btn:hover {
