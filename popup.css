@@ -2239,9 +2239,10 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 .earn-setup-intro {
-  font-size: 13px;
-  color: var(--color-text-secondary);
+  font-size: 14px;
+  color: var(--color-text-primary);
   margin: 0 0 14px 0;
+  text-align: center;
 }
 
 .earn-setup-examples {
