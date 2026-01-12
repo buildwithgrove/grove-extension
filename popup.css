@@ -659,6 +659,7 @@ button.section-card-btn:hover .quick-access-icon {
   font-size: 16px;
   font-weight: 500;
   color: var(--color-text-primary);
+  white-space: nowrap;
 }
 
 .card-chevron {
