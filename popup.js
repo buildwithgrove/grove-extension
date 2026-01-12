@@ -272,7 +272,7 @@ async function init() {
   loadExtensionVersion();
   checkForUpdates();
   setupEventListeners();
-  initCDPAuth();
+  await initCDPAuth();
 
   // Ensure chain dropdown options match current endpoint on init
   const endpointInit = await GroveAPI.getBaseURL().then(() => {
@@ -1168,7 +1168,7 @@ async function removeJwt() {
   if (slotToRemove === activeSlot) {
     await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
     await updateAuthState(null);
-    updateEarnAddressDisplay(null);
+    await updateEarnAddressDisplay(null);
     updateEnsNameDisplay(null);
   }
 
@@ -1501,7 +1501,7 @@ async function fetchBalance() {
         await updateAuthState(null);
         await loadJwtSlots();
         await prevKeysUI.updateCount();
-        updateEarnAddressDisplay(null);
+        await updateEarnAddressDisplay(null);
         updateEnsNameDisplay(null);
         balanceAmount.textContent = FormatUtils.DEFAULT_BALANCE_DISPLAY;
 
@@ -1516,7 +1516,7 @@ async function fetchBalance() {
       const previousAddress = result[STORAGE_KEYS.CLIENT_ADDRESS];
 
       await chrome.storage.local.set({ [STORAGE_KEYS.CLIENT_ADDRESS]: response.data.client_address });
-      updateEarnAddressDisplay(response.data.client_address);
+      await updateEarnAddressDisplay(response.data.client_address);
 
       // If address changed, clear cached ENS name and re-resolve
       if (previousAddress !== response.data.client_address) {
@@ -1553,13 +1553,22 @@ async function fetchBalance() {
 /**
  * Earn Tab - Unified Address Display
  * Shows ENS name or base name if available, otherwise shows 0x address
+ * For email/SMS-only users without an address, shows the setup card instead
  */
-function updateEarnAddressDisplay(displayValue, hasEnsName = false) {
+async function updateEarnAddressDisplay(displayValue, hasEnsName = false) {
   const ensLinksSection = document.getElementById('ensLinksSection');
+  const earnAddressCard = document.getElementById('earnAddressCard');
+  const earnSetupCard = document.getElementById('earnSetupCard');
 
-  if (earnAddressText && displayValue) {
-    earnAddressText.textContent = displayValue;
-    earnAddressText.classList.remove('placeholder');
+  if (displayValue) {
+    // User has an address - show the address card
+    if (earnAddressCard) earnAddressCard.classList.remove('hidden');
+    if (earnSetupCard) earnSetupCard.classList.add('hidden');
+
+    if (earnAddressText) {
+      earnAddressText.textContent = displayValue;
+      earnAddressText.classList.remove('placeholder');
+    }
     if (copyEarnAddressBtn) {
       copyEarnAddressBtn.disabled = false;
     }
@@ -1571,16 +1580,10 @@ function updateEarnAddressDisplay(displayValue, hasEnsName = false) {
         ensLinksSection.classList.remove('hidden');
       }
     }
-  } else if (earnAddressText) {
-    earnAddressText.textContent = 'Connect to see address';
-    earnAddressText.classList.add('placeholder');
-    if (copyEarnAddressBtn) {
-      copyEarnAddressBtn.disabled = true;
-    }
-    // Show "Get an ENS name" links when not connected
-    if (ensLinksSection) {
-      ensLinksSection.classList.remove('hidden');
-    }
+  } else {
+    // No address - show setup card (same for logged out or email/SMS users without address)
+    if (earnAddressCard) earnAddressCard.classList.add('hidden');
+    if (earnSetupCard) earnSetupCard.classList.remove('hidden');
   }
 }
 
@@ -1591,13 +1594,13 @@ async function loadClientAddress() {
 
   // Show ENS/base name if available, otherwise show truncated 0x address
   if (ensName) {
-    updateEarnAddressDisplay(ensName, true);
+    await updateEarnAddressDisplay(ensName, true);
   } else if (address) {
     // Truncate address for display: 0x1234...abcd
     const truncated = `${address.slice(0, 6)}...${address.slice(-4)}`;
-    updateEarnAddressDisplay(truncated, false);
+    await updateEarnAddressDisplay(truncated, false);
   } else {
-    updateEarnAddressDisplay(null, false);
+    await updateEarnAddressDisplay(null, false);
   }
 }
 
@@ -1807,7 +1810,7 @@ async function handleDevModeToggle(e) {
     // Switch to testnet JWT context
     const testnetJwt = await KeyManager.getJWT('testnet');
     await updateAuthState(testnetJwt);
-    updateEarnAddressDisplay(null); // Clear address until balance is fetched
+    await updateEarnAddressDisplay(null); // Clear address until balance is fetched
     updateEnsNameDisplay(null);
 
     // Update slot UI to show testnet as active
@@ -1845,7 +1848,7 @@ async function handleDevModeToggle(e) {
     // Switch to production JWT context
     const prodJwt = await KeyManager.getJWT('production');
     await updateAuthState(prodJwt);
-    updateEarnAddressDisplay(null); // Clear address until balance is fetched
+    await updateEarnAddressDisplay(null); // Clear address until balance is fetched
     updateEnsNameDisplay(null);
 
     // Update slot UI to show mainnet as active
@@ -2817,7 +2820,7 @@ function togglePasswordVisibility() {
 /**
  * Initialize CDP Auth event handlers
  */
-function initCDPAuth() {
+async function initCDPAuth() {
   // Only initialize if CDP auth elements exist
   if (!cdpEmailAuthBtn || !cdpPhoneAuthBtn) {
     console.log('[CDPAuth] CDP auth elements not found, skipping initialization');
@@ -2868,6 +2871,12 @@ function initCDPAuth() {
   cdpOtpInput?.addEventListener('input', (e) => {
     e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
   });
+
+  // Restore any pending OTP verification state
+  const restored = await restoreCDPAuthState();
+  if (restored) {
+    console.log('[CDPAuth] Restored pending OTP verification');
+  }
 
   console.log('[CDPAuth] Event handlers initialized');
 }
@@ -2930,6 +2939,9 @@ async function handleSendCode() {
 
     cdpAuthState.flowId = result.flowId;
 
+    // Persist state so it survives popup close
+    await saveCDPAuthState();
+
     hideCDPModal(cdpLoadingModal);
     hideCDPModal(cdpIdentityModal);
 
@@ -2986,7 +2998,7 @@ async function handleVerifyOTP() {
     // Close all modals
     hideCDPModal(cdpLoadingModal);
     hideCDPModal(cdpOtpModal);
-    resetCDPAuthState();
+    await resetCDPAuthState();
 
     // Refresh the UI to show connected state
     await refreshUIState();
@@ -2997,7 +3009,20 @@ async function handleVerifyOTP() {
   } catch (error) {
     hideCDPModal(cdpLoadingModal);
     console.error('[CDPAuth] Error verifying OTP:', error);
-    showToast(error.message || 'Verification failed', 'error');
+
+    // Check if this is a session/flow expired error
+    const errorMsg = error.message || '';
+    if (errorMsg.toLowerCase().includes('expired') ||
+        errorMsg.toLowerCase().includes('invalid') ||
+        errorMsg.toLowerCase().includes('not found') ||
+        errorMsg.toLowerCase().includes('session')) {
+      // Clear stale state and prompt to restart
+      await resetCDPAuthState();
+      hideCDPModal(cdpOtpModal);
+      showToast('Session expired. Please request a new code.', 'error');
+    } else {
+      showToast(error.message || 'Verification failed', 'error');
+    }
   }
 }
 
@@ -3065,7 +3090,7 @@ function updateResendButton() {
 /**
  * Reset CDP auth state
  */
-function resetCDPAuthState() {
+async function resetCDPAuthState() {
   if (cdpAuthState.resendTimer) {
     clearInterval(cdpAuthState.resendTimer);
   }
@@ -3076,6 +3101,68 @@ function resetCDPAuthState() {
     resendTimer: null,
     resendCountdown: 0,
   };
+  // Clear persisted state
+  await chrome.storage.local.remove(STORAGE_KEYS.CDP_AUTH_STATE);
+}
+
+/**
+ * Save CDP auth state to storage (for persistence across popup close)
+ */
+async function saveCDPAuthState() {
+  const stateToSave = {
+    method: cdpAuthState.method,
+    flowId: cdpAuthState.flowId,
+    destination: cdpAuthState.destination,
+    timestamp: Date.now(),
+  };
+  await chrome.storage.local.set({ [STORAGE_KEYS.CDP_AUTH_STATE]: stateToSave });
+}
+
+/**
+ * Restore CDP auth state from storage
+ */
+async function restoreCDPAuthState() {
+  const result = await chrome.storage.local.get(STORAGE_KEYS.CDP_AUTH_STATE);
+  const savedState = result[STORAGE_KEYS.CDP_AUTH_STATE];
+
+  if (!savedState || !savedState.flowId) return false;
+
+  // Check if state is too old (5 minutes)
+  const MAX_AGE = 5 * 60 * 1000;
+  if (Date.now() - savedState.timestamp > MAX_AGE) {
+    await chrome.storage.local.remove(STORAGE_KEYS.CDP_AUTH_STATE);
+    return false;
+  }
+
+  // Re-initialize CDP SDK (required after popup close/reopen)
+  try {
+    if (typeof window.CDPAuth !== 'undefined' && window.CDPAuth.initializeCDP) {
+      await window.CDPAuth.initializeCDP();
+    }
+  } catch (error) {
+    console.error('[CDPAuth] Failed to reinitialize SDK:', error);
+    await chrome.storage.local.remove(STORAGE_KEYS.CDP_AUTH_STATE);
+    return false;
+  }
+
+  // Restore state
+  cdpAuthState.method = savedState.method;
+  cdpAuthState.flowId = savedState.flowId;
+  cdpAuthState.destination = savedState.destination;
+
+  // Show OTP modal
+  if (cdpOtpDestination) {
+    cdpOtpDestination.textContent = savedState.destination;
+  }
+  if (cdpOtpInput) {
+    cdpOtpInput.value = '';
+  }
+  showCDPModal(cdpOtpModal);
+  if (cdpOtpInput) {
+    cdpOtpInput.focus();
+  }
+
+  return true;
 }
 
 /**
@@ -3129,7 +3216,9 @@ async function getSlotForEndpoint(endpoint) {
  */
 async function refreshUIState() {
   // Re-check JWT status and update UI
-  await checkJwtAndUpdateUI();
+  await loadJWT();
+  // Also fetch updated balance
+  await fetchBalance();
 }
 
 // Init

@@ -268,8 +268,8 @@
           <!-- Step 3: Connect -->
           <div class="onboarding-step" data-step="3">
             <div class="onboarding-content">
-              <h2 class="onboarding-title">Create Account</h2>
-              <p class="onboarding-subtitle">Sign in to start tipping</p>
+              <h2 class="onboarding-title">Sign In</h2>
+              <p class="onboarding-subtitle">Log in or sign up to start tipping</p>
             </div>
 
             <!-- CDP Auth Buttons -->
@@ -609,10 +609,10 @@
     <div class="page" id="tab-earn">
       <h2 class="page-title">Earn Tips</h2>
 
-      <!-- Your Address Section (unified - shows ENS/basename or address) -->
-      <div class="section-card your-address-section">
+      <!-- Your Address Section (shows when user has an address) -->
+      <div class="section-card your-address-section" id="earnAddressCard">
         <div class="section-header">
-          <h3>Receive Tips at Your Existing Wallet</h3>
+          <h3>Receive Tips at Your Wallet</h3>
         </div>
 
         <div class="address-display-container">
@@ -636,34 +636,23 @@
         </div>
       </div>
 
-      <!-- How to Earn Section -->
-      <div class="section-card how-to-earn-section">
-        <h3 class="how-to-earn-title">How to Earn Tips</h3>
-        <div class="how-to-earn-steps">
-          <div class="earn-step">
-            <div class="earn-step-number">1</div>
-            <div class="earn-step-content">
-              <div class="earn-step-title">Copy your address above</div>
-            </div>
-          </div>
-          <div class="earn-step">
-            <div class="earn-step-number">2</div>
-            <div class="earn-step-content">
-              <div class="earn-step-title">Add it to your 𝕏 profile</div>
-              <div class="earn-step-desc">Put it in your display name or bio</div>
-            </div>
-          </div>
-          <div class="earn-step">
-            <div class="earn-step-number">3</div>
-            <div class="earn-step-content">
-              <div class="earn-step-title">Get tipped by others</div>
-              <div class="earn-step-desc">People with the Grove extension can tip your posts</div>
-            </div>
-          </div>
+      <!-- No Address State (shows for email/SMS users without a wallet) -->
+      <div class="section-card earn-setup-card hidden" id="earnSetupCard">
+        <p class="earn-setup-intro">Add a wallet address or ENS name to your 𝕏 bio to receive tips</p>
+        <div class="earn-setup-examples">
+          <code>vitalik.eth</code>
+          <code>jesse.base.eth</code>
+          <code>0x1234...abcd</code>
         </div>
-        <a href="https://x.com/settings/profile" target="_blank" class="how-to-earn-btn">
+        <a href="https://x.com/settings/profile" target="_blank" class="earn-setup-cta">
           Edit Profile on <span class="x-logo-text">𝕏</span>
         </a>
+        <div class="ens-links">
+          <span class="ens-label">Get a name:</span>
+          <a href="https://app.ens.domains" target="_blank" class="ens-link">.eth</a>
+          <span class="ens-separator">or</span>
+          <a href="https://www.base.org/names" target="_blank" class="ens-link">.base.eth</a>
+        </div>
       </div>
     </div>
 

@@ -118,6 +118,9 @@ export async function startSmsAuth(phoneNumber) {
  * @returns {Promise<string>} CDP access token
  */
 export async function verifyOTP(flowId, otp, method) {
+  // Ensure SDK is initialized (needed after popup close/reopen)
+  await initializeCDP();
+
   console.log('[CDPAuth] Verifying OTP for method:', method);
 
   // Verify the OTP
