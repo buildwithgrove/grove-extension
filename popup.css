@@ -455,7 +455,8 @@ body {
 .card-row {
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: space-between;
+  gap: 24px;
 }
 
 .card-content {
@@ -651,6 +652,22 @@ button.section-card-btn .quick-access-icon {
 
 button.section-card-btn:hover .quick-access-icon {
   color: var(--color-primary);
+}
+
+.settings-card-desc {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+
+.card-chevron {
+  color: var(--color-text-secondary);
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+button.section-card-btn:hover .card-chevron {
+  color: var(--color-primary);
+  transform: translateX(2px);
 }
 
 .card-feature-list {

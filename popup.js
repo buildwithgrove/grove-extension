@@ -491,7 +491,7 @@ function setupEventListeners() {
   if (setupTokenBtn) {
     setupTokenBtn.addEventListener('click', () => {
       // Navigate to settings -> Account and open edit
-      document.querySelector('[data-target="tab-settings"]').click();
+      navigateToSettings();
       showSettingsView('account');
       showJwtEdit();
     });
@@ -501,8 +501,16 @@ function setupEventListeners() {
   const testModeBanner = document.getElementById('testModeBanner');
   if (testModeBanner) {
     testModeBanner.addEventListener('click', () => {
-      document.querySelector('[data-target="tab-settings"]').click();
+      navigateToSettings();
       showSettingsView('developer');
+    });
+  }
+
+  // Home Settings Card - navigate to Settings tab
+  const homeSettingsBtn = document.getElementById('homeSettingsBtn');
+  if (homeSettingsBtn) {
+    homeSettingsBtn.addEventListener('click', () => {
+      navigateToSettings();
     });
   }
 
@@ -686,6 +694,26 @@ function setupEventListeners() {
       await fetchBalance();
     }
   });
+}
+
+/**
+ * Navigate to Settings tab programmatically
+ */
+function navigateToSettings() {
+  // Update nav items
+  navItems.forEach(item => item.classList.remove('active'));
+
+  // Update pages
+  pages.forEach(page => {
+    if (page.id === 'tab-settings') {
+      page.classList.add('active');
+    } else {
+      page.classList.remove('active');
+    }
+  });
+
+  // Show main settings menu
+  showSettingsView('main');
 }
 
 /**
