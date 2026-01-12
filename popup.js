@@ -268,6 +268,10 @@ async function init() {
   await loadChain();
   await loadEndpoint();
   await prevKeysUI.updateCount();
+
+  // Clear stale ENS cache on init - will be re-resolved fresh
+  await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
+
   await loadClientAddress();
   loadExtensionVersion();
   checkForUpdates();
@@ -1512,11 +1516,15 @@ async function fetchBalance() {
 
     // Store client_address for Earn tab display
     if (response.data.client_address) {
+      console.log('[Grove Extension] fetchBalance got client_address:', response.data.client_address);
       const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
       const previousAddress = result[STORAGE_KEYS.CLIENT_ADDRESS];
 
       await chrome.storage.local.set({ [STORAGE_KEYS.CLIENT_ADDRESS]: response.data.client_address });
-      await updateEarnAddressDisplay(response.data.client_address);
+      // Show truncated address
+      const truncated = `${response.data.client_address.slice(0, 6)}...${response.data.client_address.slice(-4)}`;
+      console.log('[Grove Extension] Displaying truncated address:', truncated);
+      await updateEarnAddressDisplay(truncated, false);
 
       // If address changed, clear cached ENS name and re-resolve
       if (previousAddress !== response.data.client_address) {
@@ -1717,13 +1725,17 @@ async function loadAndResolveEnsName() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
   const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
 
+  console.log('[Grove Extension] loadAndResolveEnsName called, address:', address);
+
   if (!address) {
+    console.log('[Grove Extension] No address to resolve');
     return;
   }
 
   // Always do fresh resolution
   try {
     const ensName = await resolveEnsName(address);
+    console.log('[Grove Extension] ENS resolution result:', ensName, 'for address:', address);
     if (ensName) {
       await chrome.storage.local.set({ [STORAGE_KEYS.ENS_NAME]: ensName });
       await updateEarnAddressDisplay(ensName, true);
