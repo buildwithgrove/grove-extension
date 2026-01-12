@@ -96,6 +96,7 @@ const tipIntroSkipBtn = document.getElementById('tipIntroSkipBtn');
 const tipIntroPage1 = document.getElementById('tipIntroPage1');
 const tipIntroPage2 = document.getElementById('tipIntroPage2');
 const tipIntroDots = document.querySelectorAll('.tip-intro-dot');
+let introModalMode = 'intro'; // Track current modal mode: 'intro' shows page 1 only, 'twitter' shows page 2 only
 
 // Initialize Previous Keys UI
 let prevKeysUI = null;
@@ -276,17 +277,9 @@ async function init() {
   chrome.runtime.sendMessage({ type: 'CHECK_OPEN_TO_X_SETTINGS' }, (response) => {
     if (chrome.runtime.lastError) return; // Service worker inactive
     if (response?.shouldOpen) {
-      // Navigate to home tab first
-      const homeTab = document.querySelector('[data-target="tab-home"]');
-      if (homeTab) homeTab.click();
-
-      // Open X settings panel
-      const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
-      const homeTwitterSettingsPanel = document.getElementById('homeTwitterSettingsPanel');
-      if (homeTwitterSettingsBtn && homeTwitterSettingsPanel) {
-        homeTwitterSettingsBtn.classList.add('hidden');
-        homeTwitterSettingsPanel.classList.remove('hidden');
-      }
+      // Navigate to Settings > X
+      navigateToSettings();
+      showSettingsView('x-settings');
     }
   });
 
@@ -2627,9 +2620,6 @@ function renderHistoryList() {
  * Shows page 1 only when user first connects their account
  * Twitter connect (page 2) is shown separately after conditions are met
  */
-
-// Track current modal mode: 'intro' shows page 1 only, 'twitter' shows page 2 only
-let introModalMode = 'intro';
 
 async function checkAndShowTipIntroModal() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.TIP_INTRO_SEEN]);
