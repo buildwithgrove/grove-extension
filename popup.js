@@ -28,7 +28,7 @@ const tipAmountEdit = document.getElementById('tipAmountEdit');
 const tipAmountInput = document.getElementById('tipAmountInput');
 const saveTipAmount = document.getElementById('saveTipAmount');
 const cancelTipAmount = document.getElementById('cancelTipAmount');
-const defaultTipCard = document.getElementById('defaultTipCard');
+const tippingCard = document.getElementById('tippingCard');
 const editDefaultTipBtn = document.getElementById('editDefaultTipBtn');
 const confirmTipToggle = document.getElementById('confirmTipToggle');
 
@@ -1244,9 +1244,9 @@ function updateTipUI(amount) {
 }
 
 function showTipEdit() {
-  // Hide the default tip card
-  if (defaultTipCard) {
-    defaultTipCard.classList.add('hidden');
+  // Hide the tipping card
+  if (tippingCard) {
+    tippingCard.classList.add('hidden');
   }
   tipAmountEdit.classList.remove('hidden');
   // Focus the input for quick editing
@@ -1255,9 +1255,9 @@ function showTipEdit() {
 }
 
 function hideTipEdit() {
-  // Show the default tip card
-  if (defaultTipCard) {
-    defaultTipCard.classList.remove('hidden');
+  // Show the tipping card
+  if (tippingCard) {
+    tippingCard.classList.remove('hidden');
   }
   tipAmountEdit.classList.add('hidden');
 }

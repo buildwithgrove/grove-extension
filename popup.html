@@ -302,40 +302,52 @@
 
       <!-- Connected State -->
       <div id="connectedState">
-        <!-- Balance Card -->
-        <div class="section-card">
-          <div class="card-row">
-            <div class="card-content">
-              <div class="card-label">Tipping Balance</div>
-              <div class="amount-display" id="balanceDisplay">
+        <!-- Unified Tipping Card -->
+        <div class="section-card tipping-card" id="tippingCard">
+          <!-- Balance Row -->
+          <div class="tipping-row">
+            <div class="tipping-row-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+                <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+                <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+              </svg>
+            </div>
+            <div class="tipping-row-content">
+              <div class="tipping-row-label">Balance</div>
+              <div class="tipping-row-value amount-display" id="balanceDisplay">
                 <span class="currency-symbol">$</span>
                 <span class="amount-value" id="balanceAmount">0.00</span>
                 <div class="balance-spinner"></div>
               </div>
             </div>
-            <a href="https://app.grove.city/profile?tab=tip" target="_blank" class="card-action-btn primary" id="topUpBtn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
+            <a href="https://app.grove.city/profile?tab=tip&action=topup" target="_blank" class="card-action-btn primary" id="topUpBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 2v20m0-20L5 9m7-7l7 7" />
               </svg>
               <span>Top Up</span>
             </a>
           </div>
-        </div>
 
+          <!-- Divider -->
+          <div class="tipping-divider"></div>
 
-
-        <!-- Tip Settings Card -->
-        <div class="section-card" id="defaultTipCard">
-          <div class="card-row">
-            <div class="card-content">
-              <div class="card-label">Tip Settings</div>
-              <div class="amount-display" id="tipAmountDisplay">
+          <!-- Default Tip Row -->
+          <div class="tipping-row" id="defaultTipRow">
+            <div class="tipping-row-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 2L11 13" />
+                <path d="M22 2L15 22L11 13L2 9L22 2Z" />
+              </svg>
+            </div>
+            <div class="tipping-row-content">
+              <div class="tipping-row-label">Default Tip</div>
+              <div class="tipping-row-value" id="tipAmountDisplay">
                 <span class="currency-symbol">$</span>
                 <span class="amount-value">0.02</span>
               </div>
             </div>
-            <button class="card-action-btn primary" id="editDefaultTipBtn">
+            <button class="card-action-btn secondary" id="editDefaultTipBtn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
                 <path d="m15 5 4 4"></path>
@@ -347,11 +359,6 @@
 
         <!-- Tip Settings Edit Form (shown when editing) -->
         <div class="section-card hidden" id="tipAmountEdit">
-          <div class="card-row">
-            <div class="card-content">
-              <div class="card-label">Tip Settings</div>
-            </div>
-          </div>
           <div class="tip-edit-form">
             <div class="settings-item" style="border-bottom: none; padding: 8px 0;">
               <div class="settings-info">
