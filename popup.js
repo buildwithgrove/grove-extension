@@ -1593,15 +1593,11 @@ async function updateEarnAddressDisplay(displayValue, hasEnsName = false) {
 }
 
 async function loadClientAddress() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
+  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
   const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
-  const ensName = result[STORAGE_KEYS.ENS_NAME];
 
-  // Show ENS/base name if available, otherwise show truncated 0x address
-  if (ensName) {
-    await updateEarnAddressDisplay(ensName, true);
-  } else if (address) {
-    // Truncate address for display: 0x1234...abcd
+  // Always show truncated address first, let loadAndResolveEnsName update to ENS after fresh resolution
+  if (address) {
     const truncated = `${address.slice(0, 6)}...${address.slice(-4)}`;
     await updateEarnAddressDisplay(truncated, false);
   } else {
@@ -1699,39 +1695,46 @@ async function resolveEnsName(address) {
  * This is called after ENS resolution completes
  */
 async function updateEnsNameDisplay(ensName) {
-  // Re-load and display the address (will show ENS if available)
-  await loadClientAddress();
+  // Update earn display with ENS name if provided, otherwise show truncated address
+  if (ensName) {
+    await updateEarnAddressDisplay(ensName, true);
+  } else {
+    // Fall back to truncated address
+    const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
+    const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
+    if (address) {
+      const truncated = `${address.slice(0, 6)}...${address.slice(-4)}`;
+      await updateEarnAddressDisplay(truncated, false);
+    }
+  }
 }
 
 /**
  * Load and resolve ENS name for stored address
+ * Always does fresh resolution - does not trust cached ENS name
  */
 async function loadAndResolveEnsName() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
+  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
   const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
-  const cachedEnsName = result[STORAGE_KEYS.ENS_NAME];
 
-  // Show cached name immediately if available
-  if (cachedEnsName) {
-    updateEnsNameDisplay(cachedEnsName);
+  if (!address) {
+    return;
   }
 
-  // If we have an address, try to resolve it
-  if (address) {
-    try {
-      const ensName = await resolveEnsName(address);
-      if (ensName) {
-        await chrome.storage.local.set({ [STORAGE_KEYS.ENS_NAME]: ensName });
-        updateEnsNameDisplay(ensName);
-      } else if (cachedEnsName) {
-        // Clear cached name if resolution returns nothing
-        await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
-        updateEnsNameDisplay(null);
-      }
-    } catch (e) {
-      console.error('[Grove Extension] ENS resolution failed:', e);
-      // Keep showing cached name on error
+  // Always do fresh resolution
+  try {
+    const ensName = await resolveEnsName(address);
+    if (ensName) {
+      await chrome.storage.local.set({ [STORAGE_KEYS.ENS_NAME]: ensName });
+      await updateEarnAddressDisplay(ensName, true);
+    } else {
+      // No ENS found - clear cache and keep showing truncated address
+      await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
     }
+  } catch (e) {
+    console.error('[Grove Extension] ENS resolution failed:', e);
+    // On error, keep showing truncated address (don't use stale cache)
+    await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
   }
 }
 
