@@ -24,9 +24,11 @@ const setupTokenBtn = document.getElementById('setupTokenBtn');
 
 // Tip amount (Home)
 const tipAmountDisplay = document.getElementById('tipAmountDisplay');
-const tipAmountEditInline = document.getElementById('tipAmountEditInline');
+const defaultTipRow = document.getElementById('defaultTipRow');
+const tipAmountEditRow = document.getElementById('tipAmountEditRow');
 const tipAmountInput = document.getElementById('tipAmountInput');
 const saveTipAmount = document.getElementById('saveTipAmount');
+const cancelTipEdit = document.getElementById('cancelTipEdit');
 const editDefaultTipBtn = document.getElementById('editDefaultTipBtn');
 const confirmTipToggle = document.getElementById('confirmTipToggle');
 
@@ -440,6 +442,7 @@ function setupEventListeners() {
   // Tip Amount (Home) - Edit button triggers edit mode
   editDefaultTipBtn.addEventListener('click', showTipEdit);
   saveTipAmount.addEventListener('click', saveTip);
+  if (cancelTipEdit) cancelTipEdit.addEventListener('click', hideTipEdit);
   confirmTipToggle.addEventListener('change', handleConfirmTipToggle);
 
   // Tip Intro Modal - Page Navigation
@@ -1241,22 +1244,18 @@ function updateTipUI(amount) {
 }
 
 function showTipEdit() {
-  // Switch to inline edit mode
-  if (tipAmountDisplay) tipAmountDisplay.classList.add('hidden');
-  if (tipAmountEditInline) tipAmountEditInline.classList.remove('hidden');
-  if (editDefaultTipBtn) editDefaultTipBtn.classList.add('hidden');
-  if (saveTipAmount) saveTipAmount.classList.remove('hidden');
-  // Focus the input for quick editing
+  // Hide display row, show edit row
+  if (defaultTipRow) defaultTipRow.classList.add('hidden');
+  if (tipAmountEditRow) tipAmountEditRow.classList.remove('hidden');
+  // Focus and select all for easy replacement
   tipAmountInput.focus();
   tipAmountInput.select();
 }
 
 function hideTipEdit() {
-  // Switch back to display mode
-  if (tipAmountDisplay) tipAmountDisplay.classList.remove('hidden');
-  if (tipAmountEditInline) tipAmountEditInline.classList.add('hidden');
-  if (editDefaultTipBtn) editDefaultTipBtn.classList.remove('hidden');
-  if (saveTipAmount) saveTipAmount.classList.add('hidden');
+  // Show display row, hide edit row
+  if (defaultTipRow) defaultTipRow.classList.remove('hidden');
+  if (tipAmountEditRow) tipAmountEditRow.classList.add('hidden');
 }
 
 async function saveTip() {

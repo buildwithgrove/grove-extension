@@ -683,48 +683,74 @@ body {
 }
 
 .tipping-row-toggle {
-  padding: 4px 0;
+  padding: 8px 0 0 0;
 }
 
-.tipping-row-icon-subtle {
-  background: rgba(56, 159, 88, 0.12);
-  color: var(--color-primary);
+.tipping-row-toggle .tipping-row-content {
+  flex: 1;
 }
 
 .tipping-row-label-text {
-  font-size: 14px;
-  color: var(--color-text-primary);
+  font-size: 13px;
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
-/* Inline Edit */
-.tipping-inline-edit {
+/* Tip Edit Row */
+.tipping-edit-row {
+  padding: 4px 0;
+}
+
+.tipping-edit-field {
   display: flex;
   align-items: center;
-  gap: 2px;
-}
-
-.inline-edit-prefix {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.inline-edit-input {
-  width: 70px;
-  padding: 4px 8px;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--color-primary);
+  gap: 4px;
   background: var(--color-bg);
   border: 1px solid var(--color-primary);
-  border-radius: 6px;
-  outline: none;
-  font-family: inherit;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
 }
 
-.inline-edit-input:focus {
-  box-shadow: 0 0 0 2px rgba(56, 159, 88, 0.2);
+.tipping-edit-prefix {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.tipping-edit-input {
+  flex: 1;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  min-width: 0;
+  -moz-appearance: textfield;
+}
+
+/* Hide number input spinners */
+.tipping-edit-input::-webkit-outer-spin-button,
+.tipping-edit-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.tipping-edit-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.tipping-edit-input::selection {
+  background: rgba(56, 159, 88, 0.3);
+}
+
+.tipping-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
 }
 
 /* Clickable Section Card (button) */
@@ -782,9 +808,29 @@ button.section-card-btn:hover .card-chevron {
 
 .settings-card-bottom {
   margin-top: auto;
+  padding: 14px 16px;
 }
 
-button.section-card-btn:hover .tipping-row-icon-subtle {
+.settings-card-bottom .card-row {
+  gap: 12px;
+}
+
+.settings-card-bottom .tipping-row-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.settings-card-bottom .tipping-row-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.settings-card-bottom .settings-card-title {
+  font-size: 14px;
+}
+
+button.section-card-btn:hover .tipping-row-icon {
   background: rgba(56, 159, 88, 0.15);
   color: var(--color-primary);
 }

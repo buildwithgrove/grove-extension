@@ -349,11 +349,6 @@
                 <span class="currency-symbol">$</span>
                 <span class="amount-value">0.02</span>
               </div>
-              <!-- Edit mode (hidden by default) -->
-              <div class="tipping-inline-edit hidden" id="tipAmountEditInline">
-                <span class="inline-edit-prefix">$</span>
-                <input type="number" id="tipAmountInput" class="inline-edit-input" step="0.01" min="0.01" value="0.02">
-              </div>
             </div>
             <!-- Display mode button -->
             <button class="card-action-btn secondary" id="editDefaultTipBtn">
@@ -363,13 +358,18 @@
               </svg>
               <span>Edit</span>
             </button>
-            <!-- Edit mode button -->
-            <button class="card-action-btn primary hidden" id="saveTipAmount">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              <span>Save</span>
-            </button>
+          </div>
+
+          <!-- Edit Tip Row (hidden by default) -->
+          <div class="tipping-edit-row hidden" id="tipAmountEditRow">
+            <div class="tipping-edit-field">
+              <span class="tipping-edit-prefix">$</span>
+              <input type="number" id="tipAmountInput" class="tipping-edit-input" step="0.01" min="0.01" value="0.02">
+            </div>
+            <div class="tipping-edit-actions">
+              <button class="btn-text" id="cancelTipEdit">Cancel</button>
+              <button class="card-action-btn primary" id="saveTipAmount">Save</button>
+            </div>
           </div>
 
           <!-- Divider -->
@@ -377,12 +377,6 @@
 
           <!-- Confirm Before Tipping Row -->
           <div class="tipping-row tipping-row-toggle">
-            <div class="tipping-row-icon tipping-row-icon-subtle">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
-                <path d="m9 12 2 2 4-4"></path>
-              </svg>
-            </div>
             <div class="tipping-row-content">
               <div class="tipping-row-label-text">Confirm before tipping</div>
             </div>
@@ -399,15 +393,15 @@
         <!-- Settings Card (anchored to bottom) -->
         <button class="section-card section-card-btn settings-card-bottom" id="homeSettingsBtn">
           <div class="card-row">
-            <div class="tipping-row-icon tipping-row-icon-subtle">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div class="tipping-row-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"></circle>
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
               </svg>
             </div>
-            <span class="settings-card-title">Extension Settings</span>
+            <span class="settings-card-title">Settings</span>
             <div class="card-chevron">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </div>
