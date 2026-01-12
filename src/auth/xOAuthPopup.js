@@ -6,33 +6,56 @@
 
 /**
  * Load and update X login status UI
+ * Updates both Home card and Settings > X views
  * @returns {Promise<void>}
  */
 async function loadXLoginStatus() {
   try {
+    // Home card elements
     const homeXSettingsTitle = document.getElementById('homeXSettingsTitle');
     const homeXConnectBtn = document.getElementById('homeXConnectBtn');
-    const homeXSettingsGear = document.getElementById('homeXSettingsGear');
-    const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
-    const homeTwitterSettingsPanel = document.getElementById('homeTwitterSettingsPanel');
+    const homeXSettingsChevron = document.getElementById('homeXSettingsChevron');
+
+    // Settings > X elements
+    const settingsXConnectionStatus = document.getElementById('settingsXConnectionStatus');
+    const settingsXConnectBtn = document.getElementById('settingsXConnectBtn');
+    const settingsXDisconnectBtn = document.getElementById('settingsXDisconnectBtn');
+    const settingsXActionsGroup = document.getElementById('settingsXActionsGroup');
+    const settingsXMenuDesc = document.getElementById('settingsXMenuDesc');
 
     // Check if we have a token (don't verify with API call on every load)
     const isLoggedIn = await XAuth.isLoggedIn();
 
     if (isLoggedIn) {
+      // Update Home card - show "Connected" with chevron to navigate
       if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Connected';
-      if (homeXConnectBtn) homeXConnectBtn.classList.add('hidden');
-      if (homeXSettingsGear) homeXSettingsGear.classList.remove('hidden');
-      // Auto-expand settings panel when connected
-      if (homeTwitterSettingsBtn) homeTwitterSettingsBtn.classList.add('hidden');
-      if (homeTwitterSettingsPanel) homeTwitterSettingsPanel.classList.remove('hidden');
+      if (homeXConnectBtn) {
+        homeXConnectBtn.textContent = 'Manage';
+        homeXConnectBtn.classList.remove('hidden');
+      }
+      if (homeXSettingsChevron) homeXSettingsChevron.classList.remove('hidden');
+
+      // Update Settings > X view
+      if (settingsXConnectionStatus) settingsXConnectionStatus.textContent = 'Connected to X';
+      if (settingsXConnectBtn) settingsXConnectBtn.classList.add('hidden');
+      if (settingsXDisconnectBtn) settingsXDisconnectBtn.classList.remove('hidden');
+      if (settingsXActionsGroup) settingsXActionsGroup.classList.remove('hidden');
+      if (settingsXMenuDesc) settingsXMenuDesc.textContent = 'Connected';
     } else {
+      // Update Home card - show "Setup" with Connect button
       if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Setup';
-      if (homeXConnectBtn) homeXConnectBtn.classList.remove('hidden');
-      if (homeXSettingsGear) homeXSettingsGear.classList.add('hidden');
-      // Show card when not connected
-      if (homeTwitterSettingsBtn) homeTwitterSettingsBtn.classList.remove('hidden');
-      if (homeTwitterSettingsPanel) homeTwitterSettingsPanel.classList.add('hidden');
+      if (homeXConnectBtn) {
+        homeXConnectBtn.textContent = 'Connect';
+        homeXConnectBtn.classList.remove('hidden');
+      }
+      if (homeXSettingsChevron) homeXSettingsChevron.classList.add('hidden');
+
+      // Update Settings > X view
+      if (settingsXConnectionStatus) settingsXConnectionStatus.textContent = 'Not connected';
+      if (settingsXConnectBtn) settingsXConnectBtn.classList.remove('hidden');
+      if (settingsXDisconnectBtn) settingsXDisconnectBtn.classList.add('hidden');
+      if (settingsXActionsGroup) settingsXActionsGroup.classList.add('hidden');
+      if (settingsXMenuDesc) settingsXMenuDesc.textContent = 'Auto-like & reply settings';
     }
   } catch (error) {
     console.error('[Grove Extension] X login status check failed:', error);

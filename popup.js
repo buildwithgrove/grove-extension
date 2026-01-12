@@ -128,13 +128,15 @@ async function getActiveJWT() {
 
 // DEFAULT_AUTO_REPLY_MESSAGE is loaded from src/ui/constants.js
 
-// X Login Elements (now on home screen)
-const likeOnTipToggle = document.getElementById('homeLikeOnTipToggle');
-const autoReplyToggle = document.getElementById('homeAutoReplyToggle');
-const autoReplyMessageContainer = document.getElementById('homeAutoReplyMessageContainer');
-const autoReplyMessageInput = document.getElementById('homeAutoReplyMessageInput');
-const saveAutoReplyMessageBtn = document.getElementById('homeSaveAutoReplyMessageBtn');
-const resetAutoReplyMessageBtn = document.getElementById('homeResetAutoReplyMessageBtn');
+// X Login Elements (now in Settings > X)
+const likeOnTipToggle = document.getElementById('settingsLikeOnTipToggle');
+const autoReplyToggle = document.getElementById('settingsAutoReplyToggle');
+const autoReplyMessageContainer = document.getElementById('settingsAutoReplyMessageContainer');
+const autoReplyMessageInput = document.getElementById('settingsAutoReplyMessageInput');
+const saveAutoReplyMessageBtn = document.getElementById('settingsSaveAutoReplyMessageBtn');
+const resetAutoReplyMessageBtn = document.getElementById('settingsResetAutoReplyMessageBtn');
+const settingsXConnectBtn = document.getElementById('settingsXConnectBtn');
+const settingsXDisconnectBtn = document.getElementById('settingsXDisconnectBtn');
 
 // Defaults
 const DEFAULT_TIP_AMOUNT = 0.02;
@@ -529,18 +531,15 @@ function setupEventListeners() {
     });
   }
 
-  // Home screen Twitter settings drill-down
+  // Home screen X card - navigate to Settings > X
   const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
-  const homeTwitterSettingsPanel = document.getElementById('homeTwitterSettingsPanel');
-  const homeTwitterSettingsBack = document.getElementById('homeTwitterSettingsBack');
-
-  if (homeTwitterSettingsBtn && homeTwitterSettingsPanel) {
+  if (homeTwitterSettingsBtn) {
     homeTwitterSettingsBtn.addEventListener('click', async () => {
       const isLoggedIn = await XAuth.isLoggedIn();
       if (isLoggedIn) {
-        // Show settings panel when connected
-        homeTwitterSettingsBtn.classList.add('hidden');
-        homeTwitterSettingsPanel.classList.remove('hidden');
+        // Navigate to Settings > X when connected
+        document.querySelector('[data-target="tab-settings"]').click();
+        showSettingsView('x-settings');
       } else {
         // Trigger login directly when not connected
         handleXLogin();
@@ -548,26 +547,30 @@ function setupEventListeners() {
     });
   }
 
-  if (homeTwitterSettingsBack && homeTwitterSettingsPanel) {
-    homeTwitterSettingsBack.addEventListener('click', () => {
-      homeTwitterSettingsPanel.classList.add('hidden');
-      homeTwitterSettingsBtn.classList.remove('hidden');
-    });
-  }
-
-  // Home X disconnect button
-  const homeXDisconnectBtnEl = document.getElementById('homeXDisconnectBtn');
-  if (homeXDisconnectBtnEl) {
-    homeXDisconnectBtnEl.addEventListener('click', handleXDisconnect);
-  }
-
-  // Home X connect button (on card header)
+  // Home X connect/manage button (on card header)
   const homeXConnectBtnEl = document.getElementById('homeXConnectBtn');
   if (homeXConnectBtnEl) {
-    homeXConnectBtnEl.addEventListener('click', (e) => {
+    homeXConnectBtnEl.addEventListener('click', async (e) => {
       e.stopPropagation(); // Prevent card click
-      handleXLogin();
+      const isLoggedIn = await XAuth.isLoggedIn();
+      if (isLoggedIn) {
+        // Navigate to Settings > X when connected
+        document.querySelector('[data-target="tab-settings"]').click();
+        showSettingsView('x-settings');
+      } else {
+        handleXLogin();
+      }
     });
+  }
+
+  // Settings > X connect button
+  if (settingsXConnectBtn) {
+    settingsXConnectBtn.addEventListener('click', handleXLogin);
+  }
+
+  // Settings > X disconnect button
+  if (settingsXDisconnectBtn) {
+    settingsXDisconnectBtn.addEventListener('click', handleXDisconnect);
   }
 
   // Legacy manage button (kept for compatibility but hidden)
@@ -1478,11 +1481,10 @@ async function resetAutoReplyMessage() {
  * X (Twitter) Login
  */
 
-// Home screen X elements
-const homeXDisconnectBtn = document.getElementById('homeXDisconnectBtn');
+// Home screen X elements (simplified - most functionality moved to Settings > X)
 const homeXSettingsTitle = document.getElementById('homeXSettingsTitle');
 const homeXConnectBtn = document.getElementById('homeXConnectBtn');
-const homeXSettingsGear = document.getElementById('homeXSettingsGear');
+const homeXSettingsChevron = document.getElementById('homeXSettingsChevron');
 
 // X OAuth functions are imported from src/auth/xOAuthPopup.js
 // loadXLoginStatus, handleXDisconnect, handleXLogin are available globally
