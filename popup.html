@@ -355,9 +355,29 @@
               <span>Edit</span>
             </button>
           </div>
+
+          <!-- Divider -->
+          <div class="tipping-divider"></div>
+
+          <!-- Confirm Before Tipping Row -->
+          <div class="tipping-row tipping-row-toggle">
+            <div class="tipping-row-icon tipping-row-icon-subtle">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+                <path d="m9 12 2 2 4-4"></path>
+              </svg>
+            </div>
+            <div class="tipping-row-content">
+              <div class="tipping-row-label-text">Confirm before tipping</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="confirmTipToggle">
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
 
-        <!-- Tip Settings Edit Form (shown when editing) -->
+        <!-- Tip Amount Edit Form (shown when editing) -->
         <div class="section-card hidden" id="tipAmountEdit">
           <div class="tip-edit-form">
             <div class="settings-item" style="border-bottom: none; padding: 8px 0;">
@@ -369,16 +389,6 @@
                 <input type="number" id="tipAmountInput" step="0.01" min="0.01" value="0.02" placeholder="0.00">
               </div>
             </div>
-            <div class="settings-item" style="border-bottom: none; padding: 8px 0;">
-              <div class="settings-info">
-                <div class="settings-name">Confirm before tipping</div>
-                <div class="settings-desc">Edit the amount before each tip</div>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="confirmTipToggle">
-                <span class="slider"></span>
-              </label>
-            </div>
             <div class="form-actions">
               <button class="btn-secondary btn-sm" id="cancelTipAmount">Cancel</button>
               <button class="btn-primary btn-sm" id="saveTipAmount">Save</button>
@@ -386,18 +396,21 @@
           </div>
         </div>
 
-        <!-- Settings Card -->
-        <button class="section-card section-card-btn" id="homeSettingsBtn">
+        <!-- Spacer to push settings to bottom -->
+        <div class="home-spacer"></div>
+
+        <!-- Settings Card (anchored to bottom) -->
+        <button class="section-card section-card-btn settings-card-bottom" id="homeSettingsBtn">
           <div class="card-row">
-            <div class="card-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div class="tipping-row-icon tipping-row-icon-subtle">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"></circle>
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
               </svg>
             </div>
             <span class="settings-card-title">Extension Settings</span>
             <div class="card-chevron">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </div>

@@ -682,6 +682,20 @@ body {
   margin: 16px 0;
 }
 
+.tipping-row-toggle {
+  padding: 4px 0;
+}
+
+.tipping-row-icon-subtle {
+  background: rgba(56, 159, 88, 0.08);
+  color: var(--color-text-secondary);
+}
+
+.tipping-row-label-text {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
 /* Clickable Section Card (button) */
 button.section-card-btn {
   width: calc(100% - 32px);
@@ -723,21 +737,25 @@ button.section-card-btn:hover .card-chevron {
   color: var(--color-primary);
 }
 
-.card-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: var(--color-primary);
+/* Connected State Layout */
+#connectedState {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  flex-shrink: 0;
-  transition: background-color 0.15s ease;
+  flex-direction: column;
+  min-height: 100%;
 }
 
-button.section-card-btn:hover .card-icon {
-  background: var(--color-primary-hover);
+.home-spacer {
+  flex: 1;
+  min-height: 16px;
+}
+
+.settings-card-bottom {
+  margin-top: auto;
+}
+
+button.section-card-btn:hover .tipping-row-icon-subtle {
+  background: rgba(56, 159, 88, 0.15);
+  color: var(--color-primary);
 }
 
 .card-feature-list {
