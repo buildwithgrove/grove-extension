@@ -1656,13 +1656,37 @@ async function resolveEnsName(address) {
 
   const addr = address.toLowerCase();
 
-  // Use Ensideas API for ENS reverse resolution (proper on-chain lookup)
+  // Use web3.bio API - but FILTER results to only use entries where address matches
   try {
-    const response = await fetch(`https://ensideas.com/ens/resolve/${addr}`);
+    const response = await fetch(`https://api.web3.bio/profile/${addr}`);
     const data = await response.json();
-    if (data.name && data.name.endsWith('.eth')) {
-      console.log('[Grove Extension] Resolved ENS:', data.name);
-      return data.name;
+
+    if (Array.isArray(data) && data.length > 0) {
+      // IMPORTANT: Filter to only results where the address field matches our query
+      // web3.bio sometimes returns unrelated profiles first
+      const matchingProfiles = data.filter(p =>
+        p.address && p.address.toLowerCase() === addr
+      );
+
+      // Prefer ENS (.eth but not .base.eth) over Basenames
+      const ensProfile = matchingProfiles.find(p =>
+        p.platform === 'ens' ||
+        (p.identity && p.identity.endsWith('.eth') && !p.identity.endsWith('.base.eth'))
+      );
+      if (ensProfile?.identity) {
+        console.log('[Grove Extension] Resolved ENS:', ensProfile.identity);
+        return ensProfile.identity;
+      }
+
+      // Fallback to Basenames (.base.eth)
+      const baseProfile = matchingProfiles.find(p =>
+        p.platform === 'basenames' ||
+        (p.identity && p.identity.endsWith('.base.eth'))
+      );
+      if (baseProfile?.identity) {
+        console.log('[Grove Extension] Resolved Basename:', baseProfile.identity);
+        return baseProfile.identity;
+      }
     }
   } catch (e) {
     console.log('[Grove Extension] ENS lookup failed:', e.message);
