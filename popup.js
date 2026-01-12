@@ -1654,86 +1654,21 @@ async function resolveEnsName(address) {
     return null;
   }
 
-  const addr = address.toLowerCase().slice(2); // Remove 0x prefix
+  const addr = address.toLowerCase();
 
-  // Use public Ethereum RPC for on-chain ENS reverse resolution
-  // ENS Universal Resolver: 0xc0497E381f536Be9ce14B0dD3817cBcAe57d2F62
-  const UNIVERSAL_RESOLVER = '0xc0497E381f536Be9ce14B0dD3817cBcAe57d2F62';
-  const ETH_RPC = 'https://cloudflare-eth.com';
-
+  // Use Ensideas API for ENS reverse resolution (proper on-chain lookup)
   try {
-    // Encode the reverse name: <address>.addr.reverse
-    const reverseName = `${addr}.addr.reverse`;
-    const encodedName = encodeENSName(reverseName);
-
-    // Function selector for reverse(bytes) = 0xec11c823
-    const data = '0xec11c823' +
-      '0000000000000000000000000000000000000000000000000000000000000020' + // offset to bytes
-      encodedName.length.toString(16).padStart(64, '0') + // length of bytes
-      encodedName + '0'.repeat((64 - (encodedName.length % 64)) % 64); // padded bytes
-
-    const response = await fetch(ETH_RPC, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'eth_call',
-        params: [{ to: UNIVERSAL_RESOLVER, data }, 'latest']
-      })
-    });
-
-    const result = await response.json();
-    if (result.result && result.result !== '0x') {
-      const name = decodeENSReverseResult(result.result);
-      if (name && name.endsWith('.eth')) {
-        console.log('[Grove Extension] Resolved ENS via RPC:', name);
-        return name;
-      }
+    const response = await fetch(`https://ensideas.com/ens/resolve/${addr}`);
+    const data = await response.json();
+    if (data.name && data.name.endsWith('.eth')) {
+      console.log('[Grove Extension] Resolved ENS:', data.name);
+      return data.name;
     }
   } catch (e) {
-    console.log('[Grove Extension] ENS RPC lookup failed:', e.message);
+    console.log('[Grove Extension] ENS lookup failed:', e.message);
   }
 
   return null;
-}
-
-// Encode DNS-style ENS name to bytes
-function encodeENSName(name) {
-  const labels = name.split('.');
-  let result = '';
-  for (const label of labels) {
-    const encoded = new TextEncoder().encode(label);
-    result += encoded.length.toString(16).padStart(2, '0');
-    result += Array.from(encoded).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-  result += '00'; // null terminator
-  return result;
-}
-
-// Decode the reverse resolution result to get the name string
-function decodeENSReverseResult(hexData) {
-  try {
-    // Result is: (string name, address, address, address)
-    // Skip function response overhead and get the string
-    const data = hexData.slice(2); // Remove 0x
-
-    // First 32 bytes = offset to string (should be 0x80 = 128 for 4 return values)
-    // We need to find where the string data starts
-    const stringOffset = parseInt(data.slice(0, 64), 16) * 2;
-    const stringLength = parseInt(data.slice(stringOffset, stringOffset + 64), 16);
-    const stringData = data.slice(stringOffset + 64, stringOffset + 64 + stringLength * 2);
-
-    // Decode hex to string
-    const bytes = [];
-    for (let i = 0; i < stringData.length; i += 2) {
-      bytes.push(parseInt(stringData.slice(i, i + 2), 16));
-    }
-    return new TextDecoder().decode(new Uint8Array(bytes));
-  } catch (e) {
-    console.log('[Grove Extension] Failed to decode ENS result:', e.message);
-    return null;
-  }
 }
 
 
