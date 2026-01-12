@@ -287,9 +287,8 @@ async function init() {
   // Fetch balance after everything is loaded (also updates client address)
   await fetchBalance();
 
-  // ENS resolution disabled - web3.bio API returns incorrect data for some addresses
-  // TODO: Re-enable when we have a more reliable ENS resolution method
-  // loadAndResolveEnsName();
+  // Resolve ENS name in the background (don't await to avoid blocking UI)
+  loadAndResolveEnsName();
 
   // Show earn tab badge only if user hasn't visited earn tab yet
   const earnTabSeen = await chrome.storage.local.get([STORAGE_KEYS.EARN_TAB_SEEN]);
@@ -1527,11 +1526,10 @@ async function fetchBalance() {
       console.log('[Grove Extension] Displaying truncated address:', truncated);
       await updateEarnAddressDisplay(truncated, false);
 
-      // If address changed, clear cached ENS name
+      // If address changed, clear cached ENS name and re-resolve
       if (previousAddress !== response.data.client_address) {
         await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
-        // ENS resolution disabled - web3.bio API returns incorrect data
-        // loadAndResolveEnsName();
+        loadAndResolveEnsName();
       }
     } else {
       // No client_address in response - clear cached data and show setup card
@@ -1658,40 +1656,17 @@ async function resolveEnsName(address) {
 
   const addr = address.toLowerCase();
 
-  // Try web3.bio API (handles both ENS and Basenames)
-  try {
-    const response = await fetch(`https://api.web3.bio/profile/${addr}`);
-    const data = await response.json();
-
-    if (Array.isArray(data) && data.length > 0) {
-      // Prefer ENS (.eth) over Basenames (.base.eth)
-      const ensProfile = data.find(p => p.platform === 'ens' || (p.identity && p.identity.endsWith('.eth') && !p.identity.endsWith('.base.eth')));
-      if (ensProfile?.identity) {
-        console.log('[Grove Extension] Resolved ENS:', ensProfile.identity);
-        return ensProfile.identity;
-      }
-
-      // Check for Basenames
-      const baseProfile = data.find(p => p.platform === 'basenames' || (p.identity && p.identity.endsWith('.base.eth')));
-      if (baseProfile?.identity) {
-        console.log('[Grove Extension] Resolved Basename:', baseProfile.identity);
-        return baseProfile.identity;
-      }
-    }
-  } catch (e) {
-    console.log('[Grove Extension] web3.bio lookup failed:', e.message);
-  }
-
-  // Fallback: Try Ensideas API for ENS only
+  // Use Ensideas API for ENS reverse resolution (does proper on-chain lookup)
+  // Note: web3.bio was removed because it returns incorrect data for some addresses
   try {
     const response = await fetch(`https://ensideas.com/ens/resolve/${addr}`);
     const data = await response.json();
     if (data.name && data.name.endsWith('.eth')) {
-      console.log('[Grove Extension] Resolved ENS via Ensideas:', data.name);
+      console.log('[Grove Extension] Resolved ENS:', data.name);
       return data.name;
     }
   } catch (e) {
-    console.log('[Grove Extension] Ensideas lookup failed:', e.message);
+    console.log('[Grove Extension] ENS lookup failed:', e.message);
   }
 
   return null;
@@ -1838,8 +1813,7 @@ async function handleDevModeToggle(e) {
 
     if (testnetJwt) {
       await fetchBalance();
-      // ENS resolution disabled - web3.bio API returns incorrect data
-      // loadAndResolveEnsName();
+      loadAndResolveEnsName();
       showToast('Switched to Testnet');
     } else {
       showToast('Developer Mode - Connect via testnet app');
@@ -1877,8 +1851,7 @@ async function handleDevModeToggle(e) {
 
     if (prodJwt) {
       await fetchBalance();
-      // ENS resolution disabled - web3.bio API returns incorrect data
-      // loadAndResolveEnsName();
+      loadAndResolveEnsName();
       showToast('Switched to Mainnet');
     } else {
       showToast('Developer Mode Disabled - Connect via grove.city');
