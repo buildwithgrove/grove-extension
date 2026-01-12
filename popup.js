@@ -2931,10 +2931,21 @@ async function handleSendCode() {
     return;
   }
 
-  // Basic validation
-  if (cdpAuthState.method === 'email' && !destination.includes('@')) {
-    showToast('Please enter a valid email address', 'error');
-    return;
+  // Validate email format (text@text.text)
+  if (cdpAuthState.method === 'email') {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(destination)) {
+      showToast('Please enter a valid email address', 'error');
+      return;
+    }
+  }
+
+  // Validate phone number (E.164: optional + followed by 10-15 digits)
+  if (cdpAuthState.method === 'sms') {
+    const digitsOnly = destination.replace(/\D/g, '');
+    if (digitsOnly.length < 10 || digitsOnly.length > 15) {
+      showToast('Please enter a valid phone number with country code', 'error');
+      return;
+    }
   }
 
   cdpAuthState.destination = destination;
@@ -3074,9 +3085,15 @@ async function handleResendCode() {
 
 /**
  * Start the resend cooldown timer
+ * @param {number} [seconds=60] - Optional starting countdown value (used when restoring state)
  */
-function startResendCooldown() {
-  cdpAuthState.resendCountdown = 60; // 60 seconds cooldown
+function startResendCooldown(seconds = 60) {
+  // Clear any existing timer to prevent memory leaks
+  if (cdpAuthState.resendTimer) {
+    clearInterval(cdpAuthState.resendTimer);
+  }
+
+  cdpAuthState.resendCountdown = seconds;
   updateResendButton();
 
   cdpAuthState.resendTimer = setInterval(() => {
@@ -3132,6 +3149,10 @@ async function saveCDPAuthState() {
     flowId: cdpAuthState.flowId,
     destination: cdpAuthState.destination,
     timestamp: Date.now(),
+    // Save when cooldown expires (not the countdown itself) to handle popup close/reopen
+    resendCooldownUntil: cdpAuthState.resendCountdown > 0
+      ? Date.now() + (cdpAuthState.resendCountdown * 1000)
+      : null,
   };
   await chrome.storage.local.set({ [STORAGE_KEYS.CDP_AUTH_STATE]: stateToSave });
 }
@@ -3143,7 +3164,15 @@ async function restoreCDPAuthState() {
   const result = await chrome.storage.local.get(STORAGE_KEYS.CDP_AUTH_STATE);
   const savedState = result[STORAGE_KEYS.CDP_AUTH_STATE];
 
-  if (!savedState || !savedState.flowId) return false;
+  if (!savedState) return false;
+
+  // Validate restored state structure
+  if (!['email', 'sms'].includes(savedState.method) ||
+      typeof savedState.flowId !== 'string' || !savedState.flowId ||
+      typeof savedState.destination !== 'string' || !savedState.destination) {
+    await chrome.storage.local.remove(STORAGE_KEYS.CDP_AUTH_STATE);
+    return false;
+  }
 
   // Check if state is too old (5 minutes)
   const MAX_AGE = 5 * 60 * 1000;
@@ -3167,6 +3196,14 @@ async function restoreCDPAuthState() {
   cdpAuthState.method = savedState.method;
   cdpAuthState.flowId = savedState.flowId;
   cdpAuthState.destination = savedState.destination;
+
+  // Restore resend cooldown if still active
+  if (savedState.resendCooldownUntil) {
+    const remainingMs = savedState.resendCooldownUntil - Date.now();
+    if (remainingMs > 0) {
+      startResendCooldown(Math.ceil(remainingMs / 1000));
+    }
+  }
 
   // Show OTP modal
   if (cdpOtpDestination) {
