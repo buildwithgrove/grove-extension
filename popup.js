@@ -32,15 +32,6 @@ const defaultTipCard = document.getElementById('defaultTipCard');
 const editDefaultTipBtn = document.getElementById('editDefaultTipBtn');
 const confirmTipToggle = document.getElementById('confirmTipToggle');
 
-// Tip amount (Settings)
-const settingsTipAmountDisplay = document.getElementById('settingsTipAmountDisplay');
-const settingsTipAmountInput = document.getElementById('settingsTipAmountInput');
-const settingsSaveTipAmount = document.getElementById('settingsSaveTipAmount');
-const settingsEditTipBtn = document.getElementById('settingsEditTipBtn');
-const settingsCancelTipAmount = document.getElementById('settingsCancelTipAmount');
-const settingsTipRow = document.getElementById('settingsTipRow');
-const settingsTipEditRow = document.getElementById('settingsTipEditRow');
-
 // Balance
 const balanceAmount = document.getElementById('balanceAmount');
 const balanceDisplay = document.getElementById('balanceDisplay');
@@ -496,22 +487,6 @@ function setupEventListeners() {
   // Onboarding Multi-step Navigation
   setupOnboardingNavigation();
 
-  // Tip Amount (Settings) - synced with Home
-  if (settingsEditTipBtn) {
-    settingsEditTipBtn.addEventListener('click', showSettingsTipEdit);
-  }
-  if (settingsCancelTipAmount) {
-    settingsCancelTipAmount.addEventListener('click', hideSettingsTipEdit);
-  }
-  if (settingsSaveTipAmount) {
-    settingsSaveTipAmount.addEventListener('click', saveTipFromSettings);
-  }
-  if (settingsTipAmountInput) {
-    settingsTipAmountInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') saveTipFromSettings();
-    });
-  }
-
   // JWT setup button (if present)
   if (setupTokenBtn) {
     setupTokenBtn.addEventListener('click', () => {
@@ -528,38 +503,6 @@ function setupEventListeners() {
     testModeBanner.addEventListener('click', () => {
       document.querySelector('[data-target="tab-settings"]').click();
       showSettingsView('developer');
-    });
-  }
-
-  // Home screen X card - navigate to Settings > X
-  const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
-  if (homeTwitterSettingsBtn) {
-    homeTwitterSettingsBtn.addEventListener('click', async () => {
-      const isLoggedIn = await XAuth.isLoggedIn();
-      if (isLoggedIn) {
-        // Navigate to Settings > X when connected
-        document.querySelector('[data-target="tab-settings"]').click();
-        showSettingsView('x-settings');
-      } else {
-        // Trigger login directly when not connected
-        handleXLogin();
-      }
-    });
-  }
-
-  // Home X connect/manage button (on card header)
-  const homeXConnectBtnEl = document.getElementById('homeXConnectBtn');
-  if (homeXConnectBtnEl) {
-    homeXConnectBtnEl.addEventListener('click', async (e) => {
-      e.stopPropagation(); // Prevent card click
-      const isLoggedIn = await XAuth.isLoggedIn();
-      if (isLoggedIn) {
-        // Navigate to Settings > X when connected
-        document.querySelector('[data-target="tab-settings"]').click();
-        showSettingsView('x-settings');
-      } else {
-        handleXLogin();
-      }
     });
   }
 
@@ -1270,16 +1213,6 @@ function updateTipUI(amount) {
   }
   tipAmountInput.value = formatted;
 
-  // Update Settings display (sync)
-  if (settingsTipAmountDisplay) {
-    const settingsAmountSpan = settingsTipAmountDisplay.querySelector('.amount-value');
-    if (settingsAmountSpan) {
-      settingsAmountSpan.textContent = formatted;
-    }
-  }
-  if (settingsTipAmountInput) {
-    settingsTipAmountInput.value = formatted;
-  }
 }
 
 function showTipEdit() {
@@ -1307,29 +1240,6 @@ async function saveTip() {
     await chrome.storage.local.set({ [STORAGE_KEYS.TIP_AMOUNT]: val });
     updateTipUI(val);
     hideTipEdit();
-    showToast('Default tip updated');
-  } else {
-    showToast('Invalid amount');
-  }
-}
-
-function showSettingsTipEdit() {
-  if (settingsTipRow) settingsTipRow.classList.add('hidden');
-  if (settingsTipEditRow) settingsTipEditRow.classList.remove('hidden');
-  if (settingsTipAmountInput) settingsTipAmountInput.focus();
-}
-
-function hideSettingsTipEdit() {
-  if (settingsTipRow) settingsTipRow.classList.remove('hidden');
-  if (settingsTipEditRow) settingsTipEditRow.classList.add('hidden');
-}
-
-async function saveTipFromSettings() {
-  const val = parseFloat(settingsTipAmountInput.value);
-  if (val > 0) {
-    await chrome.storage.local.set({ [STORAGE_KEYS.TIP_AMOUNT]: val });
-    updateTipUI(val);
-    hideSettingsTipEdit();
     showToast('Default tip updated');
   } else {
     showToast('Invalid amount');
@@ -1480,11 +1390,6 @@ async function resetAutoReplyMessage() {
 /**
  * X (Twitter) Login
  */
-
-// Home screen X elements (simplified - most functionality moved to Settings > X)
-const homeXSettingsTitle = document.getElementById('homeXSettingsTitle');
-const homeXConnectBtn = document.getElementById('homeXConnectBtn');
-const homeXSettingsChevron = document.getElementById('homeXSettingsChevron');
 
 // X OAuth functions are imported from src/auth/xOAuthPopup.js
 // loadXLoginStatus, handleXDisconnect, handleXLogin are available globally

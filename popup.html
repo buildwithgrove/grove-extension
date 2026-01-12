@@ -325,11 +325,11 @@
 
 
 
-        <!-- Default Tip Card (matches balance card style) -->
+        <!-- Tip Configuration Card -->
         <div class="section-card" id="defaultTipCard">
           <div class="card-row">
             <div class="card-content">
-              <div class="card-label">Default Tip</div>
+              <div class="card-label">Tip Configuration</div>
               <div class="amount-display" id="tipAmountDisplay">
                 <span class="currency-symbol">$</span>
                 <span class="amount-value">0.02</span>
@@ -345,17 +345,32 @@
           </div>
         </div>
 
-        <!-- Default Tip Edit Form (shown when editing) -->
+        <!-- Tip Configuration Edit Form (shown when editing) -->
         <div class="section-card hidden" id="tipAmountEdit">
           <div class="card-row">
             <div class="card-content">
-              <div class="card-label">Default Tip</div>
+              <div class="card-label">Tip Configuration</div>
             </div>
           </div>
           <div class="tip-edit-form">
-            <div class="input-group">
-              <span class="input-prefix">$</span>
-              <input type="number" id="tipAmountInput" step="0.01" min="0.01" value="0.02" placeholder="0.00">
+            <div class="settings-item" style="border-bottom: none; padding: 8px 0;">
+              <div class="settings-info">
+                <div class="settings-name">Default Amount</div>
+              </div>
+              <div class="input-group" style="width: 100px;">
+                <span class="input-prefix">$</span>
+                <input type="number" id="tipAmountInput" step="0.01" min="0.01" value="0.02" placeholder="0.00">
+              </div>
+            </div>
+            <div class="settings-item" style="border-bottom: none; padding: 8px 0;">
+              <div class="settings-info">
+                <div class="settings-name">Confirm before tipping</div>
+                <div class="settings-desc">Edit the amount before each tip</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="confirmTipToggle">
+                <span class="slider"></span>
+              </label>
             </div>
             <div class="form-actions">
               <button class="btn-secondary btn-sm" id="cancelTipAmount">Cancel</button>
@@ -363,41 +378,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Confirm Before Tipping Toggle -->
-        <div class="section-card" id="confirmTipCard">
-          <div class="settings-item" style="border-bottom: none; padding: 0;">
-            <div class="settings-info">
-              <div class="settings-name">Confirm before tipping</div>
-              <div class="settings-desc">Edit the amount before each tip</div>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="confirmTipToggle">
-              <span class="slider"></span>
-            </label>
-          </div>
-        </div>
-
-        <!-- X (Twitter) Settings Card - Links to Settings -->
-        <button class="section-card section-card-btn x-connect-card sheen-card" id="homeTwitterSettingsBtn">
-          <div class="x-connect-header">
-            <div class="x-connect-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            </div>
-            <div class="x-connect-title" id="homeXSettingsTitle">Setup</div>
-            <span class="x-connect-btn" id="homeXConnectBtn">Connect</span>
-            <div class="x-connect-chevron hidden" id="homeXSettingsChevron">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          </div>
-          <p class="x-connect-desc">Let creators know you appreciate their content when you send a tip</p>
-          <ul class="x-connect-features">
-            <li>Auto-like posts you tip</li>
-            <li>Auto-reply with a custom message</li>
-          </ul>
-        </button>
 
       </div>
     </div>
@@ -668,26 +648,6 @@
             </div>
           </button>
 
-          <button class="settings-menu-item" data-drill="tipping">
-            <div class="settings-menu-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="1" x2="12" y2="23"></line>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-              </svg>
-            </div>
-            <div class="settings-menu-content">
-              <div class="settings-menu-name">Tipping</div>
-              <div class="settings-menu-desc">Default tip amount</div>
-            </div>
-            <div class="settings-menu-arrow">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          </button>
-
           <button class="settings-menu-item" data-drill="x-settings">
             <div class="settings-menu-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -877,52 +837,6 @@
             </div>
             <button class="btn-danger-text btn-sm" id="clearAllKeysBtn">Clear</button>
           </div>
-        </div>
-      </div>
-
-      <!-- Tipping Settings View -->
-      <div class="settings-view" id="settings-tipping">
-        <div class="settings-header">
-          <button class="settings-back" data-back="main">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </button>
-          <h2 class="page-title">Tipping</h2>
-        </div>
-
-        <div class="settings-group">
-          <!-- Default Tip Amount -->
-          <div class="settings-item" id="settingsTipRow">
-            <div class="settings-info">
-              <div class="settings-name">Default Tip</div>
-              <div class="settings-desc">Amount to tip by default</div>
-            </div>
-            <div class="settings-tip-value" id="settingsTipAmountDisplay">
-              <span class="currency-symbol">$</span><span class="amount-value">0.02</span>
-            </div>
-            <button class="btn-text" id="settingsEditTipBtn">Edit</button>
-          </div>
-
-          <!-- Edit form (hidden by default) -->
-          <div class="settings-item-column hidden" id="settingsTipEditRow">
-            <div class="settings-row">
-              <div class="settings-info">
-                <div class="settings-name">Default Tip</div>
-                <div class="settings-desc">Amount to tip by default</div>
-              </div>
-            </div>
-            <div class="input-group">
-              <span class="input-prefix">$</span>
-              <input type="number" id="settingsTipAmountInput" step="0.01" min="0.01" value="0.02" placeholder="0.00">
-            </div>
-            <div class="form-actions">
-              <button class="btn-secondary btn-sm" id="settingsCancelTipAmount">Cancel</button>
-              <button class="btn-primary btn-sm" id="settingsSaveTipAmount">Save</button>
-            </div>
-          </div>
-
         </div>
       </div>
 
