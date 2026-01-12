@@ -50,50 +50,91 @@ class PreviousKeysUI {
 
   /**
    * Render the list of previous keys
+   * Uses DOM methods instead of innerHTML to prevent XSS vulnerabilities
    */
   async render() {
     try {
       const prevJwts = await KeyManager.getPreviousKeys();
 
+      // Clear existing content safely
+      this.listElement.textContent = '';
+
       if (prevJwts.length === 0) {
-        this.listElement.innerHTML = '<p style="color: var(--color-text-secondary); font-size: 12px; text-align: center; padding: 20px;">No previous keys stored</p>';
+        const emptyMsg = document.createElement('p');
+        emptyMsg.style.cssText = 'color: var(--color-text-secondary); font-size: 12px; text-align: center; padding: 20px;';
+        emptyMsg.textContent = 'No previous keys stored';
+        this.listElement.appendChild(emptyMsg);
         return;
       }
 
-      this.listElement.innerHTML = prevJwts.map((item, index) => {
+      prevJwts.forEach((item, index) => {
         // Defensive checks for malformed data
-        if (!item || !item.key) return '';
+        if (!item || !item.key) return;
 
         const date = item.timestamp ? new Date(item.timestamp) : new Date();
         const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
         const maskedKey = this._maskKey(item.key);
         const env = item.environment;
         const envLabel = env === 'testnet' ? 'Testnet' : (env === 'production' ? 'Mainnet' : '');
-        const envBadge = envLabel ? ` <span class="key-env-badge ${env === 'testnet' ? 'testnet' : ''}">${envLabel}</span>` : '';
 
-        return `
-          <div class="prev-key-item">
-            <div class="prev-key-info">
-              <span class="prev-key-value">${maskedKey}</span>${envBadge}
-              <span class="prev-key-date">${formattedDate}</span>
-            </div>
-            <div class="prev-key-actions">
-              <button class="prev-key-btn use-key-btn" data-index="${index}" title="Use this key">
-                Use
-              </button>
-              <button class="prev-key-btn delete-key-btn" data-index="${index}" title="Delete this key">
-                Delete
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
+        // Build DOM elements safely
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'prev-key-item';
+
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'prev-key-info';
+
+        const keySpan = document.createElement('span');
+        keySpan.className = 'prev-key-value';
+        keySpan.textContent = maskedKey; // Safe - no HTML interpretation
+
+        infoDiv.appendChild(keySpan);
+
+        if (envLabel) {
+          const envBadge = document.createElement('span');
+          envBadge.className = 'key-env-badge' + (env === 'testnet' ? ' testnet' : '');
+          envBadge.textContent = envLabel;
+          infoDiv.appendChild(document.createTextNode(' '));
+          infoDiv.appendChild(envBadge);
+        }
+
+        const dateSpan = document.createElement('span');
+        dateSpan.className = 'prev-key-date';
+        dateSpan.textContent = formattedDate;
+        infoDiv.appendChild(dateSpan);
+
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'prev-key-actions';
+
+        const useBtn = document.createElement('button');
+        useBtn.className = 'prev-key-btn use-key-btn';
+        useBtn.dataset.index = index;
+        useBtn.title = 'Use this key';
+        useBtn.textContent = 'Use';
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'prev-key-btn delete-key-btn';
+        deleteBtn.dataset.index = index;
+        deleteBtn.title = 'Delete this key';
+        deleteBtn.textContent = 'Delete';
+
+        actionsDiv.appendChild(useBtn);
+        actionsDiv.appendChild(deleteBtn);
+
+        itemDiv.appendChild(infoDiv);
+        itemDiv.appendChild(actionsDiv);
+        this.listElement.appendChild(itemDiv);
+      });
 
       // Add event listeners
       this._attachHandlers();
     } catch (error) {
       console.error('[PreviousKeysUI] Error rendering keys:', error);
-      this.listElement.innerHTML = '<p style="color: var(--color-danger); font-size: 12px; text-align: center; padding: 20px;">Error loading keys</p>';
+      this.listElement.textContent = '';
+      const errorMsg = document.createElement('p');
+      errorMsg.style.cssText = 'color: var(--color-danger); font-size: 12px; text-align: center; padding: 20px;';
+      errorMsg.textContent = 'Error loading keys';
+      this.listElement.appendChild(errorMsg);
     }
   }
 

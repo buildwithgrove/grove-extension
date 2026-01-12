@@ -181,6 +181,7 @@ class TipModal {
     input.type = 'number';
     input.step = '0.01';
     input.min = '0.01';
+    input.max = '10000'; // Reasonable upper limit for tips
     input.value = defaultAmount.toFixed(2);
     input.style.cssText = `
       background: transparent;
@@ -521,6 +522,31 @@ class TipModal {
     this.modal.style.left = `${left}px`;
   }
 
+  // Tip amount validation constants
+  static MIN_TIP_AMOUNT = 0.01;
+  static MAX_TIP_AMOUNT = 10000;
+
+  /**
+   * Validate and sanitize tip amount
+   * @param {number} amount - The raw amount value
+   * @returns {number} - Validated amount within bounds
+   */
+  validateAmount(amount) {
+    // Handle non-finite values (NaN, Infinity, -Infinity)
+    if (!Number.isFinite(amount)) {
+      return TipModal.MIN_TIP_AMOUNT;
+    }
+    // Clamp to valid range
+    if (amount < TipModal.MIN_TIP_AMOUNT) {
+      return TipModal.MIN_TIP_AMOUNT;
+    }
+    if (amount > TipModal.MAX_TIP_AMOUNT) {
+      return TipModal.MAX_TIP_AMOUNT;
+    }
+    // Round to 2 decimal places to avoid floating point issues
+    return Math.round(amount * 100) / 100;
+  }
+
   /**
    * Confirm the first tip with settings
    * @param {number} amount - The tip amount
@@ -529,13 +555,13 @@ class TipModal {
    * @param {boolean|null} autoReply - Whether to reply to the post (null if X not connected)
    */
   confirm(amount, confirmBeforeTipping, likeOnTip = null, autoReply = null) {
-    if (amount <= 0) {
-      amount = 0.01;
-    }
+    // Validate and sanitize the amount
+    const validatedAmount = this.validateAmount(amount);
+
     const callback = this.onConfirm;
     this.hide();
     if (callback) {
-      callback({ amount, confirmBeforeTipping, likeOnTip, autoReply });
+      callback({ amount: validatedAmount, confirmBeforeTipping, likeOnTip, autoReply });
     }
   }
 
