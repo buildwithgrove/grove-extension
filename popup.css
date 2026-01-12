@@ -455,6 +455,7 @@ body {
 .card-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
 }
 
@@ -566,14 +567,11 @@ body {
   appearance: none;
 }
 
-#topUpBtn,
-#editDefaultTipBtn {
-  width: 110px;
-  margin-left: auto;
-}
-
-#topUpBtn svg {
+.tipping-row .card-action-btn {
   flex-shrink: 0;
+  padding: 8px 14px;
+  font-size: 13px;
+  gap: 6px;
 }
 
 .card-action-btn:hover {
@@ -596,13 +594,26 @@ body {
   box-shadow: 0 4px 12px rgba(56, 159, 88, 0.3);
 }
 
+.card-action-btn.secondary {
+  background-color: transparent;
+  border-color: rgba(56, 159, 88, 0.4);
+  color: var(--color-primary);
+}
+
+.card-action-btn.secondary:hover {
+  background-color: rgba(56, 159, 88, 0.1);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: none;
+  box-shadow: none;
+}
 
 /* Section Card */
 .section-card {
   background-color: var(--color-surface);
   border-radius: var(--radius-lg);
   padding: 24px;
-  margin: 0 16px 8px;
+  margin: 0 16px 12px;
   border: 1px solid var(--color-border);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -611,22 +622,135 @@ body {
   margin-top: 0;
 }
 
-/* Balance card - primary emphasis with glow */
-#connectedState > .section-card:first-child {
+/* Unified Tipping Card */
+.tipping-card {
   border-color: rgba(56, 159, 88, 0.25);
-  box-shadow: 0 4px 24px rgba(56, 159, 88, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(56, 159, 88, 0.05) 100%);
+  box-shadow: 0 4px 24px rgba(56, 159, 88, 0.08);
+  background: linear-gradient(145deg, var(--color-surface) 0%, rgba(56, 159, 88, 0.04) 100%);
+  padding: 20px;
 }
 
-/* Default Tip card - subtle accent */
-#defaultTipCard {
-  border-color: rgba(56, 159, 88, 0.15);
-  transition: all 0.3s ease;
+.tipping-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
-#defaultTipCard:hover {
-  border-color: rgba(56, 159, 88, 0.3);
-  box-shadow: 0 4px 16px rgba(56, 159, 88, 0.08);
+.tipping-row-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(56, 159, 88, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.tipping-row-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.tipping-row-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.tipping-row-value {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  position: relative;
+}
+
+.tipping-row-value .currency-symbol,
+.tipping-row-value .amount-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.tipping-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 16px 0;
+}
+
+.tipping-row-toggle {
+  padding: 8px 0 0 0;
+}
+
+.tipping-row-toggle .tipping-row-content {
+  flex: 1;
+}
+
+.tipping-row-label-text {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* Tip Edit Row */
+.tipping-edit-row {
+  padding: 4px 0;
+}
+
+.tipping-edit-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-primary);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.tipping-edit-prefix {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.tipping-edit-input {
+  flex: 1;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  min-width: 0;
+  -moz-appearance: textfield;
+}
+
+/* Hide number input spinners */
+.tipping-edit-input::-webkit-outer-spin-button,
+.tipping-edit-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.tipping-edit-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.tipping-edit-input::selection {
+  background: rgba(56, 159, 88, 0.3);
+}
+
+.tipping-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
 }
 
 /* Clickable Section Card (button) */
@@ -650,6 +774,64 @@ button.section-card-btn .quick-access-icon {
 }
 
 button.section-card-btn:hover .quick-access-icon {
+  color: var(--color-primary);
+}
+
+.settings-card-title {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.card-chevron {
+  color: var(--color-text-secondary);
+  transition: color 0.15s ease;
+}
+
+button.section-card-btn:hover .card-chevron {
+  color: var(--color-primary);
+}
+
+/* Connected State Layout */
+#connectedState {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.home-spacer {
+  flex: 1;
+  min-height: 16px;
+}
+
+.settings-card-bottom {
+  margin-top: auto;
+  padding: 14px 16px;
+}
+
+.settings-card-bottom .card-row {
+  gap: 12px;
+}
+
+.settings-card-bottom .tipping-row-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.settings-card-bottom .tipping-row-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.settings-card-bottom .settings-card-title {
+  font-size: 14px;
+}
+
+button.section-card-btn:hover .tipping-row-icon {
+  background: rgba(56, 159, 88, 0.15);
   color: var(--color-primary);
 }
 
@@ -815,9 +997,12 @@ button.section-card-btn:hover .quick-access-icon {
   gap: 8px;
 }
 
-.btn-sm {
+.form-actions .btn-sm {
   flex: 1;
-  padding: 10px 16px;
+}
+
+.btn-sm {
+  padding: 8px 14px;
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   font-weight: 600;
@@ -2370,6 +2555,30 @@ button.quick-access-item:hover .quick-access-icon {
   padding-left: 16px;
 }
 
+/* X Features List (Settings > X) */
+.x-features-list {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.x-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.x-feature-item svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
 .settings-item, .settings-item-column {
   background-color: var(--color-surface);
   transition: background-color 0.2s;
@@ -2439,6 +2648,19 @@ button.quick-access-item:hover .quick-access-icon {
   background-color: var(--color-surface-hover);
 }
 
+/* Clickable settings row (for expandable sections) */
+#prevKeysSection .settings-row {
+  cursor: pointer;
+  padding: 16px;
+  margin: -16px;
+  border-radius: var(--radius-lg);
+  transition: background-color 0.2s;
+}
+
+#prevKeysSection .settings-row:hover {
+  background-color: var(--color-surface-hover);
+}
+
 .settings-icon {
   font-size: 20px;
 }
@@ -2460,6 +2682,11 @@ button.quick-access-item:hover .quick-access-icon {
 /* JWT Slot Styles */
 .jwt-slot {
   position: relative;
+  cursor: pointer;
+}
+
+.jwt-slot:hover {
+  background-color: var(--color-surface-hover);
 }
 
 .jwt-slot-indicator {
@@ -2516,7 +2743,7 @@ button.quick-access-item:hover .quick-access-icon {
 .btn-text {
   background: none;
   border: none;
-  color: var(--color-text-secondary);
+  color: var(--color-primary);
   font-weight: 600;
   cursor: pointer;
   font-size: 13px;
@@ -2524,7 +2751,7 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 .btn-text:hover {
-  color: var(--color-primary);
+  color: var(--color-primary-hover);
 }
 
 .jwt-edit-container {
@@ -2761,6 +2988,12 @@ button.quick-access-item:hover .quick-access-icon {
 
 .toggle-switch input:checked ~ .slider:before {
   transform: translateX(20px);
+}
+
+/* Disable transition during initial load */
+.toggle-switch.no-transition .slider,
+.toggle-switch.no-transition .slider:before {
+  transition: none;
 }
 
 /* Bottom Nav */
