@@ -233,13 +233,14 @@ class TipButton {
     this.bgColor = bgColor;
     this.bgHoverColor = bgHoverColor;
 
+    // Height reduced from 56px to 44px, padding increased to maintain ~2.3:1 width:height ratio
     this.button.style.cssText = `
       background: ${bgColor} !important;
       border: 2px solid ${GROVE_COLORS.primary} !important;
-      border-radius: 28px !important;
-      padding: 12px 20px !important;
-      height: 56px !important;
-      min-width: 56px !important;
+      border-radius: 22px !important;
+      padding: 12px 28px !important;
+      height: 44px !important;
+      min-width: 44px !important;
       position: relative !important;
       overflow: hidden !important;
       display: inline-flex !important;

@@ -69,8 +69,9 @@ const TweetTipHandler = {
     const textColor = isDarkMode ? '#ffffff' : '#1a1a1a';
 
     // Adjust sizing for quoted tweets (smaller to fit the compact layout)
+    // Maintain ~50% padding-to-height ratio for consistent pill proportions
     const buttonHeight = isQuotedTweet ? '24px' : '28px';
-    const buttonPadding = isQuotedTweet ? '0 8px' : '0 12px';
+    const buttonPadding = isQuotedTweet ? '0 12px' : '0 14px';
     const fontSize = isQuotedTweet ? '11px' : '13px';
     const emojiFontSize = isQuotedTweet ? '12px' : '14px';
 
