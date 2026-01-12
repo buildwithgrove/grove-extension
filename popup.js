@@ -63,6 +63,7 @@ const localhostKeyStatus = document.getElementById('localhostKeyStatus');
 const productionActiveBadge = document.getElementById('productionActiveBadge');
 const testnetActiveBadge = document.getElementById('testnetActiveBadge');
 const localhostActiveBadge = document.getElementById('localhostActiveBadge');
+const productionKeySlot = document.getElementById('productionKeySlot');
 const testnetKeySlot = document.getElementById('testnetKeySlot');
 const localhostKeySlot = document.getElementById('localhostKeySlot');
 const manageProductionKeyBtn = document.getElementById('manageProductionKeyBtn');
@@ -75,6 +76,7 @@ const jwtEditAppLink = document.getElementById('jwtEditAppLink');
 let currentEditSlot = null; // Track which slot is being edited ('production', 'testnet', or 'localhost')
 
 // Previous Keys Management
+const prevKeysSection = document.getElementById('prevKeysSection');
 const prevKeysCount = document.getElementById('prevKeysCount');
 const viewPrevKeysBtn = document.getElementById('viewPrevKeysBtn');
 const prevKeysContainer = document.getElementById('prevKeysContainer');
@@ -535,35 +537,23 @@ function setupEventListeners() {
     });
   }
 
-  // New slot-specific manage buttons
-  if (manageProductionKeyBtn) {
-    manageProductionKeyBtn.addEventListener('click', () => {
-      if (jwtEditContainer.classList.contains('hidden') || currentEditSlot !== 'production') {
-        showJwtEditForSlot('production');
-      } else {
-        hideJwtEdit();
-      }
-    });
-  }
+  // Slot click handlers - whole row is clickable
+  const handleSlotClick = (slot) => {
+    if (jwtEditContainer.classList.contains('hidden') || currentEditSlot !== slot) {
+      showJwtEditForSlot(slot);
+    } else {
+      hideJwtEdit();
+    }
+  };
 
-  if (manageTestnetKeyBtn) {
-    manageTestnetKeyBtn.addEventListener('click', () => {
-      if (jwtEditContainer.classList.contains('hidden') || currentEditSlot !== 'testnet') {
-        showJwtEditForSlot('testnet');
-      } else {
-        hideJwtEdit();
-      }
-    });
+  if (productionKeySlot) {
+    productionKeySlot.addEventListener('click', () => handleSlotClick('production'));
   }
-
-  if (manageLocalhostKeyBtn) {
-    manageLocalhostKeyBtn.addEventListener('click', () => {
-      if (jwtEditContainer.classList.contains('hidden') || currentEditSlot !== 'localhost') {
-        showJwtEditForSlot('localhost');
-      } else {
-        hideJwtEdit();
-      }
-    });
+  if (testnetKeySlot) {
+    testnetKeySlot.addEventListener('click', () => handleSlotClick('testnet'));
+  }
+  if (localhostKeySlot) {
+    localhostKeySlot.addEventListener('click', () => handleSlotClick('localhost'));
   }
 
   if (clearAllKeysBtn) {
@@ -579,17 +569,22 @@ function setupEventListeners() {
     removeJwtBtn.addEventListener('click', removeJwt);
   }
 
-  // Previous Keys
-  if (viewPrevKeysBtn) {
-    viewPrevKeysBtn.addEventListener('click', () => {
-      if (prevKeysContainer.classList.contains('hidden')) {
-        prevKeysUI.show();
-        viewPrevKeysBtn.textContent = 'Hide';
-      } else {
-        prevKeysUI.hide();
-        viewPrevKeysBtn.textContent = 'View';
-      }
-    });
+  // Previous Keys - whole row is clickable
+  const handlePrevKeysClick = () => {
+    if (prevKeysContainer.classList.contains('hidden')) {
+      prevKeysUI.show();
+      viewPrevKeysBtn.textContent = 'Hide';
+    } else {
+      prevKeysUI.hide();
+      viewPrevKeysBtn.textContent = 'View';
+    }
+  };
+
+  if (prevKeysSection) {
+    const prevKeysRow = prevKeysSection.querySelector('.settings-row');
+    if (prevKeysRow) {
+      prevKeysRow.addEventListener('click', handlePrevKeysClick);
+    }
   }
   if (closePrevKeysBtn) {
     closePrevKeysBtn.addEventListener('click', () => {
@@ -1276,6 +1271,10 @@ async function saveTip() {
 async function loadConfirmTip() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.CONFIRM_TIP, STORAGE_KEYS.CONFIRM_TIP_V2]);
 
+  // Disable transition during initial load
+  const toggleSwitch = confirmTipToggle.closest('.toggle-switch');
+  if (toggleSwitch) toggleSwitch.classList.add('no-transition');
+
   // Migration logic: if V2 flag not set, reset confirm to true (new default)
   if (!result[STORAGE_KEYS.CONFIRM_TIP_V2]) {
     await chrome.storage.local.set({
@@ -1283,12 +1282,18 @@ async function loadConfirmTip() {
       [STORAGE_KEYS.CONFIRM_TIP_V2]: true
     });
     confirmTipToggle.checked = true;
-    return;
+  } else {
+    // V2 already set, use stored value (default to true if not set)
+    const enabled = result[STORAGE_KEYS.CONFIRM_TIP] !== false;
+    confirmTipToggle.checked = enabled;
   }
 
-  // V2 already set, use stored value (default to true if not set)
-  const enabled = result[STORAGE_KEYS.CONFIRM_TIP] !== false;
-  confirmTipToggle.checked = enabled;
+  // Re-enable transitions after paint completes
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (toggleSwitch) toggleSwitch.classList.remove('no-transition');
+    });
+  });
 }
 
 async function handleConfirmTipToggle() {

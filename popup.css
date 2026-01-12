@@ -997,9 +997,12 @@ button.section-card-btn:hover .tipping-row-icon {
   gap: 8px;
 }
 
-.btn-sm {
+.form-actions .btn-sm {
   flex: 1;
-  padding: 10px 16px;
+}
+
+.btn-sm {
+  padding: 8px 14px;
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   font-weight: 600;
@@ -2645,6 +2648,19 @@ button.quick-access-item:hover .quick-access-icon {
   background-color: var(--color-surface-hover);
 }
 
+/* Clickable settings row (for expandable sections) */
+#prevKeysSection .settings-row {
+  cursor: pointer;
+  padding: 16px;
+  margin: -16px;
+  border-radius: var(--radius-lg);
+  transition: background-color 0.2s;
+}
+
+#prevKeysSection .settings-row:hover {
+  background-color: var(--color-surface-hover);
+}
+
 .settings-icon {
   font-size: 20px;
 }
@@ -2666,6 +2682,11 @@ button.quick-access-item:hover .quick-access-icon {
 /* JWT Slot Styles */
 .jwt-slot {
   position: relative;
+  cursor: pointer;
+}
+
+.jwt-slot:hover {
+  background-color: var(--color-surface-hover);
 }
 
 .jwt-slot-indicator {
@@ -2722,7 +2743,7 @@ button.quick-access-item:hover .quick-access-icon {
 .btn-text {
   background: none;
   border: none;
-  color: var(--color-text-secondary);
+  color: var(--color-primary);
   font-weight: 600;
   cursor: pointer;
   font-size: 13px;
@@ -2730,7 +2751,7 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 .btn-text:hover {
-  color: var(--color-primary);
+  color: var(--color-primary-hover);
 }
 
 .jwt-edit-container {
@@ -2967,6 +2988,12 @@ button.quick-access-item:hover .quick-access-icon {
 
 .toggle-switch input:checked ~ .slider:before {
   transform: translateX(20px);
+}
+
+/* Disable transition during initial load */
+.toggle-switch.no-transition .slider,
+.toggle-switch.no-transition .slider:before {
+  transition: none;
 }
 
 /* Bottom Nav */
