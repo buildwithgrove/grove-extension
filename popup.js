@@ -287,8 +287,9 @@ async function init() {
   // Fetch balance after everything is loaded (also updates client address)
   await fetchBalance();
 
-  // Resolve ENS name in the background (don't await to avoid blocking UI)
-  loadAndResolveEnsName();
+  // ENS resolution disabled - web3.bio API returns incorrect data for some addresses
+  // TODO: Re-enable when we have a more reliable ENS resolution method
+  // loadAndResolveEnsName();
 
   // Show earn tab badge only if user hasn't visited earn tab yet
   const earnTabSeen = await chrome.storage.local.get([STORAGE_KEYS.EARN_TAB_SEEN]);
@@ -1526,12 +1527,11 @@ async function fetchBalance() {
       console.log('[Grove Extension] Displaying truncated address:', truncated);
       await updateEarnAddressDisplay(truncated, false);
 
-      // If address changed, clear cached ENS name and re-resolve
+      // If address changed, clear cached ENS name
       if (previousAddress !== response.data.client_address) {
         await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
-        updateEnsNameDisplay(null);
-        // Resolve in background
-        loadAndResolveEnsName();
+        // ENS resolution disabled - web3.bio API returns incorrect data
+        // loadAndResolveEnsName();
       }
     } else {
       // No client_address in response - clear cached data and show setup card
@@ -1838,7 +1838,8 @@ async function handleDevModeToggle(e) {
 
     if (testnetJwt) {
       await fetchBalance();
-      loadAndResolveEnsName();
+      // ENS resolution disabled - web3.bio API returns incorrect data
+      // loadAndResolveEnsName();
       showToast('Switched to Testnet');
     } else {
       showToast('Developer Mode - Connect via testnet app');
@@ -1876,7 +1877,8 @@ async function handleDevModeToggle(e) {
 
     if (prodJwt) {
       await fetchBalance();
-      loadAndResolveEnsName();
+      // ENS resolution disabled - web3.bio API returns incorrect data
+      // loadAndResolveEnsName();
       showToast('Switched to Mainnet');
     } else {
       showToast('Developer Mode Disabled - Connect via grove.city');
