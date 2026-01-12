@@ -24,22 +24,13 @@ const setupTokenBtn = document.getElementById('setupTokenBtn');
 
 // Tip amount (Home)
 const tipAmountDisplay = document.getElementById('tipAmountDisplay');
-const tipAmountEdit = document.getElementById('tipAmountEdit');
+const defaultTipRow = document.getElementById('defaultTipRow');
+const tipAmountEditRow = document.getElementById('tipAmountEditRow');
 const tipAmountInput = document.getElementById('tipAmountInput');
 const saveTipAmount = document.getElementById('saveTipAmount');
-const cancelTipAmount = document.getElementById('cancelTipAmount');
-const defaultTipCard = document.getElementById('defaultTipCard');
+const cancelTipEdit = document.getElementById('cancelTipEdit');
 const editDefaultTipBtn = document.getElementById('editDefaultTipBtn');
 const confirmTipToggle = document.getElementById('confirmTipToggle');
-
-// Tip amount (Settings)
-const settingsTipAmountDisplay = document.getElementById('settingsTipAmountDisplay');
-const settingsTipAmountInput = document.getElementById('settingsTipAmountInput');
-const settingsSaveTipAmount = document.getElementById('settingsSaveTipAmount');
-const settingsEditTipBtn = document.getElementById('settingsEditTipBtn');
-const settingsCancelTipAmount = document.getElementById('settingsCancelTipAmount');
-const settingsTipRow = document.getElementById('settingsTipRow');
-const settingsTipEditRow = document.getElementById('settingsTipEditRow');
 
 // Balance
 const balanceAmount = document.getElementById('balanceAmount');
@@ -72,6 +63,7 @@ const localhostKeyStatus = document.getElementById('localhostKeyStatus');
 const productionActiveBadge = document.getElementById('productionActiveBadge');
 const testnetActiveBadge = document.getElementById('testnetActiveBadge');
 const localhostActiveBadge = document.getElementById('localhostActiveBadge');
+const productionKeySlot = document.getElementById('productionKeySlot');
 const testnetKeySlot = document.getElementById('testnetKeySlot');
 const localhostKeySlot = document.getElementById('localhostKeySlot');
 const manageProductionKeyBtn = document.getElementById('manageProductionKeyBtn');
@@ -84,6 +76,7 @@ const jwtEditAppLink = document.getElementById('jwtEditAppLink');
 let currentEditSlot = null; // Track which slot is being edited ('production', 'testnet', or 'localhost')
 
 // Previous Keys Management
+const prevKeysSection = document.getElementById('prevKeysSection');
 const prevKeysCount = document.getElementById('prevKeysCount');
 const viewPrevKeysBtn = document.getElementById('viewPrevKeysBtn');
 const prevKeysContainer = document.getElementById('prevKeysContainer');
@@ -103,6 +96,7 @@ const tipIntroSkipBtn = document.getElementById('tipIntroSkipBtn');
 const tipIntroPage1 = document.getElementById('tipIntroPage1');
 const tipIntroPage2 = document.getElementById('tipIntroPage2');
 const tipIntroDots = document.querySelectorAll('.tip-intro-dot');
+let introModalMode = 'intro'; // Track current modal mode: 'intro' shows page 1 only, 'twitter' shows page 2 only
 
 // Initialize Previous Keys UI
 let prevKeysUI = null;
@@ -128,13 +122,15 @@ async function getActiveJWT() {
 
 // DEFAULT_AUTO_REPLY_MESSAGE is loaded from src/ui/constants.js
 
-// X Login Elements (now on home screen)
-const likeOnTipToggle = document.getElementById('homeLikeOnTipToggle');
-const autoReplyToggle = document.getElementById('homeAutoReplyToggle');
-const autoReplyMessageContainer = document.getElementById('homeAutoReplyMessageContainer');
-const autoReplyMessageInput = document.getElementById('homeAutoReplyMessageInput');
-const saveAutoReplyMessageBtn = document.getElementById('homeSaveAutoReplyMessageBtn');
-const resetAutoReplyMessageBtn = document.getElementById('homeResetAutoReplyMessageBtn');
+// X Login Elements (now in Settings > X)
+const likeOnTipToggle = document.getElementById('settingsLikeOnTipToggle');
+const autoReplyToggle = document.getElementById('settingsAutoReplyToggle');
+const autoReplyMessageContainer = document.getElementById('settingsAutoReplyMessageContainer');
+const autoReplyMessageInput = document.getElementById('settingsAutoReplyMessageInput');
+const saveAutoReplyMessageBtn = document.getElementById('settingsSaveAutoReplyMessageBtn');
+const resetAutoReplyMessageBtn = document.getElementById('settingsResetAutoReplyMessageBtn');
+const settingsXConnectBtn = document.getElementById('settingsXConnectBtn');
+const settingsXDisconnectBtn = document.getElementById('settingsXDisconnectBtn');
 
 // CDP Auth Elements
 const cdpAuthSection = document.getElementById('cdpAuthSection');
@@ -170,8 +166,8 @@ const DEFAULT_ENV = 'prod';
 const DEFAULT_ENDPOINT = 'production';
 // FormatUtils.DEFAULT_BALANCE_DISPLAY is now in FormatUtils
 const TOP_UP_URLS = {
-  mainnet: 'https://app.grove.city/profile?tab=tip',
-  testnet: 'https://app.testnet.grove.city/profile?tab=tip'
+  mainnet: 'https://app.grove.city/profile?tab=tip&action=topup',
+  testnet: 'https://app.testnet.grove.city/profile?tab=tip&action=topup'
 };
 const MAINNET_CHAINS = ['base', 'solana'];
 const TESTNET_CHAINS = ['base-sepolia', 'solana-devnet'];
@@ -309,17 +305,9 @@ async function init() {
   chrome.runtime.sendMessage({ type: 'CHECK_OPEN_TO_X_SETTINGS' }, (response) => {
     if (chrome.runtime.lastError) return; // Service worker inactive
     if (response?.shouldOpen) {
-      // Navigate to home tab first
-      const homeTab = document.querySelector('[data-target="tab-home"]');
-      if (homeTab) homeTab.click();
-
-      // Open X settings panel
-      const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
-      const homeTwitterSettingsPanel = document.getElementById('homeTwitterSettingsPanel');
-      if (homeTwitterSettingsBtn && homeTwitterSettingsPanel) {
-        homeTwitterSettingsBtn.classList.add('hidden');
-        homeTwitterSettingsPanel.classList.remove('hidden');
-      }
+      // Navigate to Settings > X
+      navigateToSettings();
+      showSettingsView('x-settings');
     }
   });
 
@@ -476,8 +464,8 @@ function setupEventListeners() {
 
   // Tip Amount (Home) - Edit button triggers edit mode
   editDefaultTipBtn.addEventListener('click', showTipEdit);
-  cancelTipAmount.addEventListener('click', hideTipEdit);
   saveTipAmount.addEventListener('click', saveTip);
+  if (cancelTipEdit) cancelTipEdit.addEventListener('click', hideTipEdit);
   confirmTipToggle.addEventListener('change', handleConfirmTipToggle);
 
   // Tip Intro Modal - Page Navigation
@@ -522,27 +510,11 @@ function setupEventListeners() {
   // Onboarding Multi-step Navigation
   setupOnboardingNavigation();
 
-  // Tip Amount (Settings) - synced with Home
-  if (settingsEditTipBtn) {
-    settingsEditTipBtn.addEventListener('click', showSettingsTipEdit);
-  }
-  if (settingsCancelTipAmount) {
-    settingsCancelTipAmount.addEventListener('click', hideSettingsTipEdit);
-  }
-  if (settingsSaveTipAmount) {
-    settingsSaveTipAmount.addEventListener('click', saveTipFromSettings);
-  }
-  if (settingsTipAmountInput) {
-    settingsTipAmountInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') saveTipFromSettings();
-    });
-  }
-
   // JWT setup button (if present)
   if (setupTokenBtn) {
     setupTokenBtn.addEventListener('click', () => {
       // Navigate to settings -> Account and open edit
-      document.querySelector('[data-target="tab-settings"]').click();
+      navigateToSettings();
       showSettingsView('account');
       showJwtEdit();
     });
@@ -552,50 +524,27 @@ function setupEventListeners() {
   const testModeBanner = document.getElementById('testModeBanner');
   if (testModeBanner) {
     testModeBanner.addEventListener('click', () => {
-      document.querySelector('[data-target="tab-settings"]').click();
+      navigateToSettings();
       showSettingsView('developer');
     });
   }
 
-  // Home screen Twitter settings drill-down
-  const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
-  const homeTwitterSettingsPanel = document.getElementById('homeTwitterSettingsPanel');
-  const homeTwitterSettingsBack = document.getElementById('homeTwitterSettingsBack');
-
-  if (homeTwitterSettingsBtn && homeTwitterSettingsPanel) {
-    homeTwitterSettingsBtn.addEventListener('click', async () => {
-      const isLoggedIn = await XAuth.isLoggedIn();
-      if (isLoggedIn) {
-        // Show settings panel when connected
-        homeTwitterSettingsBtn.classList.add('hidden');
-        homeTwitterSettingsPanel.classList.remove('hidden');
-      } else {
-        // Trigger login directly when not connected
-        handleXLogin();
-      }
+  // Home Settings Card - navigate to Settings tab
+  const homeSettingsBtn = document.getElementById('homeSettingsBtn');
+  if (homeSettingsBtn) {
+    homeSettingsBtn.addEventListener('click', () => {
+      navigateToSettings();
     });
   }
 
-  if (homeTwitterSettingsBack && homeTwitterSettingsPanel) {
-    homeTwitterSettingsBack.addEventListener('click', () => {
-      homeTwitterSettingsPanel.classList.add('hidden');
-      homeTwitterSettingsBtn.classList.remove('hidden');
-    });
+  // Settings > X connect button
+  if (settingsXConnectBtn) {
+    settingsXConnectBtn.addEventListener('click', handleXLogin);
   }
 
-  // Home X disconnect button
-  const homeXDisconnectBtnEl = document.getElementById('homeXDisconnectBtn');
-  if (homeXDisconnectBtnEl) {
-    homeXDisconnectBtnEl.addEventListener('click', handleXDisconnect);
-  }
-
-  // Home X connect button (on card header)
-  const homeXConnectBtnEl = document.getElementById('homeXConnectBtn');
-  if (homeXConnectBtnEl) {
-    homeXConnectBtnEl.addEventListener('click', (e) => {
-      e.stopPropagation(); // Prevent card click
-      handleXLogin();
-    });
+  // Settings > X disconnect button
+  if (settingsXDisconnectBtn) {
+    settingsXDisconnectBtn.addEventListener('click', handleXDisconnect);
   }
 
   // Legacy manage button (kept for compatibility but hidden)
@@ -609,35 +558,23 @@ function setupEventListeners() {
     });
   }
 
-  // New slot-specific manage buttons
-  if (manageProductionKeyBtn) {
-    manageProductionKeyBtn.addEventListener('click', () => {
-      if (jwtEditContainer.classList.contains('hidden') || currentEditSlot !== 'production') {
-        showJwtEditForSlot('production');
-      } else {
-        hideJwtEdit();
-      }
-    });
-  }
+  // Slot click handlers - whole row is clickable
+  const handleSlotClick = (slot) => {
+    if (jwtEditContainer.classList.contains('hidden') || currentEditSlot !== slot) {
+      showJwtEditForSlot(slot);
+    } else {
+      hideJwtEdit();
+    }
+  };
 
-  if (manageTestnetKeyBtn) {
-    manageTestnetKeyBtn.addEventListener('click', () => {
-      if (jwtEditContainer.classList.contains('hidden') || currentEditSlot !== 'testnet') {
-        showJwtEditForSlot('testnet');
-      } else {
-        hideJwtEdit();
-      }
-    });
+  if (productionKeySlot) {
+    productionKeySlot.addEventListener('click', () => handleSlotClick('production'));
   }
-
-  if (manageLocalhostKeyBtn) {
-    manageLocalhostKeyBtn.addEventListener('click', () => {
-      if (jwtEditContainer.classList.contains('hidden') || currentEditSlot !== 'localhost') {
-        showJwtEditForSlot('localhost');
-      } else {
-        hideJwtEdit();
-      }
-    });
+  if (testnetKeySlot) {
+    testnetKeySlot.addEventListener('click', () => handleSlotClick('testnet'));
+  }
+  if (localhostKeySlot) {
+    localhostKeySlot.addEventListener('click', () => handleSlotClick('localhost'));
   }
 
   if (clearAllKeysBtn) {
@@ -653,17 +590,22 @@ function setupEventListeners() {
     removeJwtBtn.addEventListener('click', removeJwt);
   }
 
-  // Previous Keys
-  if (viewPrevKeysBtn) {
-    viewPrevKeysBtn.addEventListener('click', () => {
-      if (prevKeysContainer.classList.contains('hidden')) {
-        prevKeysUI.show();
-        viewPrevKeysBtn.textContent = 'Hide';
-      } else {
-        prevKeysUI.hide();
-        viewPrevKeysBtn.textContent = 'View';
-      }
-    });
+  // Previous Keys - whole row is clickable
+  const handlePrevKeysClick = () => {
+    if (prevKeysContainer.classList.contains('hidden')) {
+      prevKeysUI.show();
+      viewPrevKeysBtn.textContent = 'Hide';
+    } else {
+      prevKeysUI.hide();
+      viewPrevKeysBtn.textContent = 'View';
+    }
+  };
+
+  if (prevKeysSection) {
+    const prevKeysRow = prevKeysSection.querySelector('.settings-row');
+    if (prevKeysRow) {
+      prevKeysRow.addEventListener('click', handlePrevKeysClick);
+    }
   }
   if (closePrevKeysBtn) {
     closePrevKeysBtn.addEventListener('click', () => {
@@ -768,6 +710,26 @@ function setupEventListeners() {
       await fetchBalance();
     }
   });
+}
+
+/**
+ * Navigate to Settings tab programmatically
+ */
+function navigateToSettings() {
+  // Update nav items
+  navItems.forEach(item => item.classList.remove('active'));
+
+  // Update pages
+  pages.forEach(page => {
+    if (page.id === 'tab-settings') {
+      page.classList.add('active');
+    } else {
+      page.classList.remove('active');
+    }
+  });
+
+  // Show main settings menu
+  showSettingsView('main');
 }
 
 /**
@@ -1295,35 +1257,21 @@ function updateTipUI(amount) {
   }
   tipAmountInput.value = formatted;
 
-  // Update Settings display (sync)
-  if (settingsTipAmountDisplay) {
-    const settingsAmountSpan = settingsTipAmountDisplay.querySelector('.amount-value');
-    if (settingsAmountSpan) {
-      settingsAmountSpan.textContent = formatted;
-    }
-  }
-  if (settingsTipAmountInput) {
-    settingsTipAmountInput.value = formatted;
-  }
 }
 
 function showTipEdit() {
-  // Hide the default tip card
-  if (defaultTipCard) {
-    defaultTipCard.classList.add('hidden');
-  }
-  tipAmountEdit.classList.remove('hidden');
-  // Focus the input for quick editing
+  // Hide display row, show edit row
+  if (defaultTipRow) defaultTipRow.classList.add('hidden');
+  if (tipAmountEditRow) tipAmountEditRow.classList.remove('hidden');
+  // Focus and select all for easy replacement
   tipAmountInput.focus();
   tipAmountInput.select();
 }
 
 function hideTipEdit() {
-  // Show the default tip card
-  if (defaultTipCard) {
-    defaultTipCard.classList.remove('hidden');
-  }
-  tipAmountEdit.classList.add('hidden');
+  // Show display row, hide edit row
+  if (defaultTipRow) defaultTipRow.classList.remove('hidden');
+  if (tipAmountEditRow) tipAmountEditRow.classList.add('hidden');
 }
 
 async function saveTip() {
@@ -1338,34 +1286,15 @@ async function saveTip() {
   }
 }
 
-function showSettingsTipEdit() {
-  if (settingsTipRow) settingsTipRow.classList.add('hidden');
-  if (settingsTipEditRow) settingsTipEditRow.classList.remove('hidden');
-  if (settingsTipAmountInput) settingsTipAmountInput.focus();
-}
-
-function hideSettingsTipEdit() {
-  if (settingsTipRow) settingsTipRow.classList.remove('hidden');
-  if (settingsTipEditRow) settingsTipEditRow.classList.add('hidden');
-}
-
-async function saveTipFromSettings() {
-  const val = parseFloat(settingsTipAmountInput.value);
-  if (val > 0) {
-    await chrome.storage.local.set({ [STORAGE_KEYS.TIP_AMOUNT]: val });
-    updateTipUI(val);
-    hideSettingsTipEdit();
-    showToast('Default tip updated');
-  } else {
-    showToast('Invalid amount');
-  }
-}
-
 /**
  * Confirm tip toggle
  */
 async function loadConfirmTip() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.CONFIRM_TIP, STORAGE_KEYS.CONFIRM_TIP_V2]);
+
+  // Disable transition during initial load
+  const toggleSwitch = confirmTipToggle.closest('.toggle-switch');
+  if (toggleSwitch) toggleSwitch.classList.add('no-transition');
 
   // Migration logic: if V2 flag not set, reset confirm to true (new default)
   if (!result[STORAGE_KEYS.CONFIRM_TIP_V2]) {
@@ -1374,12 +1303,18 @@ async function loadConfirmTip() {
       [STORAGE_KEYS.CONFIRM_TIP_V2]: true
     });
     confirmTipToggle.checked = true;
-    return;
+  } else {
+    // V2 already set, use stored value (default to true if not set)
+    const enabled = result[STORAGE_KEYS.CONFIRM_TIP] !== false;
+    confirmTipToggle.checked = enabled;
   }
 
-  // V2 already set, use stored value (default to true if not set)
-  const enabled = result[STORAGE_KEYS.CONFIRM_TIP] !== false;
-  confirmTipToggle.checked = enabled;
+  // Re-enable transitions after paint completes
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (toggleSwitch) toggleSwitch.classList.remove('no-transition');
+    });
+  });
 }
 
 async function handleConfirmTipToggle() {
@@ -1505,12 +1440,6 @@ async function resetAutoReplyMessage() {
 /**
  * X (Twitter) Login
  */
-
-// Home screen X elements
-const homeXDisconnectBtn = document.getElementById('homeXDisconnectBtn');
-const homeXSettingsTitle = document.getElementById('homeXSettingsTitle');
-const homeXConnectBtn = document.getElementById('homeXConnectBtn');
-const homeXSettingsGear = document.getElementById('homeXSettingsGear');
 
 // X OAuth functions are imported from src/auth/xOAuthPopup.js
 // loadXLoginStatus, handleXDisconnect, handleXLogin are available globally
@@ -2719,9 +2648,6 @@ function renderHistoryList() {
  * Shows page 1 only when user first connects their account
  * Twitter connect (page 2) is shown separately after conditions are met
  */
-
-// Track current modal mode: 'intro' shows page 1 only, 'twitter' shows page 2 only
-let introModalMode = 'intro';
 
 async function checkAndShowTipIntroModal() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.TIP_INTRO_SEEN]);

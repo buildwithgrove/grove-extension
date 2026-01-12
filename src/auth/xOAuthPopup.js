@@ -6,33 +6,38 @@
 
 /**
  * Load and update X login status UI
+ * Updates Settings > X view
  * @returns {Promise<void>}
  */
 async function loadXLoginStatus() {
   try {
-    const homeXSettingsTitle = document.getElementById('homeXSettingsTitle');
-    const homeXConnectBtn = document.getElementById('homeXConnectBtn');
-    const homeXSettingsGear = document.getElementById('homeXSettingsGear');
-    const homeTwitterSettingsBtn = document.getElementById('homeTwitterSettingsBtn');
-    const homeTwitterSettingsPanel = document.getElementById('homeTwitterSettingsPanel');
+    // Settings > X elements
+    const settingsXConnectionStatus = document.getElementById('settingsXConnectionStatus');
+    const settingsXConnectBtn = document.getElementById('settingsXConnectBtn');
+    const settingsXDisconnectBtn = document.getElementById('settingsXDisconnectBtn');
+    const settingsXActionsGroup = document.getElementById('settingsXActionsGroup');
+    const settingsXMenuDesc = document.getElementById('settingsXMenuDesc');
+    const settingsXFeaturesGroup = document.getElementById('settingsXFeaturesGroup');
 
     // Check if we have a token (don't verify with API call on every load)
     const isLoggedIn = await XAuth.isLoggedIn();
 
     if (isLoggedIn) {
-      if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Connected';
-      if (homeXConnectBtn) homeXConnectBtn.classList.add('hidden');
-      if (homeXSettingsGear) homeXSettingsGear.classList.remove('hidden');
-      // Auto-expand settings panel when connected
-      if (homeTwitterSettingsBtn) homeTwitterSettingsBtn.classList.add('hidden');
-      if (homeTwitterSettingsPanel) homeTwitterSettingsPanel.classList.remove('hidden');
+      // Update Settings > X view
+      if (settingsXConnectionStatus) settingsXConnectionStatus.textContent = 'Connected to X';
+      if (settingsXConnectBtn) settingsXConnectBtn.classList.add('hidden');
+      if (settingsXDisconnectBtn) settingsXDisconnectBtn.classList.remove('hidden');
+      if (settingsXActionsGroup) settingsXActionsGroup.classList.remove('hidden');
+      if (settingsXFeaturesGroup) settingsXFeaturesGroup.classList.add('hidden');
+      if (settingsXMenuDesc) settingsXMenuDesc.textContent = 'Connected';
     } else {
-      if (homeXSettingsTitle) homeXSettingsTitle.textContent = 'Setup';
-      if (homeXConnectBtn) homeXConnectBtn.classList.remove('hidden');
-      if (homeXSettingsGear) homeXSettingsGear.classList.add('hidden');
-      // Show card when not connected
-      if (homeTwitterSettingsBtn) homeTwitterSettingsBtn.classList.remove('hidden');
-      if (homeTwitterSettingsPanel) homeTwitterSettingsPanel.classList.add('hidden');
+      // Update Settings > X view
+      if (settingsXConnectionStatus) settingsXConnectionStatus.textContent = 'Not connected';
+      if (settingsXConnectBtn) settingsXConnectBtn.classList.remove('hidden');
+      if (settingsXDisconnectBtn) settingsXDisconnectBtn.classList.add('hidden');
+      if (settingsXActionsGroup) settingsXActionsGroup.classList.add('hidden');
+      if (settingsXFeaturesGroup) settingsXFeaturesGroup.classList.remove('hidden');
+      if (settingsXMenuDesc) settingsXMenuDesc.textContent = 'Auto-like & reply settings';
     }
   } catch (error) {
     console.error('[Grove Extension] X login status check failed:', error);
@@ -56,11 +61,11 @@ async function handleXDisconnect() {
  * @returns {Promise<void>}
  */
 async function handleXLogin() {
-  const homeXConnectBtn = document.getElementById('homeXConnectBtn');
+  const settingsXConnectBtn = document.getElementById('settingsXConnectBtn');
 
   try {
-    if (homeXConnectBtn) {
-      homeXConnectBtn.textContent = 'Connecting...';
+    if (settingsXConnectBtn) {
+      settingsXConnectBtn.textContent = 'Connecting...';
     }
 
     // Clear any stale tokens before starting fresh login
@@ -69,8 +74,8 @@ async function handleXLogin() {
     await XAuth.login();
 
     // Refresh UI from stored state
-    if (homeXConnectBtn) {
-      homeXConnectBtn.textContent = 'Connect';
+    if (settingsXConnectBtn) {
+      settingsXConnectBtn.textContent = 'Connect';
     }
 
     // Only update UI and show toast if actually logged in
@@ -83,8 +88,8 @@ async function handleXLogin() {
     }
   } catch (error) {
     console.error('[Grove Extension] X login failed:', error);
-    if (homeXConnectBtn) {
-      homeXConnectBtn.textContent = 'Connect';
+    if (settingsXConnectBtn) {
+      settingsXConnectBtn.textContent = 'Connect';
     }
     // Truncate long error messages to prevent UI overflow
     const errorMsg = error.message?.length > 50
