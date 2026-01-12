@@ -17,6 +17,7 @@ async function loadXLoginStatus() {
     const settingsXDisconnectBtn = document.getElementById('settingsXDisconnectBtn');
     const settingsXActionsGroup = document.getElementById('settingsXActionsGroup');
     const settingsXMenuDesc = document.getElementById('settingsXMenuDesc');
+    const settingsXFeaturesGroup = document.getElementById('settingsXFeaturesGroup');
 
     // Check if we have a token (don't verify with API call on every load)
     const isLoggedIn = await XAuth.isLoggedIn();
@@ -27,6 +28,7 @@ async function loadXLoginStatus() {
       if (settingsXConnectBtn) settingsXConnectBtn.classList.add('hidden');
       if (settingsXDisconnectBtn) settingsXDisconnectBtn.classList.remove('hidden');
       if (settingsXActionsGroup) settingsXActionsGroup.classList.remove('hidden');
+      if (settingsXFeaturesGroup) settingsXFeaturesGroup.classList.add('hidden');
       if (settingsXMenuDesc) settingsXMenuDesc.textContent = 'Connected';
     } else {
       // Update Settings > X view
@@ -34,6 +36,7 @@ async function loadXLoginStatus() {
       if (settingsXConnectBtn) settingsXConnectBtn.classList.remove('hidden');
       if (settingsXDisconnectBtn) settingsXDisconnectBtn.classList.add('hidden');
       if (settingsXActionsGroup) settingsXActionsGroup.classList.add('hidden');
+      if (settingsXFeaturesGroup) settingsXFeaturesGroup.classList.remove('hidden');
       if (settingsXMenuDesc) settingsXMenuDesc.textContent = 'Auto-like & reply settings';
     }
   } catch (error) {

@@ -456,7 +456,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
+  gap: 32px;
 }
 
 .card-content {
@@ -668,6 +668,23 @@ button.section-card-btn:hover .quick-access-icon {
 button.section-card-btn:hover .card-chevron {
   color: var(--color-primary);
   transform: translateX(2px);
+}
+
+.card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+button.section-card-btn:hover .card-icon {
+  color: var(--color-primary);
 }
 
 .card-feature-list {
@@ -2385,6 +2402,30 @@ button.quick-access-item:hover .quick-access-icon {
   font-weight: 700;
   margin-bottom: 12px;
   padding-left: 16px;
+}
+
+/* X Features List (Settings > X) */
+.x-features-list {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.x-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.x-feature-item svg {
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .settings-item, .settings-item-column {
