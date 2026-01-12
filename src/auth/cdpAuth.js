@@ -97,8 +97,13 @@ export async function startSmsAuth(phoneNumber) {
   // Clear any existing session first
   await signOutCDP();
 
-  // Normalize phone number (remove spaces, dashes)
-  const normalizedPhone = phoneNumber.replace(/[\s\-()]/g, '');
+  // Normalize phone number to E.164 format (e.g., +14155551234)
+  let normalizedPhone = phoneNumber.replace(/[\s\-()]/g, '');
+
+  // Ensure + prefix for international format
+  if (!normalizedPhone.startsWith('+')) {
+    normalizedPhone = '+' + normalizedPhone;
+  }
 
   console.log('[CDPAuth] Starting SMS auth for:', normalizedPhone);
   const result = await signInWithSms({ phoneNumber: normalizedPhone });
