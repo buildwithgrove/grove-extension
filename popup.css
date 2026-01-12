@@ -456,7 +456,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 32px;
+  gap: 16px;
 }
 
 .card-content {
@@ -664,12 +664,11 @@ button.section-card-btn:hover .quick-access-icon {
 
 .card-chevron {
   color: var(--color-text-secondary);
-  transition: color 0.15s ease, transform 0.15s ease;
+  transition: color 0.15s ease;
 }
 
 button.section-card-btn:hover .card-chevron {
   color: var(--color-primary);
-  transform: translateX(2px);
 }
 
 .card-icon {
