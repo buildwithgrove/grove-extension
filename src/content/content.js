@@ -400,6 +400,10 @@
       return new window.SoundCloudAdapter();
     }
 
+    if (hostname.includes("substack.com")) {
+      return new window.SubstackAdapter();
+    }
+
     // Return GenericAdapter for all other websites
     // Only if GenericAdapter is available (loaded via manifest)
     if (typeof window.GenericAdapter !== 'undefined') {
