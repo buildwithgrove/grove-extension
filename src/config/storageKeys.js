@@ -39,4 +39,8 @@ var STORAGE_KEYS = {
 
   // CDP Auth state (persisted across popup close/reopen)
   CDP_AUTH_STATE: 'GROVE_CDP_AUTH_STATE',
+
+  // CDP Identity info (stored after successful auth)
+  CDP_IDENTITY_TYPE: 'GROVE_CDP_IDENTITY_TYPE',   // 'email' | 'sms'
+  CDP_IDENTITY_VALUE: 'GROVE_CDP_IDENTITY_VALUE', // The email or phone number
 };

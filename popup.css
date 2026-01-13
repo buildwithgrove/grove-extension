@@ -2731,6 +2731,31 @@ button.quick-access-item:hover .quick-access-icon {
   color: var(--color-text-secondary);
 }
 
+.settings-name-mono {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.btn-icon-sm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-icon-sm:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
 /* JWT Slot Styles */
 .jwt-slot {
   position: relative;
