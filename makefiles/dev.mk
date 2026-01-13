@@ -50,3 +50,30 @@ dev_clean: ## Clean build artifacts
 dev_debug_vars: ## Print key variables
 	$(call print_info_section,Debug variables)
 	$(Q)printf "ROOT_DIR=%s\nBUILD_DIR=%s\nDIST_DIR=%s\nTMP_DIR=%s\n" "$(ROOT_DIR)" "$(BUILD_DIR)" "$(DIST_DIR)" "$(TMP_DIR)"
+
+.PHONY: dev_inject_ens_status
+dev_inject_ens_status: ## Show status of dev ENS injection feature
+	$(call print_info_section,DEV ENS Injection Status)
+	@ENABLED=$$(grep -E "^const DEV_INJECT_ENS_ENABLED\s*=" src/dev/inject-ens.js | grep -o "true\|false"); \
+	if [ "$$ENABLED" = "true" ]; then \
+		printf "$(GREEN)$(BOLD)$(CHECK) ENABLED$(RESET)\n"; \
+	else \
+		printf "$(YELLOW)$(WARN) DISABLED$(RESET)\n"; \
+	fi
+	@printf "\n$(CYAN)Configured accounts:$(RESET)\n"
+	@sed -n '/^const DEV_INJECT_ENS_ACCOUNTS/,/^\];/p' src/dev/inject-ens.js | \
+		grep -E "^\s+'[^']+'" | \
+		sed "s/.*'\([^']*\)'.*/  - \1/"
+	@printf "\n$(DIM)Edit src/dev/inject-ens.js to configure$(RESET)\n"
+
+.PHONY: dev_inject_ens_toggle
+dev_inject_ens_toggle: ## Toggle dev ENS injection on/off
+	@ENABLED=$$(grep -E "^const DEV_INJECT_ENS_ENABLED\s*=" src/dev/inject-ens.js | grep -o "true\|false"); \
+	if [ "$$ENABLED" = "true" ]; then \
+		sed -i '' 's/^const DEV_INJECT_ENS_ENABLED = true;/const DEV_INJECT_ENS_ENABLED = false;/' src/dev/inject-ens.js; \
+		printf "$(YELLOW)$(WARN) ENS injection DISABLED$(RESET)\n"; \
+	else \
+		sed -i '' 's/^const DEV_INJECT_ENS_ENABLED = false;/const DEV_INJECT_ENS_ENABLED = true;/' src/dev/inject-ens.js; \
+		printf "$(GREEN)$(BOLD)$(CHECK) ENS injection ENABLED$(RESET)\n"; \
+	fi
+	@printf "$(DIM)Reload extension in chrome://extensions/ to apply$(RESET)\n"

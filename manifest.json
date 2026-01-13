@@ -29,6 +29,11 @@
   "content_scripts": [
     {
       "matches": ["https://twitter.com/*", "https://x.com/*"],
+      "js": ["src/dev/inject-ens.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://twitter.com/*", "https://x.com/*"],
       "js": [
         "src/config/storageKeys.js",
         "src/utils/darkMode.js",
