@@ -4,3 +4,4 @@ build/
 node_modules/
 .gemini/
 test-results/
+dist/
