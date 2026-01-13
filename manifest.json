@@ -93,7 +93,7 @@
         "src/ui/button.js",
         "src/utils/api.js",
         "src/utils/tipErrors.js",
-        "src/content/profilePageHandler.js",
+        "src/content/substackHandler.js",
         "src/content/content.js"
       ],
       "css": ["src/ui/styles.css"],

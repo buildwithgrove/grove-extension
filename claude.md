@@ -305,72 +305,159 @@ The bio fetch feature solves this by:
 
 ## Adding Support for New Platforms
 
-Adapters extend `BaseAdapter` and implement these methods:
+### Architecture Overview
 
-- `detectProfilePage()` - Returns true if on a tippable page
-- `extractBio()` - Extract text that may contain crypto addresses
-- `getButtonPlacement()` - Return the element to insert the tip button near
-- `getPlatformName()` - Return the platform identifier
+Each platform requires three main components:
 
-To add a new platform, follow this workflow:
+1. **Adapter** (`src/adapters/[platform].js`) - DOM extraction and page detection
+2. **Handler** (`src/content/[platform]Handler.js`) - Business logic for button injection
+3. **Integration** - manifest.json, content.js, and styles.css updates
+
+### Component Patterns
+
+#### Adapters
+
+Adapters extend `BaseAdapter` and handle platform-specific DOM operations:
+
+```javascript
+window.PlatformAdapter = class PlatformAdapter extends window.BaseAdapter {
+  // Required methods
+  detectProfilePage() { }     // Returns true if on a tippable page
+  extractBio() { }            // Extract text that may contain crypto addresses
+  getButtonPlacement() { }    // Return element to insert tip button near
+  getPlatformName() { }       // Return platform identifier (e.g., 'substack')
+
+  // Optional: DRY pattern for parameterized methods
+  getButtonPlacement() {
+    const container = document.querySelector('.container');
+    return this.getButtonPlacementInContainer(container);
+  }
+
+  getButtonPlacementInContainer(container) {
+    // Reusable logic
+  }
+};
+```
+
+Reference examples:
+- Simple: `src/adapters/soundcloud.js`
+- Complex (with hover cards): `src/adapters/substack.js`
+- Feature-rich: `src/adapters/twitter.js`
+
+#### Handlers
+
+Handlers use the module pattern with callbacks for dependency injection:
+
+```javascript
+const PlatformHandler = {
+  callbacks: {
+    hasAddresses: null,      // (text) => boolean
+    resolveAddress: null,    // (text) => { address, type }
+    onTipClick: null,        // (buttonInstance) => void
+    createTipButton: null,   // (onClick, platform) => TipButton
+  },
+
+  init(callbacks) {
+    this.callbacks = { ...this.callbacks, ...callbacks };
+  },
+
+  async initialize(adapter) {
+    // Platform-specific initialization logic
+  },
+
+  getButton() { },
+  getResolvedAddress() { },
+  reset() { }
+};
+```
+
+Reference examples:
+- `src/content/substackHandler.js`
+- `src/content/hoverCardHandler.js`
+- `src/content/profilePageHandler.js`
+
+#### CSS Styling
+
+Use CSS classes instead of inline styles. Define platform-specific classes in `src/ui/styles.css`:
+
+```css
+/* Platform-specific button styles */
+.grove-[platform]-tip-button { }
+.grove-[platform]-tip-button:hover { }
+.grove-[platform]-hover-button { }
+```
 
 ### Step 1: Capture Platform Structure
 
 1. **Take a screenshot** of where you want the button to appear
-
    - Navigate to a profile/video/post page on the target platform
-   - Take a screenshot showing the action buttons area (Share, Like, etc.)
-   - This helps visualize the desired button placement
+   - Screenshot the action buttons area (Share, Like, etc.)
 
 2. **Extract the HTML structure**
    - Right-click on the target area → Inspect
-   - Find the container element that holds the action buttons
-   - Copy the entire HTML structure (including parent containers)
-   - Look for:
-     - Class names and IDs of button containers
-     - Button structure and styling patterns
-     - Data attributes used by the platform
+   - Copy the container element structure
+   - Note class names, IDs, and data attributes
 
-### Step 2: Use AI to Generate the Adapter
+### Step 2: Create the Adapter
 
-Provide the following prompt to Claude (or similar AI):
+Create `src/adapters/[platform].js`:
 
-```
-I need you to create a platform adapter for the Grove Tip Extension to add a tip button on [PLATFORM_NAME].
+```javascript
+window.PlatformAdapter = class PlatformAdapter extends window.BaseAdapter {
+  detectProfilePage() {
+    // Return true if on a tippable page
+  }
 
-Reference the existing Twitter adapter as an example:
-- src/adapters/twitter.js
+  extractBio() {
+    // Combine display name + bio for address detection
+    const parts = [];
+    const displayName = this.extractDisplayName();
+    if (displayName) parts.push(displayName);
+    const bio = document.querySelector('.bio')?.textContent;
+    if (bio) parts.push(bio);
+    return parts.join(' ') || null;
+  }
 
-Here's a screenshot showing where the button should appear:
-[Attach screenshot]
+  getButtonPlacement() {
+    // Return element to insert button near
+  }
 
-Here's the HTML structure of the target area:
-[Paste HTML]
-
-Please create:
-1. A new adapter file: src/adapters/[platform].js that extends BaseAdapter
-2. Update src/content/content.js to detect and use this adapter
-3. Add platform-specific button styling in src/ui/button.js (create[Platform]Button method)
-4. Add CSS styles in src/ui/styles.css for the new button
-5. Update manifest.json to include the new platform's content scripts
-
-The adapter should:
-- Detect the correct page type (profile, video, post, etc.)
-- Extract bio/description text to check for crypto addresses
-- Find the correct button placement location
-- Match the platform's native button style and structure
+  getPlatformName() {
+    return 'platform';
+  }
+};
 ```
 
-### Step 3: Integration Checklist
+### Step 3: Create the Handler (if needed)
 
-After generating the adapter code:
+For simple platforms, use `ProfilePageHandler`. For complex platforms (hover cards, multiple button locations), create `src/content/[platform]Handler.js`.
 
-- [ ] Create `src/adapters/[platform].js` with the adapter class
-- [ ] Add platform detection in `src/content/content.js`
-- [ ] Add button creation method in `src/ui/button.js`
-- [ ] Add platform-specific styles in `src/ui/styles.css`
-- [ ] Update `manifest.json` with URL patterns and content scripts
-- [ ] Test on multiple pages/profiles on the platform
+### Step 4: Integration Checklist
+
+- [ ] Create `src/adapters/[platform].js`
+- [ ] Create `src/content/[platform]Handler.js` (if complex)
+- [ ] Add platform detection in `src/content/content.js`:
+  ```javascript
+  if (hostname.includes('[platform].com')) {
+    return new window.PlatformAdapter();
+  }
+  ```
+- [ ] Add handler initialization in `src/content/content.js`:
+  ```javascript
+  if (currentAdapter.getPlatformName() === '[platform]') {
+    // Initialize handler with callbacks
+  }
+  ```
+- [ ] Add CSS styles in `src/ui/styles.css`
+- [ ] Update `manifest.json`:
+  ```json
+  {
+    "matches": ["https://[platform].com/*"],
+    "js": ["src/adapters/[platform].js", "src/content/[platform]Handler.js", ...]
+  }
+  ```
+- [ ] Add tests in `tests/[platform]-adapter.test.js`
+- [ ] Test on multiple pages/profiles
 
 ## Testing
 

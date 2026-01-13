@@ -5,8 +5,6 @@
  * Requires: src/adapters/base.js (BaseAdapter)
  */
 
-console.log('[Grove Extension] Loading substack.js... window.BaseAdapter =', typeof window.BaseAdapter);
-
 // TODO: Add tip button on Substack user profiles (https://substack.com/@username)
 
 // Assign directly to window to ensure global availability
@@ -16,23 +14,17 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
     this.hoverCardObserver = null;
     this.processedHoverCards = new WeakSet();
   }
+
   /**
    * Check if current page is a Substack post page
    * @returns {boolean}
    */
   detectProfilePage() {
     try {
-      const url = new URL(window.location.href);
-      const pathname = url.pathname;
-
       // Post pages have /p/ in the path (e.g., /p/an-incentive-to-label)
-      if (pathname.includes('/p/')) {
-        return true;
-      }
-
-      return false;
+      return window.location.pathname.includes('/p/');
     } catch (err) {
-      console.error('[Grove Extension] detectProfilePage failed:', err);
+      console.error('[Grove Substack] detectProfilePage failed:', err);
       return false;
     }
   }
@@ -42,17 +34,14 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
    * @returns {string|null}
    */
   extractDisplayName() {
-    // Look for author name in byline area
-    // The byline contains an avatar and author name link
     const bylineWrapper = document.querySelector('.byline-wrapper');
     if (bylineWrapper) {
-      // Find the author link (contains the name)
       const authorLink = bylineWrapper.querySelector('a[href*="/@"], a[href*="/profile/"]');
       if (authorLink) {
         // Get aria-label which contains "View {name}'s profile"
         const ariaLabel = authorLink.getAttribute('aria-label');
         if (ariaLabel) {
-          const match = ariaLabel.match(/View (.+?)(?:'s|'s) profile/i);
+          const match = ariaLabel.match(/View (.+?)['']s profile/i);
           if (match) {
             return match[1];
           }
@@ -104,7 +93,7 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
     }
 
     const result = parts.join(' ');
-    console.log('[Grove Extension] Substack extractBio result:', result);
+    console.log('[Grove Substack] extractBio result:', result);
 
     return result || null;
   }
@@ -121,27 +110,14 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
         const content = script.textContent || '';
         if (content.includes('_preloads') || content.includes('author_bio') || content.includes('"bio"')) {
           // Try to extract bio from JSON - check both "bio" and "author_bio" keys
-          // Handle both escaped quotes (\") and regular quotes (")
           const authorBioMatch = content.match(/[\\]?"author_bio[\\]?"\s*:\s*[\\]?"([^"\\]*(?:\\.[^"\\]*)*)[\\]?"/);
           if (authorBioMatch) {
-            // Decode escaped characters (quotes, unicode, etc.)
-            let decodedBio = authorBioMatch[1]
-              .replace(/\\"/g, '"')
-              .replace(/\\n/g, ' ')
-              .replace(/\\u[\dA-Fa-f]{4}/g, (match) => {
-                return String.fromCharCode(parseInt(match.replace('\\u', ''), 16));
-              });
-            console.log('[Grove Extension] Found author_bio in preloads:', decodedBio);
-            return decodedBio;
+            return this.decodeBioString(authorBioMatch[1]);
           }
           // Fallback to "bio" key
           const bioMatch = content.match(/[\\]?"bio[\\]?"\s*:\s*[\\]?"([^"\\]*(?:\\.[^"\\]*)*)[\\]?"/);
           if (bioMatch) {
-            let decodedBio = bioMatch[1]
-              .replace(/\\"/g, '"')
-              .replace(/\\n/g, ' ');
-            console.log('[Grove Extension] Found bio in preloads:', decodedBio);
-            return decodedBio;
+            return this.decodeBioString(bioMatch[1]);
           }
         }
       }
@@ -149,24 +125,29 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
       // Also check if _preloads is already parsed
       if (typeof window._preloads !== 'undefined') {
         const preloads = window._preloads;
-        // Navigate to find bio in various possible locations
-        if (preloads?.author_bio) {
-          return preloads.author_bio;
-        }
-        if (preloads?.post?.author_bio) {
-          return preloads.post.author_bio;
-        }
-        if (preloads?.post?.author?.bio) {
-          return preloads.post.author.bio;
-        }
-        if (preloads?.publication?.author?.bio) {
-          return preloads.publication.author.bio;
-        }
+        if (preloads?.author_bio) return preloads.author_bio;
+        if (preloads?.post?.author_bio) return preloads.post.author_bio;
+        if (preloads?.post?.author?.bio) return preloads.post.author.bio;
+        if (preloads?.publication?.author?.bio) return preloads.publication.author.bio;
       }
     } catch (err) {
-      console.log('[Grove Extension] Error extracting bio from preloads:', err);
+      console.log('[Grove Substack] Error extracting bio from preloads:', err);
     }
     return null;
+  }
+
+  /**
+   * Decode escaped characters in bio string from JSON
+   * @param {string} bio - Raw bio string with escape sequences
+   * @returns {string}
+   */
+  decodeBioString(bio) {
+    return bio
+      .replace(/\\"/g, '"')
+      .replace(/\\n/g, ' ')
+      .replace(/\\u[\dA-Fa-f]{4}/g, (match) => {
+        return String.fromCharCode(parseInt(match.replace('\\u', ''), 16));
+      });
   }
 
   /**
@@ -193,58 +174,21 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
   }
 
   /**
-   * Find the restack button in the action bar
+   * Find the restack button in the first action bar on the page
    * @returns {Element|null}
    */
   getRestackButton() {
-    // Find the post action bar
     const postUfi = document.querySelector('.post-ufi');
-    if (!postUfi) return null;
-
-    // Get the left button group (first child div with flex)
-    const leftGroup = postUfi.querySelector('div.pencraft');
-    if (!leftGroup) return null;
-
-    // Find the restack button - it's the button with circular arrows SVG (not Like or Comment)
-    // Like button has aria-label containing "Like"
-    // Comment button has aria-label containing "comment"
-    // Restack button has no aria-label or aria-label without Like/comment
-    const buttons = leftGroup.querySelectorAll('button.post-ufi-button');
-    for (const button of buttons) {
-      // Skip if it's inside edit-button-container or like-button-container
-      if (button.closest('.edit-button-container')) continue;
-      if (button.closest('.like-button-container')) continue;
-
-      const ariaLabel = (button.getAttribute('aria-label') || '').toLowerCase();
-
-      // Skip Like and Comment buttons
-      if (ariaLabel.includes('like')) continue;
-      if (ariaLabel.includes('comment')) continue;
-
-      // This should be the restack button (has circular arrows SVG)
-      // Verify it has an SVG with a path (restack icon)
-      const svg = button.querySelector('svg');
-      if (svg) {
-        console.log('[Grove Extension] Found restack button with aria-label:', ariaLabel || '(none)');
-        return button;
-      }
-    }
-
-    return null;
+    return this.getRestackButtonInActionBar(postUfi);
   }
 
   /**
-   * Get placement for tip button (the left button group in action bar)
+   * Get placement for tip button (the left button group in first action bar)
    * @returns {Element|null}
    */
   getButtonPlacement() {
-    // Find the post action bar
     const postUfi = document.querySelector('.post-ufi');
-    if (!postUfi) return null;
-
-    // Get the left button group (first child div with flex display)
-    const leftGroup = postUfi.querySelector('div.pencraft');
-    return leftGroup || null;
+    return this.getButtonPlacementInActionBar(postUfi);
   }
 
   /**
@@ -263,21 +207,23 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
   getRestackButtonInActionBar(actionBar) {
     if (!actionBar) return null;
 
-    // Get the left button group (first child div with flex)
     const leftGroup = actionBar.querySelector('div.pencraft');
     if (!leftGroup) return null;
 
     const buttons = leftGroup.querySelectorAll('button.post-ufi-button');
     for (const button of buttons) {
+      // Skip buttons in special containers
       if (button.closest('.edit-button-container')) continue;
       if (button.closest('.like-button-container')) continue;
 
       const ariaLabel = (button.getAttribute('aria-label') || '').toLowerCase();
+
+      // Skip Like and Comment buttons
       if (ariaLabel.includes('like')) continue;
       if (ariaLabel.includes('comment')) continue;
 
-      const svg = button.querySelector('svg');
-      if (svg) {
+      // Restack button has an SVG icon
+      if (button.querySelector('svg')) {
         return button;
       }
     }
@@ -308,14 +254,13 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
    * @returns {Promise<boolean>}
    */
   async waitForProfileLoad() {
-    // Wait for the action bar to appear
     const postUfi = await this.waitForElement('.post-ufi', 8000);
     if (!postUfi) return false;
 
     // Wait for byline to load (contains author info)
-    const byline = await this.waitForElement('.byline-wrapper', 5000);
+    await this.waitForElement('.byline-wrapper', 5000);
 
-    return postUfi !== null;
+    return true;
   }
 
   /**
@@ -327,7 +272,7 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
       return; // Already observing
     }
 
-    console.log('[Grove Extension] Starting Substack hover card observer');
+    console.log('[Grove Substack] Starting hover card observer');
 
     this.hoverCardObserver = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
@@ -351,86 +296,110 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
    * @param {Function} onHoverCardFound - Callback when found
    */
   checkForHoverCard(node, onHoverCardFound) {
-    // Debug: log significant additions
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const classes = node.className || '';
-      const role = node.getAttribute?.('role') || '';
+    this.logPotentialHoverCard(node);
 
-      // Look for popup/dialog/tooltip patterns
-      if (classes.includes('popup') || classes.includes('modal') ||
-          classes.includes('tooltip') || classes.includes('hover') ||
-          classes.includes('popover') || role === 'dialog' || role === 'tooltip' ||
-          node.getAttribute?.('data-state') === 'open') {
-        console.log('[Grove Extension] Potential hover card detected:', {
-          tag: node.tagName,
-          classes: classes.substring(0, 100),
-          role: role,
-          dataState: node.getAttribute?.('data-state')
-        });
-      }
-    }
-
-    // Try multiple selectors to find the hover card
-    let hoverCard = null;
-
-    // Method 1: data-state="open" (common for Radix UI popups)
-    if (node.matches?.('[data-state="open"]')) {
-      hoverCard = node;
-    } else if (node.querySelector?.('[data-state="open"]')) {
-      hoverCard = node.querySelector('[data-state="open"]');
-    }
-
-    // Method 2: role="dialog" or role="tooltip"
-    if (!hoverCard) {
-      if (node.matches?.('[role="dialog"], [role="tooltip"]')) {
-        hoverCard = node;
-      } else if (node.querySelector?.('[role="dialog"], [role="tooltip"]')) {
-        hoverCard = node.querySelector('[role="dialog"], [role="tooltip"]');
-      }
-    }
-
-    // Method 3: Look for popup/popover classes
-    if (!hoverCard) {
-      const popupSelectors = '.popup, .popover, .tooltip, [class*="hover-card"], [class*="HoverCard"], [class*="profile-popup"]';
-      if (node.matches?.(popupSelectors)) {
-        hoverCard = node;
-      } else if (node.querySelector?.(popupSelectors)) {
-        hoverCard = node.querySelector(popupSelectors);
-      }
-    }
-
-    // Method 4: Check if node contains author profile link and bio-like content
-    if (!hoverCard && node.querySelector?.('a[href*="/@"]')) {
-      const text = node.textContent || '';
-      // If it has a profile link and substantial text, might be a hover card
-      if (text.length > 50 && (text.includes('@') || text.includes('.eth'))) {
-        console.log('[Grove Extension] Node has profile link and bio text, checking as hover card');
-        hoverCard = node;
-      }
-    }
-
+    const hoverCard = this.findHoverCardElement(node);
     if (!hoverCard) return;
 
-    // Check if this looks like an author hover card (has handle like @username)
-    const text = hoverCard.textContent || '';
-    const hasHandle = text.includes('@') || hoverCard.querySelector('a[href*="/@"]');
-
-    if (!hasHandle) {
-      console.log('[Grove Extension] Hover card has no handle, skipping');
-      return;
-    }
+    if (!this.isValidAuthorHoverCard(hoverCard)) return;
 
     // Check if we've already processed this hover card
     if (this.processedHoverCards.has(hoverCard)) return;
     this.processedHoverCards.add(hoverCard);
 
-    console.log('[Grove Extension] Found Substack hover card with content:', text.substring(0, 150));
+    console.log('[Grove Substack] Found hover card with content:', (hoverCard.textContent || '').substring(0, 150));
 
-    // Extract bio from hover card
     const bioData = this.extractBioFromHoverCard(hoverCard);
     if (bioData) {
       onHoverCardFound(hoverCard, bioData);
     }
+  }
+
+  /**
+   * Log potential hover card detection for debugging
+   * @param {Element} node - DOM node to check
+   */
+  logPotentialHoverCard(node) {
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+    const classes = node.className || '';
+    const role = node.getAttribute?.('role') || '';
+
+    const isPopupLike = classes.includes('popup') || classes.includes('modal') ||
+        classes.includes('tooltip') || classes.includes('hover') ||
+        classes.includes('popover') || role === 'dialog' || role === 'tooltip' ||
+        node.getAttribute?.('data-state') === 'open';
+
+    if (isPopupLike) {
+      console.log('[Grove Substack] Potential hover card:', {
+        tag: node.tagName,
+        classes: classes.substring(0, 100),
+        role: role,
+        dataState: node.getAttribute?.('data-state')
+      });
+    }
+  }
+
+  /**
+   * Try to find a hover card element from a DOM node using multiple detection methods
+   * @param {Element} node - DOM node to check
+   * @returns {Element|null}
+   */
+  findHoverCardElement(node) {
+    // Method 1: data-state="open" (common for Radix UI popups)
+    let hoverCard = this.findBySelector(node, '[data-state="open"]');
+    if (hoverCard) return hoverCard;
+
+    // Method 2: role="dialog" or role="tooltip"
+    hoverCard = this.findBySelector(node, '[role="dialog"], [role="tooltip"]');
+    if (hoverCard) return hoverCard;
+
+    // Method 3: Look for popup/popover classes
+    const popupSelectors = '.popup, .popover, .tooltip, [class*="hover-card"], [class*="HoverCard"], [class*="profile-popup"]';
+    hoverCard = this.findBySelector(node, popupSelectors);
+    if (hoverCard) return hoverCard;
+
+    // Method 4: Check if node contains author profile link and bio-like content
+    if (node.querySelector?.('a[href*="/@"]')) {
+      const text = node.textContent || '';
+      if (text.length > 50 && (text.includes('@') || text.includes('.eth'))) {
+        return node;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Helper to find element by selector - checks if node matches or contains matching element
+   * @param {Element} node - DOM node to check
+   * @param {string} selector - CSS selector
+   * @returns {Element|null}
+   */
+  findBySelector(node, selector) {
+    if (node.matches?.(selector)) {
+      return node;
+    }
+    if (node.querySelector?.(selector)) {
+      return node.querySelector(selector);
+    }
+    return null;
+  }
+
+  /**
+   * Check if hover card contains author handle (@ pattern)
+   * @param {Element} hoverCard - The hover card element
+   * @returns {boolean}
+   */
+  isValidAuthorHoverCard(hoverCard) {
+    const text = hoverCard.textContent || '';
+    const hasHandle = text.includes('@') || hoverCard.querySelector('a[href*="/@"]');
+
+    if (!hasHandle) {
+      console.log('[Grove Substack] Hover card has no handle, skipping');
+      return false;
+    }
+    return true;
   }
 
   /**
@@ -440,9 +409,7 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
    */
   extractBioFromHoverCard(hoverCard) {
     try {
-      // Get all text content from the hover card
       const allText = hoverCard.textContent || '';
-      console.log('[Grove Extension] Hover card text:', allText.substring(0, 200));
 
       // Try to find the profile link
       const profileLink = hoverCard.querySelector('a[href*="/@"]');
@@ -452,37 +419,41 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
       const handleMatch = allText.match(/@([a-zA-Z0-9_]+)/);
       const handle = handleMatch ? handleMatch[1] : null;
 
-      // The bio is typically the longer text block
-      // Look for text that might contain addresses
-      const paragraphs = hoverCard.querySelectorAll('p, div, span');
-      let bioText = '';
+      // Find bio text - look for text that might contain addresses
+      const bioText = this.findBioTextInHoverCard(hoverCard, allText);
 
-      for (const p of paragraphs) {
-        const text = p.textContent?.trim() || '';
-        // Skip very short text (likely just name or handle)
-        if (text.length > 50 || text.includes('.eth') || text.includes('0x')) {
-          bioText = text;
-          break;
-        }
-      }
-
-      // If no specific paragraph found, use all text
-      if (!bioText) {
-        bioText = allText;
-      }
-
-      console.log('[Grove Extension] Extracted hover card bio:', bioText.substring(0, 100));
+      console.log('[Grove Substack] Extracted hover card bio:', bioText.substring(0, 100));
 
       return {
-        name: null, // Will be extracted if needed
+        name: null,
         handle: handle,
         bio: bioText,
         profileUrl: profileUrl
       };
     } catch (err) {
-      console.error('[Grove Extension] Error extracting hover card bio:', err);
+      console.error('[Grove Substack] Error extracting hover card bio:', err);
       return null;
     }
+  }
+
+  /**
+   * Find the bio text within a hover card
+   * @param {Element} hoverCard - The hover card element
+   * @param {string} fallbackText - Fallback text if no specific bio found
+   * @returns {string}
+   */
+  findBioTextInHoverCard(hoverCard, fallbackText) {
+    const paragraphs = hoverCard.querySelectorAll('p, div, span');
+
+    for (const p of paragraphs) {
+      const text = p.textContent?.trim() || '';
+      // Look for longer text or text containing addresses
+      if (text.length > 50 || text.includes('.eth') || text.includes('0x')) {
+        return text;
+      }
+    }
+
+    return fallbackText;
   }
 
   /**
@@ -491,7 +462,7 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
    * @returns {Element|null}
    */
   getHoverCardButtonPlacement(hoverCard) {
-    // Look for a button container or the bottom of the hover card
+    // Look for a button container
     const buttonContainer = hoverCard.querySelector('button')?.parentElement;
     if (buttonContainer) {
       return buttonContainer;
@@ -511,5 +482,3 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
     }
   }
 };
-
-console.log('[Grove Extension] substack.js loaded. window.SubstackAdapter =', typeof window.SubstackAdapter);

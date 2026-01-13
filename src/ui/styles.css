@@ -284,3 +284,36 @@
   opacity: 0.7;
   cursor: wait !important;
 }
+
+/* Substack hover card button - compact variant */
+.grove-substack-hover-button {
+  background: linear-gradient(135deg, #000000 0%, #0a0a0a 100%) !important;
+  border: 1px solid var(--grove-primary) !important;
+  border-radius: 9999px !important;
+  padding: 4px 12px !important;
+  height: auto !important;
+  min-width: auto !important;
+  min-height: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #ffffff !important;
+  margin-left: 8px !important;
+  transition: all 0.2s ease !important;
+}
+
+.grove-substack-hover-button:hover {
+  background: linear-gradient(135deg, #0a0a0a 0%, #141414 100%) !important;
+  border-color: var(--grove-primary-light) !important;
+  transform: translateY(-1px);
+}
+
+.grove-substack-hover-button .grove-tip-label {
+  color: #ffffff !important;
+  font-weight: 500 !important;
+  font-size: 12px !important;
+}
