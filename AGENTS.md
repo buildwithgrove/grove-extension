@@ -1,5 +1,6 @@
 # Grove Extension - Development Guidelines <!-- omit in toc -->
 
+- [Command Discovery](#command-discovery)
 - [Color Palette](#color-palette)
   - [Brand Colors](#brand-colors)
   - [Semantic Colors](#semantic-colors)
@@ -26,6 +27,26 @@
   - [Step 1: Capture Platform Structure](#step-1-capture-platform-structure)
   - [Step 2: Use AI to Generate the Adapter](#step-2-use-ai-to-generate-the-adapter)
   - [Step 3: Integration Checklist](#step-3-integration-checklist)
+
+## Command Discovery
+
+**Always check the Makefile before suggesting commands.**
+
+This project uses Make as the primary task runner. Before suggesting any build, test, or development command:
+
+1. Run `make help` to see all available targets
+2. Or check `Makefile` and `makefiles/*.mk` directly
+
+Common targets:
+
+| Target | Description |
+|--------|-------------|
+| `make build_cdp` | Build CDP auth bundle (required before loading extension) |
+| `make build_release` | Build release zip for Chrome Web Store |
+| `make dev_test` | Run Vitest tests |
+| `make dev_clean` | Clean build artifacts |
+
+**Never suggest raw npm/node commands** if an equivalent Make target exists.
 
 ## Color Palette
 

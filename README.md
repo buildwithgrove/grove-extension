@@ -60,11 +60,18 @@ Note: Chrome Web Store installs are auto-updated by Chrome and won't see beta re
 # Clone with submodules
 git clone --recurse-submodules https://github.com/buildwithgrove/grove-extension.git
 
-# Or initialize submodules after cloning
-git submodule update --init
-
-# Install dev dependencies (for testing)
+# Install dependencies and build CDP auth bundle
 npm install
+```
+
+This automatically:
+- Initializes git submodules (design-system)
+- Builds the CDP auth bundle (`dist/cdp-auth-bundle.js`)
+
+To rebuild the CDP bundle manually (e.g., after modifying `src/auth/`):
+
+```bash
+make build_cdp
 ```
 
 ### Local Development
