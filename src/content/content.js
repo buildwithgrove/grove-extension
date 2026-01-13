@@ -329,6 +329,163 @@
       return;
     }
 
+    // For Substack, handle post pages with hover card detection
+    if (currentAdapter.getPlatformName() === "substack") {
+      console.log('[Grove Extension] Initializing Substack handler...');
+
+      // Check if we're on a post page
+      if (!currentAdapter.detectProfilePage()) {
+        console.log('[Grove Extension] Not a Substack post page, skipping');
+        return;
+      }
+
+      console.log('[Grove Extension] On a Substack post page, initializing...');
+
+      // Wait for the page to load
+      const loaded = await currentAdapter.waitForProfileLoad();
+      if (!loaded) {
+        console.log('[Grove Extension] Substack page did not load in time');
+        return;
+      }
+
+      console.log('[Grove Extension] Substack page loaded');
+
+      // First, try to extract bio from page content (might have address)
+      const pageBio = currentAdapter.extractBio();
+      console.log('[Grove Extension] Substack page bio:', pageBio);
+
+      if (pageBio && AddressParser.hasAddresses(pageBio)) {
+        // Address found in page bio, inject button immediately
+        const addressResult = AddressParser.resolveAddress(pageBio);
+        console.log('[Grove Extension] Resolved address from page:', addressResult);
+
+        if (addressResult && addressResult.address) {
+          resolvedAddress = addressResult;
+          injectSubstackTipButton();
+        }
+      } else {
+        console.log('[Grove Extension] No address in page bio, will check hover cards');
+      }
+
+      // Always start hover card observer (bio might be in hover card)
+      currentAdapter.startHoverCardObserver((hoverCard, bioData) => {
+        console.log('[Grove Extension] Hover card detected with bio:', bioData.bio?.substring(0, 100));
+
+        if (bioData.bio && AddressParser.hasAddresses(bioData.bio)) {
+          const addressResult = AddressParser.resolveAddress(bioData.bio);
+          console.log('[Grove Extension] Resolved address from hover card:', addressResult);
+
+          if (addressResult && addressResult.address) {
+            // Store the address
+            resolvedAddress = addressResult;
+
+            // Inject button in action bar if not already done
+            if (!currentButton) {
+              injectSubstackTipButton();
+            }
+
+            // Also inject a tip button in the hover card
+            injectSubstackHoverCardButton(hoverCard, bioData.profileUrl);
+          }
+        }
+      });
+
+      return;
+    }
+
+    /**
+     * Inject tip button into Substack post action bar(s)
+     * Handles both top and bottom action bars
+     */
+    function injectSubstackTipButton() {
+      const actionBars = currentAdapter.getAllActionBars();
+      console.log('[Grove Extension] Found', actionBars.length, 'action bar(s)');
+
+      if (actionBars.length === 0) {
+        console.log('[Grove Extension] Could not find any action bars');
+        return;
+      }
+
+      actionBars.forEach((actionBar, index) => {
+        // Skip if already has a tip button
+        if (actionBar.querySelector('.grove-tip-button')) {
+          console.log('[Grove Extension] Action bar', index, 'already has tip button');
+          return;
+        }
+
+        const placement = currentAdapter.getButtonPlacementInActionBar(actionBar);
+        if (!placement) {
+          console.log('[Grove Extension] Could not find button placement in action bar', index);
+          return;
+        }
+
+        // Find restack button to insert after
+        const restackButton = currentAdapter.getRestackButtonInActionBar(actionBar);
+        console.log('[Grove Extension] Action bar', index, '- Restack button:', restackButton ? 'found' : 'not found');
+
+        // Create tip button for this action bar
+        const tipButton = new TipButton(handleTipClick, 'substack');
+        tipButton.create();
+
+        // Store the first button as currentButton for compatibility
+        if (index === 0) {
+          currentButton = tipButton;
+        }
+
+        // Insert after restack button if found, otherwise append to placement
+        if (restackButton && restackButton.parentElement) {
+          restackButton.parentElement.insertBefore(tipButton.button, restackButton.nextSibling);
+          console.log('[Grove Extension] Tip button injected after restack button in action bar', index);
+        } else {
+          placement.appendChild(tipButton.button);
+          console.log('[Grove Extension] Tip button appended to placement in action bar', index);
+        }
+      });
+    }
+
+    /**
+     * Inject tip button into Substack hover card
+     */
+    function injectSubstackHoverCardButton(hoverCard, profileUrl) {
+      // Check if button already exists in this hover card
+      if (hoverCard.querySelector('.grove-tip-button')) {
+        return;
+      }
+
+      console.log('[Grove Extension] Injecting tip button into hover card');
+
+      const placement = currentAdapter.getHoverCardButtonPlacement(hoverCard);
+      if (!placement) {
+        console.log('[Grove Extension] Could not find hover card button placement');
+        return;
+      }
+
+      // Create a smaller tip button for hover card
+      const button = document.createElement('button');
+      button.className = 'grove-tip-button grove-substack-hover-button';
+      button.innerHTML = '<span>Tip</span>';
+      button.style.cssText = `
+        background: linear-gradient(135deg, #000000 0%, #0a0a0a 100%);
+        border: 1px solid #389f58;
+        border-radius: 9999px;
+        padding: 4px 12px;
+        color: white;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        margin-left: 8px;
+      `;
+
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleTipClick();
+      });
+
+      placement.appendChild(button);
+      console.log('[Grove Extension] Hover card tip button injected');
+    }
+
     // For generic websites, check for metadata files
     if (currentAdapter.getPlatformName() === "generic") {
       await initializeGenericWebsite();
@@ -391,16 +548,24 @@
    */
   function detectPlatform() {
     const hostname = window.location.hostname;
+    console.log(`[Grove Extension] detectPlatform() called, hostname: ${hostname}`);
 
     if (hostname.includes("twitter.com") || hostname.includes("x.com")) {
+      console.log('[Grove Extension] Detected Twitter/X');
       return new window.TwitterAdapter();
     }
 
     if (hostname.includes("soundcloud.com")) {
+      console.log('[Grove Extension] Detected SoundCloud');
       return new window.SoundCloudAdapter();
     }
 
     if (hostname.includes("substack.com")) {
+      console.log('[Grove Extension] Detected Substack');
+      if (typeof window.SubstackAdapter === 'undefined') {
+        console.error('[Grove Extension] SubstackAdapter not loaded!');
+        return null;
+      }
       return new window.SubstackAdapter();
     }
 

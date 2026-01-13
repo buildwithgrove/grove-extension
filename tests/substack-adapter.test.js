@@ -141,6 +141,17 @@ describe('SubstackAdapter', () => {
       document.body.innerHTML = `<div></div>`;
       expect(adapter.extractBio()).toBeNull();
     });
+
+    it('should extract bio from author_bio in preloads JSON', () => {
+      const adapter = new SubstackAdapter();
+      document.body.innerHTML = `
+        <script>
+          window._preloads = {"author_bio":"Testing bio with olshansky.eth address"};
+        </script>
+      `;
+      const bio = adapter.extractBio();
+      expect(bio).toContain('olshansky.eth');
+    });
   });
 
   describe('getAuthorProfileUrl', () => {
@@ -177,17 +188,16 @@ describe('SubstackAdapter', () => {
         <div class="post-ufi">
           <div class="pencraft pc-display-flex">
             <div class="like-button-container">
-              <button class="post-ufi-button has-label">Like</button>
+              <button class="post-ufi-button has-label" aria-label="Like this post"><svg></svg>Like</button>
             </div>
-            <button class="post-ufi-button post-ufi-comment-button has-label">Comment</button>
-            <button class="post-ufi-button no-label">Restack</button>
+            <button class="post-ufi-button post-ufi-comment-button has-label" aria-label="View comments"><svg></svg>Comment</button>
+            <button class="post-ufi-button no-label" aria-label="Restack"><svg><path d="restack-icon"></path></svg></button>
           </div>
         </div>
       `;
       const restackBtn = adapter.getRestackButton();
       expect(restackBtn).not.toBeNull();
       expect(restackBtn.classList.contains('no-label')).toBe(true);
-      expect(restackBtn.textContent).toBe('Restack');
     });
 
     it('should not return button inside edit-button-container', () => {
