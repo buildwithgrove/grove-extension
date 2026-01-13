@@ -4,8 +4,15 @@
 
 console.log('[Grove Extension] Loading addressMatchers.js...');
 
-// TODO: add more address suffixes as we support them.
-const ADDRESS_SUFFIXES = ['.eth', '.base.eth', '.sol', '.near'];
+// Supported address suffixes for ENS-style naming services.
+// Currently only .eth (ENS) and .base.eth (Base Names) are supported.
+// To add a new suffix (e.g., .sol, .bnb):
+//   1. Add the suffix to this array
+//   2. Create a matching regex pattern (like ENS_PATTERN) for the new format
+//   3. Update getEnsMatches() or create a new matching function
+//   4. Update address.js resolveAddress() to handle the new type
+//   5. Add tests in tests/address.test.js
+const ADDRESS_SUFFIXES = ['.eth', '.base.eth'];
 
 // Domain exclusions apply to full tokens and also match subdomains/paths.
 const DOMAIN_EXCLUSION_LIST = ['claude.ai'];
