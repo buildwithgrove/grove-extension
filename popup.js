@@ -104,6 +104,9 @@ const tippingWalletRow = document.getElementById('tippingWalletRow');
 const tippingWalletAddress = document.getElementById('tippingWalletAddress');
 const copyTippingWalletBtn = document.getElementById('copyTippingWalletBtn');
 
+// Account Disconnect Button
+const accountDisconnectBtn = document.getElementById('accountLogoutBtn');
+
 // Tip Intro Modal
 const tipButtonIntroModal = document.getElementById('tipButtonIntroModal');
 const tipIntroGotItBtn = document.getElementById('tipIntroGotItBtn');
@@ -696,7 +699,6 @@ function setupEventListeners() {
   }
 
   // Account - Disconnect Button
-  const accountDisconnectBtn = document.getElementById('accountLogoutBtn');
   if (accountDisconnectBtn) {
     accountDisconnectBtn.addEventListener('click', handleAccountDisconnect);
   }
@@ -3431,6 +3433,16 @@ async function updateAccountInfoDisplay() {
 
   const hasCdpIdentity = identityType && identityValue;
   const hasTippingWallet = !!onchainAddress;
+
+  // Check if there's an active JWT to show/hide disconnect button
+  const activeJwt = await getActiveJWT();
+  if (accountDisconnectBtn) {
+    if (activeJwt) {
+      accountDisconnectBtn.classList.remove('hidden');
+    } else {
+      accountDisconnectBtn.classList.add('hidden');
+    }
+  }
 
   // Show Account section if user has a tipping wallet
   if (hasTippingWallet) {
