@@ -2886,7 +2886,7 @@ button.quick-access-item:hover .quick-access-icon {
   color: var(--color-primary);
 }
 
-/* Account Logout Button */
+/* Account Disconnect Button */
 .account-logout-btn {
   display: flex;
   align-items: center;
@@ -2895,10 +2895,10 @@ button.quick-access-item:hover .quick-access-icon {
   width: 100%;
   padding: 12px 16px;
   margin-top: 16px;
-  background: transparent;
-  border: 1px solid var(--color-border);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #EF4444;
   border-radius: 10px;
-  color: var(--color-text-secondary);
+  color: #EF4444;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -2906,9 +2906,9 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 .account-logout-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: #EF4444;
-  color: #EF4444;
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #DC2626;
+  color: #DC2626;
 }
 
 .account-logout-btn svg {
