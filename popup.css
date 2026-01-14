@@ -2823,6 +2823,12 @@ button.quick-access-item:hover .quick-access-icon {
   font-size: 13px;
 }
 
+.account-info-desc {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+
 .account-info-action {
   display: flex;
   align-items: center;
