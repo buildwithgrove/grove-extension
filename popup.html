@@ -828,7 +828,7 @@
 
           <!-- Production Key Slot -->
           <div class="account-info-card" id="productionKeySlot" data-slot="production">
-            <div class="account-info-icon">
+            <div class="account-info-icon account-info-icon-primary">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
               </svg>
@@ -840,18 +840,12 @@
               </div>
               <div class="account-info-value" id="productionKeyStatus">Not connected</div>
             </div>
-            <span class="key-slot-dot" id="productionSlotDot"></span>
-            <button class="account-info-action" id="manageProductionKeyBtn" title="Manage">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-              </svg>
-            </button>
+            <button class="btn-text btn-sm" id="manageProductionKeyBtn">Manage</button>
           </div>
 
           <!-- Testnet Key Slot (Developer Mode only) -->
           <div class="account-info-card hidden" id="testnetKeySlot" data-slot="testnet">
-            <div class="account-info-icon">
+            <div class="account-info-icon account-info-icon-primary">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
               </svg>
@@ -863,18 +857,12 @@
               </div>
               <div class="account-info-value" id="testnetKeyStatus">Not connected</div>
             </div>
-            <span class="key-slot-dot" id="testnetSlotDot"></span>
-            <button class="account-info-action" id="manageTestnetKeyBtn" title="Manage">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-              </svg>
-            </button>
+            <button class="btn-text btn-sm" id="manageTestnetKeyBtn">Manage</button>
           </div>
 
           <!-- Localhost Key Slot (Developer Mode only) -->
           <div class="account-info-card hidden" id="localhostKeySlot" data-slot="localhost">
-            <div class="account-info-icon">
+            <div class="account-info-icon account-info-icon-primary">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
               </svg>
@@ -886,13 +874,7 @@
               </div>
               <div class="account-info-value" id="localhostKeyStatus">Not connected</div>
             </div>
-            <span class="key-slot-dot" id="localhostSlotDot"></span>
-            <button class="account-info-action" id="manageLocalhostKeyBtn" title="Manage">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-              </svg>
-            </button>
+            <button class="btn-text btn-sm" id="manageLocalhostKeyBtn">Manage</button>
           </div>
 
           <!-- JWT Edit Form (Hidden by default) -->
@@ -931,13 +913,23 @@
           </div>
 
           <!-- Previous Tipping Keys -->
-          <div class="settings-item-column" id="prevKeysSection">
-            <div class="settings-row">
-              <div class="settings-info">
-                <div class="settings-name">Previous Keys</div>
-                <div class="settings-desc" id="prevKeysCount">No previous keys</div>
+          <div class="prev-keys-section" id="prevKeysSection">
+            <div class="account-info-card">
+              <div class="account-info-icon">
+                <!-- Keyring icon -->
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="10" r="3"></circle>
+                  <path d="M12 13v8"></path>
+                  <path d="M9 18h6"></path>
+                  <path d="M12 2a8 8 0 0 0-8 8c0 3.5 2 6 4 7.5"></path>
+                  <path d="M20 10a8 8 0 0 0-8-8"></path>
+                </svg>
               </div>
-              <button class="btn-text" id="viewPrevKeysBtn">View</button>
+              <div class="account-info-content">
+                <div class="account-info-label">Previous Keys</div>
+                <div class="account-info-value" id="prevKeysCount">No previous keys</div>
+              </div>
+              <button class="btn-text btn-sm" id="viewPrevKeysBtn">View</button>
             </div>
 
             <!-- Previous Keys List (Hidden by default) -->
