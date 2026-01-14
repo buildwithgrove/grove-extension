@@ -694,6 +694,12 @@ function setupEventListeners() {
     copyTippingWalletBtn.addEventListener('click', copyTippingWallet);
   }
 
+  // Account - Logout Button
+  const accountLogoutBtn = document.getElementById('accountLogoutBtn');
+  if (accountLogoutBtn) {
+    accountLogoutBtn.addEventListener('click', handleAccountLogout);
+  }
+
   // Listen for storage changes (e.g., when webapp injects JWT via external messaging)
   chrome.storage.onChanged.addListener(async (changes, areaName) => {
     if (areaName !== 'local') return;
@@ -1732,6 +1738,43 @@ async function copyTippingWallet() {
       showToast('Failed to copy');
     }
   }
+}
+
+/**
+ * Handle logout from Account section
+ * Clears all JWT keys and auth state
+ */
+async function handleAccountLogout() {
+  // Clear all JWT slots
+  await KeyManager.clearJWT('production');
+  await KeyManager.clearJWT('testnet');
+  await KeyManager.clearJWT('localhost');
+
+  // Clear archived keys
+  await KeyManager.clearAll();
+
+  // Clear auth state and account info
+  await chrome.storage.local.remove([
+    STORAGE_KEYS.CLIENT_ADDRESS,
+    STORAGE_KEYS.ONCHAIN_ADDRESS,
+    STORAGE_KEYS.ENS_NAME,
+    STORAGE_KEYS.CDP_IDENTITY_TYPE,
+    STORAGE_KEYS.CDP_IDENTITY_VALUE,
+  ]);
+
+  // Update UI
+  await updateAuthState(null);
+  updateEarnAddressDisplay(null);
+  updateEnsNameDisplay(null);
+  await updateAccountInfoDisplay();
+  await loadJwtSlots();
+  hideJwtEdit();
+  await prevKeysUI.updateCount();
+
+  // Navigate back to main settings
+  showSettingsView('main');
+
+  showToast('Logged out');
 }
 
 /**

@@ -686,25 +686,6 @@
             </div>
           </button>
 
-          <button class="settings-menu-item" data-drill="tipping-keys">
-            <div class="settings-menu-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
-              </svg>
-            </div>
-            <div class="settings-menu-content">
-              <div class="settings-menu-name">Tipping Keys</div>
-              <div class="settings-menu-desc">API keys for sending tips</div>
-            </div>
-            <div class="settings-menu-arrow">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          </button>
-
           <button class="settings-menu-item" data-drill="x-settings">
             <div class="settings-menu-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -784,7 +765,7 @@
 
           <!-- Identity row (email/phone) - shown for CDP auth users -->
           <div class="account-info-card hidden" id="accountIdentityRow">
-            <div class="account-info-icon" id="accountInfoIconWrapper">
+            <div class="account-info-icon account-info-icon-primary" id="accountInfoIconWrapper">
               <svg id="accountInfoIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                 <polyline points="22,6 12,13 2,6"></polyline>
@@ -839,66 +820,79 @@
             </button>
           </div>
         </div>
-      </div>
 
-      <!-- Tipping Keys Settings View -->
-      <div class="settings-view" id="settings-tipping-keys">
-        <div class="settings-header">
-          <button class="settings-back" data-back="main">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </button>
-          <h2 class="page-title">Tipping Keys</h2>
-        </div>
-
-        <div class="settings-group">
-          <p class="settings-group-desc">API keys that authorize the extension to send tips on your behalf</p>
+        <!-- Tipping Keys Section -->
+        <div class="settings-group" id="tippingKeysSection">
+          <div class="settings-label">Tipping Keys</div>
+          <p class="settings-group-desc">API keys that authorize the extension to send tips</p>
 
           <!-- Production Key Slot -->
-          <div class="key-slot-card" id="productionKeySlot" data-slot="production">
-            <div class="key-slot-status">
-              <span class="key-slot-dot" id="productionSlotDot"></span>
+          <div class="account-info-card" id="productionKeySlot" data-slot="production">
+            <div class="account-info-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+              </svg>
             </div>
-            <div class="key-slot-info">
-              <div class="key-slot-header">
-                <span class="key-slot-name">Mainnet</span>
+            <div class="account-info-content">
+              <div class="account-info-label">
+                Mainnet
                 <span class="key-slot-badge hidden" id="productionActiveBadge">Active</span>
               </div>
-              <div class="key-slot-value" id="productionKeyStatus">Not connected</div>
+              <div class="account-info-value" id="productionKeyStatus">Not connected</div>
             </div>
-            <button class="key-slot-action" id="manageProductionKeyBtn">Manage</button>
+            <span class="key-slot-dot" id="productionSlotDot"></span>
+            <button class="account-info-action" id="manageProductionKeyBtn" title="Manage">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+            </button>
           </div>
 
           <!-- Testnet Key Slot (Developer Mode only) -->
-          <div class="key-slot-card hidden" id="testnetKeySlot" data-slot="testnet">
-            <div class="key-slot-status">
-              <span class="key-slot-dot" id="testnetSlotDot"></span>
+          <div class="account-info-card hidden" id="testnetKeySlot" data-slot="testnet">
+            <div class="account-info-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+              </svg>
             </div>
-            <div class="key-slot-info">
-              <div class="key-slot-header">
-                <span class="key-slot-name">Testnet</span>
+            <div class="account-info-content">
+              <div class="account-info-label">
+                Testnet
                 <span class="key-slot-badge hidden" id="testnetActiveBadge">Active</span>
               </div>
-              <div class="key-slot-value" id="testnetKeyStatus">Not connected</div>
+              <div class="account-info-value" id="testnetKeyStatus">Not connected</div>
             </div>
-            <button class="key-slot-action" id="manageTestnetKeyBtn">Manage</button>
+            <span class="key-slot-dot" id="testnetSlotDot"></span>
+            <button class="account-info-action" id="manageTestnetKeyBtn" title="Manage">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+            </button>
           </div>
 
           <!-- Localhost Key Slot (Developer Mode only) -->
-          <div class="key-slot-card hidden" id="localhostKeySlot" data-slot="localhost">
-            <div class="key-slot-status">
-              <span class="key-slot-dot" id="localhostSlotDot"></span>
+          <div class="account-info-card hidden" id="localhostKeySlot" data-slot="localhost">
+            <div class="account-info-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+              </svg>
             </div>
-            <div class="key-slot-info">
-              <div class="key-slot-header">
-                <span class="key-slot-name">Localhost</span>
+            <div class="account-info-content">
+              <div class="account-info-label">
+                Localhost
                 <span class="key-slot-badge hidden" id="localhostActiveBadge">Active</span>
               </div>
-              <div class="key-slot-value" id="localhostKeyStatus">Not connected</div>
+              <div class="account-info-value" id="localhostKeyStatus">Not connected</div>
             </div>
-            <button class="key-slot-action" id="manageLocalhostKeyBtn">Manage</button>
+            <span class="key-slot-dot" id="localhostSlotDot"></span>
+            <button class="account-info-action" id="manageLocalhostKeyBtn" title="Manage">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+            </button>
           </div>
 
           <!-- JWT Edit Form (Hidden by default) -->
@@ -929,9 +923,7 @@
               <button class="btn-primary btn-sm" id="saveJwtBtn">Save</button>
             </div>
           </div>
-        </div>
 
-        <div class="settings-group">
           <!-- Legacy jwtStatusDisplay for backward compatibility - hidden -->
           <div class="hidden" id="jwtSettingsSection">
             <div id="jwtStatusDisplay"></div>
@@ -942,7 +934,7 @@
           <div class="settings-item-column" id="prevKeysSection">
             <div class="settings-row">
               <div class="settings-info">
-                <div class="settings-name">Previous Tipping Keys</div>
+                <div class="settings-name">Previous Keys</div>
                 <div class="settings-desc" id="prevKeysCount">No previous keys</div>
               </div>
               <button class="btn-text" id="viewPrevKeysBtn">View</button>
@@ -958,18 +950,26 @@
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Clear All Keys (Developer Mode only) -->
-        <div class="settings-group hidden" id="clearAllKeysItem">
-          <div class="settings-item">
+          <!-- Clear All Keys (Developer Mode only) -->
+          <div class="settings-item hidden" id="clearAllKeysItem">
             <div class="settings-info">
               <div class="settings-name">Clear All Keys</div>
-              <div class="settings-desc">Remove all JWT keys and archived keys</div>
+              <div class="settings-desc">Remove all keys</div>
             </div>
             <button class="btn-danger-text btn-sm" id="clearAllKeysBtn">Clear</button>
           </div>
         </div>
+
+        <!-- Logout Button -->
+        <button class="account-logout-btn" id="accountLogoutBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          Log out
+        </button>
       </div>
 
       <!-- X / Twitter Settings View -->
