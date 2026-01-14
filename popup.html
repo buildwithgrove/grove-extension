@@ -775,18 +775,19 @@
               <div class="settings-desc" id="accountInfoType">Email</div>
             </div>
           </div>
-          <div class="settings-item" id="accountAddressRow">
-            <div class="settings-menu-icon">
+          <!-- Wallet address card -->
+          <div class="account-wallet-card" id="accountAddressRow">
+            <div class="account-wallet-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+                <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+                <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
               </svg>
             </div>
-            <div class="settings-info">
-              <div class="settings-name settings-name-mono" id="accountAddressValue">—</div>
-              <div class="settings-desc">Wallet Address</div>
+            <div class="account-wallet-info">
+              <div class="account-wallet-address" id="accountAddressValue">—</div>
             </div>
-            <button class="btn-icon-sm" id="copyAccountAddressBtn" title="Copy address">
+            <button class="account-wallet-copy" id="copyAccountAddressBtn" title="Copy address">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
