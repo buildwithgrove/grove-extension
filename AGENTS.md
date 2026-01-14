@@ -1,6 +1,5 @@
 # Grove Extension - Development Guidelines <!-- omit in toc -->
 
-- [Command Discovery](#command-discovery)
 - [Color Palette](#color-palette)
   - [Brand Colors](#brand-colors)
   - [Semantic Colors](#semantic-colors)
@@ -23,44 +22,10 @@
   - [Keeping Tokens Updated](#keeping-tokens-updated)
   - [After Cloning](#after-cloning)
   - [Making Token Changes](#making-token-changes)
-- [Tip Button Flows](#tip-button-flows)
-  - [Button Types and Tip Destinations](#button-types-and-tip-destinations)
-  - [Flow Details](#flow-details)
-  - [Why Feed Tweets Pass Address Directly](#why-feed-tweets-pass-address-directly)
-  - [Key Files](#key-files)
-- [Address Matching](#address-matching)
-  - [Supported Address Formats](#supported-address-formats)
-  - [Key Files](#key-files-1)
-  - [Adding Support for New Naming Services](#adding-support-for-new-naming-services)
 - [Adding Support for New Platforms](#adding-support-for-new-platforms)
   - [Step 1: Capture Platform Structure](#step-1-capture-platform-structure)
   - [Step 2: Use AI to Generate the Adapter](#step-2-use-ai-to-generate-the-adapter)
   - [Step 3: Integration Checklist](#step-3-integration-checklist)
-- [Testing](#testing)
-  - [Running Tests](#running-tests)
-  - [Testing Requirements](#testing-requirements)
-  - [Test File Naming](#test-file-naming)
-  - [Browser Script Testing](#browser-script-testing)
-
-## Command Discovery
-
-**Always check the Makefile before suggesting commands.**
-
-This project uses Make as the primary task runner. Before suggesting any build, test, or development command:
-
-1. Run `make help` to see all available targets
-2. Or check `Makefile` and `makefiles/*.mk` directly
-
-Common targets:
-
-| Target | Description |
-|--------|-------------|
-| `make build_cdp` | Build CDP auth bundle (required before loading extension) |
-| `make build_release` | Build release zip for Chrome Web Store |
-| `make dev_test` | Run Vitest tests |
-| `make dev_clean` | Clean build artifacts |
-
-**Never suggest raw npm/node commands** if an equivalent Make target exists.
 
 ## Color Palette
 
@@ -337,42 +302,6 @@ The bio fetch feature solves this by:
 - `src/adapters/twitter.js` - Twitter-specific DOM extraction
 - `src/parsers/address.js` - Address detection (0x, ENS patterns)
 - `tests/bio-fetch.test.js` - Tests for bio fetch logic
-
-## Address Matching
-
-The extension detects tippable addresses in user bios and display names.
-
-### Supported Address Formats
-
-| Format | Pattern | Example |
-|--------|---------|---------|
-| Raw Ethereum | `0x` + 40 hex chars | `0x1234...5678` |
-| ENS Name | `*.eth` | `vitalik.eth` |
-| Base Name | `*.base.eth` | `jesse.base.eth` |
-
-### Key Files
-
-- `src/parsers/addressMatchers.js` - Address suffix list and matching helpers
-- `src/parsers/address.js` - `AddressParser` class with detection methods
-
-### Adding Support for New Naming Services
-
-To add a new naming service (e.g., `.sol` for Solana, `.bnb` for BNB Chain):
-
-1. **Update `src/parsers/addressMatchers.js`:**
-   - Add the suffix to `ADDRESS_SUFFIXES` array
-   - Create a regex pattern for the new format (similar to `ENS_PATTERN`)
-   - Add a matching function or update `getEnsMatches()`
-
-2. **Update `src/parsers/address.js`:**
-   - Add extraction method (e.g., `extractSolanaName()`)
-   - Update `resolveAddress()` to handle the new type
-
-3. **Add tests in `tests/address.test.js`:**
-   - Valid name patterns
-   - Edge cases and exclusions
-
-4. **Update this documentation** with the new format in the table above
 
 ## Adding Support for New Platforms
 
