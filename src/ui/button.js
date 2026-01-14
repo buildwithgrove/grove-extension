@@ -361,7 +361,7 @@ class TipButton {
    */
   handleClick() {
     if (this.onClickCallback) {
-      this.onClickCallback();
+      this.onClickCallback(this);
     }
   }
 

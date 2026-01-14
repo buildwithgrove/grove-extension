@@ -41,7 +41,8 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
         // Get aria-label which contains "View {name}'s profile"
         const ariaLabel = authorLink.getAttribute('aria-label');
         if (ariaLabel) {
-          const match = ariaLabel.match(/View (.+?)['']s profile/i);
+          // Match various apostrophe characters: straight ('), curly right ('), curly left (')
+          const match = ariaLabel.match(/View (.+?)[''']s profile/i);
           if (match) {
             return match[1];
           }
