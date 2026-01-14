@@ -329,6 +329,25 @@
       return;
     }
 
+    // For Substack, use the dedicated SubstackHandler
+    if (currentAdapter.getPlatformName() === "substack") {
+      if (typeof SubstackHandler !== 'undefined') {
+        SubstackHandler.init({
+          hasAddresses: (text) => AddressParser.hasAddresses(text),
+          resolveAddress: (text) => AddressParser.resolveAddress(text),
+          onTipClick: handleTipClick,
+          createTipButton: (onClick, platform) => new TipButton(onClick, platform),
+        });
+
+        const result = await SubstackHandler.initialize(currentAdapter);
+        if (result) {
+          resolvedAddress = result;
+          currentButton = SubstackHandler.getButton();
+        }
+      }
+      return;
+    }
+
     // For generic websites, check for metadata files
     if (currentAdapter.getPlatformName() === "generic") {
       await initializeGenericWebsite();
@@ -391,13 +410,25 @@
    */
   function detectPlatform() {
     const hostname = window.location.hostname;
+    console.log(`[Grove Extension] detectPlatform() called, hostname: ${hostname}`);
 
     if (hostname.includes("twitter.com") || hostname.includes("x.com")) {
+      console.log('[Grove Extension] Detected Twitter/X');
       return new window.TwitterAdapter();
     }
 
     if (hostname.includes("soundcloud.com")) {
+      console.log('[Grove Extension] Detected SoundCloud');
       return new window.SoundCloudAdapter();
+    }
+
+    if (hostname.includes("substack.com")) {
+      console.log('[Grove Extension] Detected Substack');
+      if (typeof window.SubstackAdapter === 'undefined') {
+        console.error('[Grove Extension] SubstackAdapter not loaded!');
+        return null;
+      }
+      return new window.SubstackAdapter();
     }
 
     // Return GenericAdapter for all other websites

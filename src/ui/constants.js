@@ -8,7 +8,7 @@
  * Default auto-reply message template for tips
  * Placeholders: {username}, {chain}, {tx_link}, {grove_link}
  */
-var DEFAULT_AUTO_REPLY_MESSAGE = `Hey {username}, I just sent you a tip on {chain} via #TipWithGrove!
+var DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I just sent you a tip on {chain} via #TipWithGrove!
 
 Tx: {tx_link}
 
