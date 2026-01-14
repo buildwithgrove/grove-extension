@@ -3405,12 +3405,9 @@ async function updateAccountInfoDisplay() {
         `;
       }
     } else {
-      // Web3 user: show connected wallet (no email/phone)
+      // Web3 user: only show tipping wallet (we don't have their connected wallet address)
       accountIdentityRow.classList.add('hidden');
-      connectedWalletRow.classList.remove('hidden');
-
-      connectedWalletAddress.textContent = walletDisplay;
-      connectedWalletAddress.title = clientAddress;
+      connectedWalletRow.classList.add('hidden');
     }
 
     // Always show tipping wallet
