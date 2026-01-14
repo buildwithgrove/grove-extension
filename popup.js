@@ -754,28 +754,6 @@ function setupEventListeners() {
 }
 
 /**
- * Navigate to Home tab programmatically
- */
-function navigateToHome() {
-  // Update nav items
-  navItems.forEach(item => {
-    item.classList.remove('active');
-    if (item.dataset.target === 'tab-home') {
-      item.classList.add('active');
-    }
-  });
-
-  // Update pages
-  pages.forEach(page => {
-    if (page.id === 'tab-home') {
-      page.classList.add('active');
-    } else {
-      page.classList.remove('active');
-    }
-  });
-}
-
-/**
  * Navigate to Settings tab programmatically
  */
 function navigateToSettings() {
@@ -1764,17 +1742,21 @@ async function copyTippingWallet() {
 }
 
 /**
- * Handle logout from Account section
- * Clears all JWT keys and auth state
+ * Handle disconnect from Account section
+ * Archives current key and clears active slot
  */
 async function handleAccountLogout() {
-  // Clear all JWT slots
-  await KeyManager.clearJWT('production');
-  await KeyManager.clearJWT('testnet');
-  await KeyManager.clearJWT('localhost');
+  const activeSlot = await KeyManager.getActiveSlotId();
+  const slotConfig = KeyManager.getEnvConfig(activeSlot);
 
-  // Clear archived keys
-  await KeyManager.clearAll();
+  // Archive the current key before removing
+  const currentJwt = await KeyManager.getJWT(activeSlot);
+  if (currentJwt) {
+    await KeyManager.archiveCurrentKey(currentJwt, activeSlot);
+  }
+
+  // Clear only the active slot
+  await KeyManager.clearJWT(activeSlot);
 
   // Clear auth state and account info
   await chrome.storage.local.remove([
@@ -1791,13 +1773,13 @@ async function handleAccountLogout() {
   updateEnsNameDisplay(null);
   await updateAccountInfoDisplay();
   await loadJwtSlots();
-  hideJwtEdit();
   await prevKeysUI.updateCount();
 
-  // Navigate to home screen
-  navigateToHome();
+  // Go back to main settings
+  showSettingsView('main');
 
-  showToast('Logged out');
+  const envLabel = slotConfig ? slotConfig.label : activeSlot;
+  showToast(`Disconnected from ${envLabel}`);
 }
 
 /**
