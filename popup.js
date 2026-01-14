@@ -759,8 +759,13 @@ function setupEventListeners() {
  * Navigate to Settings tab programmatically
  */
 function navigateToSettings() {
-  // Update nav items
-  navItems.forEach(item => item.classList.remove('active'));
+  // Update nav items - remove active from all, add to settings
+  navItems.forEach(item => {
+    item.classList.remove('active');
+    if (item.dataset.target === 'tab-settings') {
+      item.classList.add('active');
+    }
+  });
 
   // Update pages
   pages.forEach(page => {
