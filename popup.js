@@ -156,6 +156,7 @@ const cdpPhoneAuthBtn = document.getElementById('smsAuthBtn');
 const cdpIdentityModal = document.getElementById('cdpIdentityModal');
 const cdpIdentityInput = document.getElementById('cdpIdentityInput');
 const cdpIdentityLabel = document.getElementById('cdpIdentityLabel');
+const cdpIdentityHint = document.getElementById('cdpIdentityHint');
 const cdpSendCodeBtn = document.getElementById('cdpSendCodeBtn');
 const cdpCancelIdentityBtn = document.getElementById('cdpCancelIdentityBtn');
 const cdpOtpModal = document.getElementById('cdpOtpModal');
@@ -748,6 +749,28 @@ function setupEventListeners() {
       updateChainUI(newChain);
       updateTopUpLink(newChain);
       await fetchBalance();
+    }
+  });
+}
+
+/**
+ * Navigate to Home tab programmatically
+ */
+function navigateToHome() {
+  // Update nav items
+  navItems.forEach(item => {
+    item.classList.remove('active');
+    if (item.dataset.target === 'tab-home') {
+      item.classList.add('active');
+    }
+  });
+
+  // Update pages
+  pages.forEach(page => {
+    if (page.id === 'tab-home') {
+      page.classList.add('active');
+    } else {
+      page.classList.remove('active');
     }
   });
 }
@@ -1771,8 +1794,8 @@ async function handleAccountLogout() {
   hideJwtEdit();
   await prevKeysUI.updateCount();
 
-  // Navigate back to main settings
-  showSettingsView('main');
+  // Navigate to home screen
+  navigateToHome();
 
   showToast('Logged out');
 }
@@ -3047,10 +3070,12 @@ function showCDPIdentityModal(method) {
     cdpIdentityLabel.textContent = 'Enter your email address';
     cdpIdentityInput.type = 'email';
     cdpIdentityInput.placeholder = 'you@example.com';
+    cdpIdentityHint.textContent = 'You\'ll receive a verification code from Coinbase';
   } else {
     cdpIdentityLabel.textContent = 'Enter your phone number';
     cdpIdentityInput.type = 'tel';
     cdpIdentityInput.placeholder = '+1 (555) 123-4567';
+    cdpIdentityHint.textContent = 'We\'ll send you a verification code';
   }
 
   cdpIdentityInput.value = '';
