@@ -20,6 +20,7 @@
   <script src="src/ui/prevKeysUI.js"></script>
   <script src="src/auth/xAuth.js"></script>
   <script src="src/auth/xOAuthPopup.js"></script>
+  <script src="dist/cdp-auth-bundle.js"></script>
   <script src="src/parsers/destination.js"></script>
   <script src="src/ui/constants.js"></script>
 </head>
@@ -266,29 +267,46 @@
 
           <!-- Step 3: Connect -->
           <div class="onboarding-step" data-step="3">
-            <div class="onboarding-visual">
-              <div class="connect-visual">
-                <div class="connect-ring"></div>
-                <div class="connect-icon">
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 2L11 13"></path>
-                    <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
-                  </svg>
-                </div>
-              </div>
-            </div>
             <div class="onboarding-content">
-              <h2 class="onboarding-title">Ready to tip?</h2>
-              <p class="onboarding-subtitle">Create an account to tip anyone, anywhere on the internet</p>
+              <h2 class="onboarding-title">Sign In</h2>
+              <p class="onboarding-subtitle">Log in or sign up to start tipping</p>
             </div>
-            <a class="onboarding-btn-primary" href="https://app.grove.city/" target="_blank" rel="noopener noreferrer">
-              <span>Create Account</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-            </a>
+
+            <!-- CDP Auth Buttons -->
+            <div class="cdp-auth-methods">
+              <button class="cdp-auth-btn" id="emailAuthBtn">
+                <svg class="cdp-auth-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                <span>Continue with Email</span>
+              </button>
+
+              <button class="cdp-auth-btn" id="smsAuthBtn">
+                <svg class="cdp-auth-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                  <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                </svg>
+                <span>Continue with Phone</span>
+              </button>
+
+              <div class="cdp-auth-divider">
+                <span>or</span>
+              </div>
+
+              <a class="cdp-auth-btn cdp-auth-btn-secondary" href="https://app.grove.city/" target="_blank" rel="noopener noreferrer">
+                <svg class="cdp-auth-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <span>Sign in with Wallet</span>
+                <svg class="cdp-auth-external" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+              </a>
+            </div>
           </div>
 
           <!-- Progress Dots (at bottom) -->
@@ -591,11 +609,9 @@
     <div class="page" id="tab-earn">
       <h2 class="page-title">Earn Tips</h2>
 
-      <!-- Your Address Section (unified - shows ENS/basename or address) -->
-      <div class="section-card your-address-section">
-        <div class="section-header">
-          <h3>Receive Tips at Your Existing Wallet</h3>
-        </div>
+      <!-- Your Address Section (shows when user has an address) -->
+      <div class="section-card your-address-section" id="earnAddressCard">
+        <p class="earn-setup-intro">Add to your 𝕏 display name or bio<br>to receive tips</p>
 
         <div class="address-display-container">
           <div class="address-display primary" id="earnAddressDisplay">
@@ -609,6 +625,10 @@
           </div>
         </div>
 
+        <a href="https://x.com/settings/profile" target="_blank" class="earn-setup-cta">
+          Edit Profile on <span class="x-logo-text">𝕏</span>
+        </a>
+
         <!-- Get ENS links (hidden when ENS name exists) -->
         <div class="ens-links" id="ensLinksSection">
           <span class="ens-label">Get a name:</span>
@@ -618,34 +638,23 @@
         </div>
       </div>
 
-      <!-- How to Earn Section -->
-      <div class="section-card how-to-earn-section">
-        <h3 class="how-to-earn-title">How to Earn Tips</h3>
-        <div class="how-to-earn-steps">
-          <div class="earn-step">
-            <div class="earn-step-number">1</div>
-            <div class="earn-step-content">
-              <div class="earn-step-title">Copy your address above</div>
-            </div>
-          </div>
-          <div class="earn-step">
-            <div class="earn-step-number">2</div>
-            <div class="earn-step-content">
-              <div class="earn-step-title">Add it to your 𝕏 profile</div>
-              <div class="earn-step-desc">Put it in your display name or bio</div>
-            </div>
-          </div>
-          <div class="earn-step">
-            <div class="earn-step-number">3</div>
-            <div class="earn-step-content">
-              <div class="earn-step-title">Get tipped by others</div>
-              <div class="earn-step-desc">People with the Grove extension can tip your posts</div>
-            </div>
-          </div>
+      <!-- No Address State (shows for email/SMS users without a wallet) -->
+      <div class="section-card earn-setup-card hidden" id="earnSetupCard">
+        <p class="earn-setup-intro">Add a wallet address or ENS name to your 𝕏 bio to receive tips</p>
+        <div class="earn-setup-examples">
+          <code>vitalik.eth</code>
+          <code>jesse.base.eth</code>
+          <code>0x1234...abcd</code>
         </div>
-        <a href="https://x.com/settings/profile" target="_blank" class="how-to-earn-btn">
+        <a href="https://x.com/settings/profile" target="_blank" class="earn-setup-cta">
           Edit Profile on <span class="x-logo-text">𝕏</span>
         </a>
+        <div class="ens-links">
+          <span class="ens-label">Get a name:</span>
+          <a href="https://app.ens.domains" target="_blank" class="ens-link">.eth</a>
+          <span class="ens-separator">or</span>
+          <a href="https://www.base.org/names" target="_blank" class="ens-link">.base.eth</a>
+        </div>
       </div>
     </div>
 
@@ -667,7 +676,7 @@
             </div>
             <div class="settings-menu-content">
               <div class="settings-menu-name">Account</div>
-              <div class="settings-menu-desc">Tipping keys & connection</div>
+              <div class="settings-menu-desc">Your identity & wallets</div>
             </div>
             <div class="settings-menu-arrow">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -750,52 +759,122 @@
           <h2 class="page-title">Account</h2>
         </div>
 
-        <div class="settings-group">
-          <div class="settings-label">Tipping Keys</div>
+        <!-- Account Info (shows for all logged-in users) -->
+        <div class="settings-group hidden" id="accountInfoSection">
+          <p class="settings-group-desc">Your Grove account and wallet information</p>
 
-          <!-- Production Key Slot -->
-          <div class="settings-item jwt-slot" id="productionKeySlot" data-slot="production">
-            <div class="jwt-slot-indicator">
-              <span class="slot-dot" id="productionSlotDot"></span>
+          <!-- Identity row (email/phone) - shown for CDP auth users -->
+          <div class="account-info-card hidden" id="accountIdentityRow">
+            <div class="account-info-icon account-info-icon-primary" id="accountInfoIconWrapper">
+              <svg id="accountInfoIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
             </div>
-            <div class="settings-info">
-              <div class="settings-name">
-                Mainnet
-                <span class="slot-active-badge hidden" id="productionActiveBadge">Active</span>
-              </div>
-              <div class="settings-desc" id="productionKeyStatus">Not connected</div>
+            <div class="account-info-content">
+              <div class="account-info-label" id="accountInfoType">Signed in with</div>
+              <div class="account-info-value" id="accountInfoValue">—</div>
             </div>
-            <button class="btn-text" id="manageProductionKeyBtn">Manage</button>
           </div>
 
-          <!-- Testnet Key Slot -->
-          <div class="settings-item jwt-slot" id="testnetKeySlot" data-slot="testnet">
-            <div class="jwt-slot-indicator">
-              <span class="slot-dot" id="testnetSlotDot"></span>
+          <!-- Connected Wallet (for web3 users) -->
+          <div class="account-info-card hidden" id="connectedWalletRow">
+            <div class="account-info-icon account-info-icon-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+                <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+                <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
+              </svg>
             </div>
-            <div class="settings-info">
-              <div class="settings-name">
-                Testnet
-                <span class="slot-active-badge hidden" id="testnetActiveBadge">Active</span>
+            <div class="account-info-content">
+              <div class="account-info-label">Connected Wallet</div>
+              <div class="account-info-value account-info-value-mono" id="connectedWalletAddress">—</div>
+              <div class="account-info-desc">The wallet you signed in with</div>
+            </div>
+            <button class="account-info-action" id="copyConnectedWalletBtn" title="Copy address">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Tipping Wallet (where tips are sent from) -->
+          <div class="account-info-card hidden" id="tippingWalletRow">
+            <div class="account-info-icon account-info-icon-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </div>
+            <div class="account-info-content">
+              <div class="account-info-label">Tipping Wallet</div>
+              <div class="account-info-value account-info-value-mono" id="tippingWalletAddress">—</div>
+              <div class="account-info-desc">Where your tips are sent from</div>
+            </div>
+            <button class="account-info-action" id="copyTippingWalletBtn" title="Copy address">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tipping Keys Section -->
+        <div class="settings-group" id="tippingKeysSection">
+          <div class="settings-label">Tipping Keys</div>
+          <p class="settings-group-desc">API keys that authorize the extension to send tips</p>
+
+          <!-- Production Key Slot -->
+          <div class="account-info-card" id="productionKeySlot" data-slot="production">
+            <div class="account-info-icon account-info-icon-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+              </svg>
+            </div>
+            <div class="account-info-content">
+              <div class="account-info-label">
+                Mainnet
+                <span class="key-slot-badge hidden" id="productionActiveBadge">Active</span>
               </div>
-              <div class="settings-desc" id="testnetKeyStatus">Not connected</div>
+              <div class="account-info-value" id="productionKeyStatus">Not connected</div>
             </div>
-            <button class="btn-text" id="manageTestnetKeyBtn">Manage</button>
+            <button class="btn-text btn-sm" id="manageProductionKeyBtn">Manage</button>
+          </div>
+
+          <!-- Testnet Key Slot (Developer Mode only) -->
+          <div class="account-info-card hidden" id="testnetKeySlot" data-slot="testnet">
+            <div class="account-info-icon account-info-icon-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+              </svg>
+            </div>
+            <div class="account-info-content">
+              <div class="account-info-label">
+                Testnet
+                <span class="key-slot-badge hidden" id="testnetActiveBadge">Active</span>
+              </div>
+              <div class="account-info-value" id="testnetKeyStatus">Not connected</div>
+            </div>
+            <button class="btn-text btn-sm" id="manageTestnetKeyBtn">Manage</button>
           </div>
 
           <!-- Localhost Key Slot (Developer Mode only) -->
-          <div class="settings-item jwt-slot hidden" id="localhostKeySlot" data-slot="localhost">
-            <div class="jwt-slot-indicator">
-              <span class="slot-dot" id="localhostSlotDot"></span>
+          <div class="account-info-card hidden" id="localhostKeySlot" data-slot="localhost">
+            <div class="account-info-icon account-info-icon-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+              </svg>
             </div>
-            <div class="settings-info">
-              <div class="settings-name">
+            <div class="account-info-content">
+              <div class="account-info-label">
                 Localhost
-                <span class="slot-active-badge hidden" id="localhostActiveBadge">Active</span>
+                <span class="key-slot-badge hidden" id="localhostActiveBadge">Active</span>
               </div>
-              <div class="settings-desc" id="localhostKeyStatus">Not connected</div>
+              <div class="account-info-value" id="localhostKeyStatus">Not connected</div>
             </div>
-            <button class="btn-text" id="manageLocalhostKeyBtn">Manage</button>
+            <button class="btn-text btn-sm" id="manageLocalhostKeyBtn">Manage</button>
           </div>
 
           <!-- JWT Edit Form (Hidden by default) -->
@@ -826,9 +905,7 @@
               <button class="btn-primary btn-sm" id="saveJwtBtn">Save</button>
             </div>
           </div>
-        </div>
 
-        <div class="settings-group">
           <!-- Legacy jwtStatusDisplay for backward compatibility - hidden -->
           <div class="hidden" id="jwtSettingsSection">
             <div id="jwtStatusDisplay"></div>
@@ -836,13 +913,30 @@
           </div>
 
           <!-- Previous Tipping Keys -->
-          <div class="settings-item-column" id="prevKeysSection">
-            <div class="settings-row">
-              <div class="settings-info">
-                <div class="settings-name">Previous Tipping Keys</div>
-                <div class="settings-desc" id="prevKeysCount">No previous keys</div>
+          <div class="prev-keys-section" id="prevKeysSection">
+            <div class="account-info-card">
+              <div class="account-info-icon account-info-icon-primary">
+                <!-- Stacked keys icon (3 keys) -->
+                <svg width="18" height="18" viewBox="-2 -2 28 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <!-- Key 1 (back - top left) -->
+                  <g transform="translate(-4, -4) scale(0.85)" opacity="0.5">
+                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+                  </g>
+                  <!-- Key 2 (middle - centered) -->
+                  <g transform="scale(0.85)" opacity="0.75">
+                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+                  </g>
+                  <!-- Key 3 (front - bottom right) -->
+                  <g transform="translate(4, 4) scale(0.85)">
+                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+                  </g>
+                </svg>
               </div>
-              <button class="btn-text" id="viewPrevKeysBtn">View</button>
+              <div class="account-info-content">
+                <div class="account-info-label">Previous Keys</div>
+                <div class="account-info-value" id="prevKeysCount">No previous keys</div>
+              </div>
+              <button class="btn-text btn-sm" id="viewPrevKeysBtn">View</button>
             </div>
 
             <!-- Previous Keys List (Hidden by default) -->
@@ -855,18 +949,26 @@
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Clear All Keys (Developer Mode only) -->
-        <div class="settings-group hidden" id="clearAllKeysItem">
-          <div class="settings-item">
+          <!-- Clear All Keys (Developer Mode only) -->
+          <div class="settings-item hidden" id="clearAllKeysItem">
             <div class="settings-info">
               <div class="settings-name">Clear All Keys</div>
-              <div class="settings-desc">Remove all JWT keys and archived keys</div>
+              <div class="settings-desc">Remove all keys</div>
             </div>
             <button class="btn-danger-text btn-sm" id="clearAllKeysBtn">Clear</button>
           </div>
         </div>
+
+        <!-- Disconnect Button -->
+        <button class="account-logout-btn" id="accountLogoutBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          Disconnect
+        </button>
       </div>
 
       <!-- X / Twitter Settings View -->
@@ -930,7 +1032,7 @@
           <div class="settings-item">
             <div class="settings-info">
               <div class="settings-name">Auto-reply on tip</div>
-              <div class="settings-desc">Send a reply when you tip</div>
+              <div class="settings-desc">Automatically reply when you tip</div>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="settingsAutoReplyToggle">
@@ -1129,6 +1231,14 @@
       </div>
       <span class="nav-label">Earn</span>
     </button>
+    <button class="nav-item" data-target="tab-settings">
+      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+      <span class="nav-label">Settings</span>
+    </button>
   </nav>
 
   <!-- Tip Button Intro Modal -->
@@ -1189,6 +1299,68 @@
         <div class="tip-intro-dot active" data-page="1"></div>
         <div class="tip-intro-dot" data-page="2"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- CDP Auth: Identity Input Modal -->
+  <div class="modal-overlay hidden" id="cdpIdentityModal">
+    <div class="modal-content cdp-modal">
+      <div class="cdp-modal-header">
+        <button class="cdp-modal-back" id="cdpCancelIdentityBtn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <h3 id="cdpIdentityLabel">Enter your email</h3>
+      </div>
+      <div class="cdp-modal-body">
+        <div class="cdp-input-group">
+          <input type="email" id="cdpIdentityInput" class="cdp-input" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <p class="cdp-modal-hint" id="cdpIdentityHint">We'll send you a verification code</p>
+      </div>
+      <div class="cdp-modal-footer">
+        <button class="btn-primary btn-full" id="cdpSendCodeBtn">
+          <span>Send Code</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CDP Auth: OTP Verification Modal -->
+  <div class="modal-overlay hidden" id="cdpOtpModal">
+    <div class="modal-content cdp-modal">
+      <div class="cdp-modal-header">
+        <button class="cdp-modal-back" id="cdpCancelOtpBtn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <h3>Enter verification code</h3>
+      </div>
+      <div class="cdp-modal-body">
+        <p class="cdp-modal-subtitle" id="cdpOtpDestination">We sent a code to your email</p>
+        <div class="cdp-otp-input-group">
+          <input type="text" id="cdpOtpInput" class="cdp-otp-input" maxlength="6" placeholder="000000" inputmode="numeric" autocomplete="one-time-code">
+        </div>
+        <p class="cdp-modal-error hidden" id="cdpOtpError">Invalid code. Please try again.</p>
+      </div>
+      <div class="cdp-modal-footer">
+        <button class="btn-primary btn-full" id="cdpVerifyOtpBtn">
+          <span>Verify</span>
+        </button>
+        <button class="btn-text cdp-resend-btn" id="cdpResendCodeBtn">
+          <span>Resend code</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CDP Auth: Loading Modal -->
+  <div class="modal-overlay hidden" id="cdpLoadingModal">
+    <div class="modal-content cdp-modal cdp-loading-modal">
+      <div class="cdp-loading-spinner"></div>
+      <p id="cdpLoadingMessage">Creating your account...</p>
     </div>
   </div>
 

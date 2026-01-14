@@ -4,15 +4,21 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "postinstall": "[ -n \"$CI\" ] || git submodule update --init",
+    "postinstall": "[ -n \"$CI\" ] || (git submodule update --init && npm run build:cdp)",
+    "build": "npm run build:cdp",
+    "build:cdp": "node scripts/build-cdp-bundle.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test"
   },
+  "dependencies": {
+    "@coinbase/cdp-core": "^0.0.75"
+  },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "@vitest/coverage-v8": "^2.1.0",
+    "esbuild": "^0.24.0",
     "jsdom": "^27.3.0",
     "vitest": "^2.1.0"
   }

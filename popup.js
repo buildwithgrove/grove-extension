@@ -87,6 +87,26 @@ const closePrevKeysBtn = document.getElementById('closePrevKeysBtn');
 const earnAddressText = document.getElementById('earnAddressText');
 const copyEarnAddressBtn = document.getElementById('copyEarnAddressBtn');
 
+// Account Info Section (shows for all logged-in users)
+const accountInfoSection = document.getElementById('accountInfoSection');
+const accountIdentityRow = document.getElementById('accountIdentityRow');
+const accountInfoIcon = document.getElementById('accountInfoIcon');
+const accountInfoValue = document.getElementById('accountInfoValue');
+const accountInfoType = document.getElementById('accountInfoType');
+
+// Connected Wallet (for web3 users in Account section)
+const connectedWalletRow = document.getElementById('connectedWalletRow');
+const connectedWalletAddress = document.getElementById('connectedWalletAddress');
+const copyConnectedWalletBtn = document.getElementById('copyConnectedWalletBtn');
+
+// Tipping Wallet (in Account section)
+const tippingWalletRow = document.getElementById('tippingWalletRow');
+const tippingWalletAddress = document.getElementById('tippingWalletAddress');
+const copyTippingWalletBtn = document.getElementById('copyTippingWalletBtn');
+
+// Account Disconnect Button
+const accountDisconnectBtn = document.getElementById('accountLogoutBtn');
+
 // Tip Intro Modal
 const tipButtonIntroModal = document.getElementById('tipButtonIntroModal');
 const tipIntroGotItBtn = document.getElementById('tipIntroGotItBtn');
@@ -131,6 +151,34 @@ const saveAutoReplyMessageBtn = document.getElementById('settingsSaveAutoReplyMe
 const resetAutoReplyMessageBtn = document.getElementById('settingsResetAutoReplyMessageBtn');
 const settingsXConnectBtn = document.getElementById('settingsXConnectBtn');
 const settingsXDisconnectBtn = document.getElementById('settingsXDisconnectBtn');
+
+// CDP Auth Elements
+const cdpAuthSection = document.getElementById('cdpAuthSection');
+const cdpEmailAuthBtn = document.getElementById('emailAuthBtn');
+const cdpPhoneAuthBtn = document.getElementById('smsAuthBtn');
+const cdpIdentityModal = document.getElementById('cdpIdentityModal');
+const cdpIdentityInput = document.getElementById('cdpIdentityInput');
+const cdpIdentityLabel = document.getElementById('cdpIdentityLabel');
+const cdpIdentityHint = document.getElementById('cdpIdentityHint');
+const cdpSendCodeBtn = document.getElementById('cdpSendCodeBtn');
+const cdpCancelIdentityBtn = document.getElementById('cdpCancelIdentityBtn');
+const cdpOtpModal = document.getElementById('cdpOtpModal');
+const cdpOtpDestination = document.getElementById('cdpOtpDestination');
+const cdpOtpInput = document.getElementById('cdpOtpInput');
+const cdpVerifyOtpBtn = document.getElementById('cdpVerifyOtpBtn');
+const cdpResendCodeBtn = document.getElementById('cdpResendCodeBtn');
+const cdpCancelOtpBtn = document.getElementById('cdpCancelOtpBtn');
+const cdpLoadingModal = document.getElementById('cdpLoadingModal');
+const cdpLoadingMessage = document.getElementById('cdpLoadingMessage');
+
+// CDP Auth State
+let cdpAuthState = {
+  method: null,       // 'email' or 'sms'
+  flowId: null,       // Flow ID from CDP SDK
+  destination: null,  // Email or phone number
+  resendTimer: null,  // Timer for resend cooldown
+  resendCountdown: 0, // Seconds until resend allowed
+};
 
 // Defaults
 const DEFAULT_TIP_AMOUNT = 0.02;
@@ -241,10 +289,15 @@ async function init() {
   await loadChain();
   await loadEndpoint();
   await prevKeysUI.updateCount();
+
+  // Clear stale ENS cache on init - will be re-resolved fresh
+  await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
+
   await loadClientAddress();
   loadExtensionVersion();
   checkForUpdates();
   setupEventListeners();
+  await initCDPAuth();
 
   // Ensure chain dropdown options match current endpoint on init
   const endpointInit = await GroveAPI.getBaseURL().then(() => {
@@ -254,6 +307,9 @@ async function init() {
 
   // Fetch balance after everything is loaded (also updates client address)
   await fetchBalance();
+
+  // Update account info display (shows identity/wallet in Settings)
+  await updateAccountInfoDisplay();
 
   // Resolve ENS name in the background (don't await to avoid blocking UI)
   loadAndResolveEnsName();
@@ -632,6 +688,21 @@ function setupEventListeners() {
     copyEarnAddressBtn.addEventListener('click', copyEarnAddress);
   }
 
+  // Account - Copy Connected Wallet Button
+  if (copyConnectedWalletBtn) {
+    copyConnectedWalletBtn.addEventListener('click', copyConnectedWallet);
+  }
+
+  // Account - Copy Tipping Wallet Button
+  if (copyTippingWalletBtn) {
+    copyTippingWalletBtn.addEventListener('click', copyTippingWallet);
+  }
+
+  // Account - Disconnect Button
+  if (accountDisconnectBtn) {
+    accountDisconnectBtn.addEventListener('click', handleAccountDisconnect);
+  }
+
   // Listen for storage changes (e.g., when webapp injects JWT via external messaging)
   chrome.storage.onChanged.addListener(async (changes, areaName) => {
     if (areaName !== 'local') return;
@@ -688,8 +759,13 @@ function setupEventListeners() {
  * Navigate to Settings tab programmatically
  */
 function navigateToSettings() {
-  // Update nav items
-  navItems.forEach(item => item.classList.remove('active'));
+  // Update nav items - remove active from all, add to settings
+  navItems.forEach(item => {
+    item.classList.remove('active');
+    if (item.dataset.target === 'tab-settings') {
+      item.classList.add('active');
+    }
+  });
 
   // Update pages
   pages.forEach(page => {
@@ -1092,6 +1168,52 @@ async function saveJwtForSlot() {
   }
 }
 
+/**
+ * Core disconnect logic - archives key and clears slot
+ * @param {string} slotId - The slot to disconnect (e.g., 'production', 'testnet')
+ * @returns {Promise<{envLabel: string}>} - Info about what was disconnected
+ */
+async function disconnectSlot(slotId) {
+  const activeSlot = await KeyManager.getActiveSlotId();
+  const slotConfig = KeyManager.getEnvConfig(slotId);
+
+  // Archive the key before removing
+  const jwtToRemove = await KeyManager.getJWT(slotId);
+  if (jwtToRemove) {
+    await KeyManager.archiveCurrentKey(jwtToRemove, slotId);
+  }
+
+  // Clear the JWT in the slot
+  await KeyManager.clearJWT(slotId);
+
+  // Update the slot UI
+  await loadJwtSlots();
+
+  // If we removed the active slot, clear auth state and account info
+  if (slotId === activeSlot) {
+    await chrome.storage.local.remove([
+      STORAGE_KEYS.CLIENT_ADDRESS,
+      STORAGE_KEYS.ONCHAIN_ADDRESS,
+      STORAGE_KEYS.ENS_NAME,
+      STORAGE_KEYS.CDP_IDENTITY_TYPE,
+      STORAGE_KEYS.CDP_IDENTITY_VALUE,
+    ]);
+    await updateAuthState(null);
+    await updateEarnAddressDisplay(null);
+    updateEnsNameDisplay(null);
+    await updateAccountInfoDisplay();
+  }
+
+  await prevKeysUI.updateCount();
+
+  // Refresh previous keys list if visible
+  if (!prevKeysContainer.classList.contains('hidden')) {
+    await prevKeysUI.render();
+  }
+
+  return { envLabel: slotConfig ? slotConfig.label : slotId };
+}
+
 let removeJwtPending = false;
 
 async function removeJwt() {
@@ -1120,39 +1242,11 @@ async function removeJwt() {
   // Determine which slot to clear - use currentEditSlot if set, otherwise use active slot
   const activeSlot = await KeyManager.getActiveSlotId();
   const slotToRemove = currentEditSlot || activeSlot;
-  const slotConfig = KeyManager.getEnvConfig(slotToRemove);
 
-  // Get the JWT from the slot being removed
-  const jwtToRemove = await KeyManager.getJWT(slotToRemove);
-
-  // Archive JWT before removing
-  if (jwtToRemove) {
-    await KeyManager.archiveCurrentKey(jwtToRemove, slotToRemove);
-  }
-
-  // Clear the JWT in the slot
-  await KeyManager.clearJWT(slotToRemove);
-
-  // Update the slot UI
-  await loadJwtSlots();
-
-  // Only update auth state if we removed the active slot
-  if (slotToRemove === activeSlot) {
-    await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
-    await updateAuthState(null);
-    updateEarnAddressDisplay(null);
-    updateEnsNameDisplay(null);
-  }
+  const { envLabel } = await disconnectSlot(slotToRemove);
 
   hideJwtEdit();
-  const envLabel = slotConfig ? slotConfig.label : slotToRemove;
   showToast(`${envLabel} key removed`);
-  await prevKeysUI.updateCount();
-
-  // Refresh previous keys list if visible
-  if (!prevKeysContainer.classList.contains('hidden')) {
-    await prevKeysUI.render();
-  }
 }
 
 let clearAllKeysPending = false;
@@ -1192,11 +1286,18 @@ async function clearAllKeys() {
   // Clear archived keys
   await KeyManager.clearAll();
 
-  // Clear auth state
-  await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
+  // Clear auth state and CDP identity info
+  await chrome.storage.local.remove([
+    STORAGE_KEYS.CLIENT_ADDRESS,
+    STORAGE_KEYS.ONCHAIN_ADDRESS,
+    STORAGE_KEYS.ENS_NAME,
+    STORAGE_KEYS.CDP_IDENTITY_TYPE,
+    STORAGE_KEYS.CDP_IDENTITY_VALUE,
+  ]);
   await updateAuthState(null);
   updateEarnAddressDisplay(null);
   updateEnsNameDisplay(null);
+  await updateAccountInfoDisplay();
 
   // Update UI
   await loadJwtSlots();
@@ -1467,13 +1568,13 @@ async function fetchBalance() {
         await KeyManager.clearJWT(activeSlot);
 
         // Clear cached data
-        await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME, STORAGE_KEYS.LAST_BALANCES]);
+        await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ONCHAIN_ADDRESS, STORAGE_KEYS.ENS_NAME, STORAGE_KEYS.LAST_BALANCES]);
 
         // Update UI to show disconnected state
         await updateAuthState(null);
         await loadJwtSlots();
         await prevKeysUI.updateCount();
-        updateEarnAddressDisplay(null);
+        await updateEarnAddressDisplay(null);
         updateEnsNameDisplay(null);
         balanceAmount.textContent = FormatUtils.DEFAULT_BALANCE_DISPLAY;
 
@@ -1482,21 +1583,42 @@ async function fetchBalance() {
       return;
     }
 
-    // Store client_address for Earn tab display
-    if (response.data.client_address) {
-      const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
-      const previousAddress = result[STORAGE_KEYS.CLIENT_ADDRESS];
+    // Store addresses from API response
+    // client_address = user's logged-in wallet (connected wallet)
+    // onchain_address = Grove-managed tipping wallet
+    if (response.data.onchain_address) {
+      console.log('[Grove Extension] fetchBalance got addresses:', {
+        client: response.data.client_address,
+        onchain: response.data.onchain_address
+      });
 
-      await chrome.storage.local.set({ [STORAGE_KEYS.CLIENT_ADDRESS]: response.data.client_address });
-      updateEarnAddressDisplay(response.data.client_address);
+      const result = await chrome.storage.local.get([STORAGE_KEYS.ONCHAIN_ADDRESS]);
+      const previousAddress = result[STORAGE_KEYS.ONCHAIN_ADDRESS];
 
-      // If address changed, clear cached ENS name and re-resolve
-      if (previousAddress !== response.data.client_address) {
+      // Store both addresses
+      const addressUpdates = {
+        [STORAGE_KEYS.ONCHAIN_ADDRESS]: response.data.onchain_address,
+      };
+      if (response.data.client_address) {
+        addressUpdates[STORAGE_KEYS.CLIENT_ADDRESS] = response.data.client_address;
+      }
+      await chrome.storage.local.set(addressUpdates);
+
+      // Show truncated tipping wallet address in Earn tab
+      const truncated = `${response.data.onchain_address.slice(0, 6)}...${response.data.onchain_address.slice(-4)}`;
+      console.log('[Grove Extension] Displaying truncated address:', truncated);
+      await updateEarnAddressDisplay(truncated, false);
+
+      // If tipping wallet address changed, clear cached ENS name and re-resolve
+      if (previousAddress !== response.data.onchain_address) {
         await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
-        updateEnsNameDisplay(null);
-        // Resolve in background
         loadAndResolveEnsName();
       }
+    } else {
+      // No onchain_address in response - clear cached data and show setup card
+      await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ONCHAIN_ADDRESS, STORAGE_KEYS.ENS_NAME]);
+      await updateEarnAddressDisplay(null);
+      updateEnsNameDisplay(null);
     }
 
     // Find balance for current chain (USDC)
@@ -1525,13 +1647,22 @@ async function fetchBalance() {
 /**
  * Earn Tab - Unified Address Display
  * Shows ENS name or base name if available, otherwise shows 0x address
+ * For email/SMS-only users without an address, shows the setup card instead
  */
-function updateEarnAddressDisplay(displayValue, hasEnsName = false) {
+async function updateEarnAddressDisplay(displayValue, hasEnsName = false) {
   const ensLinksSection = document.getElementById('ensLinksSection');
+  const earnAddressCard = document.getElementById('earnAddressCard');
+  const earnSetupCard = document.getElementById('earnSetupCard');
 
-  if (earnAddressText && displayValue) {
-    earnAddressText.textContent = displayValue;
-    earnAddressText.classList.remove('placeholder');
+  if (displayValue) {
+    // User has an address - show the address card
+    if (earnAddressCard) earnAddressCard.classList.remove('hidden');
+    if (earnSetupCard) earnSetupCard.classList.add('hidden');
+
+    if (earnAddressText) {
+      earnAddressText.textContent = displayValue;
+      earnAddressText.classList.remove('placeholder');
+    }
     if (copyEarnAddressBtn) {
       copyEarnAddressBtn.disabled = false;
     }
@@ -1543,39 +1674,29 @@ function updateEarnAddressDisplay(displayValue, hasEnsName = false) {
         ensLinksSection.classList.remove('hidden');
       }
     }
-  } else if (earnAddressText) {
-    earnAddressText.textContent = 'Connect to see address';
-    earnAddressText.classList.add('placeholder');
-    if (copyEarnAddressBtn) {
-      copyEarnAddressBtn.disabled = true;
-    }
-    // Show "Get an ENS name" links when not connected
-    if (ensLinksSection) {
-      ensLinksSection.classList.remove('hidden');
-    }
+  } else {
+    // No address - show setup card (same for logged out or email/SMS users without address)
+    if (earnAddressCard) earnAddressCard.classList.add('hidden');
+    if (earnSetupCard) earnSetupCard.classList.remove('hidden');
   }
 }
 
 async function loadClientAddress() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
-  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
-  const ensName = result[STORAGE_KEYS.ENS_NAME];
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ONCHAIN_ADDRESS]);
+  const address = result[STORAGE_KEYS.ONCHAIN_ADDRESS];
 
-  // Show ENS/base name if available, otherwise show truncated 0x address
-  if (ensName) {
-    updateEarnAddressDisplay(ensName, true);
-  } else if (address) {
-    // Truncate address for display: 0x1234...abcd
+  // Always show truncated address first, let loadAndResolveEnsName update to ENS after fresh resolution
+  if (address) {
     const truncated = `${address.slice(0, 6)}...${address.slice(-4)}`;
-    updateEarnAddressDisplay(truncated, false);
+    await updateEarnAddressDisplay(truncated, false);
   } else {
-    updateEarnAddressDisplay(null, false);
+    await updateEarnAddressDisplay(null, false);
   }
 }
 
 async function copyEarnAddress() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
-  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ONCHAIN_ADDRESS, STORAGE_KEYS.ENS_NAME]);
+  const address = result[STORAGE_KEYS.ONCHAIN_ADDRESS];
   const ensName = result[STORAGE_KEYS.ENS_NAME];
 
   // Copy ENS name if available, otherwise copy 0x address
@@ -1601,6 +1722,64 @@ async function copyEarnAddress() {
   }
 }
 
+async function copyConnectedWallet() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
+  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
+
+  if (address) {
+    try {
+      await navigator.clipboard.writeText(address);
+      showToast('Address copied!');
+
+      if (copyConnectedWalletBtn) {
+        copyConnectedWalletBtn.classList.add('copied');
+        setTimeout(() => {
+          copyConnectedWalletBtn.classList.remove('copied');
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('[Grove Extension] Copy failed:', err);
+      showToast('Failed to copy');
+    }
+  }
+}
+
+async function copyTippingWallet() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ONCHAIN_ADDRESS]);
+  const address = result[STORAGE_KEYS.ONCHAIN_ADDRESS];
+
+  if (address) {
+    try {
+      await navigator.clipboard.writeText(address);
+      showToast('Address copied!');
+
+      if (copyTippingWalletBtn) {
+        copyTippingWalletBtn.classList.add('copied');
+        setTimeout(() => {
+          copyTippingWalletBtn.classList.remove('copied');
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('[Grove Extension] Copy failed:', err);
+      showToast('Failed to copy');
+    }
+  }
+}
+
+/**
+ * Handle disconnect from Account section
+ * Uses shared disconnectSlot flow
+ */
+async function handleAccountDisconnect() {
+  const activeSlot = await KeyManager.getActiveSlotId();
+  const { envLabel } = await disconnectSlot(activeSlot);
+
+  // Go back to main settings
+  showSettingsView('main');
+
+  showToast(`Disconnected from ${envLabel}`);
+}
+
 /**
  * ENS Reverse Resolution
  * Resolves an Ethereum address to its ENS name (.eth or .base.eth)
@@ -1618,40 +1797,40 @@ async function resolveEnsName(address) {
 
   const addr = address.toLowerCase();
 
-  // Try web3.bio API (handles both ENS and Basenames)
+  // Use web3.bio API - but FILTER results to only use entries where address matches
   try {
     const response = await fetch(`https://api.web3.bio/profile/${addr}`);
     const data = await response.json();
 
     if (Array.isArray(data) && data.length > 0) {
-      // Prefer ENS (.eth) over Basenames (.base.eth)
-      const ensProfile = data.find(p => p.platform === 'ens' || (p.identity && p.identity.endsWith('.eth') && !p.identity.endsWith('.base.eth')));
+      // IMPORTANT: Filter to only results where the address field matches our query
+      // web3.bio sometimes returns unrelated profiles first
+      const matchingProfiles = data.filter(p =>
+        p.address && p.address.toLowerCase() === addr
+      );
+
+      // Prefer ENS (.eth but not .base.eth) over Basenames
+      const ensProfile = matchingProfiles.find(p =>
+        p.platform === 'ens' ||
+        (p.identity && p.identity.endsWith('.eth') && !p.identity.endsWith('.base.eth'))
+      );
       if (ensProfile?.identity) {
         console.log('[Grove Extension] Resolved ENS:', ensProfile.identity);
         return ensProfile.identity;
       }
 
-      // Check for Basenames
-      const baseProfile = data.find(p => p.platform === 'basenames' || (p.identity && p.identity.endsWith('.base.eth')));
+      // Fallback to Basenames (.base.eth)
+      const baseProfile = matchingProfiles.find(p =>
+        p.platform === 'basenames' ||
+        (p.identity && p.identity.endsWith('.base.eth'))
+      );
       if (baseProfile?.identity) {
         console.log('[Grove Extension] Resolved Basename:', baseProfile.identity);
         return baseProfile.identity;
       }
     }
   } catch (e) {
-    console.log('[Grove Extension] web3.bio lookup failed:', e.message);
-  }
-
-  // Fallback: Try Ensideas API for ENS only
-  try {
-    const response = await fetch(`https://ensideas.com/ens/resolve/${addr}`);
-    const data = await response.json();
-    if (data.name && data.name.endsWith('.eth')) {
-      console.log('[Grove Extension] Resolved ENS via Ensideas:', data.name);
-      return data.name;
-    }
-  } catch (e) {
-    console.log('[Grove Extension] Ensideas lookup failed:', e.message);
+    console.log('[Grove Extension] ENS lookup failed:', e.message);
   }
 
   return null;
@@ -1663,39 +1842,50 @@ async function resolveEnsName(address) {
  * This is called after ENS resolution completes
  */
 async function updateEnsNameDisplay(ensName) {
-  // Re-load and display the address (will show ENS if available)
-  await loadClientAddress();
+  // Update earn display with ENS name if provided, otherwise show truncated address
+  if (ensName) {
+    await updateEarnAddressDisplay(ensName, true);
+  } else {
+    // Fall back to truncated address
+    const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
+    const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
+    if (address) {
+      const truncated = `${address.slice(0, 6)}...${address.slice(-4)}`;
+      await updateEarnAddressDisplay(truncated, false);
+    }
+  }
 }
 
 /**
  * Load and resolve ENS name for stored address
+ * Always does fresh resolution - does not trust cached ENS name
  */
 async function loadAndResolveEnsName() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
-  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
-  const cachedEnsName = result[STORAGE_KEYS.ENS_NAME];
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ONCHAIN_ADDRESS]);
+  const address = result[STORAGE_KEYS.ONCHAIN_ADDRESS];
 
-  // Show cached name immediately if available
-  if (cachedEnsName) {
-    updateEnsNameDisplay(cachedEnsName);
+  console.log('[Grove Extension] loadAndResolveEnsName called, address:', address);
+
+  if (!address) {
+    console.log('[Grove Extension] No address to resolve');
+    return;
   }
 
-  // If we have an address, try to resolve it
-  if (address) {
-    try {
-      const ensName = await resolveEnsName(address);
-      if (ensName) {
-        await chrome.storage.local.set({ [STORAGE_KEYS.ENS_NAME]: ensName });
-        updateEnsNameDisplay(ensName);
-      } else if (cachedEnsName) {
-        // Clear cached name if resolution returns nothing
-        await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
-        updateEnsNameDisplay(null);
-      }
-    } catch (e) {
-      console.error('[Grove Extension] ENS resolution failed:', e);
-      // Keep showing cached name on error
+  // Always do fresh resolution
+  try {
+    const ensName = await resolveEnsName(address);
+    console.log('[Grove Extension] ENS resolution result:', ensName, 'for address:', address);
+    if (ensName) {
+      await chrome.storage.local.set({ [STORAGE_KEYS.ENS_NAME]: ensName });
+      await updateEarnAddressDisplay(ensName, true);
+    } else {
+      // No ENS found - clear cache and keep showing truncated address
+      await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
     }
+  } catch (e) {
+    console.error('[Grove Extension] ENS resolution failed:', e);
+    // On error, keep showing truncated address (don't use stale cache)
+    await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
   }
 }
 
@@ -1779,7 +1969,7 @@ async function handleDevModeToggle(e) {
     // Switch to testnet JWT context
     const testnetJwt = await KeyManager.getJWT('testnet');
     await updateAuthState(testnetJwt);
-    updateEarnAddressDisplay(null); // Clear address until balance is fetched
+    await updateEarnAddressDisplay(null); // Clear address until balance is fetched
     updateEnsNameDisplay(null);
 
     // Update slot UI to show testnet as active
@@ -1817,7 +2007,7 @@ async function handleDevModeToggle(e) {
     // Switch to production JWT context
     const prodJwt = await KeyManager.getJWT('production');
     await updateAuthState(prodJwt);
-    updateEarnAddressDisplay(null); // Clear address until balance is fetched
+    await updateEarnAddressDisplay(null); // Clear address until balance is fetched
     updateEnsNameDisplay(null);
 
     // Update slot UI to show mainnet as active
@@ -2780,6 +2970,548 @@ function togglePasswordVisibility() {
       path.classList.add('hidden');
     }
   });
+}
+
+// =============================================================================
+// CDP Auth Handlers
+// =============================================================================
+
+/**
+ * Initialize CDP Auth event handlers
+ */
+async function initCDPAuth() {
+  // Only initialize if CDP auth elements exist
+  if (!cdpEmailAuthBtn || !cdpPhoneAuthBtn) {
+    console.log('[CDPAuth] CDP auth elements not found, skipping initialization');
+    return;
+  }
+
+  // Email auth button
+  cdpEmailAuthBtn.addEventListener('click', () => {
+    showCDPIdentityModal('email');
+  });
+
+  // Phone auth button
+  cdpPhoneAuthBtn.addEventListener('click', () => {
+    showCDPIdentityModal('sms');
+  });
+
+  // Send code button
+  cdpSendCodeBtn?.addEventListener('click', handleSendCode);
+
+  // Cancel identity modal
+  cdpCancelIdentityBtn?.addEventListener('click', () => {
+    hideCDPModal(cdpIdentityModal);
+    resetCDPAuthState();
+  });
+
+  // Verify OTP button
+  cdpVerifyOtpBtn?.addEventListener('click', handleVerifyOTP);
+
+  // Resend code button
+  cdpResendCodeBtn?.addEventListener('click', handleResendCode);
+
+  // Cancel OTP modal
+  cdpCancelOtpBtn?.addEventListener('click', () => {
+    hideCDPModal(cdpOtpModal);
+    resetCDPAuthState();
+  });
+
+  // Enter key handlers
+  cdpIdentityInput?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleSendCode();
+  });
+
+  cdpOtpInput?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleVerifyOTP();
+  });
+
+  // Auto-format OTP input (numbers only, max 6 digits)
+  cdpOtpInput?.addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+  });
+
+  // Restore any pending OTP verification state
+  const restored = await restoreCDPAuthState();
+  if (restored) {
+    console.log('[CDPAuth] Restored pending OTP verification');
+  }
+
+  console.log('[CDPAuth] Event handlers initialized');
+}
+
+/**
+ * Show CDP identity modal for email or SMS
+ */
+function showCDPIdentityModal(method) {
+  cdpAuthState.method = method;
+
+  if (method === 'email') {
+    cdpIdentityLabel.textContent = 'Enter your email address';
+    cdpIdentityInput.type = 'email';
+    cdpIdentityInput.placeholder = 'you@example.com';
+    cdpIdentityHint.textContent = 'You\'ll receive a verification code from Coinbase';
+  } else {
+    cdpIdentityLabel.textContent = 'Enter your phone number';
+    cdpIdentityInput.type = 'tel';
+    cdpIdentityInput.placeholder = '+1 (555) 123-4567';
+    cdpIdentityHint.textContent = 'We\'ll send you a verification code';
+  }
+
+  cdpIdentityInput.value = '';
+  showCDPModal(cdpIdentityModal);
+  cdpIdentityInput.focus();
+}
+
+/**
+ * Handle sending verification code
+ */
+async function handleSendCode() {
+  const destination = cdpIdentityInput.value.trim();
+
+  if (!destination) {
+    showToast('Please enter your ' + (cdpAuthState.method === 'email' ? 'email' : 'phone number'), 'error');
+    return;
+  }
+
+  // Validate email format (text@text.text)
+  if (cdpAuthState.method === 'email') {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(destination)) {
+      showToast('Please enter a valid email address', 'error');
+      return;
+    }
+  }
+
+  // Validate phone number (E.164: optional + followed by 10-15 digits)
+  if (cdpAuthState.method === 'sms') {
+    const digitsOnly = destination.replace(/\D/g, '');
+    if (digitsOnly.length < 10 || digitsOnly.length > 15) {
+      showToast('Please enter a valid phone number with country code', 'error');
+      return;
+    }
+  }
+
+  cdpAuthState.destination = destination;
+
+  // Show loading
+  showCDPLoading('Sending verification code...');
+
+  try {
+    // Check if CDPAuth is available (loaded from bundle)
+    if (typeof window.CDPAuth === 'undefined') {
+      throw new Error('CDP Auth not loaded. Please refresh the extension.');
+    }
+
+    let result;
+    if (cdpAuthState.method === 'email') {
+      result = await window.CDPAuth.startEmailAuth(destination);
+    } else {
+      result = await window.CDPAuth.startSmsAuth(destination);
+    }
+
+    cdpAuthState.flowId = result.flowId;
+
+    // Persist state so it survives popup close
+    await saveCDPAuthState();
+
+    hideCDPModal(cdpLoadingModal);
+    hideCDPModal(cdpIdentityModal);
+
+    // Show OTP modal
+    cdpOtpDestination.textContent = destination;
+    cdpOtpInput.value = '';
+    showCDPModal(cdpOtpModal);
+    cdpOtpInput.focus();
+
+    // Start resend cooldown
+    startResendCooldown();
+
+    showToast('Verification code sent!', 'success');
+  } catch (error) {
+    hideCDPModal(cdpLoadingModal);
+    console.error('[CDPAuth] Error sending code:', error);
+    showToast(error.message || 'Failed to send verification code', 'error');
+  }
+}
+
+/**
+ * Handle OTP verification
+ */
+async function handleVerifyOTP() {
+  const otp = cdpOtpInput.value.trim();
+
+  if (otp.length !== 6) {
+    showToast('Please enter the 6-digit code', 'error');
+    return;
+  }
+
+  showCDPLoading('Verifying code...');
+
+  try {
+    // Verify OTP and get CDP token
+    const cdpToken = await window.CDPAuth.verifyOTP(
+      cdpAuthState.flowId,
+      otp,
+      cdpAuthState.method
+    );
+
+    showCDPLoading('Creating your account...');
+
+    // Get the active endpoint for token exchange
+    const endpoint = await getActiveEndpoint();
+
+    // Exchange CDP token for Grove JWT
+    const result = await window.CDPAuth.exchangeForGroveJWT(cdpToken, endpoint);
+
+    // Store the JWT in the appropriate slot
+    const slotId = await getSlotForEndpoint(endpoint);
+    await KeyManager.setJWT(slotId, result.api_key);
+
+    // Store the CDP identity info for display in settings
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.CDP_IDENTITY_TYPE]: cdpAuthState.method,
+      [STORAGE_KEYS.CDP_IDENTITY_VALUE]: cdpAuthState.destination,
+    });
+
+    // Close all modals
+    hideCDPModal(cdpLoadingModal);
+    hideCDPModal(cdpOtpModal);
+    await resetCDPAuthState();
+
+    // Refresh the UI to show connected state
+    await refreshUIState();
+
+    const welcomeMsg = result.is_new_account ? 'Account created!' : 'Welcome back!';
+    showToast(welcomeMsg + ' You can now send tips.', 'success');
+
+  } catch (error) {
+    hideCDPModal(cdpLoadingModal);
+    console.error('[CDPAuth] Error verifying OTP:', error);
+
+    // Check if this is a session/flow expired error
+    const errorMsg = error.message || '';
+    if (errorMsg.toLowerCase().includes('expired') ||
+        errorMsg.toLowerCase().includes('invalid') ||
+        errorMsg.toLowerCase().includes('not found') ||
+        errorMsg.toLowerCase().includes('session')) {
+      // Clear stale state and prompt to restart
+      await resetCDPAuthState();
+      hideCDPModal(cdpOtpModal);
+      showToast('Session expired. Please request a new code.', 'error');
+    } else {
+      showToast(error.message || 'Verification failed', 'error');
+    }
+  }
+}
+
+/**
+ * Handle resending verification code
+ */
+async function handleResendCode() {
+  if (cdpAuthState.resendCountdown > 0) return;
+
+  showCDPLoading('Resending code...');
+
+  try {
+    let result;
+    if (cdpAuthState.method === 'email') {
+      result = await window.CDPAuth.startEmailAuth(cdpAuthState.destination);
+    } else {
+      result = await window.CDPAuth.startSmsAuth(cdpAuthState.destination);
+    }
+
+    cdpAuthState.flowId = result.flowId;
+    hideCDPModal(cdpLoadingModal);
+
+    startResendCooldown();
+    showToast('Code resent!', 'success');
+  } catch (error) {
+    hideCDPModal(cdpLoadingModal);
+    console.error('[CDPAuth] Error resending code:', error);
+    showToast(error.message || 'Failed to resend code', 'error');
+  }
+}
+
+/**
+ * Start the resend cooldown timer
+ * @param {number} [seconds=60] - Optional starting countdown value (used when restoring state)
+ */
+function startResendCooldown(seconds = 60) {
+  // Clear any existing timer to prevent memory leaks
+  if (cdpAuthState.resendTimer) {
+    clearInterval(cdpAuthState.resendTimer);
+  }
+
+  cdpAuthState.resendCountdown = seconds;
+  updateResendButton();
+
+  cdpAuthState.resendTimer = setInterval(() => {
+    cdpAuthState.resendCountdown--;
+    updateResendButton();
+
+    if (cdpAuthState.resendCountdown <= 0) {
+      clearInterval(cdpAuthState.resendTimer);
+      cdpAuthState.resendTimer = null;
+    }
+  }, 1000);
+}
+
+/**
+ * Update the resend button text
+ */
+function updateResendButton() {
+  if (!cdpResendCodeBtn) return;
+
+  if (cdpAuthState.resendCountdown > 0) {
+    cdpResendCodeBtn.textContent = `Resend code (${cdpAuthState.resendCountdown}s)`;
+    cdpResendCodeBtn.disabled = true;
+  } else {
+    cdpResendCodeBtn.textContent = 'Resend code';
+    cdpResendCodeBtn.disabled = false;
+  }
+}
+
+/**
+ * Reset CDP auth state
+ */
+async function resetCDPAuthState() {
+  if (cdpAuthState.resendTimer) {
+    clearInterval(cdpAuthState.resendTimer);
+  }
+  cdpAuthState = {
+    method: null,
+    flowId: null,
+    destination: null,
+    resendTimer: null,
+    resendCountdown: 0,
+  };
+  // Clear persisted state
+  await chrome.storage.local.remove(STORAGE_KEYS.CDP_AUTH_STATE);
+}
+
+/**
+ * Save CDP auth state to storage (for persistence across popup close)
+ */
+async function saveCDPAuthState() {
+  const stateToSave = {
+    method: cdpAuthState.method,
+    flowId: cdpAuthState.flowId,
+    destination: cdpAuthState.destination,
+    timestamp: Date.now(),
+    // Save when cooldown expires (not the countdown itself) to handle popup close/reopen
+    resendCooldownUntil: cdpAuthState.resendCountdown > 0
+      ? Date.now() + (cdpAuthState.resendCountdown * 1000)
+      : null,
+  };
+  await chrome.storage.local.set({ [STORAGE_KEYS.CDP_AUTH_STATE]: stateToSave });
+}
+
+/**
+ * Restore CDP auth state from storage
+ */
+async function restoreCDPAuthState() {
+  const result = await chrome.storage.local.get(STORAGE_KEYS.CDP_AUTH_STATE);
+  const savedState = result[STORAGE_KEYS.CDP_AUTH_STATE];
+
+  if (!savedState) return false;
+
+  // Validate restored state structure
+  if (!['email', 'sms'].includes(savedState.method) ||
+      typeof savedState.flowId !== 'string' || !savedState.flowId ||
+      typeof savedState.destination !== 'string' || !savedState.destination) {
+    await chrome.storage.local.remove(STORAGE_KEYS.CDP_AUTH_STATE);
+    return false;
+  }
+
+  // Check if state is too old (5 minutes)
+  const MAX_AGE = 5 * 60 * 1000;
+  if (Date.now() - savedState.timestamp > MAX_AGE) {
+    await chrome.storage.local.remove(STORAGE_KEYS.CDP_AUTH_STATE);
+    return false;
+  }
+
+  // Re-initialize CDP SDK (required after popup close/reopen)
+  try {
+    if (typeof window.CDPAuth !== 'undefined' && window.CDPAuth.initializeCDP) {
+      await window.CDPAuth.initializeCDP();
+    }
+  } catch (error) {
+    console.error('[CDPAuth] Failed to reinitialize SDK:', error);
+    await chrome.storage.local.remove(STORAGE_KEYS.CDP_AUTH_STATE);
+    return false;
+  }
+
+  // Restore state
+  cdpAuthState.method = savedState.method;
+  cdpAuthState.flowId = savedState.flowId;
+  cdpAuthState.destination = savedState.destination;
+
+  // Restore resend cooldown if still active
+  if (savedState.resendCooldownUntil) {
+    const remainingMs = savedState.resendCooldownUntil - Date.now();
+    if (remainingMs > 0) {
+      startResendCooldown(Math.ceil(remainingMs / 1000));
+    }
+  }
+
+  // Show OTP modal
+  if (cdpOtpDestination) {
+    cdpOtpDestination.textContent = savedState.destination;
+  }
+  if (cdpOtpInput) {
+    cdpOtpInput.value = '';
+  }
+  showCDPModal(cdpOtpModal);
+  if (cdpOtpInput) {
+    cdpOtpInput.focus();
+  }
+
+  return true;
+}
+
+/**
+ * Show a CDP modal
+ */
+function showCDPModal(modal) {
+  if (modal) {
+    modal.classList.remove('hidden');
+  }
+}
+
+/**
+ * Hide a CDP modal
+ */
+function hideCDPModal(modal) {
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+}
+
+/**
+ * Show CDP loading modal with message
+ */
+function showCDPLoading(message) {
+  if (cdpLoadingMessage) {
+    cdpLoadingMessage.textContent = message;
+  }
+  showCDPModal(cdpLoadingModal);
+}
+
+/**
+ * Get the active API endpoint URL
+ */
+async function getActiveEndpoint() {
+  const slotId = await KeyManager.getActiveSlotId();
+  const config = KeyManager.getEnvConfig(slotId);
+  return config?.apiUrl || 'https://api.grove.city';
+}
+
+/**
+ * Get the slot ID for a given endpoint URL
+ */
+async function getSlotForEndpoint(endpoint) {
+  if (endpoint.includes('localhost')) return 'localhost';
+  if (endpoint.includes('testnet')) return 'testnet';
+  return 'production';
+}
+
+/**
+ * Update the Account section in Settings
+ * Shows for all logged-in users:
+ * - CDP users: email/phone + tipping wallet
+ * - Web3 users: connected wallet + tipping wallet
+ */
+async function updateAccountInfoDisplay() {
+  const result = await chrome.storage.local.get([
+    STORAGE_KEYS.CDP_IDENTITY_TYPE,
+    STORAGE_KEYS.CDP_IDENTITY_VALUE,
+    STORAGE_KEYS.CLIENT_ADDRESS,      // User's logged-in wallet (connected wallet)
+    STORAGE_KEYS.ONCHAIN_ADDRESS,     // Grove-managed tipping wallet
+    STORAGE_KEYS.ENS_NAME,
+  ]);
+
+  const identityType = result[STORAGE_KEYS.CDP_IDENTITY_TYPE];
+  const identityValue = result[STORAGE_KEYS.CDP_IDENTITY_VALUE];
+  const clientAddress = result[STORAGE_KEYS.CLIENT_ADDRESS];      // Connected wallet
+  const onchainAddress = result[STORAGE_KEYS.ONCHAIN_ADDRESS];    // Tipping wallet
+  const ensName = result[STORAGE_KEYS.ENS_NAME];
+
+  const hasCdpIdentity = identityType && identityValue;
+  const hasTippingWallet = !!onchainAddress;
+
+  // Check if there's an active JWT to show/hide disconnect button
+  const activeJwt = await getActiveJWT();
+  if (accountDisconnectBtn) {
+    if (activeJwt) {
+      accountDisconnectBtn.classList.remove('hidden');
+    } else {
+      accountDisconnectBtn.classList.add('hidden');
+    }
+  }
+
+  // Show Account section if user has a tipping wallet
+  if (hasTippingWallet) {
+    accountInfoSection.classList.remove('hidden');
+
+    // Format tipping wallet address for display
+    const tippingDisplay = ensName || (onchainAddress.length > 20
+      ? `${onchainAddress.slice(0, 8)}...${onchainAddress.slice(-6)}`
+      : onchainAddress);
+
+    if (hasCdpIdentity) {
+      // CDP auth user: show email/phone + tipping wallet (no connected wallet)
+      accountIdentityRow.classList.remove('hidden');
+      connectedWalletRow.classList.add('hidden');
+
+      // Update identity display
+      accountInfoValue.textContent = identityValue;
+      accountInfoType.textContent = identityType === 'sms' ? 'Phone Number' : 'Email';
+
+      // Update icon based on type
+      if (identityType === 'sms') {
+        accountInfoIcon.innerHTML = `
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+        `;
+      } else {
+        accountInfoIcon.innerHTML = `
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+          <polyline points="22,6 12,13 2,6"></polyline>
+        `;
+      }
+    } else if (clientAddress) {
+      // Web3 user: show connected wallet + tipping wallet
+      accountIdentityRow.classList.add('hidden');
+      connectedWalletRow.classList.remove('hidden');
+
+      // Format connected wallet address for display
+      const connectedDisplay = clientAddress.length > 20
+        ? `${clientAddress.slice(0, 8)}...${clientAddress.slice(-6)}`
+        : clientAddress;
+      connectedWalletAddress.textContent = connectedDisplay;
+      connectedWalletAddress.title = clientAddress;
+    } else {
+      // No identity info to show (shouldn't happen, but handle gracefully)
+      accountIdentityRow.classList.add('hidden');
+      connectedWalletRow.classList.add('hidden');
+    }
+
+    // Always show tipping wallet
+    tippingWalletRow.classList.remove('hidden');
+    tippingWalletAddress.textContent = tippingDisplay;
+    tippingWalletAddress.title = onchainAddress;
+  } else {
+    accountInfoSection.classList.add('hidden');
+  }
+}
+
+async function refreshUIState() {
+  // Re-check JWT status and update UI
+  await loadJWT();
+  // Also fetch updated balance
+  await fetchBalance();
+  // Update account info display
+  await updateAccountInfoDisplay();
 }
 
 // Init

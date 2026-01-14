@@ -8,7 +8,12 @@
   "host_permissions": [
     "https://api.twitter.com/*",
     "https://twitter.com/*",
-    "https://x.com/*"
+    "https://x.com/*",
+    "https://api.cdp.coinbase.com/*",
+    "https://api.developer.coinbase.com/*",
+    "https://login.coinbase.com/*",
+    "https://api.grove.city/*",
+    "https://api.testnet.grove.city/*"
   ],
   "web_accessible_resources": [
     {

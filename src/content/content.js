@@ -959,13 +959,9 @@
     if (typeof TweetProcessor !== 'undefined') {
       TweetProcessor.reset();
     }
-    if (tipPopover) {
-      tipPopover.hide();
-      tipPopover = null;
-    }
-    if (firstTipModal) {
-      firstTipModal.hide();
-      firstTipModal = null;
+    if (tipModal) {
+      tipModal.hide();
+      tipModal = null;
     }
     currentAdapter = null;
     resolvedAddress = null;
