@@ -1200,7 +1200,7 @@ async function removeJwt() {
 
   // Only update auth state if we removed the active slot
   if (slotToRemove === activeSlot) {
-    await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
+    await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ONCHAIN_ADDRESS, STORAGE_KEYS.ENS_NAME]);
     await updateAuthState(null);
     await updateEarnAddressDisplay(null);
     updateEnsNameDisplay(null);
@@ -1257,6 +1257,7 @@ async function clearAllKeys() {
   // Clear auth state and CDP identity info
   await chrome.storage.local.remove([
     STORAGE_KEYS.CLIENT_ADDRESS,
+    STORAGE_KEYS.ONCHAIN_ADDRESS,
     STORAGE_KEYS.ENS_NAME,
     STORAGE_KEYS.CDP_IDENTITY_TYPE,
     STORAGE_KEYS.CDP_IDENTITY_VALUE,
@@ -1535,7 +1536,7 @@ async function fetchBalance() {
         await KeyManager.clearJWT(activeSlot);
 
         // Clear cached data
-        await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME, STORAGE_KEYS.LAST_BALANCES]);
+        await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ONCHAIN_ADDRESS, STORAGE_KEYS.ENS_NAME, STORAGE_KEYS.LAST_BALANCES]);
 
         // Update UI to show disconnected state
         await updateAuthState(null);
@@ -1550,26 +1551,40 @@ async function fetchBalance() {
       return;
     }
 
-    // Store client_address for Earn tab display
-    if (response.data.client_address) {
-      console.log('[Grove Extension] fetchBalance got client_address:', response.data.client_address);
-      const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
-      const previousAddress = result[STORAGE_KEYS.CLIENT_ADDRESS];
+    // Store addresses from API response
+    // client_address = user's logged-in wallet (connected wallet)
+    // onchain_address = Grove-managed tipping wallet
+    if (response.data.onchain_address) {
+      console.log('[Grove Extension] fetchBalance got addresses:', {
+        client: response.data.client_address,
+        onchain: response.data.onchain_address
+      });
 
-      await chrome.storage.local.set({ [STORAGE_KEYS.CLIENT_ADDRESS]: response.data.client_address });
-      // Show truncated address
-      const truncated = `${response.data.client_address.slice(0, 6)}...${response.data.client_address.slice(-4)}`;
+      const result = await chrome.storage.local.get([STORAGE_KEYS.ONCHAIN_ADDRESS]);
+      const previousAddress = result[STORAGE_KEYS.ONCHAIN_ADDRESS];
+
+      // Store both addresses
+      const addressUpdates = {
+        [STORAGE_KEYS.ONCHAIN_ADDRESS]: response.data.onchain_address,
+      };
+      if (response.data.client_address) {
+        addressUpdates[STORAGE_KEYS.CLIENT_ADDRESS] = response.data.client_address;
+      }
+      await chrome.storage.local.set(addressUpdates);
+
+      // Show truncated tipping wallet address in Earn tab
+      const truncated = `${response.data.onchain_address.slice(0, 6)}...${response.data.onchain_address.slice(-4)}`;
       console.log('[Grove Extension] Displaying truncated address:', truncated);
       await updateEarnAddressDisplay(truncated, false);
 
-      // If address changed, clear cached ENS name and re-resolve
-      if (previousAddress !== response.data.client_address) {
+      // If tipping wallet address changed, clear cached ENS name and re-resolve
+      if (previousAddress !== response.data.onchain_address) {
         await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
         loadAndResolveEnsName();
       }
     } else {
-      // No client_address in response - clear cached data and show setup card
-      await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
+      // No onchain_address in response - clear cached data and show setup card
+      await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ONCHAIN_ADDRESS, STORAGE_KEYS.ENS_NAME]);
       await updateEarnAddressDisplay(null);
       updateEnsNameDisplay(null);
     }
@@ -1635,8 +1650,8 @@ async function updateEarnAddressDisplay(displayValue, hasEnsName = false) {
 }
 
 async function loadClientAddress() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
-  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ONCHAIN_ADDRESS]);
+  const address = result[STORAGE_KEYS.ONCHAIN_ADDRESS];
 
   // Always show truncated address first, let loadAndResolveEnsName update to ENS after fresh resolution
   if (address) {
@@ -1648,8 +1663,8 @@ async function loadClientAddress() {
 }
 
 async function copyEarnAddress() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ENS_NAME]);
-  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ONCHAIN_ADDRESS, STORAGE_KEYS.ENS_NAME]);
+  const address = result[STORAGE_KEYS.ONCHAIN_ADDRESS];
   const ensName = result[STORAGE_KEYS.ENS_NAME];
 
   // Copy ENS name if available, otherwise copy 0x address
@@ -1698,8 +1713,8 @@ async function copyConnectedWallet() {
 }
 
 async function copyTippingWallet() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
-  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ONCHAIN_ADDRESS]);
+  const address = result[STORAGE_KEYS.ONCHAIN_ADDRESS];
 
   if (address) {
     try {
@@ -1800,8 +1815,8 @@ async function updateEnsNameDisplay(ensName) {
  * Always does fresh resolution - does not trust cached ENS name
  */
 async function loadAndResolveEnsName() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
-  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ONCHAIN_ADDRESS]);
+  const address = result[STORAGE_KEYS.ONCHAIN_ADDRESS];
 
   console.log('[Grove Extension] loadAndResolveEnsName called, address:', address);
 
@@ -3362,29 +3377,31 @@ async function updateAccountInfoDisplay() {
   const result = await chrome.storage.local.get([
     STORAGE_KEYS.CDP_IDENTITY_TYPE,
     STORAGE_KEYS.CDP_IDENTITY_VALUE,
-    STORAGE_KEYS.CLIENT_ADDRESS,
+    STORAGE_KEYS.CLIENT_ADDRESS,      // User's logged-in wallet (connected wallet)
+    STORAGE_KEYS.ONCHAIN_ADDRESS,     // Grove-managed tipping wallet
     STORAGE_KEYS.ENS_NAME,
   ]);
 
   const identityType = result[STORAGE_KEYS.CDP_IDENTITY_TYPE];
   const identityValue = result[STORAGE_KEYS.CDP_IDENTITY_VALUE];
-  const clientAddress = result[STORAGE_KEYS.CLIENT_ADDRESS];
+  const clientAddress = result[STORAGE_KEYS.CLIENT_ADDRESS];      // Connected wallet
+  const onchainAddress = result[STORAGE_KEYS.ONCHAIN_ADDRESS];    // Tipping wallet
   const ensName = result[STORAGE_KEYS.ENS_NAME];
 
   const hasCdpIdentity = identityType && identityValue;
-  const hasWalletAddress = !!clientAddress;
+  const hasTippingWallet = !!onchainAddress;
 
-  // Show Account section if user is connected (has wallet address)
-  if (hasWalletAddress) {
+  // Show Account section if user has a tipping wallet
+  if (hasTippingWallet) {
     accountInfoSection.classList.remove('hidden');
 
-    // Format wallet address for display
-    const walletDisplay = ensName || (clientAddress.length > 20
-      ? `${clientAddress.slice(0, 8)}...${clientAddress.slice(-6)}`
-      : clientAddress);
+    // Format tipping wallet address for display
+    const tippingDisplay = ensName || (onchainAddress.length > 20
+      ? `${onchainAddress.slice(0, 8)}...${onchainAddress.slice(-6)}`
+      : onchainAddress);
 
     if (hasCdpIdentity) {
-      // CDP auth user: show email/phone + tipping wallet
+      // CDP auth user: show email/phone + tipping wallet (no connected wallet)
       accountIdentityRow.classList.remove('hidden');
       connectedWalletRow.classList.add('hidden');
 
@@ -3404,16 +3421,27 @@ async function updateAccountInfoDisplay() {
           <polyline points="22,6 12,13 2,6"></polyline>
         `;
       }
+    } else if (clientAddress) {
+      // Web3 user: show connected wallet + tipping wallet
+      accountIdentityRow.classList.add('hidden');
+      connectedWalletRow.classList.remove('hidden');
+
+      // Format connected wallet address for display
+      const connectedDisplay = clientAddress.length > 20
+        ? `${clientAddress.slice(0, 8)}...${clientAddress.slice(-6)}`
+        : clientAddress;
+      connectedWalletAddress.textContent = connectedDisplay;
+      connectedWalletAddress.title = clientAddress;
     } else {
-      // Web3 user: only show tipping wallet (we don't have their connected wallet address)
+      // No identity info to show (shouldn't happen, but handle gracefully)
       accountIdentityRow.classList.add('hidden');
       connectedWalletRow.classList.add('hidden');
     }
 
     // Always show tipping wallet
     tippingWalletRow.classList.remove('hidden');
-    tippingWalletAddress.textContent = walletDisplay;
-    tippingWalletAddress.title = clientAddress;
+    tippingWalletAddress.textContent = tippingDisplay;
+    tippingWalletAddress.title = onchainAddress;
   } else {
     accountInfoSection.classList.add('hidden');
   }
