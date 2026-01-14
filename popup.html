@@ -759,13 +759,13 @@
           <h2 class="page-title">Account</h2>
         </div>
 
-        <!-- Account Section (identity - how they logged in) -->
+        <!-- Account Section (shows for all logged-in users) -->
         <div class="settings-group hidden" id="accountInfoSection">
           <div class="settings-label">Account</div>
-          <p class="settings-group-desc">How you're signed into Grove</p>
+          <p class="settings-group-desc">Your Grove account and wallet information</p>
 
           <!-- Identity row (email/phone) - shown for CDP auth users -->
-          <div class="account-info-card" id="accountIdentityRow">
+          <div class="account-info-card hidden" id="accountIdentityRow">
             <div class="account-info-icon" id="accountInfoIconWrapper">
               <svg id="accountInfoIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
@@ -773,19 +773,33 @@
               </svg>
             </div>
             <div class="account-info-content">
-              <div class="account-info-label" id="accountInfoType">Email</div>
+              <div class="account-info-label" id="accountInfoType">Signed in with</div>
               <div class="account-info-value" id="accountInfoValue">—</div>
             </div>
           </div>
-        </div>
 
-        <!-- Tipping Keys Section -->
-        <div class="settings-group">
-          <div class="settings-label">Tipping Keys</div>
-          <p class="settings-group-desc">API keys that authorize the extension to send tips</p>
+          <!-- Connected Wallet (for web3 users - same as tipping wallet) -->
+          <div class="account-info-card hidden" id="connectedWalletRow">
+            <div class="account-info-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <div class="account-info-content">
+              <div class="account-info-label">Connected Wallet</div>
+              <div class="account-info-value account-info-value-mono" id="connectedWalletAddress">—</div>
+            </div>
+            <button class="account-info-action" id="copyConnectedWalletBtn" title="Copy address">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+          </div>
 
           <!-- Tipping Wallet (where tips are sent from) -->
-          <div class="account-info-card" id="tippingWalletRow">
+          <div class="account-info-card hidden" id="tippingWalletRow">
             <div class="account-info-icon account-info-icon-primary">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
@@ -804,6 +818,12 @@
               </svg>
             </button>
           </div>
+        </div>
+
+        <!-- Tipping Keys Section -->
+        <div class="settings-group">
+          <div class="settings-label">Tipping Keys</div>
+          <p class="settings-group-desc">API keys that authorize the extension to send tips</p>
 
           <!-- Production Key Slot -->
           <div class="key-slot-card" id="productionKeySlot" data-slot="production">

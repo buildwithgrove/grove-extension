@@ -87,14 +87,19 @@ const closePrevKeysBtn = document.getElementById('closePrevKeysBtn');
 const earnAddressText = document.getElementById('earnAddressText');
 const copyEarnAddressBtn = document.getElementById('copyEarnAddressBtn');
 
-// Account Info Section (shows CDP identity - email/phone)
+// Account Info Section (shows for all logged-in users)
 const accountInfoSection = document.getElementById('accountInfoSection');
 const accountIdentityRow = document.getElementById('accountIdentityRow');
 const accountInfoIcon = document.getElementById('accountInfoIcon');
 const accountInfoValue = document.getElementById('accountInfoValue');
 const accountInfoType = document.getElementById('accountInfoType');
 
-// Tipping Wallet (in Tipping Keys section)
+// Connected Wallet (for web3 users in Account section)
+const connectedWalletRow = document.getElementById('connectedWalletRow');
+const connectedWalletAddress = document.getElementById('connectedWalletAddress');
+const copyConnectedWalletBtn = document.getElementById('copyConnectedWalletBtn');
+
+// Tipping Wallet (in Account section)
 const tippingWalletRow = document.getElementById('tippingWalletRow');
 const tippingWalletAddress = document.getElementById('tippingWalletAddress');
 const copyTippingWalletBtn = document.getElementById('copyTippingWalletBtn');
@@ -679,7 +684,12 @@ function setupEventListeners() {
     copyEarnAddressBtn.addEventListener('click', copyEarnAddress);
   }
 
-  // Tipping Keys - Copy Wallet Address Button
+  // Account - Copy Connected Wallet Button
+  if (copyConnectedWalletBtn) {
+    copyConnectedWalletBtn.addEventListener('click', copyConnectedWallet);
+  }
+
+  // Account - Copy Tipping Wallet Button
   if (copyTippingWalletBtn) {
     copyTippingWalletBtn.addEventListener('click', copyTippingWallet);
   }
@@ -1665,6 +1675,28 @@ async function copyEarnAddress() {
   }
 }
 
+async function copyConnectedWallet() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
+  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
+
+  if (address) {
+    try {
+      await navigator.clipboard.writeText(address);
+      showToast('Address copied!');
+
+      if (copyConnectedWalletBtn) {
+        copyConnectedWalletBtn.classList.add('copied');
+        setTimeout(() => {
+          copyConnectedWalletBtn.classList.remove('copied');
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('[Grove Extension] Copy failed:', err);
+      showToast('Failed to copy');
+    }
+  }
+}
+
 async function copyTippingWallet() {
   const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
   const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
@@ -1674,7 +1706,6 @@ async function copyTippingWallet() {
       await navigator.clipboard.writeText(address);
       showToast('Address copied!');
 
-      // Visual feedback
       if (copyTippingWalletBtn) {
         copyTippingWalletBtn.classList.add('copied');
         setTimeout(() => {
@@ -3322,9 +3353,10 @@ async function getSlotForEndpoint(endpoint) {
 }
 
 /**
- * Update the Account section and Tipping Wallet display in Settings
- * - Account section: Shows email/phone for CDP auth users only
- * - Tipping Wallet: Shows the wallet address where tips are sent from
+ * Update the Account section in Settings
+ * Shows for all logged-in users:
+ * - CDP users: email/phone + tipping wallet
+ * - Web3 users: connected wallet + tipping wallet
  */
 async function updateAccountInfoDisplay() {
   const result = await chrome.storage.local.get([
@@ -3342,46 +3374,51 @@ async function updateAccountInfoDisplay() {
   const hasCdpIdentity = identityType && identityValue;
   const hasWalletAddress = !!clientAddress;
 
-  // Account section - only show for CDP auth users (email/phone login)
-  if (hasCdpIdentity) {
+  // Show Account section if user is connected (has wallet address)
+  if (hasWalletAddress) {
     accountInfoSection.classList.remove('hidden');
 
-    // Update identity display
-    accountInfoValue.textContent = identityValue;
-    accountInfoType.textContent = identityType === 'sms' ? 'Phone Number' : 'Email';
+    // Format wallet address for display
+    const walletDisplay = ensName || (clientAddress.length > 20
+      ? `${clientAddress.slice(0, 8)}...${clientAddress.slice(-6)}`
+      : clientAddress);
 
-    // Update icon based on type
-    if (identityType === 'sms') {
-      accountInfoIcon.innerHTML = `
-        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-        <line x1="12" y1="18" x2="12.01" y2="18"></line>
-      `;
+    if (hasCdpIdentity) {
+      // CDP auth user: show email/phone + tipping wallet
+      accountIdentityRow.classList.remove('hidden');
+      connectedWalletRow.classList.add('hidden');
+
+      // Update identity display
+      accountInfoValue.textContent = identityValue;
+      accountInfoType.textContent = identityType === 'sms' ? 'Phone Number' : 'Email';
+
+      // Update icon based on type
+      if (identityType === 'sms') {
+        accountInfoIcon.innerHTML = `
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+        `;
+      } else {
+        accountInfoIcon.innerHTML = `
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+          <polyline points="22,6 12,13 2,6"></polyline>
+        `;
+      }
     } else {
-      accountInfoIcon.innerHTML = `
-        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-        <polyline points="22,6 12,13 2,6"></polyline>
-      `;
+      // Web3 user: show connected wallet (no email/phone)
+      accountIdentityRow.classList.add('hidden');
+      connectedWalletRow.classList.remove('hidden');
+
+      connectedWalletAddress.textContent = walletDisplay;
+      connectedWalletAddress.title = clientAddress;
     }
+
+    // Always show tipping wallet
+    tippingWalletRow.classList.remove('hidden');
+    tippingWalletAddress.textContent = walletDisplay;
+    tippingWalletAddress.title = clientAddress;
   } else {
     accountInfoSection.classList.add('hidden');
-  }
-
-  // Tipping Wallet - show in Tipping Keys section when connected
-  if (hasWalletAddress) {
-    tippingWalletRow.classList.remove('hidden');
-    // Show ENS name if available, otherwise truncate 0x address
-    if (ensName) {
-      tippingWalletAddress.textContent = ensName;
-      tippingWalletAddress.title = clientAddress;
-    } else {
-      const truncated = clientAddress.length > 20
-        ? `${clientAddress.slice(0, 8)}...${clientAddress.slice(-6)}`
-        : clientAddress;
-      tippingWalletAddress.textContent = truncated;
-      tippingWalletAddress.title = clientAddress;
-    }
-  } else {
-    tippingWalletRow.classList.add('hidden');
   }
 }
 
