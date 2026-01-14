@@ -298,6 +298,9 @@ async function init() {
   // Fetch balance after everything is loaded (also updates client address)
   await fetchBalance();
 
+  // Update account info display (shows identity/wallet in Settings)
+  await updateAccountInfoDisplay();
+
   // Resolve ENS name in the background (don't await to avoid blocking UI)
   loadAndResolveEnsName();
 
