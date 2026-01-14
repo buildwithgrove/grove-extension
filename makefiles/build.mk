@@ -2,6 +2,16 @@
 ### Extension Build    ###
 ##########################
 
+.PHONY: build_cdp
+build_cdp: ## Build CDP auth bundle (required before loading extension)
+	$(call print_info_section,Building CDP Auth Bundle)
+	@if [ ! -d "node_modules" ]; then \
+		printf "$(CYAN)$(INFO) Installing dependencies...$(RESET)\n"; \
+		$(NPM) install; \
+	fi
+	$(Q)$(NPM) run build:cdp
+	$(call print_success,CDP auth bundle built: dist/cdp-auth-bundle.js)
+
 # Extension metadata
 EXTENSION_NAME := grove-extension
 

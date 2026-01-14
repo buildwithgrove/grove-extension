@@ -28,7 +28,8 @@ var STORAGE_KEYS = {
   // State tracking
   HAS_TIPPED: 'GROVE_HAS_TIPPED',
   LAST_BALANCES: 'GROVE_LAST_BALANCES',
-  CLIENT_ADDRESS: 'GROVE_CLIENT_ADDRESS',
+  CLIENT_ADDRESS: 'GROVE_CLIENT_ADDRESS',       // User's logged-in wallet (connected wallet)
+  ONCHAIN_ADDRESS: 'GROVE_ONCHAIN_ADDRESS',     // Grove-managed tipping wallet
   ENS_NAME: 'GROVE_ENS_NAME',
 
   // Onboarding/UI state
@@ -36,4 +37,11 @@ var STORAGE_KEYS = {
   EARN_TAB_SEEN: 'GROVE_EARN_TAB_SEEN',
   LAUNCH_COUNT: 'GROVE_LAUNCH_COUNT',
   TWITTER_MODAL_SEEN: 'GROVE_TWITTER_MODAL_SEEN',
+
+  // CDP Auth state (persisted across popup close/reopen)
+  CDP_AUTH_STATE: 'GROVE_CDP_AUTH_STATE',
+
+  // CDP Identity info (stored after successful auth)
+  CDP_IDENTITY_TYPE: 'GROVE_CDP_IDENTITY_TYPE',   // 'email' | 'sms'
+  CDP_IDENTITY_VALUE: 'GROVE_CDP_IDENTITY_VALUE', // The email or phone number
 };

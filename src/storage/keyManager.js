@@ -21,18 +21,21 @@ const ENV_CONFIG = {
     label: 'Mainnet',
     storageKey: 'GROVE_JWT_PRODUCTION',
     appUrl: 'https://app.grove.city',
+    apiUrl: 'https://api.grove.city',
     isDevMode: false,
   },
   testnet: {
     label: 'Testnet',
     storageKey: 'GROVE_JWT_TESTNET',
     appUrl: 'https://app.testnet.grove.city',
+    apiUrl: 'https://api.testnet.grove.city',
     isDevMode: true,
   },
   localhost: {
     label: 'Localhost',
     storageKey: 'GROVE_JWT_LOCALHOST',
     appUrl: 'http://localhost:3000',
+    apiUrl: 'http://localhost:8000',
     isDevMode: true,
   },
 };
