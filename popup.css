@@ -2756,36 +2756,60 @@ button.quick-access-item:hover .quick-access-icon {
   color: var(--color-text-primary);
 }
 
-/* Account Wallet Card */
-.account-wallet-card {
+/* Settings Group Description */
+.settings-group-desc {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  margin: -4px 0 12px 0;
+  line-height: 1.4;
+}
+
+/* Account Info Cards */
+.account-info-card {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   background: var(--color-surface);
-  border-radius: 12px;
-  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  margin-bottom: 8px;
 }
 
-.account-wallet-icon {
+.account-info-card:last-child {
+  margin-bottom: 0;
+}
+
+.account-info-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: var(--color-primary-light);
-  border-radius: 10px;
-  color: var(--color-primary);
+  width: 36px;
+  height: 36px;
+  background: var(--color-bg);
+  border-radius: 8px;
+  color: var(--color-text-secondary);
   flex-shrink: 0;
 }
 
-.account-wallet-info {
+.account-info-icon-primary {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.account-info-content {
   flex: 1;
   min-width: 0;
 }
 
-.account-wallet-address {
-  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+.account-info-label {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.account-info-value {
   font-size: 14px;
   font-weight: 500;
   color: var(--color-text-primary);
@@ -2794,31 +2818,132 @@ button.quick-access-item:hover .quick-access-icon {
   white-space: nowrap;
 }
 
-.account-wallet-copy {
+.account-info-value-mono {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 13px;
+}
+
+.account-info-action {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   background: transparent;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: 6px;
   color: var(--color-text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
   flex-shrink: 0;
 }
 
-.account-wallet-copy:hover {
+.account-info-action:hover {
   background: var(--color-surface-hover);
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
 
-.account-wallet-copy.copied {
+.account-info-action.copied {
   background: var(--color-primary-light);
   border-color: var(--color-primary);
   color: var(--color-primary);
+}
+
+/* Key Slot Cards */
+.key-slot-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--color-surface);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.key-slot-card:hover {
+  background: var(--color-surface-hover);
+}
+
+.key-slot-card:last-of-type {
+  margin-bottom: 0;
+}
+
+.key-slot-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.key-slot-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-text-tertiary);
+}
+
+.key-slot-dot.connected {
+  background: var(--color-primary);
+  box-shadow: 0 0 6px var(--color-primary);
+}
+
+.key-slot-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.key-slot-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.key-slot-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.key-slot-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.key-slot-value {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.key-slot-action {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.key-slot-action:hover {
+  background: var(--color-primary-light);
 }
 
 /* JWT Slot Styles */

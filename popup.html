@@ -759,35 +759,39 @@
           <h2 class="page-title">Account</h2>
         </div>
 
-        <!-- Account Info (shown when logged in) -->
+        <!-- Your Account Section -->
         <div class="settings-group hidden" id="accountInfoSection">
-          <div class="settings-label" id="accountInfoLabel">Signed In As</div>
+          <div class="settings-label" id="accountInfoLabel">Your Account</div>
+          <p class="settings-group-desc">Your Grove wallet for sending and receiving tips</p>
+
           <!-- Identity row (email/phone) - shown for CDP auth users -->
-          <div class="settings-item hidden" id="accountIdentityRow">
-            <div class="settings-menu-icon">
-              <svg id="accountInfoIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <div class="account-info-card hidden" id="accountIdentityRow">
+            <div class="account-info-icon" id="accountInfoIconWrapper">
+              <svg id="accountInfoIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                 <polyline points="22,6 12,13 2,6"></polyline>
               </svg>
             </div>
-            <div class="settings-info">
-              <div class="settings-name" id="accountInfoValue">—</div>
-              <div class="settings-desc" id="accountInfoType">Email</div>
+            <div class="account-info-content">
+              <div class="account-info-label" id="accountInfoType">Email</div>
+              <div class="account-info-value" id="accountInfoValue">—</div>
             </div>
           </div>
+
           <!-- Wallet address card -->
-          <div class="account-wallet-card" id="accountAddressRow">
-            <div class="account-wallet-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <div class="account-info-card" id="accountAddressRow">
+            <div class="account-info-icon account-info-icon-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
                 <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
                 <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
               </svg>
             </div>
-            <div class="account-wallet-info">
-              <div class="account-wallet-address" id="accountAddressValue">—</div>
+            <div class="account-info-content">
+              <div class="account-info-label">Wallet Address</div>
+              <div class="account-info-value account-info-value-mono" id="accountAddressValue">—</div>
             </div>
-            <button class="account-wallet-copy" id="copyAccountAddressBtn" title="Copy address">
+            <button class="account-info-action" id="copyAccountAddressBtn" title="Copy address">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -796,52 +800,54 @@
           </div>
         </div>
 
+        <!-- Tipping Keys Section -->
         <div class="settings-group">
           <div class="settings-label">Tipping Keys</div>
+          <p class="settings-group-desc">API keys that authorize the extension to send tips on your behalf</p>
 
           <!-- Production Key Slot -->
-          <div class="settings-item jwt-slot" id="productionKeySlot" data-slot="production">
-            <div class="jwt-slot-indicator">
-              <span class="slot-dot" id="productionSlotDot"></span>
+          <div class="key-slot-card" id="productionKeySlot" data-slot="production">
+            <div class="key-slot-status">
+              <span class="key-slot-dot" id="productionSlotDot"></span>
             </div>
-            <div class="settings-info">
-              <div class="settings-name">
-                Mainnet
-                <span class="slot-active-badge hidden" id="productionActiveBadge">Active</span>
+            <div class="key-slot-info">
+              <div class="key-slot-header">
+                <span class="key-slot-name">Mainnet</span>
+                <span class="key-slot-badge hidden" id="productionActiveBadge">Active</span>
               </div>
-              <div class="settings-desc" id="productionKeyStatus">Not connected</div>
+              <div class="key-slot-value" id="productionKeyStatus">Not connected</div>
             </div>
-            <button class="btn-text" id="manageProductionKeyBtn">Manage</button>
+            <button class="key-slot-action" id="manageProductionKeyBtn">Manage</button>
           </div>
 
-          <!-- Testnet Key Slot -->
-          <div class="settings-item jwt-slot" id="testnetKeySlot" data-slot="testnet">
-            <div class="jwt-slot-indicator">
-              <span class="slot-dot" id="testnetSlotDot"></span>
+          <!-- Testnet Key Slot (Developer Mode only) -->
+          <div class="key-slot-card hidden" id="testnetKeySlot" data-slot="testnet">
+            <div class="key-slot-status">
+              <span class="key-slot-dot" id="testnetSlotDot"></span>
             </div>
-            <div class="settings-info">
-              <div class="settings-name">
-                Testnet
-                <span class="slot-active-badge hidden" id="testnetActiveBadge">Active</span>
+            <div class="key-slot-info">
+              <div class="key-slot-header">
+                <span class="key-slot-name">Testnet</span>
+                <span class="key-slot-badge hidden" id="testnetActiveBadge">Active</span>
               </div>
-              <div class="settings-desc" id="testnetKeyStatus">Not connected</div>
+              <div class="key-slot-value" id="testnetKeyStatus">Not connected</div>
             </div>
-            <button class="btn-text" id="manageTestnetKeyBtn">Manage</button>
+            <button class="key-slot-action" id="manageTestnetKeyBtn">Manage</button>
           </div>
 
           <!-- Localhost Key Slot (Developer Mode only) -->
-          <div class="settings-item jwt-slot hidden" id="localhostKeySlot" data-slot="localhost">
-            <div class="jwt-slot-indicator">
-              <span class="slot-dot" id="localhostSlotDot"></span>
+          <div class="key-slot-card hidden" id="localhostKeySlot" data-slot="localhost">
+            <div class="key-slot-status">
+              <span class="key-slot-dot" id="localhostSlotDot"></span>
             </div>
-            <div class="settings-info">
-              <div class="settings-name">
-                Localhost
-                <span class="slot-active-badge hidden" id="localhostActiveBadge">Active</span>
+            <div class="key-slot-info">
+              <div class="key-slot-header">
+                <span class="key-slot-name">Localhost</span>
+                <span class="key-slot-badge hidden" id="localhostActiveBadge">Active</span>
               </div>
-              <div class="settings-desc" id="localhostKeyStatus">Not connected</div>
+              <div class="key-slot-value" id="localhostKeyStatus">Not connected</div>
             </div>
-            <button class="btn-text" id="manageLocalhostKeyBtn">Manage</button>
+            <button class="key-slot-action" id="manageLocalhostKeyBtn">Manage</button>
           </div>
 
           <!-- JWT Edit Form (Hidden by default) -->
