@@ -695,10 +695,10 @@ function setupEventListeners() {
     copyTippingWalletBtn.addEventListener('click', copyTippingWallet);
   }
 
-  // Account - Logout Button
-  const accountLogoutBtn = document.getElementById('accountLogoutBtn');
-  if (accountLogoutBtn) {
-    accountLogoutBtn.addEventListener('click', handleAccountLogout);
+  // Account - Disconnect Button
+  const accountDisconnectBtn = document.getElementById('accountLogoutBtn');
+  if (accountDisconnectBtn) {
+    accountDisconnectBtn.addEventListener('click', handleAccountDisconnect);
   }
 
   // Listen for storage changes (e.g., when webapp injects JWT via external messaging)
@@ -1161,6 +1161,52 @@ async function saveJwtForSlot() {
   }
 }
 
+/**
+ * Core disconnect logic - archives key and clears slot
+ * @param {string} slotId - The slot to disconnect (e.g., 'production', 'testnet')
+ * @returns {Promise<{envLabel: string}>} - Info about what was disconnected
+ */
+async function disconnectSlot(slotId) {
+  const activeSlot = await KeyManager.getActiveSlotId();
+  const slotConfig = KeyManager.getEnvConfig(slotId);
+
+  // Archive the key before removing
+  const jwtToRemove = await KeyManager.getJWT(slotId);
+  if (jwtToRemove) {
+    await KeyManager.archiveCurrentKey(jwtToRemove, slotId);
+  }
+
+  // Clear the JWT in the slot
+  await KeyManager.clearJWT(slotId);
+
+  // Update the slot UI
+  await loadJwtSlots();
+
+  // If we removed the active slot, clear auth state and account info
+  if (slotId === activeSlot) {
+    await chrome.storage.local.remove([
+      STORAGE_KEYS.CLIENT_ADDRESS,
+      STORAGE_KEYS.ONCHAIN_ADDRESS,
+      STORAGE_KEYS.ENS_NAME,
+      STORAGE_KEYS.CDP_IDENTITY_TYPE,
+      STORAGE_KEYS.CDP_IDENTITY_VALUE,
+    ]);
+    await updateAuthState(null);
+    await updateEarnAddressDisplay(null);
+    updateEnsNameDisplay(null);
+    await updateAccountInfoDisplay();
+  }
+
+  await prevKeysUI.updateCount();
+
+  // Refresh previous keys list if visible
+  if (!prevKeysContainer.classList.contains('hidden')) {
+    await prevKeysUI.render();
+  }
+
+  return { envLabel: slotConfig ? slotConfig.label : slotId };
+}
+
 let removeJwtPending = false;
 
 async function removeJwt() {
@@ -1189,39 +1235,11 @@ async function removeJwt() {
   // Determine which slot to clear - use currentEditSlot if set, otherwise use active slot
   const activeSlot = await KeyManager.getActiveSlotId();
   const slotToRemove = currentEditSlot || activeSlot;
-  const slotConfig = KeyManager.getEnvConfig(slotToRemove);
 
-  // Get the JWT from the slot being removed
-  const jwtToRemove = await KeyManager.getJWT(slotToRemove);
-
-  // Archive JWT before removing
-  if (jwtToRemove) {
-    await KeyManager.archiveCurrentKey(jwtToRemove, slotToRemove);
-  }
-
-  // Clear the JWT in the slot
-  await KeyManager.clearJWT(slotToRemove);
-
-  // Update the slot UI
-  await loadJwtSlots();
-
-  // Only update auth state if we removed the active slot
-  if (slotToRemove === activeSlot) {
-    await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ONCHAIN_ADDRESS, STORAGE_KEYS.ENS_NAME]);
-    await updateAuthState(null);
-    await updateEarnAddressDisplay(null);
-    updateEnsNameDisplay(null);
-  }
+  const { envLabel } = await disconnectSlot(slotToRemove);
 
   hideJwtEdit();
-  const envLabel = slotConfig ? slotConfig.label : slotToRemove;
   showToast(`${envLabel} key removed`);
-  await prevKeysUI.updateCount();
-
-  // Refresh previous keys list if visible
-  if (!prevKeysContainer.classList.contains('hidden')) {
-    await prevKeysUI.render();
-  }
 }
 
 let clearAllKeysPending = false;
@@ -1743,42 +1761,15 @@ async function copyTippingWallet() {
 
 /**
  * Handle disconnect from Account section
- * Archives current key and clears active slot
+ * Uses shared disconnectSlot flow
  */
-async function handleAccountLogout() {
+async function handleAccountDisconnect() {
   const activeSlot = await KeyManager.getActiveSlotId();
-  const slotConfig = KeyManager.getEnvConfig(activeSlot);
-
-  // Archive the current key before removing
-  const currentJwt = await KeyManager.getJWT(activeSlot);
-  if (currentJwt) {
-    await KeyManager.archiveCurrentKey(currentJwt, activeSlot);
-  }
-
-  // Clear only the active slot
-  await KeyManager.clearJWT(activeSlot);
-
-  // Clear auth state and account info
-  await chrome.storage.local.remove([
-    STORAGE_KEYS.CLIENT_ADDRESS,
-    STORAGE_KEYS.ONCHAIN_ADDRESS,
-    STORAGE_KEYS.ENS_NAME,
-    STORAGE_KEYS.CDP_IDENTITY_TYPE,
-    STORAGE_KEYS.CDP_IDENTITY_VALUE,
-  ]);
-
-  // Update UI
-  await updateAuthState(null);
-  updateEarnAddressDisplay(null);
-  updateEnsNameDisplay(null);
-  await updateAccountInfoDisplay();
-  await loadJwtSlots();
-  await prevKeysUI.updateCount();
+  const { envLabel } = await disconnectSlot(activeSlot);
 
   // Go back to main settings
   showSettingsView('main');
 
-  const envLabel = slotConfig ? slotConfig.label : activeSlot;
   showToast(`Disconnected from ${envLabel}`);
 }
 
