@@ -107,6 +107,7 @@ class TipButton {
       z-index: 2 !important;
       display: flex !important;
       align-items: center !important;
+      white-space: nowrap !important;
     `;
 
     // Create emoji span
