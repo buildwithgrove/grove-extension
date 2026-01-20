@@ -630,7 +630,7 @@ function setupEventListeners() {
   };
 
   if (prevKeysSection) {
-    const prevKeysRow = prevKeysSection.querySelector('.settings-row');
+    const prevKeysRow = prevKeysSection.querySelector('.account-info-card');
     if (prevKeysRow) {
       prevKeysRow.addEventListener('click', handlePrevKeysClick);
     }
