@@ -575,7 +575,8 @@ const TweetTipHandler = {
                     username: username,
                     chain: chainName,
                     tx_link: txLink,
-                    grove_link: 'grove.city'
+                    grove_link: 'grove.city',
+                    amount: this.callbacks.formatTipAmount ? this.callbacks.formatTipAmount(tipAmount) : tipAmount
                   });
                 }
 

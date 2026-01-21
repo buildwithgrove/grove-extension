@@ -6,13 +6,15 @@
 
 /**
  * Default auto-reply message template for tips
- * Placeholders: {username}, {chain}, {tx_link}, {grove_link}
+ * Placeholders: {username}, {chain}, {tx_link}, {grove_link}, {amount}
  */
-var DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I just sent you a tip on {chain} via #TipWithGrove!
+var DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I just sent you a {amount} USDC tip on {chain} via #TipWithGrove! {grove_link}
 
-Tx: {tx_link}
+We're turning onchain tips into content creator lotteries.
 
-Tip creators you love → {grove_link}`;
+DMs are open!
+
+{tx_link}`;
 
 var GROVE_COLORS = {
   primary: 'var(--grove-primary)',

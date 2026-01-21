@@ -714,7 +714,8 @@
                 username: username,
                 chain: chainName,
                 tx_link: txLink,
-                grove_link: 'grove.city'
+                grove_link: 'grove.city',
+                amount: typeof formatTipAmount === 'function' ? formatTipAmount(tipAmount) : tipAmount
               });
 
               try {

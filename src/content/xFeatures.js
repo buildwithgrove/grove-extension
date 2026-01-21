@@ -24,6 +24,9 @@ function buildAutoReplyMessage(template, data) {
   if (data.grove_link) {
     message = message.replace(/{grove_link}/g, data.grove_link);
   }
+  if (data.amount) {
+    message = message.replace(/{amount}/g, data.amount);
+  }
   return message;
 }
 
@@ -49,6 +52,7 @@ async function performXActionsAfterTip(options) {
     replyEnabled,
     replyTemplate,
     username,
+    amount,
     chainName,
     explorerBaseUrl,
     explorerSuffix = ''
@@ -109,7 +113,8 @@ async function performXActionsAfterTip(options) {
         username: username,
         chain: chainName,
         tx_link: txLink,
-        grove_link: 'grove.city'
+        grove_link: 'grove.city',
+        amount: amount
       });
 
       try {
