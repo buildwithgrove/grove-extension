@@ -187,8 +187,8 @@ const DEFAULT_ENV = 'prod';
 const DEFAULT_ENDPOINT = 'production';
 // FormatUtils.DEFAULT_BALANCE_DISPLAY is now in FormatUtils
 const TOP_UP_URLS = {
-  mainnet: 'https://app.grove.city/profile?tab=tip&action=topup',
-  testnet: 'https://app.testnet.grove.city/profile?tab=tip&action=topup'
+  mainnet: 'https://app.grove.city/profile?action=topup',
+  testnet: 'https://app.testnet.grove.city/profile?action=topup'
 };
 const MAINNET_CHAINS = ['base', 'solana'];
 const TESTNET_CHAINS = ['base-sepolia', 'solana-devnet'];
