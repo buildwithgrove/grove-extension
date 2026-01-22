@@ -69,6 +69,9 @@ const localhostKeySlot = document.getElementById('localhostKeySlot');
 const manageProductionKeyBtn = document.getElementById('manageProductionKeyBtn');
 const manageTestnetKeyBtn = document.getElementById('manageTestnetKeyBtn');
 const manageLocalhostKeyBtn = document.getElementById('manageLocalhostKeyBtn');
+const copyProductionKeyBtn = document.getElementById('copyProductionKeyBtn');
+const copyTestnetKeyBtn = document.getElementById('copyTestnetKeyBtn');
+const copyLocalhostKeyBtn = document.getElementById('copyLocalhostKeyBtn');
 const clearAllKeysItem = document.getElementById('clearAllKeysItem');
 const clearAllKeysBtn = document.getElementById('clearAllKeysBtn');
 const jwtEditSlotLabel = document.getElementById('jwtEditSlotLabel');
@@ -698,6 +701,17 @@ function setupEventListeners() {
     copyTippingWalletBtn.addEventListener('click', copyTippingWallet);
   }
 
+  // Tipping Keys - Copy Key Buttons
+  if (copyProductionKeyBtn) {
+    copyProductionKeyBtn.addEventListener('click', () => copyTippingKey('production', copyProductionKeyBtn));
+  }
+  if (copyTestnetKeyBtn) {
+    copyTestnetKeyBtn.addEventListener('click', () => copyTippingKey('testnet', copyTestnetKeyBtn));
+  }
+  if (copyLocalhostKeyBtn) {
+    copyLocalhostKeyBtn.addEventListener('click', () => copyTippingKey('localhost', copyLocalhostKeyBtn));
+  }
+
   // Account - Disconnect Button
   if (accountDisconnectBtn) {
     accountDisconnectBtn.addEventListener('click', handleAccountDisconnect);
@@ -922,7 +936,7 @@ async function loadJwtSlots() {
   const activeSlot = await KeyManager.getActiveSlotId();
 
   // Helper to update slot UI
-  function updateSlotUI(dot, status, badge, jwt, isActive) {
+  function updateSlotUI(dot, status, badge, copyBtn, jwt, isActive) {
     if (dot) {
       dot.classList.toggle('connected', !!jwt);
       dot.classList.toggle('disconnected', !jwt);
@@ -939,12 +953,15 @@ async function loadJwtSlots() {
     if (badge) {
       badge.classList.toggle('hidden', !isActive);
     }
+    if (copyBtn) {
+      copyBtn.classList.toggle('hidden', !jwt);
+    }
   }
 
   // Update each slot
-  updateSlotUI(productionSlotDot, productionKeyStatus, productionActiveBadge, prodJwt, activeSlot === 'production');
-  updateSlotUI(testnetSlotDot, testnetKeyStatus, testnetActiveBadge, testnetJwt, activeSlot === 'testnet');
-  updateSlotUI(localhostSlotDot, localhostKeyStatus, localhostActiveBadge, localhostJwt, activeSlot === 'localhost');
+  updateSlotUI(productionSlotDot, productionKeyStatus, productionActiveBadge, copyProductionKeyBtn, prodJwt, activeSlot === 'production');
+  updateSlotUI(testnetSlotDot, testnetKeyStatus, testnetActiveBadge, copyTestnetKeyBtn, testnetJwt, activeSlot === 'testnet');
+  updateSlotUI(localhostSlotDot, localhostKeyStatus, localhostActiveBadge, copyLocalhostKeyBtn, localhostJwt, activeSlot === 'localhost');
 
   const devMode = await isDevMode();
   updateTestnetKeyVisibility(devMode);
@@ -1757,6 +1774,32 @@ async function copyTippingWallet() {
         copyTippingWalletBtn.classList.add('copied');
         setTimeout(() => {
           copyTippingWalletBtn.classList.remove('copied');
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('[Grove Extension] Copy failed:', err);
+      showToast('Failed to copy');
+    }
+  }
+}
+
+/**
+ * Copy a tipping key to clipboard
+ * @param {string} slotId - The slot ID ('production', 'testnet', or 'localhost')
+ * @param {HTMLElement} btn - The copy button element for visual feedback
+ */
+async function copyTippingKey(slotId, btn) {
+  const jwt = await KeyManager.getJWT(slotId);
+
+  if (jwt) {
+    try {
+      await navigator.clipboard.writeText(jwt);
+      showToast('Key copied!');
+
+      if (btn) {
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.classList.remove('copied');
         }, 2000);
       }
     } catch (err) {
