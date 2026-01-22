@@ -1577,7 +1577,7 @@ async function fetchBalance() {
     // Fetch account data from API
     const response = await GroveAPI.getAccount(jwt);
 
-    if (!response.success || !response.data?.balances) {
+    if (!response.success || !response.data?.wallet_balances) {
       console.error('[Grove Extension] Balance fetch failed:', response.error);
 
       // Check if this is an auth/account failure (401/403 for invalid JWT, 404 for account not found)
@@ -1648,8 +1648,12 @@ async function fetchBalance() {
       updateEnsNameDisplay(null);
     }
 
-    // Find balance for current chain (USDC)
-    const chainBalance = response.data.balances.find(
+    // Find the server wallet (Grove-controlled tipping wallet)
+    const serverWallet = response.data.wallet_balances.find(
+      w => w.wallet_type === 'server'
+    );
+    // Find USDC balance within the server wallet for current chain
+    const chainBalance = serverWallet?.balances.find(
       b => b.network === chain && b.token_symbol === 'USDC'
     );
 
