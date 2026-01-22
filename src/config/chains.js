@@ -36,12 +36,44 @@ const CHAIN_CONFIG = {
 const DEFAULT_CHAIN = 'base';
 
 /**
+ * Mapping from mainnet chains to their testnet equivalents
+ */
+const TESTNET_CHAIN_MAP = {
+  'base': 'base-sepolia',
+  'solana': 'solana-devnet'
+};
+
+/**
  * Normalize chain name from API format (e.g., 'base_sepolia' -> 'base-sepolia')
  * @param {string} rawChain - Raw chain name from API or storage
  * @returns {string} - Normalized chain key
  */
 function normalizeChainName(rawChain) {
   return (rawChain || DEFAULT_CHAIN).toLowerCase().replace(/_/g, '-');
+}
+
+/**
+ * Get the testnet equivalent of a chain
+ * @param {string} rawChain - Raw chain name
+ * @returns {string} - Testnet chain key, or the original if already testnet or no mapping exists
+ */
+function getTestnetChain(rawChain) {
+  const chain = normalizeChainName(rawChain);
+  return TESTNET_CHAIN_MAP[chain] || chain;
+}
+
+/**
+ * Get the appropriate chain for explorer URLs based on environment settings
+ * @param {string} rawChain - Raw chain name
+ * @param {Object} settings - Storage settings with groveEnvironment and groveEndpoint
+ * @returns {string} - Chain to use for explorer URLs (testnet if in test environment)
+ */
+function getExplorerChain(rawChain, settings = {}) {
+  const env = settings.groveEnvironment || 'prod';
+  const storedEndpoint = settings.groveEndpoint || 'production';
+  const endpoint = env === 'local' ? storedEndpoint : 'production';
+  const isTestEnvironment = endpoint === 'localhost' || endpoint === 'testnet';
+  return isTestEnvironment ? getTestnetChain(rawChain) : rawChain;
 }
 
 /**
@@ -70,6 +102,8 @@ if (typeof window !== 'undefined') {
   window.CHAIN_CONFIG = CHAIN_CONFIG;
   window.DEFAULT_CHAIN = DEFAULT_CHAIN;
   window.normalizeChainName = normalizeChainName;
+  window.getTestnetChain = getTestnetChain;
+  window.getExplorerChain = getExplorerChain;
   window.getChainConfig = getChainConfig;
   window.getExplorerTxUrl = getExplorerTxUrl;
 }

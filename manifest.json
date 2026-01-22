@@ -36,6 +36,7 @@
       "matches": ["https://twitter.com/*", "https://x.com/*"],
       "js": [
         "src/config/storageKeys.js",
+        "src/config/chains.js",
         "src/utils/darkMode.js",
         "src/utils/addressCache.js",
         "src/parsers/addressMatchers.js",

@@ -691,17 +691,17 @@
       if (platformName === 'twitter' && typeof XAuth !== 'undefined') {
         try {
           // Get X feature settings
-          const xSettings = await chrome.storage.local.get(['GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'groveChain']);
+          const xSettings = await chrome.storage.local.get(['GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'groveChain', 'groveEndpoint', 'groveEnvironment']);
           const autoReplyEnabled = xSettings.GROVE_AUTO_REPLY !== false;
 
           if (autoReplyEnabled) {
             const isLoggedIn = await XAuth.isLoggedIn();
             if (isLoggedIn && username) {
               // Get chain config for the message from centralized config
+              // Use testnet explorer URL when on localhost or testnet endpoints
               const rawChain = xSettings.groveChain || 'base';
-              const config = typeof getChainConfig === 'function'
-                ? getChainConfig(rawChain)
-                : { name: 'Base', explorerUrl: 'https://basescan.org' }; // Fallback
+              const explorerChain = getExplorerChain(rawChain, xSettings);
+              const config = getChainConfig(explorerChain);
               const chainName = config.name;
               const explorerBaseUrl = `${config.explorerUrl}/tx/`;
 

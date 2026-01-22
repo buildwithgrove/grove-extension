@@ -454,7 +454,7 @@ const TweetTipHandler = {
       }
 
       // Get other settings from storage
-      const result = await chrome.storage.local.get(['GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'GROVE_LIKE_ON_TIP', 'groveChain']);
+      const result = await chrome.storage.local.get(['GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'GROVE_LIKE_ON_TIP', 'groveChain', 'groveEndpoint', 'groveEnvironment']);
 
       // Use xActions from modal if provided, otherwise read from storage
       if (xActions) {
@@ -468,10 +468,10 @@ const TweetTipHandler = {
       console.log('[Grove TweetTipHandler] Storage loaded:', { hasJwt: !!jwt, autoReply: autoReplyEnabled, likeOnTip: likeOnTipEnabled, chain: result.groveChain, fromModal: !!xActions });
 
       // Get friendly chain name and explorer URL from centralized config
+      // Use testnet explorer URL when on localhost or testnet endpoints
       const rawChain = result.groveChain || 'base';
-      const config = typeof getChainConfig === 'function'
-        ? getChainConfig(rawChain)
-        : { name: 'Base', explorerUrl: 'https://basescan.org' }; // Fallback
+      const explorerChain = getExplorerChain(rawChain, result);
+      const config = getChainConfig(explorerChain);
       chainName = config.name;
       explorerBaseUrl = `${config.explorerUrl}/tx/`;
 
