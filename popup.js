@@ -173,6 +173,7 @@ const cdpResendCodeBtn = document.getElementById('cdpResendCodeBtn');
 const cdpCancelOtpBtn = document.getElementById('cdpCancelOtpBtn');
 const cdpLoadingModal = document.getElementById('cdpLoadingModal');
 const cdpLoadingMessage = document.getElementById('cdpLoadingMessage');
+const walletSignInBtn = document.getElementById('walletSignInBtn');
 
 // CDP Auth State
 let cdpAuthState = {
@@ -191,7 +192,13 @@ const DEFAULT_ENDPOINT = 'production';
 // FormatUtils.DEFAULT_BALANCE_DISPLAY is now in FormatUtils
 const TOP_UP_URLS = {
   mainnet: 'https://app.grove.city/profile?action=topup',
-  testnet: 'https://app.testnet.grove.city/profile?action=topup'
+  testnet: 'https://app.testnet.grove.city/profile?action=topup',
+  localhost: 'http://localhost:3000/profile?action=topup'
+};
+const APP_URLS = {
+  production: 'https://app.grove.city',
+  testnet: 'https://app.testnet.grove.city',
+  localhost: 'http://localhost:3000'
 };
 const MAINNET_CHAINS = ['base', 'solana'];
 const TESTNET_CHAINS = ['base-sepolia', 'solana-devnet'];
@@ -241,6 +248,7 @@ async function init() {
     // Update chain UI
     updateChainUI(chain);
     updateTopUpLink(chain);
+    updateAppLinks();
     updateNetworkSelectorVisibility(environment);
     updateTestnetKeyVisibility(slotConfig?.isDevMode);
 
@@ -764,6 +772,7 @@ function setupEventListeners() {
       const newChain = changes[STORAGE_KEYS.CHAIN].newValue;
       updateChainUI(newChain);
       updateTopUpLink(newChain);
+      updateAppLinks();
       await fetchBalance();
     }
   });
@@ -1121,6 +1130,7 @@ async function saveJwt() {
   // Update chain UI
   updateChainUI(chain);
   updateTopUpLink(chain);
+  updateAppLinks();
 
   await updateAuthState(token);
   hideJwtEdit();
@@ -2007,6 +2017,7 @@ async function handleDevModeToggle(e) {
     setTestModeBannerText('testnet');
     updateChainUI('base-sepolia');
     updateTopUpLink('base-sepolia');
+    updateAppLinks();
     updateNetworkSelectorVisibility('testnet');
 
     // Switch to testnet JWT context
@@ -2045,6 +2056,7 @@ async function handleDevModeToggle(e) {
     setTestModeBannerText('production');
     updateChainUI('base');
     updateTopUpLink('base');
+    updateAppLinks();
     updateNetworkSelectorVisibility('production');
 
     // Switch to production JWT context
@@ -2121,6 +2133,7 @@ async function handleEndpointChange(e) {
   await updateAuthState(jwt);
   updateChainUI(chain);
   updateTopUpLink(chain);
+  updateAppLinks();
   await fetchBalance();
 
   if (chainChangedBecauseEndpoint) {
@@ -2156,6 +2169,7 @@ async function loadChain() {
 
     updateChainUI(chain);
     updateTopUpLink(chain);
+    updateAppLinks();
 }
 
 function updateChainUI(chain) {
@@ -2248,6 +2262,7 @@ async function handleChainSelection(e, silent = false) {
   await chrome.storage.local.set({ [STORAGE_KEYS.CHAIN]: chain });
   updateChainUI(chain);
   updateTopUpLink(chain);
+  updateAppLinks();
   chainDropdown.classList.add('hidden');
 
   // Switch API endpoint based on chain (testnet vs mainnet)
@@ -2274,11 +2289,36 @@ async function handleChainSelection(e, silent = false) {
   refreshLeaderboard();
 }
 
-function updateTopUpLink(chain) {
+async function updateTopUpLink(chain) {
   if (!topUpBtn) return;
+
+  // Check if we're in localhost mode
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
+  const endpoint = result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
+
+  if (endpoint === 'localhost') {
+    topUpBtn.href = TOP_UP_URLS.localhost;
+    return;
+  }
+
   const config = NETWORKS[chain] || NETWORKS[DEFAULT_CHAIN];
   const isTestnet = (config.type || '').toLowerCase() === 'testnet';
   topUpBtn.href = isTestnet ? TOP_UP_URLS.testnet : TOP_UP_URLS.mainnet;
+}
+
+/**
+ * Update all app-related links based on current endpoint
+ * Should be called on init and when endpoint changes
+ */
+async function updateAppLinks() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
+  const endpoint = result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
+  const appUrl = APP_URLS[endpoint] || APP_URLS.production;
+
+  // Update wallet sign-in button
+  if (walletSignInBtn) {
+    walletSignInBtn.href = appUrl + '/';
+  }
 }
 
 /**
