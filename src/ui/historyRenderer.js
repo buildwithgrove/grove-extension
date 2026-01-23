@@ -207,6 +207,69 @@ const HistoryRenderer = {
    */
   renderHistoryList(transactions) {
     return transactions.map(tx => this.renderHistoryEntry(tx)).join('');
+  },
+
+  /**
+   * Calculate summary statistics from transactions
+   * @param {Array} transactions - Array of transaction objects
+   * @returns {Object} Summary with given, earned, deposits totals and counts
+   */
+  calculateSummary(transactions) {
+    const summary = {
+      givenAmount: 0,
+      givenCount: 0,
+      earnedAmount: 0,
+      earnedCount: 0,
+      depositsAmount: 0,
+      depositsCount: 0
+    };
+
+    for (const tx of transactions) {
+      // Skip failed transactions from summary
+      if (tx.status === 'failed') continue;
+
+      const amount = parseFloat(tx.amount_usd) || 0;
+      if (tx.type === 'tip_sent') {
+        summary.givenAmount += amount;
+        summary.givenCount++;
+      } else if (tx.type === 'tip_received') {
+        summary.earnedAmount += amount;
+        summary.earnedCount++;
+      } else if (tx.type === 'deposit') {
+        summary.depositsAmount += amount;
+        summary.depositsCount++;
+      }
+    }
+
+    return summary;
+  },
+
+  /**
+   * Render compact stats summary row
+   * @param {Object} summary - Summary object from calculateSummary
+   * @returns {string} HTML string
+   */
+  renderStatsSummary(summary) {
+    const givenLabel = summary.givenCount === 1 ? 'tip' : 'tips';
+    const earnedLabel = summary.earnedCount === 1 ? 'tip' : 'tips';
+    const depositsLabel = summary.depositsCount === 1 ? 'deposit' : 'deposits';
+
+    return `
+      <div class="history-stats-row">
+        <div class="history-stat-item given">
+          <div class="history-stat-value">-${FormatUtils.formatStatUSD(summary.givenAmount)}</div>
+          <div class="history-stat-label">${summary.givenCount} ${givenLabel}</div>
+        </div>
+        <div class="history-stat-item earned">
+          <div class="history-stat-value">+${FormatUtils.formatStatUSD(summary.earnedAmount)}</div>
+          <div class="history-stat-label">${summary.earnedCount} ${earnedLabel}</div>
+        </div>
+        <div class="history-stat-item deposits">
+          <div class="history-stat-value">+${FormatUtils.formatStatUSD(summary.depositsAmount)}</div>
+          <div class="history-stat-label">${summary.depositsCount} ${depositsLabel}</div>
+        </div>
+      </div>
+    `;
   }
 };
 

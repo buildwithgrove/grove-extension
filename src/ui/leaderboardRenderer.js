@@ -8,7 +8,13 @@ const LeaderboardRenderer = {
   icons: {
     dollar: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
     xPlatform: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
-    link: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'
+    link: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+    // Platform icons
+    grove: '<svg width="14" height="14" viewBox="0 0 100 100" fill="currentColor"><path d="M50 5C25.1 5 5 25.1 5 50s20.1 45 45 45 45-20.1 45-45S74.9 5 50 5zm0 80c-19.3 0-35-15.7-35-35s15.7-35 35-35 35 15.7 35 35-15.7 35-35 35z"/><path d="M50 25c-13.8 0-25 11.2-25 25s11.2 25 25 25 25-11.2 25-25-11.2-25-25-25zm0 40c-8.3 0-15-6.7-15-15s6.7-15 15-15 15 6.7 15 15-6.7 15-15 15z"/></svg>',
+    substack: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z"/></svg>',
+    base: '<svg width="14" height="14" viewBox="0 0 111 111" fill="currentColor"><path d="M54.921 110.034c30.291 0 54.86-24.569 54.86-54.86S85.212.314 54.921.314C26.042.314 2.128 22.678.079 51.334h72.102v7.396H.08c2.048 28.656 25.963 51.304 54.842 51.304z"/></svg>',
+    ens: '<svg width="14" height="14" viewBox="0 0 48 48" fill="currentColor"><path d="M10.502 6.748c.509-.841 1.437-1.322 2.382-1.322a2.7 2.7 0 011.404.403l18.09 11.19a3.4 3.4 0 011.467 2.292c.088.491.04.898.04 1.475l-.002 8.99c-.022.55-.088 1.16-.44 1.74l-5.854 9.678a.32.32 0 01-.556-.025l-.027-.072-5.476-17.52a3.74 3.74 0 01.02-2.213l3.62-10.72a.26.26 0 00-.347-.327l-12.98 6.067a.32.32 0 01-.465-.295l.002-8.56c.001-.32.041-.545.122-.782zm26.996 34.504c-.509.841-1.437 1.322-2.382 1.322a2.7 2.7 0 01-1.404-.403l-18.09-11.19a3.4 3.4 0 01-1.467-2.292c-.088-.491-.04-.898-.04-1.475l.002-8.99c.022-.55.088-1.16.44-1.74l5.854-9.678a.32.32 0 01.556.025l.027.072 5.476 17.52a3.74 3.74 0 01-.02 2.213l-3.62 10.72a.26.26 0 00.347.327l12.98-6.067a.32.32 0 01.465.295l-.002 8.56c-.001.32-.041.545-.122.782z"/></svg>',
+    globe: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
   },
 
   /**
@@ -115,6 +121,130 @@ const LeaderboardRenderer = {
   },
 
   /**
+   * Format address with shorter truncation (8 chars total)
+   * @param {string} address - Wallet address
+   * @returns {string} Shortened address (4...4)
+   */
+  formatAddressShort(address) {
+    if (!address) return 'Unknown';
+    if (address.length <= 10) return address;
+    return `${address.slice(0, 4)}...${address.slice(-4)}`;
+  },
+
+  /**
+   * Detect platform from URL or destination
+   * @param {string} destination - URL or destination string
+   * @returns {string} Platform name: 'x', 'substack', 'grove', 'base', 'ens', 'website', or null
+   */
+  detectPlatform(destination) {
+    if (!destination) return null;
+    const lower = destination.toLowerCase();
+    if (lower.includes('x.com') || lower.includes('twitter.com')) return 'x';
+    if (lower.includes('substack.com')) return 'substack';
+    if (lower.includes('grove.city')) return 'grove';
+    if (lower.includes('base.org') || lower.includes('basescan.org')) return 'base';
+    if (lower.includes('ens.domains') || lower.endsWith('.eth')) return 'ens';
+    // If it looks like a URL, it's a website
+    if (lower.includes('http') || lower.includes('www.') || lower.includes('.com') || lower.includes('.org') || lower.includes('.io')) {
+      return 'website';
+    }
+    return null;
+  },
+
+  /**
+   * Get platform icon HTML with link
+   * @param {string} platform - Platform name
+   * @param {string} url - URL to link to
+   * @returns {string} HTML string
+   */
+  getPlatformIcon(platform, url) {
+    const iconMap = {
+      'x': { icon: this.icons.xPlatform, title: 'View on X', cssClass: 'platform-x' },
+      'substack': { icon: this.icons.substack, title: 'View on Substack', cssClass: 'platform-substack' },
+      'grove': { icon: this.icons.grove, title: 'View on Grove', cssClass: 'platform-grove' },
+      'base': { icon: this.icons.base, title: 'View on Base', cssClass: 'platform-base' },
+      'ens': { icon: this.icons.ens, title: 'View on ENS', cssClass: 'platform-ens' },
+      'website': { icon: this.icons.globe, title: 'Visit website', cssClass: 'platform-website' }
+    };
+
+    const config = iconMap[platform];
+    if (!config || !url) {
+      return '<span class="history-platform-link history-platform-link-empty"></span>';
+    }
+
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="history-platform-link platform-icon ${config.cssClass}" title="${config.title}">${config.icon}</a>`;
+  },
+
+  /**
+   * Get display name for leaderboard entry with priority logic
+   * Priority: handle > base_name > ens_name > context username > parsed handle > address
+   * @param {Object} entry - Leaderboard entry
+   * @param {boolean} isEarner - Whether this is an earner entry (affects context field name)
+   * @returns {Object} { displayName, url, platform }
+   */
+  getDisplayName(entry, isEarner = false) {
+    const ctx = entry.lastTipContext || {};
+    const parsed = entry.lastTipDestination ? parseDestination(entry.lastTipDestination) : {};
+
+    // 1. Grove handle (from API)
+    if (entry.handle) {
+      return {
+        displayName: entry.handle,
+        url: `https://grove.city/@${entry.handle}`,
+        platform: 'grove'
+      };
+    }
+
+    // 2. Base name
+    if (entry.base_name) {
+      return {
+        displayName: entry.base_name,
+        url: `https://www.base.org/name/${entry.base_name}`,
+        platform: 'base'
+      };
+    }
+
+    // 3. ENS name
+    if (entry.ens_name) {
+      return {
+        displayName: entry.ens_name,
+        url: `https://app.ens.domains/${entry.ens_name}`,
+        platform: 'ens'
+      };
+    }
+
+    // 4. Context username (recipient for earners, sender for tippers)
+    const username = isEarner ? ctx.recipient_username : ctx.sender_username;
+    const profileUrl = isEarner ? ctx.recipient_profile_url : ctx.sender_profile_url;
+    if (username) {
+      const url = profileUrl || `https://x.com/${username}`;
+      return {
+        displayName: `@${username}`,
+        url: url,
+        platform: 'x'
+      };
+    }
+
+    // 5. Parsed profile handle from destination
+    if (parsed.profileHandle && parsed.profileUrl) {
+      const platform = this.detectPlatform(parsed.profileUrl);
+      return {
+        displayName: parsed.profileHandle,
+        url: parsed.profileUrl,
+        platform: platform
+      };
+    }
+
+    // 6. Fallback to address (shorter truncation)
+    const addressUrl = this.getAddressExplorerUrl(entry.network, entry.address);
+    return {
+      displayName: this.formatAddressShort(entry.address),
+      url: addressUrl,
+      platform: null
+    };
+  },
+
+  /**
    * Render a top tipper entry
    * @param {Object} entry - Tipper entry data
    * @param {number} index - Rank index (0-based)
@@ -125,7 +255,15 @@ const LeaderboardRenderer = {
     const parsed = entry.lastTipDestination ? parseDestination(entry.lastTipDestination) : {};
 
     const rankIcon = `<span class="rank-number">${index + 1}</span>`;
-    const labelHtml = FormatUtils.formatAddress(entry.address);
+
+    // Get display name for the tipper
+    const display = this.getDisplayName(entry, false);
+    const labelHtml = display.url
+      ? `<a href="${display.url}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.escapeHtml(display.displayName)}</a>`
+      : FormatUtils.escapeHtml(display.displayName);
+
+    // Platform icon for the tipper
+    const platformLinkHtml = this.getPlatformIcon(display.platform, display.url);
 
     let descriptionHtml;
     if (ctx.recipient_username) {
@@ -153,6 +291,9 @@ const LeaderboardRenderer = {
           <div class="transaction-item-amount received">${FormatUtils.formatUSD(entry.totalUSD)}</div>
           <div class="transaction-item-time">${entry.tipCount} tips</div>
         </div>
+        <div class="transaction-item-links">
+          ${platformLinkHtml}
+        </div>
       </div>
     `;
   },
@@ -164,31 +305,18 @@ const LeaderboardRenderer = {
    * @returns {string} HTML string
    */
   renderEarnerEntry(entry, index) {
-    const ctx = entry.lastTipContext || {};
-    const parsed = entry.lastTipDestination ? parseDestination(entry.lastTipDestination) : {};
-
     const rankIcon = `<span class="rank-number">${index + 1}</span>`;
 
-    let labelHtml;
-    if (ctx.recipient_username) {
-      const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
-      labelHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${FormatUtils.escapeHtml(ctx.recipient_username)}</a>`;
-    } else if (parsed.profileHandle && parsed.profileUrl) {
-      labelHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
-    } else {
-      labelHtml = FormatUtils.formatAddress(entry.address);
-    }
+    // Get display name for the earner
+    const display = this.getDisplayName(entry, true);
+    const labelHtml = display.url
+      ? `<a href="${display.url}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.escapeHtml(display.displayName)}</a>`
+      : FormatUtils.escapeHtml(display.displayName);
 
     const descriptionHtml = `${entry.tipCount.toLocaleString()} tips received`;
 
-    const isTwitter = this.isTwitterUrl(ctx.source_post_url) ||
-      this.isTwitterUrl(parsed.profileUrl) ||
-      this.isTwitterUrl(entry.lastTipSocialGraph);
-
-    let platformUrl = ctx.source_post_url || parsed.postUrl || parsed.profileUrl ||
-      (entry.lastTipSocialGraph && (entry.lastTipSocialGraph.startsWith('http') ? entry.lastTipSocialGraph : `https://${entry.lastTipSocialGraph}`));
-
-    const platformLinkHtml = this.buildPlatformLink(platformUrl, isTwitter);
+    // Platform icon for the earner
+    const platformLinkHtml = this.getPlatformIcon(display.platform, display.url);
 
     return `
       <div class="transaction-item">
@@ -218,20 +346,51 @@ const LeaderboardRenderer = {
     const parsed = parseDestination(entry.destination);
     const ctx = entry.context || {};
 
-    let labelHtml;
-    if (ctx.recipient_username) {
-      const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
-      labelHtml = `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${FormatUtils.escapeHtml(ctx.recipient_username)}</a>`;
-    } else if (parsed.profileHandle) {
-      labelHtml = `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.escapeHtml(parsed.profileHandle)}</a>`;
-    } else {
-      const addressUrl = this.getAddressExplorerUrl(entry.network, entry.address);
-      labelHtml = `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.formatAddress(entry.address)}</a>`;
+    // Build display info for recipient using similar priority logic
+    let displayName, displayUrl, displayPlatform;
+
+    // 1. Grove handle
+    if (entry.handle) {
+      displayName = entry.handle;
+      displayUrl = `https://grove.city/@${entry.handle}`;
+      displayPlatform = 'grove';
+    }
+    // 2. Base name
+    else if (entry.base_name) {
+      displayName = entry.base_name;
+      displayUrl = `https://www.base.org/name/${entry.base_name}`;
+      displayPlatform = 'base';
+    }
+    // 3. ENS name
+    else if (entry.ens_name) {
+      displayName = entry.ens_name;
+      displayUrl = `https://app.ens.domains/${entry.ens_name}`;
+      displayPlatform = 'ens';
+    }
+    // 4. Context recipient username
+    else if (ctx.recipient_username) {
+      displayName = `@${ctx.recipient_username}`;
+      displayUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
+      displayPlatform = 'x';
+    }
+    // 5. Parsed handle
+    else if (parsed.profileHandle && parsed.profileUrl) {
+      displayName = parsed.profileHandle;
+      displayUrl = parsed.profileUrl;
+      displayPlatform = this.detectPlatform(parsed.profileUrl);
+    }
+    // 6. Address fallback
+    else {
+      displayName = this.formatAddressShort(entry.address);
+      displayUrl = this.getAddressExplorerUrl(entry.network, entry.address);
+      displayPlatform = null;
     }
 
-    const isTwitter = this.isTwitterUrl(ctx.source_post_url) || this.isTwitterUrl(parsed.profileUrl);
-    const platformUrl = ctx.source_post_url || parsed.postUrl || parsed.profileUrl;
-    const platformLinkHtml = this.buildPlatformLink(platformUrl, isTwitter);
+    const labelHtml = displayUrl
+      ? `<a href="${displayUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.escapeHtml(displayName)}</a>`
+      : FormatUtils.escapeHtml(displayName);
+
+    const platformLinkHtml = this.getPlatformIcon(displayPlatform, displayUrl);
     const txLinkHtml = this.buildTxLink(entry.network, entry.txHash);
 
     return `
