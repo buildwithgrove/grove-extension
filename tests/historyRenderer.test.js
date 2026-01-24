@@ -39,7 +39,7 @@ describe('HistoryRenderer', () => {
     it('should return tip received icon for tip_received', () => {
       const icon = HistoryRenderer.getTransactionIcon('tip_received');
       expect(icon).toContain('svg');
-      expect(icon).toContain('M12 5v14'); // Down arrow path
+      expect(icon).toContain('M17 5H9.5'); // Dollar sign path
     });
 
     it('should return deposit icon for deposit', () => {
@@ -62,12 +62,12 @@ describe('HistoryRenderer', () => {
   });
 
   describe('getTransactionLabel', () => {
-    it('should return "Tip Sent" for tip_sent', () => {
-      expect(HistoryRenderer.getTransactionLabel('tip_sent')).toBe('Tip Sent');
+    it('should return "Tipped" for tip_sent', () => {
+      expect(HistoryRenderer.getTransactionLabel('tip_sent')).toBe('Tipped');
     });
 
-    it('should return "Tip Received" for tip_received', () => {
-      expect(HistoryRenderer.getTransactionLabel('tip_received')).toBe('Tip Received');
+    it('should return "Earned" for tip_received', () => {
+      expect(HistoryRenderer.getTransactionLabel('tip_received')).toBe('Earned');
     });
 
     it('should return "Deposit" for deposit', () => {

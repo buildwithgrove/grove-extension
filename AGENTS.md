@@ -70,7 +70,7 @@ All colors should be used via CSS variables in `popup.css` or the `GROVE_COLORS`
 | ------------ | ------------------------- | ------------------ | ----------------- |
 | Tip Sent     | `rgba(249, 115, 22, 0.1)` | `#f97316` (orange) | `#f97316`         |
 | Tip Received | `rgba(56, 159, 88, 0.1)`  | `--color-primary`  | `--color-primary` |
-| Deposit      | `rgba(56, 159, 88, 0.1)`  | `--color-primary`  | `--color-primary` |
+| Deposit      | `rgba(59, 130, 246, 0.1)` | `#3b82f6` (blue)   | `#3b82f6`         |
 
 ### Content Script Colors (`src/ui/constants.js`)
 

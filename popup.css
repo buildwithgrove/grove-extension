@@ -4272,8 +4272,8 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 .transaction-item-icon.deposit {
-  background: rgba(56, 159, 88, 0.1);
-  color: var(--color-primary);
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
 }
 
 .transaction-item-icon.failed {
@@ -4359,6 +4359,10 @@ button.quick-access-item:hover .quick-access-icon {
 
 .transaction-item-amount.received {
   color: var(--color-primary);
+}
+
+.transaction-item-amount.deposit {
+  color: #3b82f6;
 }
 
 .transaction-item-amount.failed {

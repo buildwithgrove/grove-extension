@@ -431,21 +431,22 @@
 
     <!-- History Page -->
     <div class="page" id="tab-history">
-      <h2 class="page-title">Transaction History</h2>
+      <h2 class="page-title">Activity</h2>
 
       <!-- Filter Tabs -->
       <div class="history-filter">
         <button class="filter-btn active" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="tips">Tips</button>
+        <button class="filter-btn" data-filter="tipped">Tipped</button>
+        <button class="filter-btn" data-filter="earned">Earned</button>
         <button class="filter-btn" data-filter="deposits">Deposits</button>
       </div>
 
       <!-- Period Filter -->
       <div class="history-period-filter">
-        <button class="period-btn active" data-period="all">All</button>
-        <button class="period-btn" data-period="30d">30d</button>
-        <button class="period-btn" data-period="7d">7d</button>
         <button class="period-btn" data-period="24h">24h</button>
+        <button class="period-btn" data-period="7d">7d</button>
+        <button class="period-btn" data-period="30d">30d</button>
+        <button class="period-btn active" data-period="all">Lifetime</button>
       </div>
 
       <!-- Stats Summary -->
@@ -481,7 +482,7 @@
             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
           </svg>
         </div>
-        <p>Connect your account to see history</p>
+        <p>Connect your account to see activity</p>
       </div>
 
       <!-- Transaction List -->
@@ -1238,7 +1239,7 @@
         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
       </svg>
-      <span class="nav-label">History</span>
+      <span class="nav-label">Activity</span>
     </button>
     <button class="nav-item" data-target="tab-leaderboard">
       <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"

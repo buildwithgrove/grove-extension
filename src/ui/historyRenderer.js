@@ -7,7 +7,7 @@ const HistoryRenderer = {
   // SVG Icons
   icons: {
     tipSent: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5m0 0l-7 7m7-7l7 7"/></svg>',
-    tipReceived: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m0 0l7-7m-7 7l-7-7"/></svg>',
+    tipReceived: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
     deposit: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
     failed: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>',
     default: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>',
@@ -37,8 +37,8 @@ const HistoryRenderer = {
    */
   getTransactionLabel(type) {
     switch (type) {
-      case 'tip_sent': return 'Tip Sent';
-      case 'tip_received': return 'Tip Received';
+      case 'tip_sent': return 'Tipped';
+      case 'tip_received': return 'Earned';
       case 'deposit': return 'Deposit';
       default: return 'Transaction';
     }
@@ -172,7 +172,7 @@ const HistoryRenderer = {
     const label = isFailed ? 'Tip Failed' : this.getTransactionLabel(tx.type);
     const amount = FormatUtils.formatHistoryAmount(tx);
     const time = FormatUtils.formatRelativeTime(tx.created_at);
-    const amountClass = isFailed ? 'failed' : (tx.type === 'tip_sent' ? 'sent' : 'received');
+    const amountClass = isFailed ? 'failed' : (tx.type === 'tip_sent' ? 'sent' : (tx.type === 'deposit' ? 'deposit' : 'received'));
 
     const parsed = parseDestination(tx.destination);
     const ctx = tx.context || {};
@@ -257,15 +257,15 @@ const HistoryRenderer = {
     return `
       <div class="history-stats-row">
         <div class="history-stat-item given">
-          <div class="history-stat-value">-${FormatUtils.formatStatUSD(summary.givenAmount)}</div>
+          <div class="history-stat-value">${FormatUtils.formatStatUSD(summary.givenAmount)}</div>
           <div class="history-stat-label">${summary.givenCount} ${givenLabel}</div>
         </div>
         <div class="history-stat-item earned">
-          <div class="history-stat-value">+${FormatUtils.formatStatUSD(summary.earnedAmount)}</div>
+          <div class="history-stat-value">${FormatUtils.formatStatUSD(summary.earnedAmount)}</div>
           <div class="history-stat-label">${summary.earnedCount} ${earnedLabel}</div>
         </div>
         <div class="history-stat-item deposits">
-          <div class="history-stat-value">+${FormatUtils.formatStatUSD(summary.depositsAmount)}</div>
+          <div class="history-stat-value">${FormatUtils.formatStatUSD(summary.depositsAmount)}</div>
           <div class="history-stat-label">${summary.depositsCount} ${depositsLabel}</div>
         </div>
       </div>

@@ -398,7 +398,7 @@ const LeaderboardRenderer = {
         <div class="transaction-item-icon tip_received">${this.icons.dollar}</div>
         <div class="transaction-item-details">
           <div class="transaction-item-label">${labelHtml}</div>
-          <div class="transaction-item-description">Tip Received</div>
+          <div class="transaction-item-description">Earned</div>
         </div>
         <div class="transaction-item-right">
           <div class="transaction-item-amount received">${FormatUtils.formatUSD(entry.amountUSD)}</div>

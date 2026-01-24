@@ -2847,8 +2847,9 @@ function getFilteredTransactions() {
   const now = new Date();
 
   return historyTransactions.filter(tx => {
-    // Type filter (All/Tips/Deposits)
-    if (historyFilter === 'tips' && tx.type !== 'tip_sent' && tx.type !== 'tip_received') return false;
+    // Type filter (All/Tipped/Earned/Deposits)
+    if (historyFilter === 'tipped' && tx.type !== 'tip_sent') return false;
+    if (historyFilter === 'earned' && tx.type !== 'tip_received') return false;
     if (historyFilter === 'deposits' && tx.type !== 'deposit') return false;
 
     // Period filter (24h/7d/30d/All)
@@ -2896,8 +2897,10 @@ function renderHistoryList() {
     pagination.classList.add('hidden');
 
     // Contextual empty message
-    if (historyFilter === 'tips') {
-      emptyMessage.textContent = 'No tips yet';
+    if (historyFilter === 'tipped') {
+      emptyMessage.textContent = 'No tips sent yet';
+    } else if (historyFilter === 'earned') {
+      emptyMessage.textContent = 'No tips earned yet';
     } else if (historyFilter === 'deposits') {
       emptyMessage.textContent = 'No deposits yet';
     } else if (historyPeriod !== 'all') {
