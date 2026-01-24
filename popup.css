@@ -3980,6 +3980,111 @@ button.quick-access-item:hover .quick-access-icon {
   color: var(--color-text-primary);
 }
 
+/* History Period Filter */
+.history-period-filter {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.period-btn {
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 16px;
+  transition: all 0.2s;
+}
+
+.period-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.period-btn:hover:not(.active) {
+  border-color: var(--color-text-tertiary);
+  color: var(--color-text-primary);
+}
+
+/* History Stats Row */
+.history-stats-container {
+  margin-bottom: 16px;
+}
+
+.history-stats-row {
+  display: flex;
+  gap: 8px;
+}
+
+.history-stat-item {
+  flex: 1;
+  padding: 10px 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.history-stat-value {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.history-stat-label {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.history-stat-item.given .history-stat-value {
+  color: #f97316;
+}
+
+.history-stat-item.earned .history-stat-value {
+  color: var(--color-primary);
+}
+
+.history-stat-item.deposits .history-stat-value {
+  color: #3b82f6;
+}
+
+/* Platform Icons */
+.platform-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.platform-icon.platform-x {
+  color: var(--color-text-primary);
+}
+
+.platform-icon.platform-grove {
+  color: var(--color-primary);
+}
+
+.platform-icon.platform-substack {
+  color: #ff6719;
+}
+
+.platform-icon.platform-base {
+  color: #0052ff;
+}
+
+.platform-icon.platform-ens {
+  color: #5298ff;
+}
+
+.platform-icon.platform-website {
+  color: var(--color-text-secondary);
+}
+
 /* History Loading */
 .history-loading {
   display: flex;

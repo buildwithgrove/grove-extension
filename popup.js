@@ -2387,6 +2387,7 @@ let seenTxHashes = new Set();
  */
 let historyTransactions = [];
 let historyFilter = 'all';
+let historyPeriod = 'all';
 let historyCurrentPage = 0;
 let historyTotalCount = 0;
 const HISTORY_PAGE_SIZE = 10;
@@ -2683,11 +2684,12 @@ async function loadLeaderboardStats() {
  */
 function setupHistoryTab() {
   const filterBtns = document.querySelectorAll('.history-filter .filter-btn');
+  const periodBtns = document.querySelectorAll('.history-period-filter .period-btn');
   const prevBtn = document.getElementById('history-prev-btn');
   const nextBtn = document.getElementById('history-next-btn');
   const retryBtn = document.getElementById('history-retry-btn');
 
-  // Filter buttons
+  // Filter buttons (All/Tips/Deposits)
   filterBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
       const filter = e.target.dataset.filter;
@@ -2695,6 +2697,20 @@ function setupHistoryTab() {
       historyCurrentPage = 0;
 
       filterBtns.forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+
+      renderHistoryList();
+    });
+  });
+
+  // Period filter buttons (24h/7d/30d/All)
+  periodBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const period = e.target.dataset.period;
+      historyPeriod = period;
+      historyCurrentPage = 0;
+
+      periodBtns.forEach(b => b.classList.remove('active'));
       e.target.classList.add('active');
 
       renderHistoryList();
@@ -2825,13 +2841,27 @@ async function loadHistory() {
 }
 
 /**
- * Get filtered transactions based on current filter
+ * Get filtered transactions based on current filter and period
  */
 function getFilteredTransactions() {
+  const now = new Date();
+
   return historyTransactions.filter(tx => {
-    if (historyFilter === 'all') return true;
-    if (historyFilter === 'tips') return tx.type === 'tip_sent' || tx.type === 'tip_received';
-    if (historyFilter === 'deposits') return tx.type === 'deposit';
+    // Type filter (All/Tips/Deposits)
+    if (historyFilter === 'tips' && tx.type !== 'tip_sent' && tx.type !== 'tip_received') return false;
+    if (historyFilter === 'deposits' && tx.type !== 'deposit') return false;
+
+    // Period filter (24h/7d/30d/All)
+    if (historyPeriod !== 'all') {
+      const txDate = new Date(tx.created_at);
+      const diffMs = now - txDate;
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+      if (historyPeriod === '24h' && diffDays > 1) return false;
+      if (historyPeriod === '7d' && diffDays > 7) return false;
+      if (historyPeriod === '30d' && diffDays > 30) return false;
+    }
+
     return true;
   });
 }
@@ -2847,8 +2877,18 @@ function renderHistoryList() {
   const pageInfo = document.getElementById('history-page-info');
   const prevBtn = document.getElementById('history-prev-btn');
   const nextBtn = document.getElementById('history-next-btn');
+  const statsContainer = document.getElementById('history-stats');
 
   const filtered = getFilteredTransactions();
+
+  // Calculate and render stats summary
+  if (statsContainer && filtered.length > 0) {
+    const summary = HistoryRenderer.calculateSummary(filtered);
+    statsContainer.innerHTML = HistoryRenderer.renderStatsSummary(summary);
+    statsContainer.classList.remove('hidden');
+  } else if (statsContainer) {
+    statsContainer.classList.add('hidden');
+  }
 
   if (filtered.length === 0) {
     empty.classList.remove('hidden');
@@ -2860,6 +2900,9 @@ function renderHistoryList() {
       emptyMessage.textContent = 'No tips yet';
     } else if (historyFilter === 'deposits') {
       emptyMessage.textContent = 'No deposits yet';
+    } else if (historyPeriod !== 'all') {
+      const periodLabels = { '24h': '24 hours', '7d': '7 days', '30d': '30 days' };
+      emptyMessage.textContent = `No transactions in the last ${periodLabels[historyPeriod] || historyPeriod}`;
     } else {
       emptyMessage.textContent = 'No transactions yet';
     }
