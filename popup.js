@@ -3736,7 +3736,7 @@ async function loadReferralData() {
 
     // Referral link
     if (referralCode) {
-      referralLinkInput.value = `https://app.grove.city/?ref=${referralCode}`;
+      referralLinkInput.value = `https://app.grove.city/?ref=${encodeURIComponent(referralCode)}`;
     } else {
       referralLinkInput.placeholder = 'No referral code available';
     }
@@ -3746,7 +3746,7 @@ async function loadReferralData() {
     if (referralEarnings) {
       if (totalEarnings !== null) {
         const earnings = parseFloat(totalEarnings);
-        referralEarnings.textContent = `$${earnings.toFixed(2)}`;
+        referralEarnings.textContent = `$${isNaN(earnings) ? '0.00' : earnings.toFixed(2)}`;
       } else {
         referralEarnings.textContent = '$0.00';
       }
@@ -3782,7 +3782,7 @@ function renderRefereesList(referees, listEl, emptyEl) {
 
     const nameEl = document.createElement('div');
     nameEl.className = 'referral-referee-name';
-    nameEl.textContent = referee.display_name;
+    nameEl.textContent = referee.display_name || 'Unknown';
     if (referee.display_type === 'wallet') {
       nameEl.classList.add('monospace');
     }
@@ -3793,11 +3793,12 @@ function renderRefereesList(referees, listEl, emptyEl) {
     const earnings = parseFloat(referee.earnings_usd || '0');
     const earningsEl = document.createElement('span');
     earningsEl.className = 'referral-referee-earnings';
-    earningsEl.textContent = `$${earnings.toFixed(2)}`;
+    earningsEl.textContent = `$${isNaN(earnings) ? '0.00' : earnings.toFixed(2)}`;
 
+    const tipCount = referee.tip_count ?? 0;
     const tipsEl = document.createElement('span');
     tipsEl.className = 'referral-referee-tips';
-    tipsEl.textContent = `${referee.tip_count} tip${referee.tip_count !== 1 ? 's' : ''}`;
+    tipsEl.textContent = `${tipCount} tip${tipCount !== 1 ? 's' : ''}`;
 
     infoEl.appendChild(earningsEl);
     infoEl.appendChild(tipsEl);
