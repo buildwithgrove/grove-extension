@@ -699,6 +699,29 @@ function setupEventListeners() {
     copyEarnAddressBtn.addEventListener('click', copyEarnAddress);
   }
 
+  // Earn Tab - Platform accordion toggles
+  document.querySelectorAll('.platform-accordion-toggle').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      const isOpen = toggle.getAttribute('aria-expanded') === 'true';
+      // Close all
+      document.querySelectorAll('.platform-accordion-toggle').forEach(t => {
+        t.setAttribute('aria-expanded', 'false');
+        const body = t.nextElementSibling;
+        if (body && body.classList.contains('platform-accordion-body')) {
+          body.classList.remove('open');
+        }
+      });
+      // Open clicked if it was closed
+      if (!isOpen) {
+        toggle.setAttribute('aria-expanded', 'true');
+        const body = toggle.nextElementSibling;
+        if (body && body.classList.contains('platform-accordion-body')) {
+          body.classList.add('open');
+        }
+      }
+    });
+  });
+
   // Account - Copy Connected Wallet Button
   if (copyConnectedWalletBtn) {
     copyConnectedWalletBtn.addEventListener('click', copyConnectedWallet);
@@ -1220,6 +1243,7 @@ async function disconnectSlot(slotId) {
   if (slotId === activeSlot) {
     await chrome.storage.local.remove([
       STORAGE_KEYS.CLIENT_ADDRESS,
+      STORAGE_KEYS.EMBEDDED_WALLET_ADDRESS,
       STORAGE_KEYS.ONCHAIN_ADDRESS,
       STORAGE_KEYS.ENS_NAME,
       STORAGE_KEYS.CDP_IDENTITY_TYPE,
@@ -1316,6 +1340,7 @@ async function clearAllKeys() {
   // Clear auth state and CDP identity info
   await chrome.storage.local.remove([
     STORAGE_KEYS.CLIENT_ADDRESS,
+    STORAGE_KEYS.EMBEDDED_WALLET_ADDRESS,
     STORAGE_KEYS.ONCHAIN_ADDRESS,
     STORAGE_KEYS.ENS_NAME,
     STORAGE_KEYS.CDP_IDENTITY_TYPE,
@@ -1595,7 +1620,7 @@ async function fetchBalance() {
         await KeyManager.clearJWT(activeSlot);
 
         // Clear cached data
-        await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ONCHAIN_ADDRESS, STORAGE_KEYS.ENS_NAME, STORAGE_KEYS.LAST_BALANCES]);
+        await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.EMBEDDED_WALLET_ADDRESS, STORAGE_KEYS.ONCHAIN_ADDRESS, STORAGE_KEYS.ENS_NAME, STORAGE_KEYS.LAST_BALANCES]);
 
         // Update UI to show disconnected state
         await updateAuthState(null);
@@ -1611,39 +1636,47 @@ async function fetchBalance() {
     }
 
     // Store addresses from API response
-    // client_address = user's logged-in wallet (connected wallet)
+    // client_address = user's connected wallet (earning address, preferred)
+    // embedded_wallet_address = CDP embedded wallet (earning address, fallback)
     // onchain_address = Grove-managed tipping wallet
-    if (response.data.onchain_address) {
+    const earnAddress = response.data.client_address || response.data.embedded_wallet_address;
+
+    if (earnAddress) {
       console.log('[Grove Extension] fetchBalance got addresses:', {
         client: response.data.client_address,
-        onchain: response.data.onchain_address
+        embedded: response.data.embedded_wallet_address,
+        onchain: response.data.onchain_address,
+        earn: earnAddress
       });
 
-      const result = await chrome.storage.local.get([STORAGE_KEYS.ONCHAIN_ADDRESS]);
-      const previousAddress = result[STORAGE_KEYS.ONCHAIN_ADDRESS];
+      const previousEarnAddress = await getEarnAddress();
 
-      // Store both addresses
-      const addressUpdates = {
-        [STORAGE_KEYS.ONCHAIN_ADDRESS]: response.data.onchain_address,
-      };
+      // Store all addresses
+      const addressUpdates = {};
       if (response.data.client_address) {
         addressUpdates[STORAGE_KEYS.CLIENT_ADDRESS] = response.data.client_address;
       }
+      if (response.data.embedded_wallet_address) {
+        addressUpdates[STORAGE_KEYS.EMBEDDED_WALLET_ADDRESS] = response.data.embedded_wallet_address;
+      }
+      if (response.data.onchain_address) {
+        addressUpdates[STORAGE_KEYS.ONCHAIN_ADDRESS] = response.data.onchain_address;
+      }
       await chrome.storage.local.set(addressUpdates);
 
-      // Show truncated tipping wallet address in Earn tab
-      const truncated = `${response.data.onchain_address.slice(0, 6)}...${response.data.onchain_address.slice(-4)}`;
-      console.log('[Grove Extension] Displaying truncated address:', truncated);
+      // Show truncated earning address in Earn tab
+      const truncated = `${earnAddress.slice(0, 6)}...${earnAddress.slice(-4)}`;
+      console.log('[Grove Extension] Displaying truncated earn address:', truncated);
       await updateEarnAddressDisplay(truncated, false);
 
-      // If tipping wallet address changed, clear cached ENS name and re-resolve
-      if (previousAddress !== response.data.onchain_address) {
+      // If earning address changed, clear cached ENS name and re-resolve
+      if (previousEarnAddress !== earnAddress) {
         await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
         loadAndResolveEnsName();
       }
     } else {
-      // No onchain_address in response - clear cached data and show setup card
-      await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.ONCHAIN_ADDRESS, STORAGE_KEYS.ENS_NAME]);
+      // No earning address in response - clear cached data and show setup card
+      await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.EMBEDDED_WALLET_ADDRESS, STORAGE_KEYS.ONCHAIN_ADDRESS, STORAGE_KEYS.ENS_NAME]);
       await updateEarnAddressDisplay(null);
       updateEnsNameDisplay(null);
     }
@@ -1682,13 +1715,13 @@ async function fetchBalance() {
  */
 async function updateEarnAddressDisplay(displayValue, hasEnsName = false) {
   const ensLinksSection = document.getElementById('ensLinksSection');
-  const earnAddressCard = document.getElementById('earnAddressCard');
-  const earnSetupCard = document.getElementById('earnSetupCard');
+  const earnAddressContent = document.getElementById('earnAddressContent');
+  const earnSetupContent = document.getElementById('earnSetupContent');
 
   if (displayValue) {
-    // User has an address - show the address card
-    if (earnAddressCard) earnAddressCard.classList.remove('hidden');
-    if (earnSetupCard) earnSetupCard.classList.add('hidden');
+    // User has an address - show the address content
+    if (earnAddressContent) earnAddressContent.classList.remove('hidden');
+    if (earnSetupContent) earnSetupContent.classList.add('hidden');
 
     if (earnAddressText) {
       earnAddressText.textContent = displayValue;
@@ -1706,15 +1739,23 @@ async function updateEarnAddressDisplay(displayValue, hasEnsName = false) {
       }
     }
   } else {
-    // No address - show setup card (same for logged out or email/SMS users without address)
-    if (earnAddressCard) earnAddressCard.classList.add('hidden');
-    if (earnSetupCard) earnSetupCard.classList.remove('hidden');
+    // No address - show setup content (same for logged out or email/SMS users without address)
+    if (earnAddressContent) earnAddressContent.classList.add('hidden');
+    if (earnSetupContent) earnSetupContent.classList.remove('hidden');
   }
 }
 
+/**
+ * Get the user's earning address from storage.
+ * Prefers client_address (connected wallet) over embedded_wallet_address.
+ */
+async function getEarnAddress() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.EMBEDDED_WALLET_ADDRESS]);
+  return result[STORAGE_KEYS.CLIENT_ADDRESS] || result[STORAGE_KEYS.EMBEDDED_WALLET_ADDRESS] || null;
+}
+
 async function loadClientAddress() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.ONCHAIN_ADDRESS]);
-  const address = result[STORAGE_KEYS.ONCHAIN_ADDRESS];
+  const address = await getEarnAddress();
 
   // Always show truncated address first, let loadAndResolveEnsName update to ENS after fresh resolution
   if (address) {
@@ -1726,9 +1767,9 @@ async function loadClientAddress() {
 }
 
 async function copyEarnAddress() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.ONCHAIN_ADDRESS, STORAGE_KEYS.ENS_NAME]);
-  const address = result[STORAGE_KEYS.ONCHAIN_ADDRESS];
-  const ensName = result[STORAGE_KEYS.ENS_NAME];
+  const address = await getEarnAddress();
+  const ensResult = await chrome.storage.local.get([STORAGE_KEYS.ENS_NAME]);
+  const ensName = ensResult[STORAGE_KEYS.ENS_NAME];
 
   // Copy ENS name if available, otherwise copy 0x address
   const valueToCopy = ensName || address;
@@ -1918,8 +1959,7 @@ async function updateEnsNameDisplay(ensName) {
  * Always does fresh resolution - does not trust cached ENS name
  */
 async function loadAndResolveEnsName() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.ONCHAIN_ADDRESS]);
-  const address = result[STORAGE_KEYS.ONCHAIN_ADDRESS];
+  const address = await getEarnAddress();
 
   console.log('[Grove Extension] loadAndResolveEnsName called, address:', address);
 

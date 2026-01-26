@@ -2177,23 +2177,6 @@ button.quick-access-item:hover .quick-access-icon {
   margin-bottom: 0;
 }
 
-/* Your Address Section (Earn Tab) */
-.your-address-section {
-  margin: 0 8px 12px;
-  padding: 16px;
-  border-color: rgba(56, 159, 88, 0.2);
-  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(56, 159, 88, 0.03) 100%);
-  box-shadow: 0 4px 16px rgba(56, 159, 88, 0.08);
-}
-
-.your-address-section .section-header h3 {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: 12px;
-  text-align: center;
-}
-
 .address-display-container {
   margin-bottom: 16px;
 }
@@ -2232,19 +2215,6 @@ button.quick-access-item:hover .quick-access-icon {
   font-family: var(--font-sans);
 }
 
-/* Earn Setup Card */
-.earn-setup-card {
-  padding: 16px;
-  margin: 0 8px;
-}
-
-.earn-setup-intro {
-  font-size: 14px;
-  color: var(--color-text-primary);
-  margin: 0 0 14px 0;
-  text-align: center;
-}
-
 .earn-setup-examples {
   display: flex;
   flex-direction: column;
@@ -2262,26 +2232,7 @@ button.quick-access-item:hover .quick-access-icon {
   color: var(--color-text-primary);
 }
 
-.earn-setup-cta {
-  display: block;
-  padding: 12px 16px;
-  background: var(--color-primary);
-  border-radius: var(--radius-md);
-  color: white;
-  font-size: 14px;
-  font-weight: 500;
-  text-decoration: none;
-  text-align: center;
-  transition: all 0.2s ease;
-  margin-bottom: 12px;
-}
-
-.earn-setup-cta:hover {
-  background: var(--color-primary-hover);
-}
-
-.earn-setup-card .ens-links,
-.your-address-section .ens-links {
+.earn-card .ens-links {
   justify-content: flex-start;
 }
 
@@ -2377,44 +2328,45 @@ button.quick-access-item:hover .quick-access-icon {
   word-break: break-all;
 }
 
-/* How to Earn Section */
-.how-to-earn-section {
-  margin: 0 16px 16px;
+/* Earn Card (unified) */
+.earn-card {
+  margin: 0 8px 12px;
   padding: 18px;
-  text-align: left;
-  border-color: rgba(56, 159, 88, 0.15);
-  transition: all 0.3s ease;
+  border-color: rgba(56, 159, 88, 0.2);
+  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(56, 159, 88, 0.03) 100%);
+  box-shadow: 0 4px 16px rgba(56, 159, 88, 0.08);
 }
 
-.how-to-earn-section:hover {
-  border-color: rgba(56, 159, 88, 0.25);
-  box-shadow: 0 4px 20px rgba(56, 159, 88, 0.1);
-}
-
-.how-to-earn-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin: 0 0 16px 0;
-  text-align: center;
-}
-
-.how-to-earn-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+.earn-section {
   margin-bottom: 18px;
 }
 
-.earn-step {
+.earn-section:last-child {
+  margin-bottom: 0;
+}
+
+.earn-section-final {
+  margin-bottom: 0;
+}
+
+.earn-section-desc {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin: 0;
+  padding-left: 32px;
+}
+
+.earn-section-label {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .earn-step-number {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   background: linear-gradient(135deg, var(--color-primary) 0%, #2f8549 100%);
   color: white;
   border-radius: 50%;
@@ -2424,64 +2376,125 @@ button.quick-access-item:hover .quick-access-icon {
   font-weight: 700;
   font-size: 11px;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(56, 159, 88, 0.3);
 }
 
-.earn-step-content {
-  flex: 1;
-  padding-top: 2px;
-}
-
-.earn-step-title {
+.earn-section-title {
   font-size: 13px;
   font-weight: 600;
   color: var(--color-text-primary);
-  margin-bottom: 2px;
 }
 
-.earn-step-desc {
+/* Platform Accordion */
+.platform-accordions {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.platform-accordion-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--color-bg);
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.platform-accordion-toggle:last-of-type,
+.platform-accordion-toggle:last-child {
+  border-bottom: none;
+}
+
+.platform-accordion-toggle[aria-expanded="true"] {
+  background: var(--color-surface-hover);
+}
+
+.platform-accordion-toggle[aria-expanded="true"] + .platform-accordion-body + .platform-accordion-toggle,
+.platform-accordion-toggle[aria-expanded="true"] {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.platform-accordion-toggle:hover {
+  background: var(--color-surface-hover);
+}
+
+.platform-accordion-icon {
+  flex-shrink: 0;
+}
+
+.platform-accordion-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.platform-accordion-chevron {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+  transition: transform 0.2s ease;
+}
+
+.platform-accordion-toggle[aria-expanded="true"] .platform-accordion-chevron {
+  transform: rotate(90deg);
+}
+
+.platform-accordion-body {
+  display: none;
+  padding: 10px 12px 12px;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.platform-accordion-body.open {
+  display: block;
+}
+
+.platform-accordion-body:last-child {
+  border-bottom: none;
+}
+
+.platform-guide-desc {
   font-size: 12px;
   color: var(--color-text-secondary);
   line-height: 1.4;
+  margin: 0 0 8px 0;
 }
 
-.earn-example {
+.platform-guide-desc code {
   font-family: 'Monaco', 'Menlo', monospace;
   font-size: 11px;
   color: var(--color-primary);
   background: var(--color-primary-light);
-  padding: 1px 6px;
-  border-radius: 4px;
+  padding: 1px 5px;
+  border-radius: 3px;
 }
 
-.how-to-earn-btn {
-  display: flex;
+.platform-accordion-body:last-child .platform-guide-desc:last-child {
+  margin-bottom: 0;
+}
+
+.platform-guide-link {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #2f8549 100%);
-  border: none;
-  border-radius: var(--radius-md);
-  color: white;
-  font-size: 14px;
-  font-weight: 600;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-primary);
   text-decoration: none;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 16px rgba(56, 159, 88, 0.25);
+  transition: opacity 0.2s;
 }
 
-.how-to-earn-btn:hover {
-  background: linear-gradient(135deg, #2f8549 0%, #267a3d 100%);
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(56, 159, 88, 0.35);
-}
-
-.how-to-earn-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(56, 159, 88, 0.25);
+.platform-guide-link:hover {
+  opacity: 0.8;
 }
 
 .x-logo-text {
