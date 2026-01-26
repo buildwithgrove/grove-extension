@@ -51,8 +51,8 @@ function detectDarkMode(platform) {
     if (result !== null) return result;
   }
 
-  // Fallback: check system preference
-  return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  // Both body and html are transparent — browser default is white
+  return false;
 }
 
 // Export to window for browser context

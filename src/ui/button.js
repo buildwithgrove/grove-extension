@@ -35,7 +35,8 @@ class TipButton {
       const luminance = (0.299 * parseInt(match[1]) + 0.587 * parseInt(match[2]) + 0.114 * parseInt(match[3])) / 255;
       return luminance < 0.5;
     }
-    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    // Both body and html are transparent — browser default is white
+    return false;
   }
 
   /**

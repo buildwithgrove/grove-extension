@@ -87,7 +87,7 @@ describe('TipButton', () => {
       expect(button.isDarkMode).toBe(false);
     });
 
-    it('should fallback to system preference', () => {
+    it('should default to light mode when background is transparent', () => {
       context.window.getComputedStyle = vi.fn(() => ({
         backgroundColor: '',
       }));
@@ -95,7 +95,7 @@ describe('TipButton', () => {
         matches: true,
       }));
       const button = new TipButton(() => {});
-      expect(button.isDarkMode).toBe(true);
+      expect(button.isDarkMode).toBe(false);
     });
   });
 
