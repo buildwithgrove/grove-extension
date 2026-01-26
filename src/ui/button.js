@@ -25,11 +25,17 @@ class TipButton {
    * @returns {boolean}
    */
   _fallbackDetectDarkMode() {
-    const bg = window.getComputedStyle(document.body).backgroundColor;
-    const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-    if (!match) return true;
-    const luminance = (0.299 * parseInt(match[1]) + 0.587 * parseInt(match[2]) + 0.114 * parseInt(match[3])) / 255;
-    return luminance < 0.5;
+    // Check body, then html, then system preference
+    for (const el of [document.body, document.documentElement]) {
+      const bg = window.getComputedStyle(el).backgroundColor;
+      const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+      if (!match) continue;
+      const a = match[4] !== undefined ? parseFloat(match[4]) : 1;
+      if (a < 0.1) continue; // Transparent — skip
+      const luminance = (0.299 * parseInt(match[1]) + 0.587 * parseInt(match[2]) + 0.114 * parseInt(match[3])) / 255;
+      return luminance < 0.5;
+    }
+    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   }
 
   /**

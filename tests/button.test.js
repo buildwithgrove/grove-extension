@@ -121,8 +121,12 @@ describe('TipButton', () => {
       expect(context.isColorDark('rgba(255, 255, 255, 0.5)')).toBe(false);
     });
 
-    it('should default to dark for unparseable colors', () => {
-      expect(context.isColorDark('invalid')).toBe(true);
+    it('should return null for unparseable colors', () => {
+      expect(context.isColorDark('invalid')).toBe(null);
+    });
+
+    it('should return null for transparent backgrounds', () => {
+      expect(context.isColorDark('rgba(0, 0, 0, 0)')).toBe(null);
     });
   });
 

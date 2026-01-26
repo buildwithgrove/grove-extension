@@ -9,12 +9,16 @@
  * @returns {boolean}
  */
 function isColorDark(color) {
-  const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (!match) return true; // Default to dark if can't parse
+  const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+  if (!match) return null; // Can't parse — let caller decide
 
   const r = parseInt(match[1]);
   const g = parseInt(match[2]);
   const b = parseInt(match[3]);
+  const a = match[4] !== undefined ? parseFloat(match[4]) : 1;
+
+  // Transparent background — can't determine from this element
+  if (a < 0.1) return null;
 
   // Calculate relative luminance
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
@@ -27,27 +31,28 @@ function isColorDark(color) {
  * @returns {boolean}
  */
 function detectDarkMode(platform) {
-  // Platform-specific detection: check actual page background
-  if (platform === 'twitter' || platform === 'substack') {
-    const bg = document.body.style.backgroundColor ||
-               window.getComputedStyle(document.body).backgroundColor;
-    if (bg) {
-      return isColorDark(bg);
-    }
-  }
-
+  // Platform-specific detection
   if (platform === 'soundcloud') {
     return document.body.classList.contains('theme-dark');
   }
 
-  // Fallback: check system preference
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    return true;
+  // Check body background (most reliable for platforms that set it)
+  const bodyBg = document.body.style.backgroundColor ||
+                 window.getComputedStyle(document.body).backgroundColor;
+  if (bodyBg) {
+    const result = isColorDark(bodyBg);
+    if (result !== null) return result;
   }
 
-  // Fallback: check body background luminosity
-  const bg = window.getComputedStyle(document.body).backgroundColor;
-  return isColorDark(bg);
+  // Body was transparent — check <html> element
+  const htmlBg = window.getComputedStyle(document.documentElement).backgroundColor;
+  if (htmlBg) {
+    const result = isColorDark(htmlBg);
+    if (result !== null) return result;
+  }
+
+  // Fallback: check system preference
+  return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 }
 
 // Export to window for browser context
