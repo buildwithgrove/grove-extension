@@ -480,6 +480,9 @@ function setupEventListeners() {
   // Settings drill-down navigation
   setupSettingsDrillDown();
 
+  // Referral copy button
+  setupReferralCopyButton();
+
   // Chain Selector
   chainSelectorBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -568,11 +571,13 @@ function setupEventListeners() {
     });
   }
 
-  // Home Settings Card - navigate to Settings tab
-  const homeSettingsBtn = document.getElementById('homeSettingsBtn');
-  if (homeSettingsBtn) {
-    homeSettingsBtn.addEventListener('click', () => {
+  // Home Referrals Card - navigate to Settings > Referrals view
+  const homeReferralsBtn = document.getElementById('homeReferralsBtn');
+  if (homeReferralsBtn) {
+    homeReferralsBtn.addEventListener('click', () => {
       navigateToSettings();
+      showSettingsView('referral');
+      loadReferralData();
     });
   }
 
@@ -2378,6 +2383,10 @@ function showSettingsView(targetView) {
   if (targetElement) {
     targetElement.classList.add('active');
   }
+
+  if (targetView === 'referral') {
+    loadReferralData();
+  }
 }
 
 /**
@@ -3676,6 +3685,157 @@ async function updateAccountInfoDisplay() {
   } else {
     accountInfoSection.classList.add('hidden');
   }
+}
+
+/**
+ * Load referral data from the referrals API
+ */
+async function loadReferralData() {
+  const referralLinkInput = document.getElementById('referralLinkInput');
+  const referralCount = document.getElementById('referralCount');
+  const referralEarnings = document.getElementById('referralEarnings');
+  const referralRefereesList = document.getElementById('referralRefereesList');
+  const referralRefereesEmpty = document.getElementById('referralRefereesEmpty');
+
+  if (!referralLinkInput || !referralCount) return;
+
+  referralLinkInput.value = '';
+  referralLinkInput.placeholder = 'Loading...';
+  referralCount.textContent = '—';
+  if (referralEarnings) referralEarnings.textContent = '—';
+
+  try {
+    const jwt = await getActiveJWT();
+    if (!jwt) {
+      referralLinkInput.placeholder = 'Sign in to get your referral link';
+      if (referralRefereesEmpty) referralRefereesEmpty.textContent = 'Sign in to see your referrals.';
+      return;
+    }
+
+    // Try the dedicated referrals endpoint first, fall back to account endpoint
+    let referralCode, totalReferees, totalEarnings, referees;
+
+    const referralsResponse = await GroveAPI.getReferrals(jwt);
+    if (referralsResponse.success && referralsResponse.data) {
+      referralCode = referralsResponse.data.referral_code;
+      totalReferees = referralsResponse.data.stats?.total_referees ?? 0;
+      totalEarnings = referralsResponse.data.stats?.total_referee_earnings_usd || '0';
+      referees = referralsResponse.data.referees || [];
+    } else {
+      // Fallback: getAccount has referral_code and referral_count
+      const accountResponse = await GroveAPI.getAccount(jwt);
+      if (!accountResponse.success || !accountResponse.data) {
+        referralLinkInput.placeholder = 'Failed to load referral link';
+        return;
+      }
+      referralCode = accountResponse.data.referral_code;
+      totalReferees = accountResponse.data.referral_count ?? 0;
+      totalEarnings = null;
+      referees = null;
+    }
+
+    // Referral link
+    if (referralCode) {
+      referralLinkInput.value = `https://app.grove.city/?ref=${referralCode}`;
+    } else {
+      referralLinkInput.placeholder = 'No referral code available';
+    }
+
+    // Stats
+    referralCount.textContent = totalReferees;
+    if (referralEarnings) {
+      if (totalEarnings !== null) {
+        const earnings = parseFloat(totalEarnings);
+        referralEarnings.textContent = `$${earnings.toFixed(2)}`;
+      } else {
+        referralEarnings.textContent = '$0.00';
+      }
+    }
+
+    // Referees list
+    if (referralRefereesList && referees) {
+      renderRefereesList(referees, referralRefereesList, referralRefereesEmpty);
+    }
+  } catch (error) {
+    console.log('[Referrals] Failed to load referral data:', error.message);
+    referralLinkInput.placeholder = 'Failed to load referral link';
+  }
+}
+
+/**
+ * Render the list of referred friends
+ */
+function renderRefereesList(referees, listEl, emptyEl) {
+  // Clear existing referee rows (keep the empty message element)
+  listEl.querySelectorAll('.referral-referee-row').forEach(el => el.remove());
+
+  if (!referees.length) {
+    if (emptyEl) emptyEl.classList.remove('hidden');
+    return;
+  }
+
+  if (emptyEl) emptyEl.classList.add('hidden');
+
+  referees.forEach(referee => {
+    const row = document.createElement('div');
+    row.className = 'referral-referee-row';
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'referral-referee-name';
+    nameEl.textContent = referee.display_name;
+    if (referee.display_type === 'wallet') {
+      nameEl.classList.add('monospace');
+    }
+
+    const infoEl = document.createElement('div');
+    infoEl.className = 'referral-referee-info';
+
+    const earnings = parseFloat(referee.earnings_usd || '0');
+    const earningsEl = document.createElement('span');
+    earningsEl.className = 'referral-referee-earnings';
+    earningsEl.textContent = `$${earnings.toFixed(2)}`;
+
+    const tipsEl = document.createElement('span');
+    tipsEl.className = 'referral-referee-tips';
+    tipsEl.textContent = `${referee.tip_count} tip${referee.tip_count !== 1 ? 's' : ''}`;
+
+    infoEl.appendChild(earningsEl);
+    infoEl.appendChild(tipsEl);
+
+    row.appendChild(nameEl);
+    row.appendChild(infoEl);
+    listEl.appendChild(row);
+  });
+}
+
+/**
+ * Setup referral copy button handler
+ */
+function setupReferralCopyButton() {
+  const referralCopyBtn = document.getElementById('referralCopyBtn');
+  const referralLinkInput = document.getElementById('referralLinkInput');
+
+  if (!referralCopyBtn || !referralLinkInput) return;
+
+  referralCopyBtn.addEventListener('click', async () => {
+    const link = referralLinkInput.value;
+    if (!link) return;
+
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      // Fallback for environments where clipboard API is unavailable
+      referralLinkInput.select();
+      document.execCommand('copy');
+    }
+
+    referralCopyBtn.textContent = 'Copied!';
+    referralCopyBtn.classList.add('copied');
+    setTimeout(() => {
+      referralCopyBtn.textContent = 'Copy';
+      referralCopyBtn.classList.remove('copied');
+    }, 2000);
+  });
 }
 
 async function refreshUIState() {
