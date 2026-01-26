@@ -27,8 +27,8 @@ function isColorDark(color) {
  * @returns {boolean}
  */
 function detectDarkMode(platform) {
-  // Platform-specific detection
-  if (platform === 'twitter') {
+  // Platform-specific detection: check actual page background
+  if (platform === 'twitter' || platform === 'substack') {
     const bg = document.body.style.backgroundColor ||
                window.getComputedStyle(document.body).backgroundColor;
     if (bg) {
