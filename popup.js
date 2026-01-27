@@ -2667,6 +2667,7 @@ async function loadLeaderboardStats() {
  */
 let giveawaysData = [];
 let selectedGiveawayId = null;
+let giveawayRefreshTimeout = null;
 
 /**
  * Setup Giveaways Tab
@@ -2772,8 +2773,14 @@ async function openGiveawayDetail(giveawayId) {
 
   const { giveaway, stats } = result.data;
   content.innerHTML = GiveawaysRenderer.renderGiveawayDetail(giveaway, stats);
+  wireGiveawayEnterButton(giveaway, giveawayId, content);
+}
 
-  // Wire up the enter button
+/**
+ * Wire up the Enter Giveaway button inside the detail overlay.
+ * Extracted so it can be re-called after the detail view refreshes.
+ */
+function wireGiveawayEnterButton(giveaway, giveawayId, content) {
   const enterBtn = document.getElementById('giveawayEnterBtn');
   const tipInput = document.getElementById('giveawayTipAmount');
   const tipError = document.getElementById('giveawayTipError');
@@ -2789,7 +2796,12 @@ async function openGiveawayDetail(giveawayId) {
       const amount = parseFloat(tipInput.value);
       const minTip = parseFloat(giveaway.minimum_tip_usd) || 0;
 
-      if (isNaN(amount) || amount < minTip) {
+      if (!tipInput.value || isNaN(amount) || !isFinite(amount) || amount <= 0) {
+        showTipError(tipError, 'Please enter a valid amount');
+        return;
+      }
+
+      if (amount < minTip) {
         showTipError(tipError, `Minimum tip is $${minTip.toFixed(2)}`);
         return;
       }
@@ -2815,12 +2827,16 @@ async function openGiveawayDetail(giveawayId) {
       if (tipResult.success) {
         btnText.textContent = 'Entered!';
         enterBtn.classList.add('success');
+        fetchBalance();
         // Refresh detail after a delay
-        setTimeout(async () => {
+        if (giveawayRefreshTimeout) clearTimeout(giveawayRefreshTimeout);
+        giveawayRefreshTimeout = setTimeout(async () => {
+          giveawayRefreshTimeout = null;
           if (selectedGiveawayId === giveawayId) {
             const refreshed = await GroveAPI.getGiveaway(giveawayId);
             if (refreshed.success) {
               content.innerHTML = GiveawaysRenderer.renderGiveawayDetail(refreshed.data.giveaway, refreshed.data.stats);
+              wireGiveawayEnterButton(refreshed.data.giveaway, giveawayId, content);
             }
           }
         }, 2000);
@@ -2837,6 +2853,10 @@ async function openGiveawayDetail(giveawayId) {
  * Close Giveaway Detail overlay
  */
 function closeGiveawayDetail() {
+  if (giveawayRefreshTimeout) {
+    clearTimeout(giveawayRefreshTimeout);
+    giveawayRefreshTimeout = null;
+  }
   const overlay = document.getElementById('giveaway-detail-overlay');
   overlay.classList.add('hidden');
   selectedGiveawayId = null;

@@ -84,7 +84,9 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
           left,
           focused: true
         });
-      }).catch(() => {});
+      }).catch((err) => {
+        console.error('[Grove Extension] Failed to open popup window:', err);
+      });
     });
     return true; // Keep channel open for async response
   }
