@@ -72,7 +72,7 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       // Open the extension popup window so the user sees it's activated
       chrome.windows.getLastFocused().then((currentWindow) => {
         const width = 340;
-        const height = 580;
+        const height = 600;
         const top = (currentWindow.top || 0) + 80;
         const left = (currentWindow.left || 0) + (currentWindow.width || 1280) - width - 20;
         return chrome.windows.create({
