@@ -2294,7 +2294,7 @@ async function updateAppLinks() {
 
   // Update wallet sign-in button
   if (walletSignInBtn) {
-    walletSignInBtn.href = appUrl + '/extension-auth';
+    walletSignInBtn.href = appUrl + '/extension';
   }
 
   // Update create giveaway link
