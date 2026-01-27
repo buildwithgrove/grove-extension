@@ -223,8 +223,8 @@ body {
 
 /* Update Available Banner */
 .update-banner {
-  background: linear-gradient(135deg, #389f58 0%, #2f8549 100%);
-  color: #fff;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  color: white;
   font-size: 13px;
   font-weight: 500;
   display: flex;
@@ -263,7 +263,7 @@ body {
 }
 
 .update-banner-icon svg {
-  stroke: #fff;
+  stroke: white;
 }
 
 .update-banner-text {
@@ -285,7 +285,7 @@ body {
 
 .update-btn-download {
   background: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  color: white;
   font-size: 12px;
   font-weight: 600;
   padding: 5px 12px;
@@ -312,7 +312,7 @@ body {
 }
 
 .update-btn-dismiss:hover {
-  color: #fff;
+  color: white;
   background: rgba(255, 255, 255, 0.1);
 }
 
@@ -333,7 +333,7 @@ body {
 
 .key-env-badge.testnet {
   background-color: rgba(249, 115, 22, 0.15);
-  color: #f97316;
+  color: var(--color-warning);
 }
 
 .optional-badge {
@@ -431,11 +431,11 @@ body {
   border: 2px solid #444;
   box-shadow:
     -7px -7px 7px var(--color-primary),
-    0px -7px 7px 0px #389f58,
-    7px -7px 7px #f0ad4e,
-    7px 0 7px #f0ad4e,
-    7px 7px 7px 0px #f0ad4e,
-    0 7px 7px 0px #389f58,
+    0px -7px 7px 0px var(--color-primary),
+    7px -7px 7px var(--color-accent),
+    7px 0 7px var(--color-accent),
+    7px 7px 7px 0px var(--color-accent),
+    0 7px 7px 0px var(--color-primary),
     -7px 7px 7px 0px var(--color-primary);
   position: absolute;
   left: 50%;
@@ -1374,7 +1374,7 @@ button.section-card-btn:hover .tipping-row-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #2f8549 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   border-radius: 50%;
   color: white;
   box-shadow:
@@ -1398,7 +1398,7 @@ button.section-card-btn:hover .tipping-row-icon {
   justify-content: center;
   gap: 8px;
   padding: 12px 20px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #2f8549 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: white;
   border: none;
   border-radius: var(--radius-md);
@@ -1473,7 +1473,7 @@ button.section-card-btn:hover .tipping-row-icon {
   justify-content: center;
   gap: 10px;
   padding: 16px 24px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #2f8549 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: white;
   border: none;
   border-radius: var(--radius-md);
@@ -2327,7 +2327,7 @@ button.quick-access-item:hover .quick-access-icon {
 .earn-step-number {
   width: 22px;
   height: 22px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #2f8549 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -2488,11 +2488,11 @@ button.quick-access-item:hover .quick-access-icon {
 
 .coming-soon-card h4,
 .coming-soon-state h3 {
-  color: #f0ad4e;
+  color: var(--color-accent);
 }
 
 .coming-soon-card .step-content p {
-  color: #f0ad4e !important;
+  color: var(--color-accent) !important;
   font-weight: 500;
 }
 
@@ -2869,9 +2869,9 @@ button.quick-access-item:hover .quick-access-icon {
   padding: 12px 16px;
   margin-top: 16px;
   background: rgba(239, 68, 68, 0.1);
-  border: 1px solid #EF4444;
+  border: 1px solid var(--color-danger);
   border-radius: 10px;
-  color: #EF4444;
+  color: var(--color-danger);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -2880,8 +2880,8 @@ button.quick-access-item:hover .quick-access-icon {
 
 .account-logout-btn:hover {
   background: rgba(239, 68, 68, 0.2);
-  border-color: #DC2626;
-  color: #DC2626;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
 }
 
 .account-logout-btn svg {
@@ -3550,7 +3550,7 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 .leaderboard-item:nth-child(1) .rank {
-  background: linear-gradient(135deg, #FFD700 0%, #f0ad4e 100%);
+  background: linear-gradient(135deg, #FFD700 0%, var(--color-accent) 100%);
 }
 
 .leaderboard-item:nth-child(2) .rank {
@@ -3850,11 +3850,11 @@ button.quick-access-item:hover .quick-access-icon {
   border: 2px solid #444;
   box-shadow:
     -10px -10px 10px var(--color-primary),
-    0px -10px 10px 0px #389f58,
-    10px -10px 10px #f0ad4e,
-    10px 0 10px #f0ad4e,
-    10px 10px 10px 0px #f0ad4e,
-    0 10px 10px 0px #389f58,
+    0px -10px 10px 0px var(--color-primary),
+    10px -10px 10px var(--color-accent),
+    10px 0 10px var(--color-accent),
+    10px 10px 10px 0px var(--color-accent),
+    0 10px 10px 0px var(--color-primary),
     -10px 10px 10px 0px var(--color-primary);
   animation: balance-spin 0.7s linear infinite;
 }
@@ -4016,7 +4016,7 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 .history-stat-item.given .history-stat-value {
-  color: #f97316;
+  color: var(--color-warning);
 }
 
 .history-stat-item.earned .history-stat-value {
@@ -4073,11 +4073,11 @@ button.quick-access-item:hover .quick-access-icon {
   border: 2px solid #444;
   box-shadow:
     -10px -10px 10px var(--color-primary),
-    0px -10px 10px 0px #389f58,
-    10px -10px 10px #f0ad4e,
-    10px 0 10px #f0ad4e,
-    10px 10px 10px 0px #f0ad4e,
-    0 10px 10px 0px #389f58,
+    0px -10px 10px 0px var(--color-primary),
+    10px -10px 10px var(--color-accent),
+    10px 0 10px var(--color-accent),
+    10px 10px 10px 0px var(--color-accent),
+    0 10px 10px 0px var(--color-primary),
     -10px 10px 10px 0px var(--color-primary);
   animation: balance-spin 0.7s linear infinite;
 }
@@ -4236,7 +4236,7 @@ button.quick-access-item:hover .quick-access-icon {
 
 .transaction-item-icon.tip_sent {
   background: rgba(249, 115, 22, 0.1);
-  color: #f97316;
+  color: var(--color-warning);
 }
 
 .transaction-item-icon.tip_received {
@@ -4268,7 +4268,7 @@ button.quick-access-item:hover .quick-access-icon {
 
 /* Gold/Silver/Bronze for top 3 */
 .transaction-item:nth-child(1) .transaction-item-icon.rank-icon {
-  background: linear-gradient(135deg, #FFD700 0%, #f0ad4e 100%);
+  background: linear-gradient(135deg, #FFD700 0%, var(--color-accent) 100%);
 }
 
 .transaction-item:nth-child(2) .transaction-item-icon.rank-icon {
@@ -4327,7 +4327,7 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 .transaction-item-amount.sent {
-  color: #f97316;
+  color: var(--color-warning);
 }
 
 .transaction-item-amount.received {
@@ -5624,7 +5624,7 @@ button.quick-access-item:hover .quick-access-icon {
   width: 100%;
   padding: 12px 24px;
   background: var(--color-primary);
-  color: #fff;
+  color: white;
   border: none;
   border-radius: 10px;
   font-size: 15px;
