@@ -707,7 +707,6 @@ class GroveAPI {
       };
     }
   }
-}
 
   /**
    * Fetch active giveaways

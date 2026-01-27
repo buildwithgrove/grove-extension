@@ -1279,14 +1279,9 @@ button.section-card-btn:hover .tipping-row-icon {
   height: 22px;
 }
 
-.onboarding-container .feature-card-icon.earn-icon {
+.onboarding-container .feature-card-icon.send-icon {
   background: linear-gradient(135deg, rgba(240, 173, 78, 0.15) 0%, rgba(240, 173, 78, 0.05) 100%);
   color: var(--color-accent);
-}
-
-.onboarding-container .feature-card-icon.free-icon {
-  background: linear-gradient(135deg, rgba(var(--color-info-rgb), 0.15) 0%, rgba(var(--color-info-rgb), 0.05) 100%);
-  color: var(--color-info);
 }
 
 .onboarding-container .feature-card-content h3 {
