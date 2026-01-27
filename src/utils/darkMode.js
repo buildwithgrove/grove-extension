@@ -36,9 +36,20 @@ function detectDarkMode(platform) {
     return document.body.classList.contains('theme-dark');
   }
 
+  if (platform === 'substack') {
+    // Substack exposes --theme_bg_is_dark: 0 (light) or 1 (dark)
+    const val = getComputedStyle(document.documentElement)
+      .getPropertyValue('--theme_bg_is_dark').trim();
+    console.log('[Grove DarkMode] Substack --theme_bg_is_dark:', JSON.stringify(val));
+    if (val === '1') return true;
+    if (val === '0') return false;
+    // Fall through to generic detection if variable not found
+  }
+
   // Check body background (most reliable for platforms that set it)
   const bodyBg = document.body.style.backgroundColor ||
                  window.getComputedStyle(document.body).backgroundColor;
+  console.log('[Grove DarkMode] body bg:', JSON.stringify(bodyBg));
   if (bodyBg) {
     const result = isColorDark(bodyBg);
     if (result !== null) return result;
@@ -46,12 +57,14 @@ function detectDarkMode(platform) {
 
   // Body was transparent — check <html> element
   const htmlBg = window.getComputedStyle(document.documentElement).backgroundColor;
+  console.log('[Grove DarkMode] html bg:', JSON.stringify(htmlBg));
   if (htmlBg) {
     const result = isColorDark(htmlBg);
     if (result !== null) return result;
   }
 
   // Both body and html are transparent — browser default is white
+  console.log('[Grove DarkMode] Fallback: light mode (transparent page)');
   return false;
 }
 
