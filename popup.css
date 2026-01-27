@@ -428,7 +428,7 @@ body {
   width: 1.1em;
   height: 1.1em;
   border-radius: 50%;
-  border: 2px solid #444;
+  border: 2px solid #404040;
   box-shadow:
     -7px -7px 7px var(--color-primary),
     0px -7px 7px 0px var(--color-primary),
@@ -3847,7 +3847,7 @@ button.quick-access-item:hover .quick-access-icon {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 2px solid #444;
+  border: 2px solid #404040;
   box-shadow:
     -10px -10px 10px var(--color-primary),
     0px -10px 10px 0px var(--color-primary),
@@ -4070,7 +4070,7 @@ button.quick-access-item:hover .quick-access-icon {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 2px solid #444;
+  border: 2px solid #404040;
   box-shadow:
     -10px -10px 10px var(--color-primary),
     0px -10px 10px 0px var(--color-primary),
