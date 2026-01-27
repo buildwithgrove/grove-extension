@@ -68,6 +68,14 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
         environment: env,
         devModeEnabled: isNonProduction
       });
+
+      // Try to open the extension popup so the user sees it's activated
+      const chromeVersion = parseInt(navigator.userAgent.match(/Chrome\/(\d+)/)?.[1] || '0');
+      if (chromeVersion >= 127 && chrome.action.openPopup) {
+        chrome.action.openPopup().catch(() => {
+          // Popup may be blocked if no recent user gesture — that's fine
+        });
+      }
     });
     return true; // Keep channel open for async response
   }
