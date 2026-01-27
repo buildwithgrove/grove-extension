@@ -709,6 +709,77 @@ class GroveAPI {
   }
 }
 
+  /**
+   * Fetch active giveaways
+   * @param {Object} params - Query parameters
+   * @param {string} params.status - Filter by status (default: 'active')
+   * @param {number} params.limit - Max results (default: 50)
+   * @param {number} params.offset - Pagination offset (default: 0)
+   * @returns {Promise<Object>} - Giveaways list with totals
+   */
+  static async listGiveaways({ status = 'active', limit = 50, offset = 0 } = {}) {
+    const baseURL = await this.getBaseURL();
+    const params = new URLSearchParams({ status, limit: String(limit), offset: String(offset) });
+    const apiUrl = `${baseURL}/v1/giveaways?${params}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data: {
+          giveaways: data.giveaways || [],
+          total: data.total || 0
+        }
+      };
+    } catch (error) {
+      console.error('[Grove Extension] Giveaways fetch failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Get a single giveaway with stats
+   * @param {string} giveawayId - Giveaway UUID
+   * @returns {Promise<Object>} - Giveaway details with stats
+   */
+  static async getGiveaway(giveawayId) {
+    const baseURL = await this.getBaseURL();
+    const apiUrl = `${baseURL}/v1/giveaway/${giveawayId}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data: {
+          giveaway: data.giveaway,
+          stats: data.stats
+        }
+      };
+    } catch (error) {
+      console.error('[Grove Extension] Giveaway detail fetch failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+}
+
 if (typeof window !== 'undefined') {
   window.GroveAPI = GroveAPI;
 }

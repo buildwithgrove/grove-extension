@@ -11,12 +11,6 @@ const pages = document.querySelectorAll('.page');
 let leaderboardSwitcherBtns = null;
 let leaderboardViews = null;
 
-// Chain selector
-const chainSelectorBtn = document.getElementById('chainSelectorBtn');
-const chainDropdown = document.getElementById('chainDropdown');
-const chainName = document.getElementById('chainName');
-const chainOptions = document.querySelectorAll('.chain-option');
-
 // Home States
 const onboardingState = document.getElementById('onboardingState');
 const connectedState = document.getElementById('connectedState');
@@ -474,6 +468,9 @@ function setupEventListeners() {
   // Leaderboard switcher
   setupLeaderboardSwitcher();
 
+  // Giveaways tab
+  setupGiveawaysTab();
+
   // History tab
   setupHistoryTab();
 
@@ -483,26 +480,13 @@ function setupEventListeners() {
   // Referral copy button
   setupReferralCopyButton();
 
-  // Chain Selector
-  chainSelectorBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    // Refresh visibility based on current endpoint before showing dropdown
-    chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]).then(res => {
-      const endpoint = res[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
-      updateNetworkSelectorVisibility(endpoint);
+  // Header settings button
+  const headerSettingsBtn = document.getElementById('headerSettingsBtn');
+  if (headerSettingsBtn) {
+    headerSettingsBtn.addEventListener('click', () => {
+      navigateToSettings();
     });
-    chainDropdown.classList.toggle('hidden');
-  });
-
-  chainOptions.forEach(option => {
-    option.addEventListener('click', handleChainSelection);
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!chainSelectorBtn.contains(e.target) && !chainDropdown.contains(e.target)) {
-      chainDropdown.classList.add('hidden');
-    }
-  });
+  }
 
   // Tip Amount (Home) - Edit button triggers edit mode
   editDefaultTipBtn.addEventListener('click', showTipEdit);
@@ -810,13 +794,12 @@ function setupEventListeners() {
  * Navigate to Settings tab programmatically
  */
 function navigateToSettings() {
-  // Update nav items - remove active from all, add to settings
-  navItems.forEach(item => {
-    item.classList.remove('active');
-    if (item.dataset.target === 'tab-settings') {
-      item.classList.add('active');
-    }
-  });
+  // Remove active from all nav items (settings is now in the header, not bottom nav)
+  navItems.forEach(item => item.classList.remove('active'));
+
+  // Highlight header settings button
+  const headerSettingsBtn = document.getElementById('headerSettingsBtn');
+  if (headerSettingsBtn) headerSettingsBtn.classList.add('active');
 
   // Update pages
   pages.forEach(page => {
@@ -840,6 +823,10 @@ async function handleNavigation(e) {
   // Update Tabs
   navItems.forEach(item => item.classList.remove('active'));
   e.currentTarget.classList.add('active');
+
+  // Deactivate header settings button when navigating to a tab
+  const headerSettingsBtn = document.getElementById('headerSettingsBtn');
+  if (headerSettingsBtn) headerSettingsBtn.classList.remove('active');
 
   // Update Pages
   pages.forEach(page => {
@@ -883,6 +870,11 @@ async function handleNavigation(e) {
   } else {
     // Stop live polling when leaving leaderboard tab
     stopLivePolling();
+  }
+
+  // Load giveaways when navigating to giveaways tab
+  if (targetId === 'tab-giveaways') {
+    loadGiveaways();
   }
 
   // Reset settings view to main menu when navigating to settings tab
@@ -2222,32 +2214,7 @@ async function loadChain() {
 }
 
 function updateChainUI(chain) {
-  const config = NETWORKS[chain] || NETWORKS['base'];
-  chainName.textContent = config.name;
-
-  // Update chain icon based on selected chain
-  const chainIcon = document.getElementById('chainSelectorIcon');
-  if (chainIcon) {
-    // Get the logo SVG from the dropdown option
-    const selectedOption = document.querySelector(`[data-chain="${chain}"]`);
-    if (selectedOption) {
-      const logo = selectedOption.querySelector('.chain-logo').cloneNode(true);
-      logo.setAttribute('width', '16');
-      logo.setAttribute('height', '16');
-      chainIcon.innerHTML = '';
-      chainIcon.appendChild(logo);
-    }
-  }
-
-  // Update selected state in dropdown
-  chainOptions.forEach(opt => {
-    const check = opt.querySelector('.chain-selected-check');
-    if (opt.dataset.chain === chain) {
-      if (check) check.style.opacity = '1';
-    } else {
-      if (check) check.style.opacity = '0';
-    }
-  });
+  // Chain selector UI removed — no-op
 }
 
 /**
@@ -2256,19 +2223,7 @@ function updateChainUI(chain) {
  * - Testnet/local: show testnet options (Base Sepolia, Solana Devnet)
  */
 function updateNetworkSelectorVisibility(endpoint) {
-  const isTest = isTestEndpoint(endpoint);
-  const mainnetOptions = document.querySelectorAll('.chain-option.mainnet-option');
-  const testnetOptions = document.querySelectorAll('.chain-option.testnet-option');
-
-  mainnetOptions.forEach(option => {
-    option.classList.toggle('hidden', isTest);
-    option.style.display = isTest ? 'none' : 'flex';
-  });
-
-  testnetOptions.forEach(option => {
-    option.classList.toggle('hidden', !isTest);
-    option.style.display = isTest ? 'flex' : 'none';
-  });
+  // Chain selector UI removed — no-op
 }
 
 function updateTestnetKeyVisibility(devModeEnabled) {
@@ -2301,41 +2256,6 @@ function setTestModeBannerText(endpoint) {
   const textNode = document.getElementById('testModeBannerText') || banner;
   const label = getEndpointLabel(endpoint);
   textNode.textContent = `Developer Mode (${label})`;
-}
-
-async function handleChainSelection(e, silent = false) {
-  // Ignore disabled chains (e.g., Solana - Coming Soon)
-  if (e.currentTarget.classList.contains('chain-disabled')) return;
-
-  const chain = e.currentTarget.dataset.chain;
-  await chrome.storage.local.set({ [STORAGE_KEYS.CHAIN]: chain });
-  updateChainUI(chain);
-  updateTopUpLink(chain);
-  updateAppLinks();
-  chainDropdown.classList.add('hidden');
-
-  // Switch API endpoint based on chain (testnet vs mainnet)
-  const config = NETWORKS[chain] || NETWORKS[DEFAULT_CHAIN];
-  const isTestnet = (config.type || '').toLowerCase() === 'testnet';
-  const newEndpoint = isTestnet ? 'testnet' : 'production';
-  await chrome.storage.local.set({ [STORAGE_KEYS.ENDPOINT]: newEndpoint });
-  setTestModeBannerText(newEndpoint);
-  updateNetworkSelectorVisibility(newEndpoint);
-  await loadJwtSlots();
-
-  if (!silent) showToast(`Switched to ${NETWORKS[chain].name}`);
-
-  // Reload balance
-  fetchBalance();
-
-  // Reload history (reset state and refetch)
-  historyTransactions = [];
-  historyCurrentPage = 0;
-  loadHistory();
-
-  // Reload leaderboard data
-  seenTxHashes.clear(); // Reset seen tips for new chain
-  refreshLeaderboard();
 }
 
 async function updateTopUpLink(chain) {
@@ -2726,6 +2646,200 @@ async function loadLeaderboardStats() {
   } catch (error) {
     console.error('[Grove Extension] Failed to load leaderboard stats:', error);
   }
+}
+
+/**
+ * Giveaways State
+ */
+let giveawaysData = [];
+let selectedGiveawayId = null;
+
+/**
+ * Setup Giveaways Tab
+ */
+function setupGiveawaysTab() {
+  const retryBtn = document.getElementById('giveaway-retry-btn');
+  if (retryBtn) {
+    retryBtn.addEventListener('click', loadGiveaways);
+  }
+
+  const backBtn = document.getElementById('giveaway-detail-back');
+  if (backBtn) {
+    backBtn.addEventListener('click', closeGiveawayDetail);
+  }
+
+  // Delegate click on giveaway cards
+  const list = document.getElementById('giveaway-list');
+  if (list) {
+    list.addEventListener('click', (e) => {
+      const card = e.target.closest('.giveaway-card');
+      if (card) {
+        const id = card.dataset.giveawayId;
+        if (id) openGiveawayDetail(id);
+      }
+    });
+  }
+}
+
+/**
+ * Load Giveaways list
+ */
+async function loadGiveaways() {
+  const loading = document.getElementById('giveaway-loading');
+  const empty = document.getElementById('giveaway-empty');
+  const error = document.getElementById('giveaway-error');
+  const list = document.getElementById('giveaway-list');
+
+  loading.classList.remove('hidden');
+  empty.classList.add('hidden');
+  error.classList.add('hidden');
+  list.innerHTML = '';
+
+  const result = await GroveAPI.listGiveaways({ status: 'active', limit: 50 });
+
+  loading.classList.add('hidden');
+
+  if (!result.success) {
+    error.classList.remove('hidden');
+    return;
+  }
+
+  const giveaways = result.data.giveaways;
+  if (!giveaways || giveaways.length === 0) {
+    empty.classList.remove('hidden');
+    return;
+  }
+
+  // Fetch stats for each giveaway in parallel
+  const withStats = await Promise.all(
+    giveaways.map(async (g) => {
+      try {
+        const detail = await GroveAPI.getGiveaway(g.id);
+        if (detail.success) {
+          return { giveaway: detail.data.giveaway, stats: detail.data.stats };
+        }
+      } catch (err) {
+        console.error('[Grove Extension] Giveaway detail fetch error:', err);
+      }
+      return { giveaway: g, stats: {} };
+    })
+  );
+
+  giveawaysData = withStats;
+
+  // Sort by total entries descending (most popular first)
+  withStats.sort((a, b) => (b.stats.total_entries || 0) - (a.stats.total_entries || 0));
+
+  list.innerHTML = GiveawaysRenderer.renderGiveawaysList(withStats);
+}
+
+/**
+ * Open Giveaway Detail overlay
+ * @param {string} giveawayId - Giveaway UUID
+ */
+async function openGiveawayDetail(giveawayId) {
+  const overlay = document.getElementById('giveaway-detail-overlay');
+  const content = document.getElementById('giveaway-detail-content');
+  const detailLoading = document.getElementById('giveaway-detail-loading');
+
+  selectedGiveawayId = giveawayId;
+  overlay.classList.remove('hidden');
+  content.innerHTML = '';
+  detailLoading.classList.remove('hidden');
+
+  const result = await GroveAPI.getGiveaway(giveawayId);
+
+  detailLoading.classList.add('hidden');
+
+  if (!result.success) {
+    content.innerHTML = '<p class="giveaway-detail-error">Failed to load giveaway details.</p>';
+    return;
+  }
+
+  const { giveaway, stats } = result.data;
+  content.innerHTML = GiveawaysRenderer.renderGiveawayDetail(giveaway, stats);
+
+  // Wire up the enter button
+  const enterBtn = document.getElementById('giveawayEnterBtn');
+  const tipInput = document.getElementById('giveawayTipAmount');
+  const tipError = document.getElementById('giveawayTipError');
+
+  if (enterBtn && tipInput) {
+    enterBtn.addEventListener('click', async () => {
+      const jwt = await getActiveJWT();
+      if (!jwt) {
+        showTipError(tipError, 'Connect your account first to enter.');
+        return;
+      }
+
+      const amount = parseFloat(tipInput.value);
+      const minTip = parseFloat(giveaway.minimum_tip_usd) || 0;
+
+      if (isNaN(amount) || amount < minTip) {
+        showTipError(tipError, `Minimum tip is $${minTip.toFixed(2)}`);
+        return;
+      }
+
+      if (amount > 10000) {
+        showTipError(tipError, 'Maximum tip is $10,000');
+        return;
+      }
+
+      // Disable button, show loading
+      enterBtn.disabled = true;
+      const btnText = enterBtn.querySelector('.giveaway-enter-btn-text');
+      const originalText = btnText.textContent;
+      btnText.textContent = 'Sending...';
+
+      const tipResult = await GroveAPI.sendTip(
+        giveaway.creator_address,
+        amount,
+        jwt,
+        { campaign: 'grove-extension-giveaway', custom_metadata: JSON.stringify({ giveaway_id: giveaway.id }) }
+      );
+
+      if (tipResult.success) {
+        btnText.textContent = 'Entered!';
+        enterBtn.classList.add('success');
+        // Refresh detail after a delay
+        setTimeout(async () => {
+          if (selectedGiveawayId === giveawayId) {
+            const refreshed = await GroveAPI.getGiveaway(giveawayId);
+            if (refreshed.success) {
+              content.innerHTML = GiveawaysRenderer.renderGiveawayDetail(refreshed.data.giveaway, refreshed.data.stats);
+            }
+          }
+        }, 2000);
+      } else {
+        btnText.textContent = originalText;
+        enterBtn.disabled = false;
+        showTipError(tipError, tipResult.error || 'Failed to send tip. Try again.');
+      }
+    });
+  }
+}
+
+/**
+ * Close Giveaway Detail overlay
+ */
+function closeGiveawayDetail() {
+  const overlay = document.getElementById('giveaway-detail-overlay');
+  overlay.classList.add('hidden');
+  selectedGiveawayId = null;
+}
+
+/**
+ * Show tip error in giveaway detail
+ * @param {HTMLElement} el - Error element
+ * @param {string} msg - Error message
+ */
+function showTipError(el, msg) {
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  setTimeout(() => {
+    el.classList.add('hidden');
+  }, 4000);
 }
 
 /**
