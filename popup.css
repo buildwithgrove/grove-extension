@@ -5375,36 +5375,9 @@ button.quick-access-item:hover .quick-access-icon {
   color: var(--color-text-secondary);
 }
 
-/* ============================================
-   GIVEAWAY CREATE CTA
-   ============================================ */
-
 .giveaway-create-cta {
   text-align: center;
   padding: 16px 0 4px;
-}
-
-.giveaway-create-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--color-text-secondary);
-  font-size: 13px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.giveaway-create-link:hover {
-  color: var(--color-primary);
-}
-
-.giveaway-create-link svg {
-  opacity: 0.6;
-}
-
-.giveaway-create-link:hover svg {
-  opacity: 1;
 }
 
 /* ============================================
