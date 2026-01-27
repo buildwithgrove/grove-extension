@@ -185,19 +185,19 @@ const DEFAULT_ENDPOINT = 'production';
 const TOP_UP_URLS = {
   mainnet: 'https://app.grove.city/profile?action=topup',
   testnet: 'https://app.testnet.grove.city/profile?action=topup',
-  localhost: 'http://localhost:8000/profile?action=topup'
+  localhost: 'http://localhost:3000/profile?action=topup'
 };
 const APP_URLS = {
   production: 'https://app.grove.city',
   testnet: 'https://app.testnet.grove.city',
-  localhost: 'http://localhost:8000'
+  localhost: 'http://localhost:3000'
 };
 const MAINNET_CHAINS = ['base', 'solana'];
 const TESTNET_CHAINS = ['base-sepolia', 'solana-devnet'];
 const ENDPOINT_LABELS = {
   'production': 'api.grove.city',
   'testnet': 'api.testnet.grove.city',
-  'localhost': 'localhost:8000',
+  'localhost': 'localhost:3000',
 };
 
 /**

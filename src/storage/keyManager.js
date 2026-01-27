@@ -34,8 +34,8 @@ const ENV_CONFIG = {
   localhost: {
     label: 'Localhost',
     storageKey: 'GROVE_JWT_LOCALHOST',
-    appUrl: 'http://localhost:8000',
-    apiUrl: 'http://localhost:8000',
+    appUrl: 'http://localhost:3000',
+    apiUrl: 'http://localhost:3000',
     isDevMode: true,
   },
 };
