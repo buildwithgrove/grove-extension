@@ -2288,6 +2288,12 @@ async function updateAppLinks() {
   if (walletSignInBtn) {
     walletSignInBtn.href = appUrl + '/';
   }
+
+  // Update create giveaway link
+  const createGiveawayLink = document.getElementById('createGiveawayLink');
+  if (createGiveawayLink) {
+    createGiveawayLink.href = appUrl + '/profile?tab=giveaways';
+  }
 }
 
 /**
