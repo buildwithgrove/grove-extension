@@ -87,7 +87,7 @@ describe('TipButton', () => {
       expect(button.isDarkMode).toBe(false);
     });
 
-    it('should fallback to system preference', () => {
+    it('should default to light mode when background is transparent', () => {
       context.window.getComputedStyle = vi.fn(() => ({
         backgroundColor: '',
       }));
@@ -95,7 +95,7 @@ describe('TipButton', () => {
         matches: true,
       }));
       const button = new TipButton(() => {});
-      expect(button.isDarkMode).toBe(true);
+      expect(button.isDarkMode).toBe(false);
     });
   });
 
@@ -121,8 +121,12 @@ describe('TipButton', () => {
       expect(context.isColorDark('rgba(255, 255, 255, 0.5)')).toBe(false);
     });
 
-    it('should default to dark for unparseable colors', () => {
-      expect(context.isColorDark('invalid')).toBe(true);
+    it('should return null for unparseable colors', () => {
+      expect(context.isColorDark('invalid')).toBe(null);
+    });
+
+    it('should return null for transparent backgrounds', () => {
+      expect(context.isColorDark('rgba(0, 0, 0, 0)')).toBe(null);
     });
   });
 

@@ -582,6 +582,57 @@ class GroveAPI {
   }
 
   /**
+   * Get referral dashboard (referral code, stats, and referred accounts)
+   * @param {string} groveApiJwt - JWT token for authentication
+   * @param {number} limit - Number of referees per page (default: 50, max: 100)
+   * @param {number} offset - Offset for pagination (default: 0)
+   * @returns {Promise<Object>} - Referrals data with stats and referees
+   */
+  static async getReferrals(groveApiJwt, limit = 50, offset = 0) {
+    const baseURL = await this.getBaseURL();
+    const params = new URLSearchParams({
+      limit: Math.min(Math.max(1, limit), 100).toString(),
+      offset: Math.max(0, offset).toString(),
+    });
+    const apiUrl = `${baseURL}/v1/referrals?${params}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${groveApiJwt}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.message || `API request failed with status ${response.status}`,
+          status: response.status,
+          data: data
+        };
+      }
+
+      return {
+        success: true,
+        data: data,
+        status: response.status
+      };
+
+    } catch (error) {
+      console.error('[Grove Extension] Referrals fetch failed:', error);
+      return {
+        success: false,
+        error: error.message,
+        status: null
+      };
+    }
+  }
+
+  /**
    * Send a tip to the current page URL
    * @param {string} pageUrl - Full page URL (e.g., "https://twitter.com/olshansky")
    * @param {number} tipAmount - Tip amount in dollars (default: 0.05)

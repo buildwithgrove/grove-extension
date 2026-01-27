@@ -9,12 +9,16 @@
  * @returns {boolean}
  */
 function isColorDark(color) {
-  const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (!match) return true; // Default to dark if can't parse
+  const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+  if (!match) return null; // Can't parse — let caller decide
 
   const r = parseInt(match[1]);
   const g = parseInt(match[2]);
   const b = parseInt(match[3]);
+  const a = match[4] !== undefined ? parseFloat(match[4]) : 1;
+
+  // Transparent background — can't determine from this element
+  if (a < 0.1) return null;
 
   // Calculate relative luminance
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
@@ -28,26 +32,36 @@ function isColorDark(color) {
  */
 function detectDarkMode(platform) {
   // Platform-specific detection
-  if (platform === 'twitter') {
-    const bg = document.body.style.backgroundColor ||
-               window.getComputedStyle(document.body).backgroundColor;
-    if (bg) {
-      return isColorDark(bg);
-    }
-  }
-
   if (platform === 'soundcloud') {
     return document.body.classList.contains('theme-dark');
   }
 
-  // Fallback: check system preference
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    return true;
+  if (platform === 'substack') {
+    // Substack exposes --theme_bg_is_dark: 0 (light) or 1 (dark)
+    const val = getComputedStyle(document.documentElement)
+      .getPropertyValue('--theme_bg_is_dark').trim();
+    if (val === '1') return true;
+    if (val === '0') return false;
+    // Fall through to generic detection if variable not found
   }
 
-  // Fallback: check body background luminosity
-  const bg = window.getComputedStyle(document.body).backgroundColor;
-  return isColorDark(bg);
+  // Check body background (most reliable for platforms that set it)
+  const bodyBg = document.body.style.backgroundColor ||
+                 window.getComputedStyle(document.body).backgroundColor;
+  if (bodyBg) {
+    const result = isColorDark(bodyBg);
+    if (result !== null) return result;
+  }
+
+  // Body was transparent — check <html> element
+  const htmlBg = window.getComputedStyle(document.documentElement).backgroundColor;
+  if (htmlBg) {
+    const result = isColorDark(htmlBg);
+    if (result !== null) return result;
+  }
+
+  // Both body and html are transparent — browser default is white
+  return false;
 }
 
 // Export to window for browser context
