@@ -91,11 +91,6 @@ const accountInfoIcon = document.getElementById('accountInfoIcon');
 const accountInfoValue = document.getElementById('accountInfoValue');
 const accountInfoType = document.getElementById('accountInfoType');
 
-// Connected Wallet (for web3 users in Account section)
-const connectedWalletRow = document.getElementById('connectedWalletRow');
-const connectedWalletAddress = document.getElementById('connectedWalletAddress');
-const copyConnectedWalletBtn = document.getElementById('copyConnectedWalletBtn');
-
 // Tipping Wallet (in Account section)
 const tippingWalletRow = document.getElementById('tippingWalletRow');
 const tippingWalletAddress = document.getElementById('tippingWalletAddress');
@@ -710,11 +705,6 @@ function setupEventListeners() {
       }
     });
   });
-
-  // Account - Copy Connected Wallet Button
-  if (copyConnectedWalletBtn) {
-    copyConnectedWalletBtn.addEventListener('click', copyConnectedWallet);
-  }
 
   // Account - Copy Tipping Wallet Button
   if (copyTippingWalletBtn) {
@@ -1813,28 +1803,6 @@ async function loadEarnStats() {
     }
   } catch (err) {
     console.error('[Grove Extension] Earn stats load failed:', err);
-  }
-}
-
-async function copyConnectedWallet() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
-  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
-
-  if (address) {
-    try {
-      await navigator.clipboard.writeText(address);
-      showToast('Address copied!');
-
-      if (copyConnectedWalletBtn) {
-        copyConnectedWalletBtn.classList.add('copied');
-        setTimeout(() => {
-          copyConnectedWalletBtn.classList.remove('copied');
-        }, 2000);
-      }
-    } catch (err) {
-      console.error('[Grove Extension] Copy failed:', err);
-      showToast('Failed to copy');
-    }
   }
 }
 
@@ -3786,9 +3754,8 @@ async function updateAccountInfoDisplay() {
       : onchainAddress);
 
     if (hasCdpIdentity) {
-      // CDP auth user: show email/phone + tipping wallet (no connected wallet)
+      // CDP auth user: show email/phone + tipping wallet
       accountIdentityRow.classList.remove('hidden');
-      connectedWalletRow.classList.add('hidden');
 
       // Update identity display
       accountInfoValue.textContent = identityValue;
@@ -3806,21 +3773,8 @@ async function updateAccountInfoDisplay() {
           <polyline points="22,6 12,13 2,6"></polyline>
         `;
       }
-    } else if (clientAddress) {
-      // Web3 user: show connected wallet + tipping wallet
-      accountIdentityRow.classList.add('hidden');
-      connectedWalletRow.classList.remove('hidden');
-
-      // Format connected wallet address for display
-      const connectedDisplay = clientAddress.length > 20
-        ? `${clientAddress.slice(0, 8)}...${clientAddress.slice(-6)}`
-        : clientAddress;
-      connectedWalletAddress.textContent = connectedDisplay;
-      connectedWalletAddress.title = clientAddress;
     } else {
-      // No identity info to show (shouldn't happen, but handle gracefully)
       accountIdentityRow.classList.add('hidden');
-      connectedWalletRow.classList.add('hidden');
     }
 
     // Always show tipping wallet
