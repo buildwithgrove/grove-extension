@@ -1110,7 +1110,7 @@ async function showJwtEditForSlot(slot) {
   jwtEditContainer.classList.remove('hidden');
 
   // Get config for this slot
-  const config = KeyManager.getEnvConfig(slot) || { label: 'Key', appUrl: 'https://app.grove.city' };
+  const config = KeyManager.getEnvConfig(slot) || { label: 'Key', appUrl: 'https://app.grove.city/extension' };
 
   // Update the label and link based on slot
   if (jwtEditSlotLabel) {
