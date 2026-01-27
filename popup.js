@@ -3949,46 +3949,8 @@ async function updateAccountInfoDisplay() {
     }
   }
 
-  // Show Account section if user has a tipping wallet
-  if (hasTippingWallet) {
-    accountInfoSection.classList.remove('hidden');
-
-    // Format tipping wallet address for display
-    const tippingDisplay = ensName || (onchainAddress.length > 20
-      ? `${onchainAddress.slice(0, 8)}...${onchainAddress.slice(-6)}`
-      : onchainAddress);
-
-    if (hasCdpIdentity) {
-      // CDP auth user: show email/phone + tipping wallet
-      accountIdentityRow.classList.remove('hidden');
-
-      // Update identity display
-      accountInfoValue.textContent = identityValue;
-      accountInfoType.textContent = identityType === 'sms' ? 'Phone Number' : 'Email';
-
-      // Update icon based on type
-      if (identityType === 'sms') {
-        accountInfoIcon.innerHTML = `
-          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-          <line x1="12" y1="18" x2="12.01" y2="18"></line>
-        `;
-      } else {
-        accountInfoIcon.innerHTML = `
-          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-          <polyline points="22,6 12,13 2,6"></polyline>
-        `;
-      }
-    } else {
-      accountIdentityRow.classList.add('hidden');
-    }
-
-    // Always show tipping wallet
-    tippingWalletRow.classList.remove('hidden');
-    tippingWalletAddress.textContent = tippingDisplay;
-    tippingWalletAddress.title = onchainAddress;
-  } else {
-    accountInfoSection.classList.add('hidden');
-  }
+  // Account info section hidden — not useful to end users
+  accountInfoSection.classList.add('hidden');
 }
 
 /**
