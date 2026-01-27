@@ -847,8 +847,9 @@ async function handleNavigation(e) {
     loadHistory();
   }
 
-  // Hide earn badge when navigating to earn tab
+  // Load earn stats and hide badge when navigating to earn tab
   if (targetId === 'tab-earn') {
+    loadEarnStats();
     const earnBadge = document.querySelector('.nav-badge-dot');
     if (earnBadge) {
       earnBadge.classList.add('hidden');
@@ -1788,6 +1789,30 @@ async function copyEarnAddress() {
       console.error('[Grove Extension] Copy failed:', err);
       showToast('Failed to copy');
     }
+  }
+}
+
+/**
+ * Load earnings summary stats for the Earn tab
+ */
+async function loadEarnStats() {
+  const jwt = await getActiveJWT();
+  if (!jwt) return;
+
+  const totalEl = document.getElementById('earnTotalUsd');
+  const tipsEl = document.getElementById('earnTipCount');
+  const tippersEl = document.getElementById('earnTipperCount');
+
+  try {
+    const result = await GroveAPI.getEarningsSummary(jwt, 'all');
+    if (result.success) {
+      const val = parseFloat(result.data.total_usd) || 0;
+      if (totalEl) totalEl.textContent = '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (tipsEl) tipsEl.textContent = result.data.tip_count.toLocaleString();
+      if (tippersEl) tippersEl.textContent = result.data.unique_tipper_count.toLocaleString();
+    }
+  } catch (err) {
+    console.error('[Grove Extension] Earn stats load failed:', err);
   }
 }
 

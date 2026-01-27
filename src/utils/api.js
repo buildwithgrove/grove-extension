@@ -777,6 +777,45 @@ class GroveAPI {
       return { success: false, error: error.message };
     }
   }
+
+  /**
+   * Get earnings summary for the authenticated user
+   * @param {string} groveApiJwt - JWT token
+   * @param {string} window - Time window: '24h', '7d', '30d', or 'all'
+   * @returns {Promise<Object>} - { total_usd, tip_count, unique_tipper_count }
+   */
+  static async getEarningsSummary(groveApiJwt, window = 'all') {
+    const baseURL = await this.getBaseURL();
+    const params = new URLSearchParams({ window });
+    const apiUrl = `${baseURL}/v1/account/earnings/summary?${params}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${groveApiJwt}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data: {
+          total_usd: data.total_usd || '0',
+          tip_count: data.tip_count || 0,
+          unique_tipper_count: data.unique_tipper_count || 0
+        }
+      };
+    } catch (error) {
+      console.error('[Grove Extension] Earnings summary fetch failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 if (typeof window !== 'undefined') {

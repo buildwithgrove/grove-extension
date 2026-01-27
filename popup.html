@@ -207,7 +207,7 @@
               </svg>
             </div>
             <div class="tipping-row-content">
-              <div class="tipping-row-label">Tipping Balance</div>
+              <div class="tipping-row-label">Balance</div>
               <div class="tipping-row-value amount-display" id="balanceDisplay">
                 <span class="currency-symbol">$</span>
                 <span class="amount-value" id="balanceAmount">0.00</span>
@@ -558,6 +558,26 @@
     <!-- Earn Tips Page -->
     <div class="page" id="tab-earn">
       <h2 class="page-title">Earn Tips</h2>
+
+      <!-- Earnings Summary -->
+      <div class="section-card earn-stats-card" id="earnStatsCard">
+        <div class="earn-stats-row">
+          <div class="earn-stat">
+            <span class="earn-stat-value" id="earnTotalUsd">$0.00</span>
+            <span class="earn-stat-label">Earned</span>
+          </div>
+          <div class="earn-stat-divider"></div>
+          <div class="earn-stat">
+            <span class="earn-stat-value" id="earnTipCount">0</span>
+            <span class="earn-stat-label">Tips</span>
+          </div>
+          <div class="earn-stat-divider"></div>
+          <div class="earn-stat">
+            <span class="earn-stat-value" id="earnTipperCount">0</span>
+            <span class="earn-stat-label">Tippers</span>
+          </div>
+        </div>
+      </div>
 
       <div class="section-card earn-card">
 
