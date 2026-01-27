@@ -99,6 +99,16 @@ const tippingWalletRow = document.getElementById('tippingWalletRow');
 const tippingWalletAddress = document.getElementById('tippingWalletAddress');
 const copyTippingWalletBtn = document.getElementById('copyTippingWalletBtn');
 
+// Username Claim
+const homeUsernameBtn = document.getElementById('homeUsernameBtn');
+const homeUsernameSubtitle = document.getElementById('homeUsernameSubtitle');
+const usernameClaimed = document.getElementById('usernameClaimed');
+const usernameClaim = document.getElementById('usernameClaim');
+const usernameDisplayValue = document.getElementById('usernameDisplayValue');
+const usernameInput = document.getElementById('usernameInput');
+const usernameClaimBtn = document.getElementById('usernameClaimBtn');
+const usernameError = document.getElementById('usernameError');
+
 // Account Disconnect Button
 const accountDisconnectBtn = document.getElementById('accountLogoutBtn');
 
@@ -307,6 +317,10 @@ async function init() {
     return chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
   }).then(res => res[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT).catch(() => DEFAULT_ENDPOINT);
   updateNetworkSelectorVisibility(endpointInit);
+
+  // Load cached handle for immediate home card display
+  const cachedHandle = await chrome.storage.local.get([STORAGE_KEYS.HANDLE]);
+  updateUsernameCard(cachedHandle[STORAGE_KEYS.HANDLE] || null);
 
   // Fetch balance after everything is loaded (also updates client address)
   await fetchBalance();
@@ -551,6 +565,19 @@ function setupEventListeners() {
       navigateToSettings();
       showSettingsView('developer');
     });
+  }
+
+  // Home Username Card - navigate to Settings > Username view
+  if (homeUsernameBtn) {
+    homeUsernameBtn.addEventListener('click', () => {
+      navigateToSettings();
+      showSettingsView('username');
+    });
+  }
+
+  // Username claim button
+  if (usernameClaimBtn) {
+    usernameClaimBtn.addEventListener('click', handleClaimUsername);
   }
 
   // Home Referrals Card - navigate to Settings > Referrals view
@@ -1249,12 +1276,14 @@ async function disconnectSlot(slotId) {
       STORAGE_KEYS.EMBEDDED_WALLET_ADDRESS,
       STORAGE_KEYS.ONCHAIN_ADDRESS,
       STORAGE_KEYS.ENS_NAME,
+      STORAGE_KEYS.HANDLE,
       STORAGE_KEYS.CDP_IDENTITY_TYPE,
       STORAGE_KEYS.CDP_IDENTITY_VALUE,
     ]);
     await updateAuthState(null);
     await updateEarnAddressDisplay(null);
     updateEnsNameDisplay(null);
+    updateUsernameCard(null);
     await updateAccountInfoDisplay();
   }
 
@@ -1623,7 +1652,7 @@ async function fetchBalance() {
         await KeyManager.clearJWT(activeSlot);
 
         // Clear cached data
-        await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.EMBEDDED_WALLET_ADDRESS, STORAGE_KEYS.ONCHAIN_ADDRESS, STORAGE_KEYS.ENS_NAME, STORAGE_KEYS.LAST_BALANCES]);
+        await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.EMBEDDED_WALLET_ADDRESS, STORAGE_KEYS.ONCHAIN_ADDRESS, STORAGE_KEYS.ENS_NAME, STORAGE_KEYS.HANDLE, STORAGE_KEYS.LAST_BALANCES]);
 
         // Update UI to show disconnected state
         await updateAuthState(null);
@@ -1683,6 +1712,15 @@ async function fetchBalance() {
       await updateEarnAddressDisplay(null);
       updateEnsNameDisplay(null);
     }
+
+    // Store handle from account response
+    const handle = response.data.handle || null;
+    if (handle) {
+      await chrome.storage.local.set({ [STORAGE_KEYS.HANDLE]: handle });
+    } else {
+      await chrome.storage.local.remove([STORAGE_KEYS.HANDLE]);
+    }
+    updateUsernameCard(handle);
 
     // Find the server wallet (Grove-controlled tipping wallet)
     const serverWallet = response.data.wallet_balances.find(
@@ -2320,6 +2358,138 @@ function showSettingsView(targetView) {
 
   if (targetView === 'referral') {
     loadReferralData();
+  }
+
+  if (targetView === 'username') {
+    loadUsernameView();
+  }
+}
+
+/**
+ * Load the Username settings view — show claimed or claim UI
+ */
+async function loadUsernameView() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.HANDLE]);
+  const handle = result[STORAGE_KEYS.HANDLE];
+
+  if (handle) {
+    usernameClaimed.classList.remove('hidden');
+    usernameClaim.classList.add('hidden');
+    usernameDisplayValue.textContent = handle;
+  } else {
+    usernameClaimed.classList.add('hidden');
+    usernameClaim.classList.remove('hidden');
+    usernameInput.value = '';
+    usernameError.classList.add('hidden');
+    usernameError.textContent = '';
+  }
+}
+
+/**
+ * Update the home screen username card visibility and page title
+ */
+function updateUsernameCard(handle) {
+  if (homeUsernameBtn) {
+    if (handle) {
+      homeUsernameBtn.classList.add('hidden');
+    } else {
+      homeUsernameBtn.classList.remove('hidden');
+    }
+  }
+
+  // Update header settings button to show handle
+  const headerHandleLabel = document.getElementById('headerHandleLabel');
+  const headerSettingsIcon = document.getElementById('headerSettingsIcon');
+  const headerHandleChevron = document.getElementById('headerHandleChevron');
+  const headerSettingsBtn = document.getElementById('headerSettingsBtn');
+  if (headerHandleLabel && headerSettingsIcon && headerHandleChevron && headerSettingsBtn) {
+    if (handle) {
+      headerHandleLabel.textContent = `@${handle}`;
+      headerHandleLabel.classList.remove('hidden');
+      headerHandleChevron.classList.remove('hidden');
+      headerSettingsIcon.classList.add('hidden');
+      headerSettingsBtn.classList.add('has-handle');
+    } else {
+      headerHandleLabel.classList.add('hidden');
+      headerHandleChevron.classList.add('hidden');
+      headerSettingsIcon.classList.remove('hidden');
+      headerSettingsBtn.classList.remove('has-handle');
+    }
+  }
+}
+
+/**
+ * Validate a handle string client-side
+ * @param {string} handle
+ * @returns {string|null} Error message, or null if valid
+ */
+function validateHandle(handle) {
+  if (handle.length < 4 || handle.length > 15) {
+    return 'Must be 4–15 characters.';
+  }
+  if (!/^[a-z0-9_]+$/.test(handle)) {
+    return 'Only lowercase letters, numbers, and underscores.';
+  }
+  if (handle.startsWith('_') || handle.endsWith('_')) {
+    return 'Cannot start or end with an underscore.';
+  }
+  if (handle.includes('__')) {
+    return 'Cannot contain consecutive underscores.';
+  }
+  return null;
+}
+
+/**
+ * Handle the "Claim" button click
+ */
+async function handleClaimUsername() {
+  const handle = usernameInput.value.trim().toLowerCase();
+  usernameError.classList.add('hidden');
+
+  const validationError = validateHandle(handle);
+  if (validationError) {
+    usernameError.textContent = validationError;
+    usernameError.classList.remove('hidden');
+    return;
+  }
+
+  usernameClaimBtn.disabled = true;
+  usernameClaimBtn.textContent = 'Claiming...';
+
+  try {
+    const jwt = await getActiveJWT();
+    if (!jwt) {
+      usernameError.textContent = 'Not signed in.';
+      usernameError.classList.remove('hidden');
+      return;
+    }
+
+    const response = await GroveAPI.claimHandle(handle, jwt);
+
+    if (!response.success) {
+      if (response.status === 409) {
+        usernameError.textContent = 'This username is already taken.';
+      } else if (response.status === 400) {
+        usernameError.textContent = response.error || 'Invalid username.';
+      } else {
+        usernameError.textContent = response.error || 'Failed to claim username.';
+      }
+      usernameError.classList.remove('hidden');
+      return;
+    }
+
+    // Success — persist and update UI
+    await chrome.storage.local.set({ [STORAGE_KEYS.HANDLE]: handle });
+    updateUsernameCard(handle);
+    loadUsernameView();
+    showToast(`Claimed @${handle}`);
+  } catch (error) {
+    console.error('[Grove Extension] Claim username error:', error);
+    usernameError.textContent = 'Something went wrong. Try again.';
+    usernameError.classList.remove('hidden');
+  } finally {
+    usernameClaimBtn.disabled = false;
+    usernameClaimBtn.textContent = 'Claim';
   }
 }
 

@@ -120,6 +120,33 @@ body {
   background-color: var(--color-primary-light);
 }
 
+.header-settings-btn.has-handle {
+  width: auto;
+  gap: 4px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+}
+
+.header-settings-btn.has-handle:hover {
+  border-color: rgba(56, 159, 88, 0.3);
+}
+
+.header-settings-btn.has-handle.active {
+  border-color: var(--color-primary);
+}
+
+.header-handle-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+.header-handle-chevron {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
 .logo-container {
   display: flex;
   align-items: center;
@@ -5648,10 +5675,6 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 /* ===== Username Claim ===== */
-
-.home-title-handle {
-  color: var(--color-primary);
-}
 
 .settings-card-subtitle {
   font-size: 12px;

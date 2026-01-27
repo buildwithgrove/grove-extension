@@ -816,6 +816,53 @@ class GroveAPI {
       return { success: false, error: error.message };
     }
   }
+
+  /**
+   * Claim a handle for the authenticated user
+   * @param {string} handle - Desired handle (4-15 chars, [a-z0-9_])
+   * @param {string} groveApiJwt - JWT token for authentication
+   * @returns {Promise<Object>} - { success, data, error, status }
+   */
+  static async claimHandle(handle, groveApiJwt) {
+    const baseURL = await this.getBaseURL();
+    const apiUrl = `${baseURL}/v1/account/handle`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groveApiJwt}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ handle })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.message || data.error || `Request failed with status ${response.status}`,
+          status: response.status,
+          data
+        };
+      }
+
+      return {
+        success: true,
+        data,
+        status: response.status
+      };
+
+    } catch (error) {
+      console.error('[Grove Extension] Handle claim failed:', error);
+      return {
+        success: false,
+        error: error.message,
+        status: null
+      };
+    }
+  }
 }
 
 if (typeof window !== 'undefined') {
