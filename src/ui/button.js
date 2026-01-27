@@ -129,16 +129,16 @@ class TipButton {
 
     // Create animated sheen overlay
     const sheenOverlay = document.createElement('div');
+    const sheenBg = this.isDarkMode
+      ? 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)'
+      : 'linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.06), transparent)';
     sheenOverlay.style.cssText = `
       position: absolute !important;
       top: 0 !important;
       left: 0 !important;
       width: 100% !important;
       height: 100% !important;
-      background: linear-gradient(90deg,
-        transparent,
-        rgba(255, 255, 255, 0.2),
-        transparent) !important;
+      background: ${sheenBg} !important;
       pointer-events: none !important;
       z-index: 1 !important;
       animation: grove-sheen-slide 3s ease-in-out infinite !important;
