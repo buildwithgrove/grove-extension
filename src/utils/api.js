@@ -7,8 +7,8 @@ class GroveAPI {
   static ENDPOINTS = {
     'production': 'https://api.grove.city',
     'testnet': 'https://api.testnet.grove.city',
-    'localhost': 'http://localhost:8000',
-    'localhost:8000': 'http://localhost:8000',
+    'localhost': 'http://localhost:3000',
+    'localhost:3000': 'http://localhost:3000',
   };
 
   static DEFAULT_TIP_AMOUNT = 0.05; // $0.05 default
@@ -700,6 +700,162 @@ class GroveAPI {
     } catch (error) {
       console.error('[Grove Extension] Tip failed:', error);
 
+      return {
+        success: false,
+        error: error.message,
+        status: null
+      };
+    }
+  }
+
+  /**
+   * Fetch active giveaways
+   * @param {Object} params - Query parameters
+   * @param {string} params.status - Filter by status (default: 'active')
+   * @param {number} params.limit - Max results (default: 50)
+   * @param {number} params.offset - Pagination offset (default: 0)
+   * @returns {Promise<Object>} - Giveaways list with totals
+   */
+  static async listGiveaways({ status = 'active', limit = 50, offset = 0 } = {}) {
+    const baseURL = await this.getBaseURL();
+    const params = new URLSearchParams({ status, limit: String(limit), offset: String(offset) });
+    const apiUrl = `${baseURL}/v1/giveaways?${params}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data: {
+          giveaways: data.giveaways || [],
+          total: data.total || 0
+        }
+      };
+    } catch (error) {
+      console.error('[Grove Extension] Giveaways fetch failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Get a single giveaway with stats
+   * @param {string} giveawayId - Giveaway UUID
+   * @returns {Promise<Object>} - Giveaway details with stats
+   */
+  static async getGiveaway(giveawayId) {
+    const baseURL = await this.getBaseURL();
+    const apiUrl = `${baseURL}/v1/giveaway/${giveawayId}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data: {
+          giveaway: data.giveaway,
+          stats: data.stats
+        }
+      };
+    } catch (error) {
+      console.error('[Grove Extension] Giveaway detail fetch failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Get earnings summary for the authenticated user
+   * @param {string} groveApiJwt - JWT token
+   * @param {string} window - Time window: '24h', '7d', '30d', or 'all'
+   * @returns {Promise<Object>} - { total_usd, tip_count, unique_tipper_count }
+   */
+  static async getEarningsSummary(groveApiJwt, window = 'all') {
+    const baseURL = await this.getBaseURL();
+    const params = new URLSearchParams({ window });
+    const apiUrl = `${baseURL}/v1/account/earnings/summary?${params}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${groveApiJwt}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data: {
+          total_usd: data.total_usd || '0',
+          tip_count: data.tip_count || 0,
+          unique_tipper_count: data.unique_tipper_count || 0
+        }
+      };
+    } catch (error) {
+      console.error('[Grove Extension] Earnings summary fetch failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Claim a handle for the authenticated user
+   * @param {string} handle - Desired handle (4-15 chars, [a-z0-9_])
+   * @param {string} groveApiJwt - JWT token for authentication
+   * @returns {Promise<Object>} - { success, data, error, status }
+   */
+  static async claimHandle(handle, groveApiJwt) {
+    const baseURL = await this.getBaseURL();
+    const apiUrl = `${baseURL}/v1/account/handle`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groveApiJwt}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ handle })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.message || data.error || `Request failed with status ${response.status}`,
+          status: response.status,
+          data
+        };
+      }
+
+      return {
+        success: true,
+        data,
+        status: response.status
+      };
+
+    } catch (error) {
+      console.error('[Grove Extension] Handle claim failed:', error);
       return {
         success: false,
         error: error.message,

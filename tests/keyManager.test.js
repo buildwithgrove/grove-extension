@@ -37,7 +37,7 @@ describe('KeyManager', () => {
       const config = KeyManager.getEnvConfig('production');
       expect(config.label).toBe('Mainnet');
       expect(config.storageKey).toBe('GROVE_JWT_PRODUCTION');
-      expect(config.appUrl).toBe('https://app.grove.city');
+      expect(config.appUrl).toBe('https://app.grove.city/extension');
     });
 
     it('should return config for testnet slot', () => {

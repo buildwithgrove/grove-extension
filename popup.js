@@ -7,15 +7,12 @@
 const navItems = document.querySelectorAll('.nav-item');
 const pages = document.querySelectorAll('.page');
 
+// Track previous tab for settings toggle
+let previousTabTarget = 'tab-home';
+
 // Leaderboard switcher
 let leaderboardSwitcherBtns = null;
 let leaderboardViews = null;
-
-// Chain selector
-const chainSelectorBtn = document.getElementById('chainSelectorBtn');
-const chainDropdown = document.getElementById('chainDropdown');
-const chainName = document.getElementById('chainName');
-const chainOptions = document.querySelectorAll('.chain-option');
 
 // Home States
 const onboardingState = document.getElementById('onboardingState');
@@ -97,15 +94,20 @@ const accountInfoIcon = document.getElementById('accountInfoIcon');
 const accountInfoValue = document.getElementById('accountInfoValue');
 const accountInfoType = document.getElementById('accountInfoType');
 
-// Connected Wallet (for web3 users in Account section)
-const connectedWalletRow = document.getElementById('connectedWalletRow');
-const connectedWalletAddress = document.getElementById('connectedWalletAddress');
-const copyConnectedWalletBtn = document.getElementById('copyConnectedWalletBtn');
-
 // Tipping Wallet (in Account section)
 const tippingWalletRow = document.getElementById('tippingWalletRow');
 const tippingWalletAddress = document.getElementById('tippingWalletAddress');
 const copyTippingWalletBtn = document.getElementById('copyTippingWalletBtn');
+
+// Username Claim
+const homeUsernameBtn = document.getElementById('homeUsernameBtn');
+const homeUsernameSubtitle = document.getElementById('homeUsernameSubtitle');
+const usernameClaimed = document.getElementById('usernameClaimed');
+const usernameClaim = document.getElementById('usernameClaim');
+const usernameDisplayValue = document.getElementById('usernameDisplayValue');
+const usernameInput = document.getElementById('usernameInput');
+const usernameClaimBtn = document.getElementById('usernameClaimBtn');
+const usernameError = document.getElementById('usernameError');
 
 // Account Disconnect Button
 const accountDisconnectBtn = document.getElementById('accountLogoutBtn');
@@ -205,7 +207,7 @@ const TESTNET_CHAINS = ['base-sepolia', 'solana-devnet'];
 const ENDPOINT_LABELS = {
   'production': 'api.grove.city',
   'testnet': 'api.testnet.grove.city',
-  'localhost': 'localhost:8000',
+  'localhost': 'localhost:3000',
 };
 
 /**
@@ -315,6 +317,10 @@ async function init() {
     return chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
   }).then(res => res[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT).catch(() => DEFAULT_ENDPOINT);
   updateNetworkSelectorVisibility(endpointInit);
+
+  // Load cached handle for immediate home card display
+  const cachedHandle = await chrome.storage.local.get([STORAGE_KEYS.HANDLE]);
+  updateUsernameCard(cachedHandle[STORAGE_KEYS.HANDLE] || null);
 
   // Fetch balance after everything is loaded (also updates client address)
   await fetchBalance();
@@ -474,6 +480,9 @@ function setupEventListeners() {
   // Leaderboard switcher
   setupLeaderboardSwitcher();
 
+  // Giveaways tab
+  setupGiveawaysTab();
+
   // History tab
   setupHistoryTab();
 
@@ -483,26 +492,13 @@ function setupEventListeners() {
   // Referral copy button
   setupReferralCopyButton();
 
-  // Chain Selector
-  chainSelectorBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    // Refresh visibility based on current endpoint before showing dropdown
-    chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]).then(res => {
-      const endpoint = res[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
-      updateNetworkSelectorVisibility(endpoint);
+  // Header settings button
+  const headerSettingsBtn = document.getElementById('headerSettingsBtn');
+  if (headerSettingsBtn) {
+    headerSettingsBtn.addEventListener('click', () => {
+      navigateToSettings();
     });
-    chainDropdown.classList.toggle('hidden');
-  });
-
-  chainOptions.forEach(option => {
-    option.addEventListener('click', handleChainSelection);
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!chainSelectorBtn.contains(e.target) && !chainDropdown.contains(e.target)) {
-      chainDropdown.classList.add('hidden');
-    }
-  });
+  }
 
   // Tip Amount (Home) - Edit button triggers edit mode
   editDefaultTipBtn.addEventListener('click', showTipEdit);
@@ -569,6 +565,19 @@ function setupEventListeners() {
       navigateToSettings();
       showSettingsView('developer');
     });
+  }
+
+  // Home Username Card - navigate to Settings > Username view
+  if (homeUsernameBtn) {
+    homeUsernameBtn.addEventListener('click', () => {
+      navigateToSettings();
+      showSettingsView('username');
+    });
+  }
+
+  // Username claim button
+  if (usernameClaimBtn) {
+    usernameClaimBtn.addEventListener('click', handleClaimUsername);
   }
 
   // Home Referrals Card - navigate to Settings > Referrals view
@@ -727,11 +736,6 @@ function setupEventListeners() {
     });
   });
 
-  // Account - Copy Connected Wallet Button
-  if (copyConnectedWalletBtn) {
-    copyConnectedWalletBtn.addEventListener('click', copyConnectedWallet);
-  }
-
   // Account - Copy Tipping Wallet Button
   if (copyTippingWalletBtn) {
     copyTippingWalletBtn.addEventListener('click', copyTippingWallet);
@@ -810,13 +814,24 @@ function setupEventListeners() {
  * Navigate to Settings tab programmatically
  */
 function navigateToSettings() {
-  // Update nav items - remove active from all, add to settings
-  navItems.forEach(item => {
-    item.classList.remove('active');
-    if (item.dataset.target === 'tab-settings') {
-      item.classList.add('active');
-    }
-  });
+  // If already on settings, go back to previous tab
+  const settingsPage = document.getElementById('tab-settings');
+  if (settingsPage && settingsPage.classList.contains('active')) {
+    const prevNav = document.querySelector(`.nav-item[data-target="${previousTabTarget}"]`);
+    if (prevNav) prevNav.click();
+    return;
+  }
+
+  // Save current tab before switching
+  const activeNav = document.querySelector('.nav-item.active');
+  if (activeNav) previousTabTarget = activeNav.dataset.target;
+
+  // Remove active from all nav items (settings is now in the header, not bottom nav)
+  navItems.forEach(item => item.classList.remove('active'));
+
+  // Highlight header settings button
+  const headerSettingsBtn = document.getElementById('headerSettingsBtn');
+  if (headerSettingsBtn) headerSettingsBtn.classList.add('active');
 
   // Update pages
   pages.forEach(page => {
@@ -841,6 +856,10 @@ async function handleNavigation(e) {
   navItems.forEach(item => item.classList.remove('active'));
   e.currentTarget.classList.add('active');
 
+  // Deactivate header settings button when navigating to a tab
+  const headerSettingsBtn = document.getElementById('headerSettingsBtn');
+  if (headerSettingsBtn) headerSettingsBtn.classList.remove('active');
+
   // Update Pages
   pages.forEach(page => {
     if (page.id === targetId) {
@@ -860,8 +879,9 @@ async function handleNavigation(e) {
     loadHistory();
   }
 
-  // Hide earn badge when navigating to earn tab
+  // Load earn stats and hide badge when navigating to earn tab
   if (targetId === 'tab-earn') {
+    loadEarnStats();
     const earnBadge = document.querySelector('.nav-badge-dot');
     if (earnBadge) {
       earnBadge.classList.add('hidden');
@@ -883,6 +903,11 @@ async function handleNavigation(e) {
   } else {
     // Stop live polling when leaving leaderboard tab
     stopLivePolling();
+  }
+
+  // Load giveaways when navigating to giveaways tab
+  if (targetId === 'tab-giveaways') {
+    loadGiveaways();
   }
 
   // Reset settings view to main menu when navigating to settings tab
@@ -1085,7 +1110,7 @@ async function showJwtEditForSlot(slot) {
   jwtEditContainer.classList.remove('hidden');
 
   // Get config for this slot
-  const config = KeyManager.getEnvConfig(slot) || { label: 'Key', appUrl: 'https://app.grove.city' };
+  const config = KeyManager.getEnvConfig(slot) || { label: 'Key', appUrl: 'https://app.grove.city/extension' };
 
   // Update the label and link based on slot
   if (jwtEditSlotLabel) {
@@ -1251,12 +1276,14 @@ async function disconnectSlot(slotId) {
       STORAGE_KEYS.EMBEDDED_WALLET_ADDRESS,
       STORAGE_KEYS.ONCHAIN_ADDRESS,
       STORAGE_KEYS.ENS_NAME,
+      STORAGE_KEYS.HANDLE,
       STORAGE_KEYS.CDP_IDENTITY_TYPE,
       STORAGE_KEYS.CDP_IDENTITY_VALUE,
     ]);
     await updateAuthState(null);
     await updateEarnAddressDisplay(null);
     updateEnsNameDisplay(null);
+    updateUsernameCard(null);
     await updateAccountInfoDisplay();
   }
 
@@ -1625,7 +1652,7 @@ async function fetchBalance() {
         await KeyManager.clearJWT(activeSlot);
 
         // Clear cached data
-        await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.EMBEDDED_WALLET_ADDRESS, STORAGE_KEYS.ONCHAIN_ADDRESS, STORAGE_KEYS.ENS_NAME, STORAGE_KEYS.LAST_BALANCES]);
+        await chrome.storage.local.remove([STORAGE_KEYS.CLIENT_ADDRESS, STORAGE_KEYS.EMBEDDED_WALLET_ADDRESS, STORAGE_KEYS.ONCHAIN_ADDRESS, STORAGE_KEYS.ENS_NAME, STORAGE_KEYS.HANDLE, STORAGE_KEYS.LAST_BALANCES]);
 
         // Update UI to show disconnected state
         await updateAuthState(null);
@@ -1685,6 +1712,15 @@ async function fetchBalance() {
       await updateEarnAddressDisplay(null);
       updateEnsNameDisplay(null);
     }
+
+    // Store handle from account response
+    const handle = response.data.handle || null;
+    if (handle) {
+      await chrome.storage.local.set({ [STORAGE_KEYS.HANDLE]: handle });
+    } else {
+      await chrome.storage.local.remove([STORAGE_KEYS.HANDLE]);
+    }
+    updateUsernameCard(handle);
 
     // Find the server wallet (Grove-controlled tipping wallet)
     const serverWallet = response.data.wallet_balances.find(
@@ -1799,25 +1835,27 @@ async function copyEarnAddress() {
   }
 }
 
-async function copyConnectedWallet() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.CLIENT_ADDRESS]);
-  const address = result[STORAGE_KEYS.CLIENT_ADDRESS];
+/**
+ * Load earnings summary stats for the Earn tab
+ */
+async function loadEarnStats() {
+  const jwt = await getActiveJWT();
+  if (!jwt) return;
 
-  if (address) {
-    try {
-      await navigator.clipboard.writeText(address);
-      showToast('Address copied!');
+  const totalEl = document.getElementById('earnTotalUsd');
+  const tipsEl = document.getElementById('earnTipCount');
+  const tippersEl = document.getElementById('earnTipperCount');
 
-      if (copyConnectedWalletBtn) {
-        copyConnectedWalletBtn.classList.add('copied');
-        setTimeout(() => {
-          copyConnectedWalletBtn.classList.remove('copied');
-        }, 2000);
-      }
-    } catch (err) {
-      console.error('[Grove Extension] Copy failed:', err);
-      showToast('Failed to copy');
+  try {
+    const result = await GroveAPI.getEarningsSummary(jwt, 'all');
+    if (result.success) {
+      const val = parseFloat(result.data.total_usd) || 0;
+      if (totalEl) totalEl.textContent = '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (tipsEl) tipsEl.textContent = result.data.tip_count.toLocaleString();
+      if (tippersEl) tippersEl.textContent = result.data.unique_tipper_count.toLocaleString();
     }
+  } catch (err) {
+    console.error('[Grove Extension] Earn stats load failed:', err);
   }
 }
 
@@ -2222,32 +2260,7 @@ async function loadChain() {
 }
 
 function updateChainUI(chain) {
-  const config = NETWORKS[chain] || NETWORKS['base'];
-  chainName.textContent = config.name;
-
-  // Update chain icon based on selected chain
-  const chainIcon = document.getElementById('chainSelectorIcon');
-  if (chainIcon) {
-    // Get the logo SVG from the dropdown option
-    const selectedOption = document.querySelector(`[data-chain="${chain}"]`);
-    if (selectedOption) {
-      const logo = selectedOption.querySelector('.chain-logo').cloneNode(true);
-      logo.setAttribute('width', '16');
-      logo.setAttribute('height', '16');
-      chainIcon.innerHTML = '';
-      chainIcon.appendChild(logo);
-    }
-  }
-
-  // Update selected state in dropdown
-  chainOptions.forEach(opt => {
-    const check = opt.querySelector('.chain-selected-check');
-    if (opt.dataset.chain === chain) {
-      if (check) check.style.opacity = '1';
-    } else {
-      if (check) check.style.opacity = '0';
-    }
-  });
+  // Chain selector UI removed — no-op
 }
 
 /**
@@ -2256,19 +2269,7 @@ function updateChainUI(chain) {
  * - Testnet/local: show testnet options (Base Sepolia, Solana Devnet)
  */
 function updateNetworkSelectorVisibility(endpoint) {
-  const isTest = isTestEndpoint(endpoint);
-  const mainnetOptions = document.querySelectorAll('.chain-option.mainnet-option');
-  const testnetOptions = document.querySelectorAll('.chain-option.testnet-option');
-
-  mainnetOptions.forEach(option => {
-    option.classList.toggle('hidden', isTest);
-    option.style.display = isTest ? 'none' : 'flex';
-  });
-
-  testnetOptions.forEach(option => {
-    option.classList.toggle('hidden', !isTest);
-    option.style.display = isTest ? 'flex' : 'none';
-  });
+  // Chain selector UI removed — no-op
 }
 
 function updateTestnetKeyVisibility(devModeEnabled) {
@@ -2303,41 +2304,6 @@ function setTestModeBannerText(endpoint) {
   textNode.textContent = `Developer Mode (${label})`;
 }
 
-async function handleChainSelection(e, silent = false) {
-  // Ignore disabled chains (e.g., Solana - Coming Soon)
-  if (e.currentTarget.classList.contains('chain-disabled')) return;
-
-  const chain = e.currentTarget.dataset.chain;
-  await chrome.storage.local.set({ [STORAGE_KEYS.CHAIN]: chain });
-  updateChainUI(chain);
-  updateTopUpLink(chain);
-  updateAppLinks();
-  chainDropdown.classList.add('hidden');
-
-  // Switch API endpoint based on chain (testnet vs mainnet)
-  const config = NETWORKS[chain] || NETWORKS[DEFAULT_CHAIN];
-  const isTestnet = (config.type || '').toLowerCase() === 'testnet';
-  const newEndpoint = isTestnet ? 'testnet' : 'production';
-  await chrome.storage.local.set({ [STORAGE_KEYS.ENDPOINT]: newEndpoint });
-  setTestModeBannerText(newEndpoint);
-  updateNetworkSelectorVisibility(newEndpoint);
-  await loadJwtSlots();
-
-  if (!silent) showToast(`Switched to ${NETWORKS[chain].name}`);
-
-  // Reload balance
-  fetchBalance();
-
-  // Reload history (reset state and refetch)
-  historyTransactions = [];
-  historyCurrentPage = 0;
-  loadHistory();
-
-  // Reload leaderboard data
-  seenTxHashes.clear(); // Reset seen tips for new chain
-  refreshLeaderboard();
-}
-
 async function updateTopUpLink(chain) {
   if (!topUpBtn) return;
 
@@ -2366,7 +2332,13 @@ async function updateAppLinks() {
 
   // Update wallet sign-in button
   if (walletSignInBtn) {
-    walletSignInBtn.href = appUrl + '/';
+    walletSignInBtn.href = appUrl + '/extension';
+  }
+
+  // Update create giveaway link
+  const createGiveawayLink = document.getElementById('createGiveawayLink');
+  if (createGiveawayLink) {
+    createGiveawayLink.href = appUrl + '/profile?tab=giveaways';
   }
 }
 
@@ -2386,6 +2358,138 @@ function showSettingsView(targetView) {
 
   if (targetView === 'referral') {
     loadReferralData();
+  }
+
+  if (targetView === 'username') {
+    loadUsernameView();
+  }
+}
+
+/**
+ * Load the Username settings view — show claimed or claim UI
+ */
+async function loadUsernameView() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.HANDLE]);
+  const handle = result[STORAGE_KEYS.HANDLE];
+
+  if (handle) {
+    usernameClaimed.classList.remove('hidden');
+    usernameClaim.classList.add('hidden');
+    usernameDisplayValue.textContent = handle;
+  } else {
+    usernameClaimed.classList.add('hidden');
+    usernameClaim.classList.remove('hidden');
+    usernameInput.value = '';
+    usernameError.classList.add('hidden');
+    usernameError.textContent = '';
+  }
+}
+
+/**
+ * Update the home screen username card visibility and page title
+ */
+function updateUsernameCard(handle) {
+  if (homeUsernameBtn) {
+    if (handle) {
+      homeUsernameBtn.classList.add('hidden');
+    } else {
+      homeUsernameBtn.classList.remove('hidden');
+    }
+  }
+
+  // Update header settings button to show handle
+  const headerHandleLabel = document.getElementById('headerHandleLabel');
+  const headerSettingsIcon = document.getElementById('headerSettingsIcon');
+  const headerHandleChevron = document.getElementById('headerHandleChevron');
+  const headerSettingsBtn = document.getElementById('headerSettingsBtn');
+  if (headerHandleLabel && headerSettingsIcon && headerHandleChevron && headerSettingsBtn) {
+    if (handle) {
+      headerHandleLabel.textContent = `@${handle}`;
+      headerHandleLabel.classList.remove('hidden');
+      headerHandleChevron.classList.remove('hidden');
+      headerSettingsIcon.classList.add('hidden');
+      headerSettingsBtn.classList.add('has-handle');
+    } else {
+      headerHandleLabel.classList.add('hidden');
+      headerHandleChevron.classList.add('hidden');
+      headerSettingsIcon.classList.remove('hidden');
+      headerSettingsBtn.classList.remove('has-handle');
+    }
+  }
+}
+
+/**
+ * Validate a handle string client-side
+ * @param {string} handle
+ * @returns {string|null} Error message, or null if valid
+ */
+function validateHandle(handle) {
+  if (handle.length < 4 || handle.length > 15) {
+    return 'Must be 4–15 characters.';
+  }
+  if (!/^[a-z0-9_]+$/.test(handle)) {
+    return 'Only lowercase letters, numbers, and underscores.';
+  }
+  if (handle.startsWith('_') || handle.endsWith('_')) {
+    return 'Cannot start or end with an underscore.';
+  }
+  if (handle.includes('__')) {
+    return 'Cannot contain consecutive underscores.';
+  }
+  return null;
+}
+
+/**
+ * Handle the "Claim" button click
+ */
+async function handleClaimUsername() {
+  const handle = usernameInput.value.trim().toLowerCase();
+  usernameError.classList.add('hidden');
+
+  const validationError = validateHandle(handle);
+  if (validationError) {
+    usernameError.textContent = validationError;
+    usernameError.classList.remove('hidden');
+    return;
+  }
+
+  usernameClaimBtn.disabled = true;
+  usernameClaimBtn.textContent = 'Claiming...';
+
+  try {
+    const jwt = await getActiveJWT();
+    if (!jwt) {
+      usernameError.textContent = 'Not signed in.';
+      usernameError.classList.remove('hidden');
+      return;
+    }
+
+    const response = await GroveAPI.claimHandle(handle, jwt);
+
+    if (!response.success) {
+      if (response.status === 409) {
+        usernameError.textContent = 'This username is already taken.';
+      } else if (response.status === 400) {
+        usernameError.textContent = response.error || 'Invalid username.';
+      } else {
+        usernameError.textContent = response.error || 'Failed to claim username.';
+      }
+      usernameError.classList.remove('hidden');
+      return;
+    }
+
+    // Success — persist and update UI
+    await chrome.storage.local.set({ [STORAGE_KEYS.HANDLE]: handle });
+    updateUsernameCard(handle);
+    loadUsernameView();
+    showToast(`Claimed @${handle}`);
+  } catch (error) {
+    console.error('[Grove Extension] Claim username error:', error);
+    usernameError.textContent = 'Something went wrong. Try again.';
+    usernameError.classList.remove('hidden');
+  } finally {
+    usernameClaimBtn.disabled = false;
+    usernameClaimBtn.textContent = 'Claim';
   }
 }
 
@@ -2726,6 +2830,220 @@ async function loadLeaderboardStats() {
   } catch (error) {
     console.error('[Grove Extension] Failed to load leaderboard stats:', error);
   }
+}
+
+/**
+ * Giveaways State
+ */
+let giveawaysData = [];
+let selectedGiveawayId = null;
+let giveawayRefreshTimeout = null;
+
+/**
+ * Setup Giveaways Tab
+ */
+function setupGiveawaysTab() {
+  const retryBtn = document.getElementById('giveaway-retry-btn');
+  if (retryBtn) {
+    retryBtn.addEventListener('click', loadGiveaways);
+  }
+
+  const backBtn = document.getElementById('giveaway-detail-back');
+  if (backBtn) {
+    backBtn.addEventListener('click', closeGiveawayDetail);
+  }
+
+  // Delegate click on giveaway cards
+  const list = document.getElementById('giveaway-list');
+  if (list) {
+    list.addEventListener('click', (e) => {
+      const card = e.target.closest('.giveaway-card');
+      if (card) {
+        const id = card.dataset.giveawayId;
+        if (id) openGiveawayDetail(id);
+      }
+    });
+  }
+}
+
+/**
+ * Load Giveaways list
+ */
+async function loadGiveaways() {
+  const loading = document.getElementById('giveaway-loading');
+  const empty = document.getElementById('giveaway-empty');
+  const error = document.getElementById('giveaway-error');
+  const list = document.getElementById('giveaway-list');
+
+  loading.classList.remove('hidden');
+  empty.classList.add('hidden');
+  error.classList.add('hidden');
+  list.innerHTML = '';
+
+  const result = await GroveAPI.listGiveaways({ status: 'active', limit: 50 });
+
+  loading.classList.add('hidden');
+
+  if (!result.success) {
+    error.classList.remove('hidden');
+    return;
+  }
+
+  const giveaways = result.data.giveaways;
+  if (!giveaways || giveaways.length === 0) {
+    empty.classList.remove('hidden');
+    return;
+  }
+
+  // Fetch stats for each giveaway in parallel
+  const withStats = await Promise.all(
+    giveaways.map(async (g) => {
+      try {
+        const detail = await GroveAPI.getGiveaway(g.id);
+        if (detail.success) {
+          return { giveaway: detail.data.giveaway, stats: detail.data.stats };
+        }
+      } catch (err) {
+        console.error('[Grove Extension] Giveaway detail fetch error:', err);
+      }
+      return { giveaway: g, stats: {} };
+    })
+  );
+
+  giveawaysData = withStats;
+
+  // Sort by total entries descending (most popular first)
+  withStats.sort((a, b) => (b.stats.total_entries || 0) - (a.stats.total_entries || 0));
+
+  list.innerHTML = GiveawaysRenderer.renderGiveawaysList(withStats);
+}
+
+/**
+ * Open Giveaway Detail overlay
+ * @param {string} giveawayId - Giveaway UUID
+ */
+async function openGiveawayDetail(giveawayId) {
+  const overlay = document.getElementById('giveaway-detail-overlay');
+  const content = document.getElementById('giveaway-detail-content');
+  const detailLoading = document.getElementById('giveaway-detail-loading');
+
+  selectedGiveawayId = giveawayId;
+  overlay.classList.remove('hidden');
+  content.innerHTML = '';
+  detailLoading.classList.remove('hidden');
+
+  const result = await GroveAPI.getGiveaway(giveawayId);
+
+  detailLoading.classList.add('hidden');
+
+  if (!result.success) {
+    content.innerHTML = '<p class="giveaway-detail-error">Failed to load giveaway details.</p>';
+    return;
+  }
+
+  const { giveaway, stats } = result.data;
+  content.innerHTML = GiveawaysRenderer.renderGiveawayDetail(giveaway, stats);
+  wireGiveawayEnterButton(giveaway, giveawayId, content);
+}
+
+/**
+ * Wire up the Enter Giveaway button inside the detail overlay.
+ * Extracted so it can be re-called after the detail view refreshes.
+ */
+function wireGiveawayEnterButton(giveaway, giveawayId, content) {
+  const enterBtn = document.getElementById('giveawayEnterBtn');
+  const tipInput = document.getElementById('giveawayTipAmount');
+  const tipError = document.getElementById('giveawayTipError');
+
+  if (enterBtn && tipInput) {
+    enterBtn.addEventListener('click', async () => {
+      const jwt = await getActiveJWT();
+      if (!jwt) {
+        showTipError(tipError, 'Connect your account first to enter.');
+        return;
+      }
+
+      const amount = parseFloat(tipInput.value);
+      const minTip = parseFloat(giveaway.minimum_tip_usd) || 0;
+
+      if (!tipInput.value || isNaN(amount) || !isFinite(amount) || amount <= 0) {
+        showTipError(tipError, 'Please enter a valid amount');
+        return;
+      }
+
+      if (amount < minTip) {
+        showTipError(tipError, `Minimum tip is $${minTip.toFixed(2)}`);
+        return;
+      }
+
+      if (amount > 10000) {
+        showTipError(tipError, 'Maximum tip is $10,000');
+        return;
+      }
+
+      // Disable button, show loading
+      enterBtn.disabled = true;
+      const btnText = enterBtn.querySelector('.giveaway-enter-btn-text');
+      const originalText = btnText.textContent;
+      btnText.textContent = 'Sending...';
+
+      const tipResult = await GroveAPI.sendTip(
+        giveaway.creator_address,
+        amount,
+        jwt,
+        { campaign: 'grove-extension-giveaway', custom_metadata: JSON.stringify({ giveaway_id: giveaway.id }) }
+      );
+
+      if (tipResult.success) {
+        btnText.textContent = 'Entered!';
+        enterBtn.classList.add('success');
+        fetchBalance();
+        // Refresh detail after a delay
+        if (giveawayRefreshTimeout) clearTimeout(giveawayRefreshTimeout);
+        giveawayRefreshTimeout = setTimeout(async () => {
+          giveawayRefreshTimeout = null;
+          if (selectedGiveawayId === giveawayId) {
+            const refreshed = await GroveAPI.getGiveaway(giveawayId);
+            if (refreshed.success) {
+              content.innerHTML = GiveawaysRenderer.renderGiveawayDetail(refreshed.data.giveaway, refreshed.data.stats);
+              wireGiveawayEnterButton(refreshed.data.giveaway, giveawayId, content);
+            }
+          }
+        }, 2000);
+      } else {
+        btnText.textContent = originalText;
+        enterBtn.disabled = false;
+        showTipError(tipError, tipResult.error || 'Failed to send tip. Try again.');
+      }
+    });
+  }
+}
+
+/**
+ * Close Giveaway Detail overlay
+ */
+function closeGiveawayDetail() {
+  if (giveawayRefreshTimeout) {
+    clearTimeout(giveawayRefreshTimeout);
+    giveawayRefreshTimeout = null;
+  }
+  const overlay = document.getElementById('giveaway-detail-overlay');
+  overlay.classList.add('hidden');
+  selectedGiveawayId = null;
+}
+
+/**
+ * Show tip error in giveaway detail
+ * @param {HTMLElement} el - Error element
+ * @param {string} msg - Error message
+ */
+function showTipError(el, msg) {
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  setTimeout(() => {
+    el.classList.add('hidden');
+  }, 4000);
 }
 
 /**
@@ -3631,60 +3949,8 @@ async function updateAccountInfoDisplay() {
     }
   }
 
-  // Show Account section if user has a tipping wallet
-  if (hasTippingWallet) {
-    accountInfoSection.classList.remove('hidden');
-
-    // Format tipping wallet address for display
-    const tippingDisplay = ensName || (onchainAddress.length > 20
-      ? `${onchainAddress.slice(0, 8)}...${onchainAddress.slice(-6)}`
-      : onchainAddress);
-
-    if (hasCdpIdentity) {
-      // CDP auth user: show email/phone + tipping wallet (no connected wallet)
-      accountIdentityRow.classList.remove('hidden');
-      connectedWalletRow.classList.add('hidden');
-
-      // Update identity display
-      accountInfoValue.textContent = identityValue;
-      accountInfoType.textContent = identityType === 'sms' ? 'Phone Number' : 'Email';
-
-      // Update icon based on type
-      if (identityType === 'sms') {
-        accountInfoIcon.innerHTML = `
-          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-          <line x1="12" y1="18" x2="12.01" y2="18"></line>
-        `;
-      } else {
-        accountInfoIcon.innerHTML = `
-          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-          <polyline points="22,6 12,13 2,6"></polyline>
-        `;
-      }
-    } else if (clientAddress) {
-      // Web3 user: show connected wallet + tipping wallet
-      accountIdentityRow.classList.add('hidden');
-      connectedWalletRow.classList.remove('hidden');
-
-      // Format connected wallet address for display
-      const connectedDisplay = clientAddress.length > 20
-        ? `${clientAddress.slice(0, 8)}...${clientAddress.slice(-6)}`
-        : clientAddress;
-      connectedWalletAddress.textContent = connectedDisplay;
-      connectedWalletAddress.title = clientAddress;
-    } else {
-      // No identity info to show (shouldn't happen, but handle gracefully)
-      accountIdentityRow.classList.add('hidden');
-      connectedWalletRow.classList.add('hidden');
-    }
-
-    // Always show tipping wallet
-    tippingWalletRow.classList.remove('hidden');
-    tippingWalletAddress.textContent = tippingDisplay;
-    tippingWalletAddress.title = onchainAddress;
-  } else {
-    accountInfoSection.classList.add('hidden');
-  }
+  // Account info section hidden — not useful to end users
+  accountInfoSection.classList.add('hidden');
 }
 
 /**

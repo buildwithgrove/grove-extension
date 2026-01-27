@@ -57,7 +57,7 @@ describe('GroveAPI', () => {
     it('should return localhost URL when environment is local and endpoint is localhost', async () => {
       mockChrome.storage.local._setData({ groveEnvironment: 'local', groveEndpoint: 'localhost' });
       const url = await GroveAPI.getBaseURL();
-      expect(url).toBe('http://localhost:8000');
+      expect(url).toBe('http://localhost:3000');
     });
   });
 
@@ -279,6 +279,70 @@ describe('GroveAPI', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('500');
+    });
+  });
+
+  describe('claimHandle', () => {
+    it('should claim a handle successfully', async () => {
+      const responseData = { handle: 'alice' };
+      mockFetch.mockResponse('POST', 'https://api.grove.city/v1/account/handle', responseData);
+
+      const result = await GroveAPI.claimHandle('alice', 'test-jwt');
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(responseData);
+      expect(mockFetch.expectCalled('POST', 'https://api.grove.city/v1/account/handle')).toBe(true);
+    });
+
+    it('should send handle in request body', async () => {
+      mockFetch.mockHandler('POST', 'https://api.grove.city/v1/account/handle', (url, options) => {
+        const body = JSON.parse(options.body);
+        expect(body.handle).toBe('bob_123');
+        expect(options.headers['Authorization']).toBe('Bearer my-jwt');
+        return {
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve({ handle: 'bob_123' })
+        };
+      });
+
+      await GroveAPI.claimHandle('bob_123', 'my-jwt');
+    });
+
+    it('should handle 409 conflict (taken)', async () => {
+      mockFetch.mockResponse('POST', 'https://api.grove.city/v1/account/handle',
+        { message: 'Handle already taken' },
+        { status: 409 }
+      );
+
+      const result = await GroveAPI.claimHandle('taken_name', 'test-jwt');
+
+      expect(result.success).toBe(false);
+      expect(result.status).toBe(409);
+      expect(result.error).toBe('Handle already taken');
+    });
+
+    it('should handle 400 validation error', async () => {
+      mockFetch.mockResponse('POST', 'https://api.grove.city/v1/account/handle',
+        { message: 'Invalid handle format' },
+        { status: 400 }
+      );
+
+      const result = await GroveAPI.claimHandle('ab', 'test-jwt');
+
+      expect(result.success).toBe(false);
+      expect(result.status).toBe(400);
+      expect(result.error).toBe('Invalid handle format');
+    });
+
+    it('should handle network errors', async () => {
+      mockFetch.mockError('POST', 'https://api.grove.city/v1/account/handle', 'Network failure');
+
+      const result = await GroveAPI.claimHandle('alice', 'test-jwt');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Network failure');
+      expect(result.status).toBeNull();
     });
   });
 });

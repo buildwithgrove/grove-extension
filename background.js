@@ -68,6 +68,25 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
         environment: env,
         devModeEnabled: isNonProduction
       });
+
+      // Open the extension popup window so the user sees it's activated
+      chrome.windows.getLastFocused().then((currentWindow) => {
+        const width = 360;
+        const height = 600;
+        const top = (currentWindow.top || 0) + 80;
+        const left = (currentWindow.left || 0) + (currentWindow.width || 1280) - width - 20;
+        return chrome.windows.create({
+          url: chrome.runtime.getURL('popup.html'),
+          type: 'popup',
+          width,
+          height,
+          top,
+          left,
+          focused: true
+        });
+      }).catch((err) => {
+        console.error('[Grove Extension] Failed to open popup window:', err);
+      });
     });
     return true; // Keep channel open for async response
   }
