@@ -7,6 +7,9 @@
 const navItems = document.querySelectorAll('.nav-item');
 const pages = document.querySelectorAll('.page');
 
+// Track previous tab for settings toggle
+let previousTabTarget = 'tab-home';
+
 // Leaderboard switcher
 let leaderboardSwitcherBtns = null;
 let leaderboardViews = null;
@@ -784,6 +787,18 @@ function setupEventListeners() {
  * Navigate to Settings tab programmatically
  */
 function navigateToSettings() {
+  // If already on settings, go back to previous tab
+  const settingsPage = document.getElementById('tab-settings');
+  if (settingsPage && settingsPage.classList.contains('active')) {
+    const prevNav = document.querySelector(`.nav-item[data-target="${previousTabTarget}"]`);
+    if (prevNav) prevNav.click();
+    return;
+  }
+
+  // Save current tab before switching
+  const activeNav = document.querySelector('.nav-item.active');
+  if (activeNav) previousTabTarget = activeNav.dataset.target;
+
   // Remove active from all nav items (settings is now in the header, not bottom nav)
   navItems.forEach(item => item.classList.remove('active'));
 
