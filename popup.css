@@ -2859,6 +2859,47 @@ button.quick-access-item:hover .quick-access-icon {
   color: var(--color-primary);
 }
 
+/* Settings Callout */
+.settings-callout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 20px;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.settings-callout::before {
+  content: '';
+  position: absolute;
+  top: -11px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.settings-callout svg {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+}
+
+.settings-callout a {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.settings-callout a:hover {
+  text-decoration: underline;
+}
+
 /* Account Disconnect Button */
 .account-logout-btn {
   display: flex;
@@ -2867,7 +2908,7 @@ button.quick-access-item:hover .quick-access-icon {
   gap: 8px;
   width: 100%;
   padding: 12px 16px;
-  margin-top: 16px;
+  margin-top: 24px;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid var(--color-danger);
   border-radius: 10px;
@@ -3507,97 +3548,6 @@ button.quick-access-item:hover .quick-access-icon {
   font-weight: 700;
 }
 
-/* Leaderboard */
-.leaderboard-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  background: var(--color-border);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.leaderboard-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: var(--color-surface);
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.leaderboard-item:hover {
-  background: var(--color-surface-hover);
-  transform: translateX(4px);
-}
-
-.leaderboard-item:active {
-  transform: translateX(2px);
-}
-
-.leaderboard-item .rank {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 12px;
-}
-
-.leaderboard-item:nth-child(1) .rank {
-  background: linear-gradient(135deg, #FFD700 0%, var(--color-accent) 100%);
-}
-
-.leaderboard-item:nth-child(2) .rank {
-  background: linear-gradient(135deg, #C0C0C0 0%, #808080 100%);
-}
-
-.leaderboard-item:nth-child(3) .rank {
-  background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%);
-}
-
-.leaderboard-item .user-info {
-  flex: 1;
-}
-
-.leaderboard-item .wallet-address {
-  color: var(--color-text-primary);
-  font-weight: 600;
-  font-size: 13px;
-  margin-bottom: 2px;
-  font-family: 'SF Mono', Monaco, monospace;
-}
-
-.leaderboard-item .wallet-address.secondary {
-  color: var(--color-text-secondary);
-  font-weight: 400;
-  font-size: 11px;
-  margin-bottom: 0;
-}
-
-.leaderboard-item .display-name {
-  color: var(--color-text-primary);
-  font-weight: 600;
-  font-size: 13px;
-  margin-bottom: 2px;
-}
-
-.leaderboard-item .tip-count {
-  color: var(--color-text-secondary);
-  font-size: 12px;
-}
-
-.leaderboard-item .amount {
-  color: var(--color-primary);
-  font-weight: 600;
-  font-size: 16px;
-}
-
 /* Leaderboard Switcher */
 .leaderboard-switcher {
   display: flex;
@@ -3627,61 +3577,10 @@ button.quick-access-item:hover .quick-access-icon {
   background: var(--color-bg-primary);
   color: var(--color-primary);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-.switcher-btn.active::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  background: var(--color-primary);
-  border-radius: 50%;
-  animation: pulse-dot 1.5s ease-in-out infinite;
 }
 
 .switcher-btn:hover:not(.active) {
   color: var(--color-text-primary);
-}
-
-/* Leaderboard Filters Container (Period Selector + Stats) */
-.leaderboard-filters {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.leaderboard-filters.expanded {
-  grid-template-rows: 1fr;
-}
-
-.leaderboard-filters-inner {
-  overflow: hidden;
-}
-
-.leaderboard-filters .period-selector {
-  opacity: 0;
-  transform: translateY(-12px) scale(0.95);
-  filter: blur(4px);
-  /* Reverse spring on collapse - dips down then springs up */
-  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.4s cubic-bezier(0.6, -0.28, 0.74, 0.05),
-              filter 0.3s ease;
-  transition-delay: 0.1s; /* Collapse last */
-  margin-bottom: 0;
-}
-
-.leaderboard-filters.expanded .period-selector {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  filter: blur(0);
-  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-              filter 0.3s ease;
-  transition-delay: 0.08s;
-  margin-bottom: 12px;
 }
 
 /* Leaderboard Views */
@@ -3804,45 +3703,286 @@ button.quick-access-item:hover .quick-access-icon {
   margin-top: 6px;
 }
 
-/* Period Selector */
-.period-selector {
+/* ---- Leaderboard Table Layout ---- */
+
+/* Filters row: "Rankings" title + inline period pills */
+.lb-filters-row {
   display: flex;
-  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
 }
 
-.period-btn {
-  flex: 1;
-  padding: 6px 12px;
+.lb-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.lb-period-pills {
+  display: flex;
+  gap: 4px;
+}
+
+.lb-period-pill {
+  padding: 4px 10px;
   background: transparent;
-  white-space: nowrap;
   border: 1px solid var(--color-border);
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: 12px;
   transition: all 0.2s;
 }
 
-.period-btn.active {
+.lb-period-pill.active {
   background: var(--color-primary);
   border-color: var(--color-primary);
   color: white;
 }
 
-.period-btn:hover:not(.active) {
+.lb-period-pill:hover:not(.active) {
   border-color: var(--color-text-secondary);
   color: var(--color-text-primary);
 }
 
-/* Leaderboard Loading */
-.leaderboard-loading {
+/* View header: "Top Tippers" + badge or "Live Tips" + pulse dot */
+.lb-view-header {
   display: flex;
-  justify-content: center;
   align-items: center;
-  padding: 48px 0;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
+.lb-view-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.lb-period-badge {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.lb-live-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* Table */
+.lb-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.lb-table tr {
+  background: var(--color-surface);
+  transition: background 0.2s ease;
+}
+
+.lb-table tr:hover {
+  background: var(--color-surface-hover);
+}
+
+.lb-table td {
+  padding: 10px 0;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.lb-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Column: Rank / Time */
+.lb-col-rank {
+  width: 36px;
+  text-align: center;
+  padding-left: 12px !important;
+}
+
+.lb-col-time {
+  width: 56px;
+  text-align: center;
+  padding-left: 12px !important;
+}
+
+/* Rank badge */
+.lb-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.lb-rank.rank1 {
+  background: linear-gradient(135deg, #FFD700 0%, var(--color-accent) 100%);
+  color: white;
+}
+
+.lb-rank.rank2 {
+  background: linear-gradient(135deg, #C0C0C0 0%, #808080 100%);
+  color: white;
+}
+
+.lb-rank.rank3 {
+  background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%);
+  color: white;
+}
+
+/* Column: User (flex remainder) */
+.lb-col-user {
+  padding-left: 10px !important;
+  padding-right: 6px !important;
+}
+
+.lb-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  display: block;
+}
+
+.lb-user-name a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.lb-user-name a:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.lb-user-meta {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  margin-top: 1px;
+}
+
+/* Column: Amount */
+.lb-col-amount {
+  width: 70px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+  padding-right: 6px !important;
+}
+
+/* Column: Content (platform icon) */
+.lb-col-content {
+  width: 40px;
+  text-align: center;
+  padding-right: 10px !important;
+}
+
+.lb-col-content a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--color-text-tertiary);
+  transition: all 0.2s;
+}
+
+.lb-col-content a:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Time link for live tips */
+.lb-time-link {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.lb-time-link:hover {
+  color: var(--color-primary);
+}
+
+/* Shimmer skeleton */
+.lb-shimmer {
+  background: linear-gradient(90deg, var(--color-surface) 25%, var(--color-surface-hover) 50%, var(--color-surface) 75%);
+  background-size: 200% 100%;
+  animation: lb-shimmer 1.5s infinite;
+  border-radius: 4px;
+  color: transparent;
+}
+
+@keyframes lb-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.lb-skeleton-rank {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.lb-skeleton-name {
+  width: 100px;
+  height: 13px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.lb-skeleton-meta {
+  width: 60px;
+  height: 11px;
+  display: block;
+}
+
+.lb-skeleton-amount {
+  width: 44px;
+  height: 13px;
+  display: inline-block;
+}
+
+.lb-skeleton-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* New item flash animation for live tips table */
+.lb-table tr.lb-new {
+  animation: tip-flash 1s ease-out;
+}
+
+/* Leaderboard Spinner (shared with giveaways tab) */
 .leaderboard-spinner {
   width: 24px;
   height: 24px;
@@ -3857,10 +3997,6 @@ button.quick-access-item:hover .quick-access-icon {
     0 10px 10px 0px var(--color-primary),
     -10px 10px 10px 0px var(--color-primary);
   animation: balance-spin 0.7s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 /* Leaderboard Empty State */
@@ -4252,31 +4388,6 @@ button.quick-access-item:hover .quick-access-icon {
 .transaction-item-icon.failed {
   background: rgba(239, 68, 68, 0.1);
   color: var(--color-danger);
-}
-
-/* Rank icon for leaderboards */
-.transaction-item-icon.rank-icon {
-  background: var(--color-primary);
-  color: white;
-  font-weight: 700;
-  font-size: 12px;
-}
-
-.transaction-item-icon.rank-icon .rank-number {
-  line-height: 1;
-}
-
-/* Gold/Silver/Bronze for top 3 */
-.transaction-item:nth-child(1) .transaction-item-icon.rank-icon {
-  background: linear-gradient(135deg, #FFD700 0%, var(--color-accent) 100%);
-}
-
-.transaction-item:nth-child(2) .transaction-item-icon.rank-icon {
-  background: linear-gradient(135deg, #C0C0C0 0%, #808080 100%);
-}
-
-.transaction-item:nth-child(3) .transaction-item-icon.rank-icon {
-  background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%);
 }
 
 /* History Item Details */

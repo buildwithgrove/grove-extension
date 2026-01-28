@@ -2549,14 +2549,17 @@ const HISTORY_PAGE_SIZE = 10;
  * Setup Leaderboard
  */
 function setupLeaderboardSwitcher() {
-  const periodBtns = document.querySelectorAll('.period-btn');
+  const periodBtns = document.querySelectorAll('.lb-period-pill');
   leaderboardSwitcherBtns = document.querySelectorAll('.switcher-btn');
   leaderboardViews = document.querySelectorAll('.leaderboard-view');
 
-  // Filters container (period selector + stats) - collapsed by default for Live view
-  const filtersContainer = document.getElementById('leaderboard-filters');
+  // Filters row - hidden for Live view, shown for tippers/earners
+  const filtersRow = document.getElementById('lb-filters-row');
 
-  // Period selector
+  // Period badge labels map
+  const periodLabels = { day: '24h', week: '7d', month: '30d', all: 'Lifetime' };
+
+  // Period selector pills
   periodBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
       const period = e.target.dataset.period;
@@ -2564,6 +2567,13 @@ function setupLeaderboardSwitcher() {
 
       periodBtns.forEach(b => b.classList.remove('active'));
       e.target.classList.add('active');
+
+      // Update period badges in view headers
+      const label = periodLabels[period] || period;
+      const tippersBadge = document.getElementById('tippers-period-badge');
+      const earnersBadge = document.getElementById('earners-period-badge');
+      if (tippersBadge) tippersBadge.textContent = label;
+      if (earnersBadge) earnersBadge.textContent = label;
 
       // Reload current leaderboard view with new period
       if (currentLeaderboardView === 'tippers') {
@@ -2587,10 +2597,10 @@ function setupLeaderboardSwitcher() {
         leaderboardViews.forEach(v => v.classList.remove('active'));
         document.getElementById(`${view}-view`).classList.add('active');
 
-        // Show/hide filters container with slide animation
+        // Show/hide filters row
         const isLive = view === 'live';
-        if (filtersContainer) {
-          filtersContainer.classList.toggle('expanded', !isLive);
+        if (filtersRow) {
+          filtersRow.style.display = isLive ? 'none' : 'flex';
         }
 
         // Load data for the selected view
@@ -2613,19 +2623,16 @@ function setupLeaderboardSwitcher() {
  * Load Top Tippers
  */
 async function loadTopTippers() {
-  const loading = document.getElementById('tippers-loading');
   const empty = document.getElementById('tippers-empty');
   const list = document.getElementById('tippers-list');
 
-  loading.classList.remove('hidden');
   empty.classList.add('hidden');
-  list.innerHTML = '';
+  list.innerHTML = LeaderboardRenderer.renderSkeletonTable(false, 5);
 
   const result = await GroveAPI.getTopTippers(currentPeriod, 10);
 
-  loading.classList.add('hidden');
-
   if (!result.success || result.data.entries.length === 0) {
+    list.innerHTML = '';
     empty.classList.remove('hidden');
     return;
   }
@@ -2637,19 +2644,16 @@ async function loadTopTippers() {
  * Load Top Earners
  */
 async function loadTopEarners() {
-  const loading = document.getElementById('earners-loading');
   const empty = document.getElementById('earners-empty');
   const list = document.getElementById('earners-list');
 
-  loading.classList.remove('hidden');
   empty.classList.add('hidden');
-  list.innerHTML = '';
+  list.innerHTML = LeaderboardRenderer.renderSkeletonTable(false, 5);
 
   const result = await GroveAPI.getTopEarners(currentPeriod, 10);
 
-  loading.classList.add('hidden');
-
   if (!result.success || result.data.entries.length === 0) {
+    list.innerHTML = '';
     empty.classList.remove('hidden');
     return;
   }
@@ -2716,22 +2720,19 @@ async function loadPoolStats() {
  * Load Live Tips
  */
 async function loadLiveTips(isRefresh = false) {
-  const loading = document.getElementById('live-loading');
   const empty = document.getElementById('live-empty');
   const list = document.getElementById('live-list');
 
   if (!isRefresh) {
-    loading.classList.remove('hidden');
     empty.classList.add('hidden');
-    list.innerHTML = '';
+    list.innerHTML = LeaderboardRenderer.renderSkeletonTable(true, 5);
   }
 
   const result = await GroveAPI.getRecentTips(10);
 
-  loading.classList.add('hidden');
-
   if (!result.success || result.data.entries.length === 0) {
     if (!isRefresh) {
+      list.innerHTML = '';
       empty.classList.remove('hidden');
     }
     return;
