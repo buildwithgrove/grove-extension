@@ -449,22 +449,22 @@
         <button class="switcher-btn" data-view="earners">Earners</button>
       </div>
 
-      <!-- Collapsible section: Period Selector (slides in for tippers/earners) -->
-      <div class="leaderboard-filters" id="leaderboard-filters">
-        <div class="leaderboard-filters-inner">
-          <div class="period-selector" id="period-selector">
-            <button class="period-btn active" data-period="day">24h</button>
-            <button class="period-btn" data-period="week">7d</button>
-            <button class="period-btn" data-period="month">30d</button>
-            <button class="period-btn" data-period="all">Lifetime</button>
-          </div>
+      <!-- Filters Row: Rankings title + period pills (hidden for Live view) -->
+      <div class="lb-filters-row" id="lb-filters-row" style="display: none;">
+        <span class="lb-section-title">Rankings</span>
+        <div class="lb-period-pills" id="period-selector">
+          <button class="lb-period-pill active" data-period="day">24h</button>
+          <button class="lb-period-pill" data-period="week">7d</button>
+          <button class="lb-period-pill" data-period="month">30d</button>
+          <button class="lb-period-pill" data-period="all">Lifetime</button>
         </div>
       </div>
 
       <!-- Live Tips View -->
       <div class="leaderboard-view active" id="live-view">
-        <div class="leaderboard-loading" id="live-loading">
-          <div class="leaderboard-spinner"></div>
+        <div class="lb-view-header">
+          <span class="lb-view-title">Live Tips</span>
+          <span class="lb-live-dot"></span>
         </div>
         <div class="leaderboard-empty hidden" id="live-empty">
           <div class="empty-icon">
@@ -474,13 +474,14 @@
           </div>
           <p>No recent tips</p>
         </div>
-        <div class="history-list" id="live-list"></div>
+        <div id="live-list"></div>
       </div>
 
       <!-- Top Tippers View -->
       <div class="leaderboard-view" id="tippers-view">
-        <div class="leaderboard-loading" id="tippers-loading">
-          <div class="leaderboard-spinner"></div>
+        <div class="lb-view-header">
+          <span class="lb-view-title">Top Tippers</span>
+          <span class="lb-period-badge" id="tippers-period-badge">24h</span>
         </div>
         <div class="leaderboard-empty hidden" id="tippers-empty">
           <div class="empty-icon">
@@ -495,13 +496,14 @@
           </div>
           <p>No tippers yet this period</p>
         </div>
-        <div class="history-list" id="tippers-list"></div>
+        <div id="tippers-list"></div>
       </div>
 
       <!-- Top Earners View -->
       <div class="leaderboard-view" id="earners-view">
-        <div class="leaderboard-loading" id="earners-loading">
-          <div class="leaderboard-spinner"></div>
+        <div class="lb-view-header">
+          <span class="lb-view-title">Top Earners</span>
+          <span class="lb-period-badge" id="earners-period-badge">24h</span>
         </div>
         <div class="leaderboard-empty hidden" id="earners-empty">
           <div class="empty-icon">
@@ -512,7 +514,7 @@
           </div>
           <p>No earners yet this period</p>
         </div>
-        <div class="history-list" id="earners-list"></div>
+        <div id="earners-list"></div>
       </div>
     </div>
 
@@ -1048,6 +1050,16 @@
             </div>
             <button class="btn-danger-text btn-sm" id="clearAllKeysBtn">Clear</button>
           </div>
+        </div>
+
+        <!-- More Settings Callout -->
+        <div class="settings-callout">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span>More settings available at <a href="https://app.grove.city" target="_blank" rel="noopener noreferrer">app.grove.city</a></span>
         </div>
 
         <!-- Disconnect Button -->

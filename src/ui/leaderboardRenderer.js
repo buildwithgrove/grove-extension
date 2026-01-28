@@ -190,7 +190,7 @@ const LeaderboardRenderer = {
     if (entry.handle) {
       return {
         displayName: entry.handle,
-        url: `https://grove.city/@${entry.handle}`,
+        url: `https://grove.city/@${encodeURIComponent(entry.handle)}`,
         platform: 'grove'
       };
     }
@@ -199,7 +199,7 @@ const LeaderboardRenderer = {
     if (entry.base_name) {
       return {
         displayName: entry.base_name,
-        url: `https://www.base.org/name/${entry.base_name}`,
+        url: `https://www.base.org/name/${encodeURIComponent(entry.base_name)}`,
         platform: 'base'
       };
     }
@@ -208,7 +208,7 @@ const LeaderboardRenderer = {
     if (entry.ens_name) {
       return {
         displayName: entry.ens_name,
-        url: `https://app.ens.domains/${entry.ens_name}`,
+        url: `https://app.ens.domains/${encodeURIComponent(entry.ens_name)}`,
         platform: 'ens'
       };
     }
@@ -217,7 +217,7 @@ const LeaderboardRenderer = {
     const username = isEarner ? ctx.recipient_username : ctx.sender_username;
     const profileUrl = isEarner ? ctx.recipient_profile_url : ctx.sender_profile_url;
     if (username) {
-      const url = profileUrl || `https://x.com/${username}`;
+      const url = profileUrl || `https://x.com/${encodeURIComponent(username)}`;
       return {
         displayName: `@${username}`,
         url: url,
@@ -352,25 +352,25 @@ const LeaderboardRenderer = {
     // 1. Grove handle
     if (entry.handle) {
       displayName = entry.handle;
-      displayUrl = `https://grove.city/@${entry.handle}`;
+      displayUrl = `https://grove.city/@${encodeURIComponent(entry.handle)}`;
       displayPlatform = 'grove';
     }
     // 2. Base name
     else if (entry.base_name) {
       displayName = entry.base_name;
-      displayUrl = `https://www.base.org/name/${entry.base_name}`;
+      displayUrl = `https://www.base.org/name/${encodeURIComponent(entry.base_name)}`;
       displayPlatform = 'base';
     }
     // 3. ENS name
     else if (entry.ens_name) {
       displayName = entry.ens_name;
-      displayUrl = `https://app.ens.domains/${entry.ens_name}`;
+      displayUrl = `https://app.ens.domains/${encodeURIComponent(entry.ens_name)}`;
       displayPlatform = 'ens';
     }
     // 4. Context recipient username
     else if (ctx.recipient_username) {
       displayName = `@${ctx.recipient_username}`;
-      displayUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
+      displayUrl = ctx.recipient_profile_url || `https://x.com/${encodeURIComponent(ctx.recipient_username)}`;
       displayPlatform = 'x';
     }
     // 5. Parsed handle
@@ -418,7 +418,7 @@ const LeaderboardRenderer = {
    * @returns {string} HTML string
    */
   renderTippersList(entries) {
-    return entries.map((entry, i) => this.renderTipperEntry(entry, i)).join('');
+    return this.renderTippersTable(entries);
   },
 
   /**
@@ -427,7 +427,7 @@ const LeaderboardRenderer = {
    * @returns {string} HTML string
    */
   renderEarnersList(entries) {
-    return entries.map((entry, i) => this.renderEarnerEntry(entry, i)).join('');
+    return this.renderEarnersTable(entries);
   },
 
   /**
@@ -437,7 +437,223 @@ const LeaderboardRenderer = {
    * @returns {string} HTML string
    */
   renderLiveTipsList(entries, newTxHashes = new Set()) {
-    return entries.map(entry => this.renderLiveTipEntry(entry, newTxHashes.has(entry.txHash))).join('');
+    return this.renderLiveTipsTable(entries, newTxHashes);
+  },
+
+  // ---- Table-based rendering ----
+
+  /**
+   * Get rank class for top 3 positions
+   * @param {number} index - 0-based rank index
+   * @returns {string} CSS class name
+   */
+  getRankClass(index) {
+    if (index === 0) return 'rank1';
+    if (index === 1) return 'rank2';
+    if (index === 2) return 'rank3';
+    return '';
+  },
+
+  /**
+   * Build platform icon cell HTML for table
+   * @param {string} platform - Platform name
+   * @param {string} url - URL to link to
+   * @returns {string} HTML string for td content
+   */
+  buildPlatformIconCell(platform, url) {
+    const iconMap = {
+      'x': { icon: this.icons.xPlatform, title: 'View on X' },
+      'substack': { icon: this.icons.substack, title: 'View on Substack' },
+      'grove': { icon: this.icons.grove, title: 'View on Grove' },
+      'base': { icon: this.icons.base, title: 'View on Base' },
+      'ens': { icon: this.icons.ens, title: 'View on ENS' },
+      'website': { icon: this.icons.globe, title: 'Visit website' }
+    };
+
+    const config = iconMap[platform];
+    if (!config || !url) return '';
+
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer" title="${config.title}">${config.icon}</a>`;
+  },
+
+  /**
+   * Get the tipped content platform and URL from entry context/destination
+   * @param {Object} entry - Leaderboard entry with lastTipContext/lastTipDestination or context/destination
+   * @returns {{ platform: string|null, url: string|null }}
+   */
+  getContentPlatform(entry) {
+    // Only surface actual content platforms, not identity platforms
+    const contentPlatforms = new Set(['x', 'substack', 'website']);
+    const ctx = entry.lastTipContext || entry.context || {};
+    const destination = entry.lastTipDestination || entry.destination;
+
+    // Prefer source post URL (most specific content link)
+    const contentUrl = ctx.source_post_url || destination;
+    if (contentUrl) {
+      const url = this.getDestinationUrl(contentUrl);
+      const platform = this.detectPlatform(contentUrl);
+      if (contentPlatforms.has(platform) && url) return { platform, url };
+    }
+
+    // Fall back to profile URL from context
+    const profileUrl = ctx.recipient_profile_url || ctx.sender_profile_url;
+    if (profileUrl) {
+      const platform = this.detectPlatform(profileUrl);
+      if (contentPlatforms.has(platform)) return { platform, url: profileUrl };
+    }
+
+    return { platform: null, url: null };
+  },
+
+  /**
+   * Render tippers as a table
+   * @param {Array} entries - Array of tipper entries
+   * @returns {string} HTML table string
+   */
+  renderTippersTable(entries) {
+    const rows = entries.map((entry, i) => {
+      const display = this.getDisplayName(entry, false);
+      const rankClass = this.getRankClass(i);
+      const nameHtml = display.url
+        ? `<a href="${display.url}" target="_blank" rel="noopener noreferrer">${FormatUtils.escapeHtml(display.displayName)}</a>`
+        : FormatUtils.escapeHtml(display.displayName);
+      const content = this.getContentPlatform(entry);
+      const platformCell = this.buildPlatformIconCell(content.platform, content.url);
+
+      return `<tr>
+        <td class="lb-col-rank"><span class="lb-rank ${rankClass}">${i + 1}</span></td>
+        <td class="lb-col-user">
+          <span class="lb-user-name">${nameHtml}</span>
+          <span class="lb-user-meta">${entry.tipCount.toLocaleString()} tips sent</span>
+        </td>
+        <td class="lb-col-amount">${FormatUtils.formatUSD(entry.totalUSD)}</td>
+        <td class="lb-col-content">${platformCell}</td>
+      </tr>`;
+    }).join('');
+
+    return `<table class="lb-table"><tbody>${rows}</tbody></table>`;
+  },
+
+  /**
+   * Render earners as a table
+   * @param {Array} entries - Array of earner entries
+   * @returns {string} HTML table string
+   */
+  renderEarnersTable(entries) {
+    const rows = entries.map((entry, i) => {
+      const display = this.getDisplayName(entry, true);
+      const rankClass = this.getRankClass(i);
+      const nameHtml = display.url
+        ? `<a href="${display.url}" target="_blank" rel="noopener noreferrer">${FormatUtils.escapeHtml(display.displayName)}</a>`
+        : FormatUtils.escapeHtml(display.displayName);
+      const content = this.getContentPlatform(entry);
+      const platformCell = this.buildPlatformIconCell(content.platform, content.url);
+
+      return `<tr>
+        <td class="lb-col-rank"><span class="lb-rank ${rankClass}">${i + 1}</span></td>
+        <td class="lb-col-user">
+          <span class="lb-user-name">${nameHtml}</span>
+          <span class="lb-user-meta">${entry.tipCount.toLocaleString()} tips earned</span>
+        </td>
+        <td class="lb-col-amount">${FormatUtils.formatUSD(entry.totalUSD)}</td>
+        <td class="lb-col-content">${platformCell}</td>
+      </tr>`;
+    }).join('');
+
+    return `<table class="lb-table"><tbody>${rows}</tbody></table>`;
+  },
+
+  /**
+   * Render live tips as a table
+   * @param {Array} entries - Array of live tip entries
+   * @param {Set} newTxHashes - Set of new transaction hashes (for animation)
+   * @returns {string} HTML table string
+   */
+  renderLiveTipsTable(entries, newTxHashes = new Set()) {
+    const rows = entries.map(entry => {
+      const isNew = newTxHashes.has(entry.txHash);
+      const parsed = parseDestination(entry.destination);
+      const ctx = entry.context || {};
+
+      // Build display info for recipient
+      let displayName, displayUrl, displayPlatform;
+      if (entry.handle) {
+        displayName = entry.handle;
+        displayUrl = `https://grove.city/@${encodeURIComponent(entry.handle)}`;
+        displayPlatform = 'grove';
+      } else if (entry.base_name) {
+        displayName = entry.base_name;
+        displayUrl = `https://www.base.org/name/${encodeURIComponent(entry.base_name)}`;
+        displayPlatform = 'base';
+      } else if (entry.ens_name) {
+        displayName = entry.ens_name;
+        displayUrl = `https://app.ens.domains/${encodeURIComponent(entry.ens_name)}`;
+        displayPlatform = 'ens';
+      } else if (ctx.recipient_username) {
+        displayName = `@${ctx.recipient_username}`;
+        displayUrl = ctx.recipient_profile_url || `https://x.com/${encodeURIComponent(ctx.recipient_username)}`;
+        displayPlatform = 'x';
+      } else if (parsed.profileHandle && parsed.profileUrl) {
+        displayName = parsed.profileHandle;
+        displayUrl = parsed.profileUrl;
+        displayPlatform = this.detectPlatform(parsed.profileUrl);
+      } else {
+        displayName = this.formatAddressShort(entry.address);
+        displayUrl = this.getAddressExplorerUrl(entry.network, entry.address);
+        displayPlatform = null;
+      }
+
+      const nameHtml = displayUrl
+        ? `<a href="${displayUrl}" target="_blank" rel="noopener noreferrer">${FormatUtils.escapeHtml(displayName)}</a>`
+        : FormatUtils.escapeHtml(displayName);
+      const content = this.getContentPlatform(entry);
+      const platformCell = this.buildPlatformIconCell(content.platform, content.url);
+
+      // Time column: tx-linked "Xm ago"
+      const timeText = FormatUtils.formatTimeAgo(entry.confirmedAt);
+      const explorerUrl = this.getExplorerUrl(entry.network, entry.txHash);
+      const timeHtml = explorerUrl
+        ? `<a href="${explorerUrl}" target="_blank" rel="noopener noreferrer" class="lb-time-link">${timeText}</a>`
+        : `<span class="lb-time-link">${timeText}</span>`;
+
+      return `<tr${isNew ? ' class="lb-new"' : ''}>
+        <td class="lb-col-time">${timeHtml}</td>
+        <td class="lb-col-user">
+          <span class="lb-user-name">${nameHtml}</span>
+          <span class="lb-user-meta">earned tip</span>
+        </td>
+        <td class="lb-col-amount">${FormatUtils.formatUSD(entry.amountUSD)}</td>
+        <td class="lb-col-content">${platformCell}</td>
+      </tr>`;
+    }).join('');
+
+    return `<table class="lb-table"><tbody>${rows}</tbody></table>`;
+  },
+
+  /**
+   * Render a skeleton loading table
+   * @param {boolean} isLive - Whether this is the live view (uses time column instead of rank)
+   * @param {number} rowCount - Number of skeleton rows
+   * @returns {string} HTML table string
+   */
+  renderSkeletonTable(isLive = false, rowCount = 5) {
+    const rows = Array.from({ length: rowCount }, () => {
+      const firstCol = isLive
+        ? `<td class="lb-col-time"><span class="lb-shimmer lb-skeleton-amount">&nbsp;</span></td>`
+        : `<td class="lb-col-rank"><span class="lb-shimmer lb-skeleton-rank">&nbsp;</span></td>`;
+
+      return `<tr>
+        ${firstCol}
+        <td class="lb-col-user">
+          <span class="lb-shimmer lb-skeleton-name">&nbsp;</span>
+          <span class="lb-shimmer lb-skeleton-meta">&nbsp;</span>
+        </td>
+        <td class="lb-col-amount"><span class="lb-shimmer lb-skeleton-amount">&nbsp;</span></td>
+        <td class="lb-col-content"><span class="lb-shimmer lb-skeleton-icon">&nbsp;</span></td>
+      </tr>`;
+    }).join('');
+
+    return `<table class="lb-table"><tbody>${rows}</tbody></table>`;
   }
 };
 
