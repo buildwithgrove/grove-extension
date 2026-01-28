@@ -20,7 +20,7 @@ class TipModal {
    * @param {HTMLElement} anchorElement - The button to position near
    * @param {number} defaultAmount - The default tip amount
    * @param {boolean} currentConfirmSetting - Current confirm before tipping setting
-   * @param {Function} onConfirm - Callback when confirmed, receives { amount, confirmBeforeTipping, likeOnTip, autoReply }
+   * @param {Function} onConfirm - Callback when confirmed, receives { amount, confirmBeforeTipping, likeOnTip, autoReply, customMessage }
    * @param {Function} onCancel - Callback when cancelled
    * @param {Object} xOptions - X integration options
    * @param {boolean} xOptions.isConnected - Whether X is connected
@@ -31,6 +31,7 @@ class TipModal {
    * @param {boolean} displayOptions.showConfirmCheckbox - Whether to show the confirm checkbox (default: true)
    * @param {boolean} displayOptions.isProfileTip - Whether this is a profile tip (changes X action labels)
    * @param {string} displayOptions.recipientUsername - Username for profile tips (e.g., "vitalik")
+   * @param {string} displayOptions.autoReplyMessage - Default auto-reply message template
    */
   show(anchorElement, defaultAmount, currentConfirmSetting, onConfirm, onCancel, xOptions = null, displayOptions = null) {
     // Remove any existing modal
@@ -97,6 +98,7 @@ class TipModal {
     const showConfirmCheckbox = displayOptions?.showConfirmCheckbox !== false;
     const isProfileTip = displayOptions?.isProfileTip || false;
     const recipientUsername = displayOptions?.recipientUsername || null;
+    const autoReplyMessage = displayOptions?.autoReplyMessage || '';
 
     // Create header
     const header = document.createElement('div');
@@ -208,7 +210,8 @@ class TipModal {
           parseFloat(input.value) || defaultAmount,
           confirmCheckbox.checked,
           likeCheckbox ? likeCheckbox.checked : null,
-          replyCheckbox ? replyCheckbox.checked : null
+          replyCheckbox ? replyCheckbox.checked : null,
+          messageTextarea ? messageTextarea.value : null
         );
       } else if (e.key === 'Escape') {
         e.preventDefault();
@@ -275,6 +278,7 @@ class TipModal {
     let likeCheckbox = null;
     let replyCheckbox = null;
     let xActionsContainer = null;
+    let messageTextarea = null;
 
     if (xOptions && xOptions.isConnected) {
       xActionsContainer = document.createElement('div');
@@ -374,6 +378,62 @@ class TipModal {
       xActionsContainer.appendChild(replyContainer);
     }
 
+    // Create message section (always shown)
+    const messageSection = document.createElement('div');
+    messageSection.style.cssText = `
+      margin-bottom: 20px;
+    `;
+
+    const messageLabel = document.createElement('label');
+    messageLabel.textContent = 'Message';
+    messageLabel.style.cssText = `
+      display: block;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    `;
+
+    messageTextarea = document.createElement('textarea');
+    messageTextarea.value = autoReplyMessage;
+    messageTextarea.placeholder = 'Add a message to your tip...';
+    messageTextarea.style.cssText = `
+      width: 100%;
+      min-height: 80px;
+      background: #000;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 13px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    `;
+    messageTextarea.addEventListener('focus', () => {
+      messageTextarea.style.borderColor = GROVE_COLORS.primary;
+    });
+    messageTextarea.addEventListener('blur', () => {
+      messageTextarea.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+    });
+
+    const messageHelper = document.createElement('p');
+    messageHelper.style.cssText = `
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 11px;
+      margin: 6px 0 0 0;
+      line-height: 1.4;
+    `;
+    messageHelper.textContent = 'Available: {username}, {chain}, {tx_link}, {grove_link}';
+
+    messageSection.appendChild(messageLabel);
+    messageSection.appendChild(messageTextarea);
+    messageSection.appendChild(messageHelper);
+
     // Create send button container for centering
     const sendBtnContainer = document.createElement('div');
     sendBtnContainer.style.cssText = `
@@ -453,7 +513,8 @@ class TipModal {
         parseFloat(input.value) || defaultAmount,
         confirmCheckbox.checked,
         likeCheckbox ? likeCheckbox.checked : null,
-        replyCheckbox ? replyCheckbox.checked : null
+        replyCheckbox ? replyCheckbox.checked : null,
+        messageTextarea ? messageTextarea.value : null
       );
     });
 
@@ -470,6 +531,7 @@ class TipModal {
     if (xActionsContainer) {
       this.modal.appendChild(xActionsContainer);
     }
+    this.modal.appendChild(messageSection);
     this.modal.appendChild(sendBtnContainer);
 
     // Add to DOM
@@ -553,15 +615,16 @@ class TipModal {
    * @param {boolean} confirmBeforeTipping - Whether to always confirm
    * @param {boolean|null} likeOnTip - Whether to like the post (null if X not connected)
    * @param {boolean|null} autoReply - Whether to reply to the post (null if X not connected)
+   * @param {string|null} customMessage - Custom message for the tip
    */
-  confirm(amount, confirmBeforeTipping, likeOnTip = null, autoReply = null) {
+  confirm(amount, confirmBeforeTipping, likeOnTip = null, autoReply = null, customMessage = null) {
     // Validate and sanitize the amount
     const validatedAmount = this.validateAmount(amount);
 
     const callback = this.onConfirm;
     this.hide();
     if (callback) {
-      callback({ amount: validatedAmount, confirmBeforeTipping, likeOnTip, autoReply });
+      callback({ amount: validatedAmount, confirmBeforeTipping, likeOnTip, autoReply, customMessage });
     }
   }
 
