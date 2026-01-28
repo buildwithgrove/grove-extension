@@ -121,13 +121,52 @@ _prompt_version_bump:
 	@printf "\n"
 
 .PHONY: build_release
-build_release: _prompt_version_bump _build_extension_zip ## Build release zip for Chrome Web Store
+build_release: _prompt_version_bump _build_extension_zip _create_tag_and_release ## Build release zip for Chrome Web Store
 	@printf "$(YELLOW)$(BOLD)Next steps:$(RESET)\n"
 	@printf "  1. Go to $(CYAN)$(CHROME_STORE_CONSOLE)$(RESET)\n"
 	@printf "  2. Ensure you are logged in with the group publisher.\n"
 	@NEW_ZIP=$$(ls -t $(BUILD_DIR)/grove-extension-v*.zip 2>/dev/null | head -1); \
 	printf "  3. Upload $(CYAN)$$NEW_ZIP$(RESET)\n"
 	@printf "\n"
+
+# Internal target to create git tag and GitHub release
+.PHONY: _create_tag_and_release
+_create_tag_and_release:
+	@RELEASE_VERSION=$$(grep '"version"' manifest.json | sed 's/.*: "\([^"]*\)".*/\1/'); \
+	LOCAL_TAG="v$$RELEASE_VERSION"; \
+	RELEASE_TAG="$$RELEASE_VERSION"; \
+	printf "$(CYAN)ℹ️  Creating git tag and GitHub release for v$$RELEASE_VERSION...$(RESET)\n"; \
+	printf "\n"; \
+	if git rev-parse "$$LOCAL_TAG" >/dev/null 2>&1; then \
+		printf "$(YELLOW)$(WARN) Tag $$LOCAL_TAG already exists, skipping tag creation$(RESET)\n"; \
+	else \
+		printf "$(CYAN)ℹ️  Creating local git tag $$LOCAL_TAG...$(RESET)\n"; \
+		git tag -a $$LOCAL_TAG -m "Release $$RELEASE_VERSION" && \
+		git push origin $$LOCAL_TAG && \
+		printf "$(GREEN)$(CHECK) Tag $$LOCAL_TAG created and pushed$(RESET)\n"; \
+	fi; \
+	printf "\n"; \
+	printf "$(CYAN)ℹ️  Preparing release zip with public key...$(RESET)\n"; \
+	mkdir -p $(BUILD_DIR)/repack; \
+	cp -r $(INCLUDE_FILES) $(BUILD_DIR)/repack/; \
+	sed 's|"version": "[^"]*"|"version": "'$$RELEASE_VERSION'"|; s|"manifest_version": 3,|"manifest_version": 3,\n  "key": "$(EXTENSION_PUBLIC_KEY)",|' $(BUILD_DIR)/repack/manifest.json > $(BUILD_DIR)/repack/manifest.json.tmp && mv $(BUILD_DIR)/repack/manifest.json.tmp $(BUILD_DIR)/repack/manifest.json; \
+	cd $(BUILD_DIR)/repack && zip -rq ../grove-extension-v$$RELEASE_VERSION-beta.zip .; \
+	rm -rf $(BUILD_DIR)/repack; \
+	cp $(BUILD_DIR)/grove-extension-v$$RELEASE_VERSION-beta.zip $(RELEASE_ASSET); \
+	printf "\n"; \
+	if gh release view $$RELEASE_TAG --repo $(RELEASES_REPO) >/dev/null 2>&1; then \
+		printf "$(YELLOW)$(WARN) Release $$RELEASE_TAG already exists in $(RELEASES_REPO), skipping$(RESET)\n"; \
+	else \
+		printf "$(CYAN)ℹ️  Creating GitHub release $$RELEASE_TAG in $(RELEASES_REPO)...$(RESET)\n"; \
+		NOTES=$$(echo "$$RELEASE_NOTES" | sed "s/VERSION_PLACEHOLDER/$$RELEASE_VERSION/g"); \
+		gh release create $$RELEASE_TAG $(RELEASE_ASSET) \
+			--repo $(RELEASES_REPO) \
+			--title "Grove Extension v$$RELEASE_VERSION" \
+			--notes "$$NOTES" \
+			--latest && \
+		printf "$(GREEN)$(CHECK) GitHub release created!$(RESET)\n"; \
+	fi; \
+	printf "\n"
 
 ##########################
 ### Release Workflow   ###
