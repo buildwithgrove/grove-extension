@@ -133,17 +133,16 @@ build_release: _prompt_version_bump _build_extension_zip _create_tag_and_release
 .PHONY: _create_tag_and_release
 _create_tag_and_release:
 	@RELEASE_VERSION=$$(grep '"version"' manifest.json | sed 's/.*: "\([^"]*\)".*/\1/'); \
-	LOCAL_TAG="v$$RELEASE_VERSION"; \
 	RELEASE_TAG="$$RELEASE_VERSION"; \
-	printf "$(CYAN)ℹ️  Creating git tag and GitHub release for v$$RELEASE_VERSION...$(RESET)\n"; \
+	printf "$(CYAN)ℹ️  Creating git tag and GitHub release for $$RELEASE_VERSION...$(RESET)\n"; \
 	printf "\n"; \
-	if git rev-parse "$$LOCAL_TAG" >/dev/null 2>&1; then \
-		printf "$(YELLOW)$(WARN) Tag $$LOCAL_TAG already exists, skipping tag creation$(RESET)\n"; \
+	if git rev-parse "$$RELEASE_TAG" >/dev/null 2>&1; then \
+		printf "$(YELLOW)$(WARN) Tag $$RELEASE_TAG already exists, skipping tag creation$(RESET)\n"; \
 	else \
-		printf "$(CYAN)ℹ️  Creating local git tag $$LOCAL_TAG...$(RESET)\n"; \
-		git tag -a $$LOCAL_TAG -m "Release $$RELEASE_VERSION" && \
-		git push origin $$LOCAL_TAG && \
-		printf "$(GREEN)$(CHECK) Tag $$LOCAL_TAG created and pushed$(RESET)\n"; \
+		printf "$(CYAN)ℹ️  Creating git tag $$RELEASE_TAG...$(RESET)\n"; \
+		git tag -a $$RELEASE_TAG -m "Release $$RELEASE_VERSION" && \
+		git push origin $$RELEASE_TAG && \
+		printf "$(GREEN)$(CHECK) Tag $$RELEASE_TAG created and pushed$(RESET)\n"; \
 	fi; \
 	printf "\n"; \
 	printf "$(CYAN)ℹ️  Preparing release zip with public key...$(RESET)\n"; \
@@ -161,17 +160,17 @@ _create_tag_and_release:
 		printf "$(CYAN)ℹ️  Creating GitHub release $$RELEASE_TAG in $(RELEASES_REPO)...$(RESET)\n"; \
 		gh release create $$RELEASE_TAG $(RELEASE_ASSET) \
 			--repo $(RELEASES_REPO) \
-			--title "Grove Extension v$$RELEASE_VERSION" \
+			--title "$$RELEASE_VERSION" \
 			--notes "$$NOTES" \
 			--latest && \
 		printf "$(GREEN)$(CHECK) GitHub release created in $(RELEASES_REPO)!$(RESET)\n"; \
 	fi; \
-	if gh release view $$LOCAL_TAG >/dev/null 2>&1; then \
-		printf "$(YELLOW)$(WARN) Release $$LOCAL_TAG already exists in origin, skipping$(RESET)\n"; \
+	if gh release view $$RELEASE_TAG >/dev/null 2>&1; then \
+		printf "$(YELLOW)$(WARN) Release $$RELEASE_TAG already exists in origin, skipping$(RESET)\n"; \
 	else \
-		printf "$(CYAN)ℹ️  Creating GitHub release $$LOCAL_TAG in origin...$(RESET)\n"; \
-		gh release create $$LOCAL_TAG \
-			--title "Grove Extension v$$RELEASE_VERSION" \
+		printf "$(CYAN)ℹ️  Creating GitHub release $$RELEASE_TAG in origin...$(RESET)\n"; \
+		gh release create $$RELEASE_TAG \
+			--title "$$RELEASE_VERSION" \
 			--notes "$$NOTES" \
 			--latest && \
 		printf "$(GREEN)$(CHECK) GitHub release created in origin!$(RESET)\n"; \
@@ -190,7 +189,7 @@ EXTENSION_PUBLIC_KEY := MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7nXN5llSn+XJ
 
 # Release notes template (VERSION_PLACEHOLDER replaced at runtime)
 define RELEASE_NOTES
-## Grove Extension vVERSION_PLACEHOLDER
+## VERSION_PLACEHOLDER
 
 ### New Installation
 1. Download the zip file below
@@ -220,14 +219,12 @@ build_beta: ## Build and upload beta zip to GitHub releases
 _grove_release_internal: _build_extension_zip
 	@# Use the current version from manifest.json (already bumped by _prompt_version_bump)
 	@RELEASE_VERSION=$$(grep '"version"' manifest.json | sed 's/.*: "\([^"]*\)".*/\1/'); \
-	printf "$(CYAN)ℹ️  Creating release for v$$RELEASE_VERSION...$(RESET)\n"; \
-	RELEASE_TAG="grove-extension-v$$RELEASE_VERSION"; \
-	LOCAL_TAG="v$$RELEASE_VERSION"; \
+	printf "$(CYAN)ℹ️  Creating release for $$RELEASE_VERSION...$(RESET)\n"; \
+	RELEASE_TAG="$$RELEASE_VERSION"; \
 	printf "\n"; \
 	printf "$(YELLOW)%s$(RESET)\n" "╔════════════════════════════════════════════════════════╗"; \
 	printf "$(YELLOW)║$(RESET)  $(BOLD)Release Version:$(RESET) $$RELEASE_VERSION\n"; \
 	printf "$(YELLOW)║$(RESET)  $(BOLD)Release Tag:$(RESET)     $$RELEASE_TAG\n"; \
-	printf "$(YELLOW)║$(RESET)  $(BOLD)Local Git Tag:$(RESET)   $$LOCAL_TAG\n"; \
 	printf "$(YELLOW)%s$(RESET)\n" "╚════════════════════════════════════════════════════════╝"; \
 	printf "\n"; \
 	printf "$(CYAN)ℹ️  Preparing release zip with public key...$(RESET)\n"; \
@@ -238,22 +235,30 @@ _grove_release_internal: _build_extension_zip
 	rm -rf $(BUILD_DIR)/repack; \
 	cp $(BUILD_DIR)/grove-extension-v$$RELEASE_VERSION.zip $(RELEASE_ASSET); \
 	printf "\n"; \
-	printf "$(CYAN)ℹ️  Creating local git tag $$LOCAL_TAG...$(RESET)\n"; \
-	git tag -a $$LOCAL_TAG -m "Release $$RELEASE_VERSION" 2>/dev/null && \
-		git push origin $$LOCAL_TAG && \
-		printf "$(GREEN)$(CHECK) Tag $$LOCAL_TAG created and pushed$(RESET)\n" || \
-		printf "$(YELLOW)$(WARN) Tag $$LOCAL_TAG already exists, skipping$(RESET)\n"; \
+	printf "$(CYAN)ℹ️  Creating git tag $$RELEASE_TAG...$(RESET)\n"; \
+	git tag -a $$RELEASE_TAG -m "Release $$RELEASE_VERSION" 2>/dev/null && \
+		git push origin $$RELEASE_TAG && \
+		printf "$(GREEN)$(CHECK) Tag $$RELEASE_TAG created and pushed$(RESET)\n" || \
+		printf "$(YELLOW)$(WARN) Tag $$RELEASE_TAG already exists, skipping$(RESET)\n"; \
 	printf "\n"; \
 	printf "$(YELLOW)$(BOLD)━━━ Uploading to $(RELEASES_REPO) ━━━$(RESET)\n"; \
 	printf "$(CYAN)ℹ️  Creating release $$RELEASE_TAG...$(RESET)\n"; \
 	NOTES=$$(echo "$$RELEASE_NOTES" | sed "s/VERSION_PLACEHOLDER/$$RELEASE_VERSION/g"); \
 	gh release create $$RELEASE_TAG $(RELEASE_ASSET) \
 		--repo $(RELEASES_REPO) \
-		--title "Grove Extension v$$RELEASE_VERSION" \
+		--title "$$RELEASE_VERSION" \
 		--notes "$$NOTES" \
 		--latest && \
 		printf "$(GREEN)$(BOLD)$(CHECK) Release created!$(RESET)\n" || \
 		{ printf "$(RED)$(CROSS) Failed to create release$(RESET)\n"; exit 1; }; \
+	printf "\n"; \
+	printf "$(CYAN)ℹ️  Creating release $$RELEASE_TAG in origin...$(RESET)\n"; \
+	gh release create $$RELEASE_TAG \
+		--title "$$RELEASE_VERSION" \
+		--notes "$$NOTES" \
+		--latest && \
+		printf "$(GREEN)$(BOLD)$(CHECK) Release created in origin!$(RESET)\n" || \
+		printf "$(YELLOW)$(WARN) Release $$RELEASE_TAG already exists in origin, skipping$(RESET)\n"; \
 	printf "\n"; \
 	printf "$(GREEN)$(BOLD)🔗 Download URLs:$(RESET)\n"; \
 	printf "   Latest:    $(CYAN)https://github.com/$(RELEASES_REPO)/releases/latest/download/grove-extension.zip$(RESET)\n"; \
