@@ -172,6 +172,7 @@ describe('TipModal', () => {
         confirmBeforeTipping: true,
         likeOnTip: null,
         autoReply: null,
+        customMessage: null,
       });
     });
 
@@ -189,6 +190,7 @@ describe('TipModal', () => {
         confirmBeforeTipping: false,
         likeOnTip: null,
         autoReply: null,
+        customMessage: null,
       });
     });
 
@@ -206,6 +208,7 @@ describe('TipModal', () => {
         confirmBeforeTipping: true,
         likeOnTip: true,
         autoReply: false,
+        customMessage: null,
       });
     });
 
@@ -234,6 +237,7 @@ describe('TipModal', () => {
         confirmBeforeTipping: false,
         likeOnTip: null,
         autoReply: null,
+        customMessage: null,
       });
     });
 
@@ -251,6 +255,7 @@ describe('TipModal', () => {
         confirmBeforeTipping: true,
         likeOnTip: null,
         autoReply: null,
+        customMessage: null,
       });
     });
   });
@@ -400,6 +405,7 @@ describe('TipModal', () => {
         confirmBeforeTipping: true,
         likeOnTip: null,
         autoReply: null,
+        customMessage: '',
       });
     });
   });

@@ -293,6 +293,8 @@ const TweetTipHandler = {
     let autoReply = true;
     let isXConnected = false;
 
+    let autoReplyMessage = this.callbacks.getDefaultAutoReplyMessage ? this.callbacks.getDefaultAutoReplyMessage() : '';
+
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         const result = await chrome.storage.local.get([
@@ -301,8 +303,10 @@ const TweetTipHandler = {
           'GROVE_CONFIRM_TIP_V2',
           'GROVE_HAS_TIPPED',
           'GROVE_LIKE_ON_TIP',
-          'GROVE_AUTO_REPLY'
+          'GROVE_AUTO_REPLY',
+          'GROVE_AUTO_REPLY_MESSAGE'
         ]);
+        autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || autoReplyMessage;
         tipAmount = result.GROVE_TIP_AMOUNT || 0.02;
         hasTipped = result.GROVE_HAS_TIPPED || false;
         likeOnTip = result.GROVE_LIKE_ON_TIP !== false;
@@ -371,14 +375,14 @@ const TweetTipHandler = {
 
       // Configure display based on whether this is the first tip
       const displayOptions = hasTipped
-        ? { title: 'Confirm Tip', showConfirmCheckbox: true, recipientUsername }
-        : { title: 'Your First Tip!', showConfirmCheckbox: true, recipientUsername };
+        ? { title: 'Confirm Tip', showConfirmCheckbox: true, recipientUsername, autoReplyMessage }
+        : { title: 'Your First Tip!', showConfirmCheckbox: true, recipientUsername, autoReplyMessage };
 
       this.tipModal.show(
         buttonWrapper.button,
         tipAmount,
         confirmBeforeTipping,
-        async ({ amount, confirmBeforeTipping: newConfirmSetting, likeOnTip: newLikeOnTip, autoReply: newAutoReply }) => {
+        async ({ amount, confirmBeforeTipping: newConfirmSetting, likeOnTip: newLikeOnTip, autoReply: newAutoReply, customMessage }) => {
           // Save preferences
           try {
             const saveData = {
@@ -399,7 +403,7 @@ const TweetTipHandler = {
           }
           // Build xActions if X options were provided
           const xActions = (newLikeOnTip !== null || newAutoReply !== null)
-            ? { likeOnTip: newLikeOnTip, autoReply: newAutoReply }
+            ? { likeOnTip: newLikeOnTip, autoReply: newAutoReply, customMessage }
             : null;
           // Send the tip
           this.sendTip(amount, buttonWrapper, tweetUrl, xActions);
@@ -460,11 +464,17 @@ const TweetTipHandler = {
       if (xActions) {
         likeOnTipEnabled = xActions.likeOnTip !== false;
         autoReplyEnabled = xActions.autoReply !== false;
+        // Use custom message from modal if provided
+        if (xActions.customMessage) {
+          autoReplyMessage = xActions.customMessage;
+        } else {
+          autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || autoReplyMessage;
+        }
       } else {
         autoReplyEnabled = result.GROVE_AUTO_REPLY !== false;
         likeOnTipEnabled = result.GROVE_LIKE_ON_TIP !== false;
+        autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || autoReplyMessage;
       }
-      autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || autoReplyMessage;
       console.log('[Grove TweetTipHandler] Storage loaded:', { hasJwt: !!jwt, autoReply: autoReplyEnabled, likeOnTip: likeOnTipEnabled, chain: result.groveChain, fromModal: !!xActions });
 
       // Get friendly chain name and explorer URL from centralized config

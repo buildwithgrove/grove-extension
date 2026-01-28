@@ -471,6 +471,8 @@
     let autoReply = true;
     let isXConnected = false;
 
+    let autoReplyMessage = DEFAULT_AUTO_REPLY_MESSAGE;
+
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         const result = await chrome.storage.local.get([
@@ -479,8 +481,10 @@
           'GROVE_CONFIRM_TIP_V2',
           'GROVE_HAS_TIPPED',
           'GROVE_LIKE_ON_TIP',
-          'GROVE_AUTO_REPLY'
+          'GROVE_AUTO_REPLY',
+          'GROVE_AUTO_REPLY_MESSAGE'
         ]);
+        autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
         tipAmount = result.GROVE_TIP_AMOUNT || 0.02;
         hasTipped = result.GROVE_HAS_TIPPED || false;
         likeOnTip = result.GROVE_LIKE_ON_TIP !== false;
@@ -553,14 +557,14 @@
 
       // Configure display based on whether this is the first tip
       const displayOptions = hasTipped
-        ? { title: 'Confirm Tip', showConfirmCheckbox: true, isProfileTip: true, recipientUsername }
-        : { title: 'Your First Tip!', showConfirmCheckbox: true, isProfileTip: true, recipientUsername };
+        ? { title: 'Confirm Tip', showConfirmCheckbox: true, isProfileTip: true, recipientUsername, autoReplyMessage }
+        : { title: 'Your First Tip!', showConfirmCheckbox: true, isProfileTip: true, recipientUsername, autoReplyMessage };
 
       tipModal.show(
         buttonElement,
         tipAmount,
         true, // confirmBeforeTipping is always true here
-        async ({ amount, confirmBeforeTipping: newConfirmSetting, likeOnTip: newLikeOnTip, autoReply: newAutoReply }) => {
+        async ({ amount, confirmBeforeTipping: newConfirmSetting, likeOnTip: newLikeOnTip, autoReply: newAutoReply, customMessage }) => {
           // Save preferences
           try {
             const saveData = {
@@ -579,8 +583,8 @@
           } catch (e) {
             console.error("[Grove Extension] Failed to save tip preferences:", e);
           }
-          // Send the tip
-          sendTip(amount, button);
+          // Send the tip with custom message
+          sendTip(amount, button, customMessage);
         },
         () => {
           console.log("[Grove Extension] Tip cancelled");
@@ -598,8 +602,9 @@
    * Send tip with the given amount
    * @param {number} tipAmount - The amount to tip
    * @param {TipButton} button - The button instance for state updates
+   * @param {string|null} customMessage - Custom message for the tip (optional)
    */
-  async function sendTip(tipAmount, button) {
+  async function sendTip(tipAmount, button, customMessage = null) {
     // Show loading animation with amount
     if (button) {
       button.setLoading(tipAmount);
@@ -708,8 +713,8 @@
               const txHash = response.data?.tx_hash || '';
               const txLink = `${explorerBaseUrl}${txHash}`;
 
-              // Build tweet text from template
-              const autoReplyMessage = xSettings.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
+              // Build tweet text from template (prefer custom message from modal)
+              const autoReplyMessage = customMessage || xSettings.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
               const tweetText = buildAutoReplyMessage(autoReplyMessage, {
                 username: username,
                 chain: chainName,
