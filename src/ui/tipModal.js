@@ -378,11 +378,20 @@ class TipModal {
       xActionsContainer.appendChild(replyContainer);
     }
 
-    // Create message section (always shown)
+    // Create message section (shown only when X connected and reply enabled)
     const messageSection = document.createElement('div');
+    const showMessageSection = replyCheckbox && replyCheckbox.checked;
     messageSection.style.cssText = `
       margin-bottom: 20px;
+      display: ${showMessageSection ? 'block' : 'none'};
     `;
+
+    // Toggle message section when reply checkbox changes
+    if (replyCheckbox) {
+      replyCheckbox.addEventListener('change', () => {
+        messageSection.style.display = replyCheckbox.checked ? 'block' : 'none';
+      });
+    }
 
     const messageLabel = document.createElement('label');
     messageLabel.textContent = 'Message';
