@@ -193,9 +193,9 @@ const DEFAULT_ENV = 'prod';
 const DEFAULT_ENDPOINT = 'production';
 // FormatUtils.DEFAULT_BALANCE_DISPLAY is now in FormatUtils
 const TOP_UP_URLS = {
-  mainnet: 'https://app.grove.city/profile?action=topup',
-  testnet: 'https://app.testnet.grove.city/profile?action=topup',
-  localhost: 'http://localhost:3000/profile?action=topup'
+  mainnet: 'https://app.grove.city/wallets?action=topup',
+  testnet: 'https://app.testnet.grove.city/wallets?action=topup',
+  localhost: 'http://localhost:3000/wallets?action=topup'
 };
 const APP_URLS = {
   production: 'https://app.grove.city',
