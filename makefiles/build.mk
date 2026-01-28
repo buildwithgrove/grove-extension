@@ -154,17 +154,27 @@ _create_tag_and_release:
 	rm -rf $(BUILD_DIR)/repack; \
 	cp $(BUILD_DIR)/grove-extension-v$$RELEASE_VERSION-beta.zip $(RELEASE_ASSET); \
 	printf "\n"; \
+	NOTES=$$(echo "$$RELEASE_NOTES" | sed "s/VERSION_PLACEHOLDER/$$RELEASE_VERSION/g"); \
 	if gh release view $$RELEASE_TAG --repo $(RELEASES_REPO) >/dev/null 2>&1; then \
 		printf "$(YELLOW)$(WARN) Release $$RELEASE_TAG already exists in $(RELEASES_REPO), skipping$(RESET)\n"; \
 	else \
 		printf "$(CYAN)ℹ️  Creating GitHub release $$RELEASE_TAG in $(RELEASES_REPO)...$(RESET)\n"; \
-		NOTES=$$(echo "$$RELEASE_NOTES" | sed "s/VERSION_PLACEHOLDER/$$RELEASE_VERSION/g"); \
 		gh release create $$RELEASE_TAG $(RELEASE_ASSET) \
 			--repo $(RELEASES_REPO) \
 			--title "Grove Extension v$$RELEASE_VERSION" \
 			--notes "$$NOTES" \
 			--latest && \
-		printf "$(GREEN)$(CHECK) GitHub release created!$(RESET)\n"; \
+		printf "$(GREEN)$(CHECK) GitHub release created in $(RELEASES_REPO)!$(RESET)\n"; \
+	fi; \
+	if gh release view $$LOCAL_TAG >/dev/null 2>&1; then \
+		printf "$(YELLOW)$(WARN) Release $$LOCAL_TAG already exists in origin, skipping$(RESET)\n"; \
+	else \
+		printf "$(CYAN)ℹ️  Creating GitHub release $$LOCAL_TAG in origin...$(RESET)\n"; \
+		gh release create $$LOCAL_TAG \
+			--title "Grove Extension v$$RELEASE_VERSION" \
+			--notes "$$NOTES" \
+			--latest && \
+		printf "$(GREEN)$(CHECK) GitHub release created in origin!$(RESET)\n"; \
 	fi; \
 	printf "\n"
 
