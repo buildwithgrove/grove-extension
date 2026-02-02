@@ -162,7 +162,8 @@ Available placeholders:
 - `{username}` - Twitter username of the tip recipient
 - `{chain}` - Network name (e.g., "Base", "Base Sepolia")
 - `{tx_link}` - Block explorer link to the transaction
-- `{grove_link}` - Link to Grove website (grove.city)
+- `{referral_link}` - User's referral link (falls back to grove.city if no referral code)
+- `{grove_link}` - Link to Grove website (grove.city) [legacy, still supported]
 
 ## Design System
 

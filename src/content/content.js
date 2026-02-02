@@ -696,7 +696,7 @@
       if (platformName === 'twitter' && typeof XAuth !== 'undefined') {
         try {
           // Get X feature settings
-          const xSettings = await chrome.storage.local.get(['GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'groveChain', 'groveEndpoint', 'groveEnvironment']);
+          const xSettings = await chrome.storage.local.get(['GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'GROVE_REFERRAL_CODE', 'groveChain', 'groveEndpoint', 'groveEnvironment']);
           const autoReplyEnabled = xSettings.GROVE_AUTO_REPLY !== false;
 
           if (autoReplyEnabled) {
@@ -715,11 +715,14 @@
 
               // Build tweet text from template (prefer custom message from modal)
               const autoReplyMessage = customMessage || xSettings.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
+              const referralCode = xSettings.GROVE_REFERRAL_CODE;
+              const referralLink = referralCode ? `https://app.grove.city/?ref=${encodeURIComponent(referralCode)}` : 'grove.city';
               const tweetText = buildAutoReplyMessage(autoReplyMessage, {
                 username: username,
                 chain: chainName,
                 tx_link: txLink,
-                grove_link: 'grove.city'
+                grove_link: 'grove.city',
+                referral_link: referralLink
               });
 
               try {

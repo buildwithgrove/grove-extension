@@ -24,6 +24,9 @@ function buildAutoReplyMessage(template, data) {
   if (data.grove_link) {
     message = message.replace(/{grove_link}/g, data.grove_link);
   }
+  if (data.referral_link) {
+    message = message.replace(/{referral_link}/g, data.referral_link);
+  }
   return message;
 }
 
@@ -39,6 +42,7 @@ function buildAutoReplyMessage(template, data) {
  * @param {string} options.chainName - Chain name for reply message
  * @param {string} options.explorerBaseUrl - Block explorer base URL
  * @param {string} options.explorerSuffix - Block explorer URL suffix (e.g., ?cluster=devnet)
+ * @param {string} options.referralLink - User's referral link (optional)
  * @returns {Promise<{didLike: boolean, didReply: boolean, likeFailed: boolean, replyFailed: boolean}>}
  */
 async function performXActionsAfterTip(options) {
@@ -51,7 +55,8 @@ async function performXActionsAfterTip(options) {
     username,
     chainName,
     explorerBaseUrl,
-    explorerSuffix = ''
+    explorerSuffix = '',
+    referralLink = ''
   } = options;
 
   const result = {
@@ -109,7 +114,8 @@ async function performXActionsAfterTip(options) {
         username: username,
         chain: chainName,
         tx_link: txLink,
-        grove_link: 'grove.city'
+        grove_link: 'grove.city',
+        referral_link: referralLink || 'grove.city'
       });
 
       try {
