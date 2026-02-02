@@ -39,13 +39,13 @@ const SubstackHandler = {
     this.adapter = adapter;
     console.log('[Grove Substack] Initializing...');
 
-    // Check if we're on a post page
+    // Check if we're on a supported page (post or profile)
     if (!adapter.detectProfilePage()) {
-      console.log('[Grove Substack] Not a post page, skipping');
+      console.log('[Grove Substack] Not a supported page, skipping');
       return null;
     }
 
-    console.log('[Grove Substack] On a post page, initializing...');
+    console.log('[Grove Substack] On a supported page, initializing...');
 
     // Wait for the page to load
     const loaded = await adapter.waitForProfileLoad();
@@ -66,7 +66,7 @@ const SubstackHandler = {
 
       if (addressResult && addressResult.address) {
         this.resolvedAddress = addressResult;
-        this.injectActionBarButtons();
+        this.injectPageButtons();
       }
     } else {
       console.log('[Grove Substack] No address in page bio, will check hover cards');
@@ -92,9 +92,9 @@ const SubstackHandler = {
         if (addressResult && addressResult.address) {
           this.resolvedAddress = addressResult;
 
-          // Inject button in action bar if not already done
+          // Inject button in page (action bar or profile header) if not already done
           if (!this.currentButton) {
-            this.injectActionBarButtons();
+            this.injectPageButtons();
           }
 
           // Also inject a tip button in the hover card
@@ -105,14 +105,23 @@ const SubstackHandler = {
   },
 
   /**
-   * Inject tip buttons into all Substack post action bars
+   * Inject tip buttons into page (action bars or profile header)
    */
-  injectActionBarButtons() {
+  injectPageButtons() {
+    // 1. Try to inject into profile header (subscribe widget or similar)
+    const profilePlacement = this.adapter.getProfileButtonPlacement();
+    if (profilePlacement) {
+      this.injectProfileButton(profilePlacement);
+    }
+
+    // 2. Inject into all visible action bars
     const actionBars = this.adapter.getAllActionBars();
     console.log('[Grove Substack] Found', actionBars.length, 'action bar(s)');
 
     if (actionBars.length === 0) {
-      console.log('[Grove Substack] Could not find any action bars');
+      if (!profilePlacement) {
+        console.log('[Grove Substack] Could not find any button placement');
+      }
       return;
     }
 
@@ -144,8 +153,8 @@ const SubstackHandler = {
       );
       tipButton.create();
 
-      // Store the first button as currentButton for compatibility
-      if (index === 0) {
+      // Store the first button as currentButton for compatibility if not set by profile
+      if (!this.currentButton && index === 0) {
         this.currentButton = tipButton;
       }
 
@@ -158,6 +167,34 @@ const SubstackHandler = {
         console.log('[Grove Substack] Tip button appended to placement in action bar', index);
       }
     });
+  },
+
+  /**
+   * Inject tip button into profile header
+   * @param {Element} placement - The container element to inject into
+   */
+  injectProfileButton(placement) {
+    // Skip if already has a tip button
+    if (placement.querySelector('.grove-tip-button')) {
+      console.log('[Grove Substack] Profile header already has tip button');
+      return;
+    }
+
+    // Create tip button
+    const tipButton = this.callbacks.createTipButton(
+      (buttonInstance) => {
+        if (this.callbacks.onTipClick) {
+          this.callbacks.onTipClick(buttonInstance);
+        }
+      },
+      'substack'
+    );
+    tipButton.create();
+    this.currentButton = tipButton;
+
+    // Insert as last child of the placement container
+    placement.appendChild(tipButton.button);
+    console.log('[Grove Substack] Tip button injected into profile header');
   },
 
   /**

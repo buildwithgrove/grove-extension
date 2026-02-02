@@ -84,7 +84,7 @@
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://*.substack.com/*"],
+      "matches": ["https://*.substack.com/*", "https://substack.com/*"],
       "js": [
         "src/config/storageKeys.js",
         "src/utils/darkMode.js",
@@ -114,7 +114,8 @@
         "https://www.x.com/*",
         "https://soundcloud.com/*",
         "https://www.soundcloud.com/*",
-        "https://*.substack.com/*"
+        "https://*.substack.com/*",
+        "https://substack.com/*"
       ],
       "js": [
         "src/config/storageKeys.js",

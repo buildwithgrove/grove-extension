@@ -6,16 +6,11 @@ let document;
 let SubstackAdapter;
 let context;
 
-beforeEach(() => {
-  const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
-    url: 'https://olshansky.substack.com/p/an-incentive-to-label'
-  });
-  document = dom.window.document;
-
-  // Prepare context with JSDOM globals
-  context = {
+function createContext(url) {
+  const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', { url });
+  const ctx = {
     window: dom.window,
-    document: document,
+    document: dom.window.document,
     console: console,
     MutationObserver: dom.window.MutationObserver,
     URL: dom.window.URL,
@@ -25,13 +20,16 @@ beforeEach(() => {
     setTimeout: setTimeout,
     clearTimeout: clearTimeout,
   };
-  context.window = context; // Circular reference for window.window
-  context.location = dom.window.location;
+  ctx.window = ctx;
+  ctx.location = dom.window.location;
+  loadBrowserScript('src/adapters/base.js', ctx);
+  loadBrowserScript('src/adapters/substack.js', ctx);
+  return ctx;
+}
 
-  // Load scripts
-  loadBrowserScript('src/adapters/base.js', context);
-  loadBrowserScript('src/adapters/substack.js', context);
-
+beforeEach(() => {
+  context = createContext('https://olshansky.substack.com/p/an-incentive-to-label');
+  document = context.document;
   SubstackAdapter = context.SubstackAdapter;
 });
 
@@ -42,50 +40,40 @@ describe('SubstackAdapter', () => {
       expect(adapter.detectProfilePage()).toBe(true);
     });
 
-    it('should return false for non-post pages', () => {
-      const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
-        url: 'https://olshansky.substack.com/'
-      });
-      const newContext = {
-        window: dom.window,
-        document: dom.window.document,
-        console: console,
-        MutationObserver: dom.window.MutationObserver,
-        URL: dom.window.URL,
-        setTimeout: setTimeout,
-        clearTimeout: clearTimeout,
-      };
-      newContext.window = newContext;
-      newContext.location = dom.window.location;
-
-      loadBrowserScript('src/adapters/base.js', newContext);
-      loadBrowserScript('src/adapters/substack.js', newContext);
-
-      const adapter = new newContext.SubstackAdapter();
-      expect(adapter.detectProfilePage()).toBe(false);
+    it('should return true for bare domain reader view (/@user/p-digits)', () => {
+      const ctx = createContext('https://substack.com/@timour/p-184358935');
+      const adapter = new ctx.SubstackAdapter();
+      expect(adapter.detectProfilePage()).toBe(true);
     });
 
-    it('should return false for archive pages', () => {
-      const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
-        url: 'https://olshansky.substack.com/archive'
-      });
-      const newContext = {
-        window: dom.window,
-        document: dom.window.document,
-        console: console,
-        MutationObserver: dom.window.MutationObserver,
-        URL: dom.window.URL,
-        setTimeout: setTimeout,
-        clearTimeout: clearTimeout,
-      };
-      newContext.window = newContext;
-      newContext.location = dom.window.location;
+    it('should return true for bare domain home post view (/home/post/p-digits)', () => {
+      const ctx = createContext('https://substack.com/home/post/p-184358935');
+      const adapter = new ctx.SubstackAdapter();
+      expect(adapter.detectProfilePage()).toBe(true);
+    });
 
-      loadBrowserScript('src/adapters/base.js', newContext);
-      loadBrowserScript('src/adapters/substack.js', newContext);
+    it('should return true for bare domain profile page (/@user)', () => {
+      const ctx = createContext('https://substack.com/@timour');
+      const adapter = new ctx.SubstackAdapter();
+      expect(adapter.detectProfilePage()).toBe(true);
+    });
 
-      const adapter = new newContext.SubstackAdapter();
-      expect(adapter.detectProfilePage()).toBe(false);
+    it('should return true for subdomain profile page (root)', () => {
+      const ctx = createContext('https://olshansky.substack.com/');
+      const adapter = new ctx.SubstackAdapter();
+      expect(adapter.detectProfilePage()).toBe(true);
+    });
+
+    it('should return true for subdomain profile page (about)', () => {
+      const ctx = createContext('https://olshansky.substack.com/about');
+      const adapter = new ctx.SubstackAdapter();
+      expect(adapter.detectProfilePage()).toBe(true);
+    });
+
+    it('should return true for all subdomain pages', () => {
+      const ctx = createContext('https://olshansky.substack.com/archive');
+      const adapter = new ctx.SubstackAdapter();
+      expect(adapter.detectProfilePage()).toBe(true);
     });
   });
 
@@ -147,6 +135,39 @@ describe('SubstackAdapter', () => {
       document.body.innerHTML = `
         <script>
           window._preloads = {"author_bio":"Testing bio with olshansky.eth address"};
+        </script>
+      `;
+      const bio = adapter.extractBio();
+      expect(bio).toContain('olshansky.eth');
+    });
+
+    it('should extract bio from preloads.profile.bio (bare domain profile)', () => {
+      const adapter = new SubstackAdapter();
+      document.body.innerHTML = `
+        <script>
+          window._preloads = {
+            "profile": {
+              "id": 123,
+              "name": "Timour",
+              "bio": "Building Edge City. timour.eth"
+            }
+          };
+        </script>
+      `;
+      const bio = adapter.extractBio();
+      expect(bio).toContain('timour.eth');
+    });
+
+    it('should extract bio from preloads.pub.author_bio (subdomain profile)', () => {
+      const adapter = new SubstackAdapter();
+      document.body.innerHTML = `
+        <script>
+          window._preloads = {
+            "pub": {
+              "id": 456,
+              "author_bio": "olshansky.eth"
+            }
+          };
         </script>
       `;
       const bio = adapter.extractBio();
@@ -224,7 +245,7 @@ describe('SubstackAdapter', () => {
   });
 
   describe('getButtonPlacement', () => {
-    it('should return the left button group', () => {
+    it('should return the left button group on post page', () => {
       const adapter = new SubstackAdapter();
       document.body.innerHTML = `
         <div class="post-ufi">
@@ -241,10 +262,54 @@ describe('SubstackAdapter', () => {
       expect(placement.classList.contains('pencraft')).toBe(true);
     });
 
-    it('should return null if no action bar found', () => {
+    it('should return null if no action bar found and no profile button found', () => {
       const adapter = new SubstackAdapter();
       document.body.innerHTML = `<div></div>`;
       expect(adapter.getButtonPlacement()).toBeNull();
+    });
+
+    it('should return navbar items container on subdomain profile page and insert after About', () => {
+      const adapter = new SubstackAdapter();
+      document.body.innerHTML = `
+        <div class="overflow-items">
+          <div class="menu-item" id="home"><a href="/">Home</a></div>
+          <div class="menu-item" id="about"><a href="/about">About</a></div>
+          <div class="menu-item" id="other"><a href="/other">Other</a></div>
+        </div>
+      `;
+      const placement = adapter.getButtonPlacement();
+      expect(placement).not.toBeNull();
+      expect(placement.classList.contains('grove-navbar-item')).toBe(true);
+      expect(placement.classList.contains('menu-item')).toBe(false);
+      
+      const aboutItem = document.getElementById('about');
+      expect(aboutItem.nextSibling).toBe(placement);
+    });
+
+    it('should return subscribe widget wrapper on subdomain profile page as fallback', () => {
+      const adapter = new SubstackAdapter();
+      document.body.innerHTML = `
+        <div class="subscribe-widget">
+          <div class="button-wrapper">
+            <button>Subscribe</button>
+          </div>
+        </div>
+      `;
+      const placement = adapter.getButtonPlacement();
+      expect(placement).not.toBeNull();
+      expect(placement.classList.contains('button-wrapper')).toBe(true);
+    });
+
+    it('should return subscribe button container on bare domain profile page', () => {
+      const adapter = new SubstackAdapter();
+      document.body.innerHTML = `
+        <div class="profile-header">
+          <button>Subscribe</button>
+        </div>
+      `;
+      const placement = adapter.getButtonPlacement();
+      expect(placement).not.toBeNull();
+      expect(placement.classList.contains('profile-header')).toBe(true);
     });
   });
 
