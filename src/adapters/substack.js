@@ -21,8 +21,11 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
    */
   detectProfilePage() {
     try {
-      // Post pages have /p/ in the path (e.g., /p/an-incentive-to-label)
-      return window.location.pathname.includes('/p/');
+      // Subdomain view: /p/post-title (e.g., /p/an-incentive-to-label)
+      // Bare domain reader view: /@username/p-{digits} (e.g., /@timour/p-184358935)
+      // Bare domain home post view: /home/post/p-{digits} (e.g., /home/post/p-184358935)
+      return window.location.pathname.includes('/p/') ||
+             /\/p-\d+/.test(window.location.pathname);
     } catch (err) {
       console.error('[Grove Substack] detectProfilePage failed:', err);
       return false;
@@ -179,8 +182,9 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
    * @returns {Element|null}
    */
   getRestackButton() {
-    const postUfi = document.querySelector('.post-ufi');
-    return this.getRestackButtonInActionBar(postUfi);
+    const actionBars = this.getAllActionBars();
+    if (actionBars.length === 0) return null;
+    return this.getRestackButtonInActionBar(actionBars[0]);
   }
 
   /**
@@ -188,16 +192,26 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
    * @returns {Element|null}
    */
   getButtonPlacement() {
-    const postUfi = document.querySelector('.post-ufi');
-    return this.getButtonPlacementInActionBar(postUfi);
+    const actionBars = this.getAllActionBars();
+    if (actionBars.length === 0) return null;
+    return this.getButtonPlacementInActionBar(actionBars[0]);
   }
 
   /**
    * Get ALL action bars on the page (top and bottom)
+   * Supports both subdomain view (.post-ufi) and bare domain reader view
    * @returns {Element[]}
    */
   getAllActionBars() {
-    return Array.from(document.querySelectorAll('.post-ufi'));
+    // Subdomain view: .post-ufi containers
+    const postUfis = document.querySelectorAll('.post-ufi');
+    if (postUfis.length > 0) {
+      return Array.from(postUfis);
+    }
+
+    // Bare domain reader view: find action bars by locating Restack buttons
+    const restackButtons = document.querySelectorAll('button[aria-label="Restack"]');
+    return Array.from(restackButtons).map(btn => btn.parentElement).filter(Boolean);
   }
 
   /**
@@ -208,6 +222,11 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
   getRestackButtonInActionBar(actionBar) {
     if (!actionBar) return null;
 
+    // Reader view: button with aria-label="Restack" directly in the action bar
+    const restackByLabel = actionBar.querySelector('button[aria-label="Restack"]');
+    if (restackByLabel) return restackByLabel;
+
+    // Subdomain view: find by elimination within .post-ufi
     const leftGroup = actionBar.querySelector('div.pencraft');
     if (!leftGroup) return null;
 
@@ -239,7 +258,9 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
    */
   getButtonPlacementInActionBar(actionBar) {
     if (!actionBar) return null;
-    return actionBar.querySelector('div.pencraft') || null;
+    // Subdomain view: inner div.pencraft contains the button group
+    // Reader view: the action bar itself IS the button group (parent of Restack button)
+    return actionBar.querySelector('div.pencraft') || actionBar;
   }
 
   /**
@@ -255,13 +276,51 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
    * @returns {Promise<boolean>}
    */
   async waitForProfileLoad() {
-    const postUfi = await this.waitForElement('.post-ufi', 8000);
-    if (!postUfi) return false;
+    // Wait for action bar: .post-ufi (subdomain) or Restack button (reader view)
+    const actionBar = await this.waitForEither(
+      '.post-ufi',
+      'button[aria-label="Restack"]',
+      8000
+    );
+    if (!actionBar) return false;
 
-    // Wait for byline to load (contains author info)
+    // Wait for byline to load (contains author info, present on both views)
     await this.waitForElement('.byline-wrapper', 5000);
 
     return true;
+  }
+
+  /**
+   * Wait for either of two selectors to appear
+   * @param {string} selector1
+   * @param {string} selector2
+   * @param {number} timeout
+   * @returns {Promise<Element|null>}
+   */
+  waitForEither(selector1, selector2, timeout = 5000) {
+    return new Promise((resolve) => {
+      const existing = document.querySelector(selector1) || document.querySelector(selector2);
+      if (existing) {
+        resolve(existing);
+        return;
+      }
+
+      const observer = new MutationObserver(() => {
+        const el = document.querySelector(selector1) || document.querySelector(selector2);
+        if (el) {
+          observer.disconnect();
+          clearTimeout(timer);
+          resolve(el);
+        }
+      });
+
+      const timer = setTimeout(() => {
+        observer.disconnect();
+        resolve(null);
+      }, timeout);
+
+      observer.observe(document.body, { childList: true, subtree: true });
+    });
   }
 
   /**
