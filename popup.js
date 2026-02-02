@@ -1724,6 +1724,8 @@ async function fetchBalance() {
     // Cache referral code for use in auto-reply messages
     if (response.data.referral_code) {
       await chrome.storage.local.set({ [STORAGE_KEYS.REFERRAL_CODE]: response.data.referral_code });
+    } else {
+      await chrome.storage.local.remove([STORAGE_KEYS.REFERRAL_CODE]);
     }
     updateUsernameCard(handle);
 

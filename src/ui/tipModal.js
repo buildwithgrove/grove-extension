@@ -437,7 +437,7 @@ class TipModal {
       margin: 6px 0 0 0;
       line-height: 1.4;
     `;
-    messageHelper.textContent = 'Available: {username}, {chain}, {tx_link}, {referral_link}';
+    messageHelper.textContent = 'Available: {username}, {chain}, {tx_link}, {referral_link}, {grove_link}';
 
     messageSection.appendChild(messageLabel);
     messageSection.appendChild(messageTextarea);
