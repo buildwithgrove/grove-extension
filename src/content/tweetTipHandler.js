@@ -450,6 +450,7 @@ const TweetTipHandler = {
     let likeOnTipEnabled = true;
     let chainName = 'Base Sepolia';
     let explorerBaseUrl = 'https://sepolia.basescan.org/tx/';
+    let referralLink = 'grove.city';
 
     try {
       // Get JWT using callback
@@ -474,6 +475,10 @@ const TweetTipHandler = {
         autoReplyEnabled = result.GROVE_AUTO_REPLY !== false;
         likeOnTipEnabled = result.GROVE_LIKE_ON_TIP !== false;
         autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || autoReplyMessage;
+      }
+      const referralCode = result.GROVE_REFERRAL_CODE;
+      if (referralCode) {
+        referralLink = `https://app.grove.city/?ref=${encodeURIComponent(referralCode)}`;
       }
       console.log('[Grove TweetTipHandler] Storage loaded:', { hasJwt: !!jwt, autoReply: autoReplyEnabled, likeOnTip: likeOnTipEnabled, chain: result.groveChain, fromModal: !!xActions });
 
@@ -581,8 +586,6 @@ const TweetTipHandler = {
                 // Build reply text from template
                 let replyText = '';
                 if (this.callbacks.buildAutoReplyMessage) {
-                  const referralCode = result.GROVE_REFERRAL_CODE;
-                  const referralLink = referralCode ? `https://app.grove.city/?ref=${encodeURIComponent(referralCode)}` : 'grove.city';
                   replyText = this.callbacks.buildAutoReplyMessage(autoReplyMessage, {
                     username: username,
                     chain: chainName,
