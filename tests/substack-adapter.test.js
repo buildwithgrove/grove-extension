@@ -52,28 +52,28 @@ describe('SubstackAdapter', () => {
       expect(adapter.detectProfilePage()).toBe(true);
     });
 
-    it('should return false for non-post pages', () => {
-      const ctx = createContext('https://olshansky.substack.com/');
-      const adapter = new ctx.SubstackAdapter();
-      expect(adapter.detectProfilePage()).toBe(false);
-    });
-
-    it('should return false for archive pages', () => {
-      const ctx = createContext('https://olshansky.substack.com/archive');
-      const adapter = new ctx.SubstackAdapter();
-      expect(adapter.detectProfilePage()).toBe(false);
-    });
-
-    it('should return false for bare domain profile page (/@user)', () => {
+    it('should return true for bare domain profile page (/@user)', () => {
       const ctx = createContext('https://substack.com/@timour');
       const adapter = new ctx.SubstackAdapter();
-      expect(adapter.detectProfilePage()).toBe(false);
+      expect(adapter.detectProfilePage()).toBe(true);
     });
 
-    it('should return false for bare domain posts list (/@user/posts)', () => {
-      const ctx = createContext('https://substack.com/@timour/posts');
+    it('should return true for subdomain profile page (root)', () => {
+      const ctx = createContext('https://olshansky.substack.com/');
       const adapter = new ctx.SubstackAdapter();
-      expect(adapter.detectProfilePage()).toBe(false);
+      expect(adapter.detectProfilePage()).toBe(true);
+    });
+
+    it('should return true for subdomain profile page (about)', () => {
+      const ctx = createContext('https://olshansky.substack.com/about');
+      const adapter = new ctx.SubstackAdapter();
+      expect(adapter.detectProfilePage()).toBe(true);
+    });
+
+    it('should return true for all subdomain pages', () => {
+      const ctx = createContext('https://olshansky.substack.com/archive');
+      const adapter = new ctx.SubstackAdapter();
+      expect(adapter.detectProfilePage()).toBe(true);
     });
   });
 
@@ -135,6 +135,39 @@ describe('SubstackAdapter', () => {
       document.body.innerHTML = `
         <script>
           window._preloads = {"author_bio":"Testing bio with olshansky.eth address"};
+        </script>
+      `;
+      const bio = adapter.extractBio();
+      expect(bio).toContain('olshansky.eth');
+    });
+
+    it('should extract bio from preloads.profile.bio (bare domain profile)', () => {
+      const adapter = new SubstackAdapter();
+      document.body.innerHTML = `
+        <script>
+          window._preloads = {
+            "profile": {
+              "id": 123,
+              "name": "Timour",
+              "bio": "Building Edge City. timour.eth"
+            }
+          };
+        </script>
+      `;
+      const bio = adapter.extractBio();
+      expect(bio).toContain('timour.eth');
+    });
+
+    it('should extract bio from preloads.pub.author_bio (subdomain profile)', () => {
+      const adapter = new SubstackAdapter();
+      document.body.innerHTML = `
+        <script>
+          window._preloads = {
+            "pub": {
+              "id": 456,
+              "author_bio": "olshansky.eth"
+            }
+          };
         </script>
       `;
       const bio = adapter.extractBio();
@@ -212,7 +245,7 @@ describe('SubstackAdapter', () => {
   });
 
   describe('getButtonPlacement', () => {
-    it('should return the left button group', () => {
+    it('should return the left button group on post page', () => {
       const adapter = new SubstackAdapter();
       document.body.innerHTML = `
         <div class="post-ufi">
@@ -229,76 +262,53 @@ describe('SubstackAdapter', () => {
       expect(placement.classList.contains('pencraft')).toBe(true);
     });
 
-    it('should return null if no action bar found', () => {
+    it('should return null if no action bar found and no profile button found', () => {
       const adapter = new SubstackAdapter();
       document.body.innerHTML = `<div></div>`;
       expect(adapter.getButtonPlacement()).toBeNull();
     });
-  });
 
-  describe('reader view (bare domain)', () => {
-    it('should find restack button via aria-label when no .post-ufi exists', () => {
+    it('should return navbar items container on subdomain profile page and insert after About', () => {
       const adapter = new SubstackAdapter();
       document.body.innerHTML = `
-        <div class="pencraft pc-display-flex pc-gap-8">
-          <button aria-label="Like"><svg></svg>16</button>
-          <button aria-label="Comment"><svg></svg>3</button>
-          <button aria-label="Restack"><svg></svg></button>
+        <div class="overflow-items">
+          <div class="menu-item" id="home"><a href="/">Home</a></div>
+          <div class="menu-item" id="about"><a href="/about">About</a></div>
+          <div class="menu-item" id="other"><a href="/other">Other</a></div>
         </div>
       `;
-      const restackBtn = adapter.getRestackButton();
-      expect(restackBtn).not.toBeNull();
-      expect(restackBtn.getAttribute('aria-label')).toBe('Restack');
-    });
-
-    it('should find action bars via Restack buttons when no .post-ufi exists', () => {
-      const adapter = new SubstackAdapter();
-      document.body.innerHTML = `
-        <div class="pencraft pc-display-flex pc-gap-8" id="bar1">
-          <button aria-label="Like"><svg></svg></button>
-          <button aria-label="Restack"><svg></svg></button>
-        </div>
-        <div class="pencraft pc-display-flex pc-gap-8" id="bar2">
-          <button aria-label="Like"><svg></svg></button>
-          <button aria-label="Restack"><svg></svg></button>
-        </div>
-      `;
-      const bars = adapter.getAllActionBars();
-      expect(bars.length).toBe(2);
-      expect(bars[0].id).toBe('bar1');
-      expect(bars[1].id).toBe('bar2');
-    });
-
-    it('should return action bar as button placement when no inner div.pencraft', () => {
-      const adapter = new SubstackAdapter();
-      document.body.innerHTML = `
-        <div id="action-bar">
-          <button aria-label="Like"><svg></svg></button>
-          <button aria-label="Restack"><svg></svg></button>
-        </div>
-      `;
-      const bars = adapter.getAllActionBars();
-      expect(bars.length).toBe(1);
-      const placement = adapter.getButtonPlacementInActionBar(bars[0]);
+      const placement = adapter.getButtonPlacement();
       expect(placement).not.toBeNull();
-      expect(placement.id).toBe('action-bar');
+      expect(placement.classList.contains('grove-navbar-item')).toBe(true);
+      
+      const aboutItem = document.getElementById('about');
+      expect(aboutItem.nextSibling).toBe(placement);
     });
 
-    it('should prefer .post-ufi when both DOM structures exist', () => {
+    it('should return subscribe widget wrapper on subdomain profile page as fallback', () => {
       const adapter = new SubstackAdapter();
       document.body.innerHTML = `
-        <div class="post-ufi" id="ufi">
-          <div class="pencraft">
-            <button class="post-ufi-button" aria-label="Restack"><svg></svg></button>
+        <div class="subscribe-widget">
+          <div class="button-wrapper">
+            <button>Subscribe</button>
           </div>
         </div>
-        <div id="reader-bar">
-          <button aria-label="Restack"><svg></svg></button>
+      `;
+      const placement = adapter.getButtonPlacement();
+      expect(placement).not.toBeNull();
+      expect(placement.classList.contains('button-wrapper')).toBe(true);
+    });
+
+    it('should return subscribe button container on bare domain profile page', () => {
+      const adapter = new SubstackAdapter();
+      document.body.innerHTML = `
+        <div class="profile-header">
+          <button>Subscribe</button>
         </div>
       `;
-      const bars = adapter.getAllActionBars();
-      expect(bars.length).toBe(1);
-      expect(bars[0].id).toBe('ufi');
+      const placement = adapter.getButtonPlacement();
+      expect(placement).not.toBeNull();
+      expect(placement.classList.contains('profile-header')).toBe(true);
     });
   });
 

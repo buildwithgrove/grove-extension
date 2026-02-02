@@ -16,16 +16,35 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
   }
 
   /**
-   * Check if current page is a Substack post page
+   * Check if current page is a Substack post page or profile page
    * @returns {boolean}
    */
   detectProfilePage() {
     try {
+      const path = window.location.pathname;
+      const hostname = window.location.hostname;
+
+      // 1. Post pages
       // Subdomain view: /p/post-title (e.g., /p/an-incentive-to-label)
       // Bare domain reader view: /@username/p-{digits} (e.g., /@timour/p-184358935)
       // Bare domain home post view: /home/post/p-{digits} (e.g., /home/post/p-184358935)
-      return window.location.pathname.includes('/p/') ||
-             /\/p-\d+/.test(window.location.pathname);
+      if (path.includes('/p/') || /\/p-\d+/.test(path)) {
+        return true;
+      }
+
+      // 2. User Profile pages
+      // Bare domain: substack.com/@username
+      if (hostname === 'substack.com' && path.startsWith('/@')) {
+        // Ensure it's not a specific post (already covered above, but good to be safe)
+        return true;
+      }
+
+      // Subdomain: username.substack.com
+      if (hostname.endsWith('.substack.com')) {
+        return true;
+      }
+
+      return false;
     } catch (err) {
       console.error('[Grove Substack] detectProfilePage failed:', err);
       return false;
@@ -133,6 +152,13 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
         if (preloads?.post?.author_bio) return preloads.post.author_bio;
         if (preloads?.post?.author?.bio) return preloads.post.author.bio;
         if (preloads?.publication?.author?.bio) return preloads.publication.author.bio;
+        
+        // Profile pages (bare domain)
+        if (preloads?.profile?.bio) return preloads.profile.bio;
+        
+        // Profile pages (subdomain) - 'pub' key often used instead of 'publication'
+        if (preloads?.pub?.author?.bio) return preloads.pub.author.bio;
+        if (preloads?.pub?.author_bio) return preloads.pub.author_bio;
       }
     } catch (err) {
       console.log('[Grove Substack] Error extracting bio from preloads:', err);
@@ -188,13 +214,73 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
   }
 
   /**
-   * Get placement for tip button (the left button group in first action bar)
+   * Get placement for tip button
    * @returns {Element|null}
    */
   getButtonPlacement() {
-    const actionBars = this.getAllActionBars();
-    if (actionBars.length === 0) return null;
-    return this.getButtonPlacementInActionBar(actionBars[0]);
+    const isPostPage = window.location.pathname.includes('/p/') || /\/p-\d+/.test(window.location.pathname);
+
+    if (isPostPage) {
+      const actionBars = this.getAllActionBars();
+      if (actionBars.length > 0) {
+        return this.getButtonPlacementInActionBar(actionBars[0]);
+      }
+      return this.getProfileButtonPlacement();
+    } else {
+      // On profile/home pages, prioritize the profile/subscribe button
+      const profilePlacement = this.getProfileButtonPlacement();
+      if (profilePlacement) return profilePlacement;
+
+      const actionBars = this.getAllActionBars();
+      if (actionBars.length > 0) {
+        return this.getButtonPlacementInActionBar(actionBars[0]);
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Get button placement for profile pages
+   * @returns {Element|null}
+   */
+  getProfileButtonPlacement() {
+    // 1. Navbar About link (subdomain profile)
+    // Usually at the top of subdomain publications
+    const aboutLink = document.querySelector('.overflow-items a[href$="/about"]');
+    if (aboutLink && aboutLink.closest('.overflow-items')) {
+      const container = aboutLink.closest('.overflow-items');
+      const menuItem = aboutLink.closest('.menu-item');
+      // Try to find existing Grove navbar item
+      let wrapper = container.querySelector('.grove-navbar-item');
+      if (!wrapper) {
+        wrapper = document.createElement('div');
+        wrapper.className = 'menu-item grove-navbar-item';
+        // Insert immediately after "About" menu item
+        container.insertBefore(wrapper, menuItem.nextSibling);
+      }
+      return wrapper;
+    }
+
+    // 2. Subdomain profile (.subscribe-widget)
+    const subscribeWidget = document.querySelector('.subscribe-widget .button-wrapper');
+    if (subscribeWidget) return subscribeWidget;
+
+    const subscribeWidgetParent = document.querySelector('.subscribe-widget');
+    if (subscribeWidgetParent) return subscribeWidgetParent;
+
+    // 3. Bare domain profile (Look for Subscribe/Subscribed button)
+    // Often in a flex container with "Message" or "More" buttons
+    const buttons = Array.from(document.querySelectorAll('button'));
+    for (const button of buttons) {
+      const text = (button.textContent || '').trim().toLowerCase();
+      if (text === 'subscribe' || text === 'subscribed') {
+        // Return the parent container to append next to it
+        return button.parentElement;
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -272,22 +358,41 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
   }
 
   /**
-   * Wait for post to load
+   * Wait for page to load content
    * @returns {Promise<boolean>}
    */
   async waitForProfileLoad() {
-    // Wait for action bar: .post-ufi (subdomain) or Restack button (reader view)
+    // 1. Check for Post page elements
     const actionBar = await this.waitForEither(
       '.post-ufi',
       'button[aria-label="Restack"]',
-      8000
+      2000 // Short timeout for post detection
     );
-    if (!actionBar) return false;
+    
+    if (actionBar) {
+      // It's a post page, wait for byline
+      await this.waitForElement('.byline-wrapper', 5000);
+      return true;
+    }
 
-    // Wait for byline to load (contains author info, present on both views)
-    await this.waitForElement('.byline-wrapper', 5000);
+    // 2. Check for Profile page elements
+    const profileElement = await this.waitForEither(
+      '.subscribe-widget', // Subdomain profile
+      '.reader-nav-page',  // Bare domain profile container
+      5000
+    );
 
-    return true;
+    if (profileElement) {
+      return true;
+    }
+
+    // If we're here, we might be on a profile page that didn't match selectors,
+    // or detection failed. If detectProfilePage() is true, we should probably proceed.
+    if (this.detectProfilePage()) {
+        return true;
+    }
+
+    return false;
   }
 
   /**
