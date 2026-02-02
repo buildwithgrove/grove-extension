@@ -280,6 +280,7 @@ describe('SubstackAdapter', () => {
       const placement = adapter.getButtonPlacement();
       expect(placement).not.toBeNull();
       expect(placement.classList.contains('grove-navbar-item')).toBe(true);
+      expect(placement.classList.contains('menu-item')).toBe(false);
       
       const aboutItem = document.getElementById('about');
       expect(aboutItem.nextSibling).toBe(placement);

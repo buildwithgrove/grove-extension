@@ -255,7 +255,7 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
       let wrapper = container.querySelector('.grove-navbar-item');
       if (!wrapper) {
         wrapper = document.createElement('div');
-        wrapper.className = 'menu-item grove-navbar-item';
+        wrapper.className = 'grove-navbar-item';
         // Insert immediately after "About" menu item
         container.insertBefore(wrapper, menuItem.nextSibling);
       }
@@ -362,6 +362,12 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
    * @returns {Promise<boolean>}
    */
   async waitForProfileLoad() {
+    // 0. Quick check for Navbar (Subdomain profile) - Fastest path
+    const navbar = document.querySelector('.overflow-items');
+    if (navbar) {
+      return true;
+    }
+
     // 1. Check for Post page elements
     const actionBar = await this.waitForEither(
       '.post-ufi',
