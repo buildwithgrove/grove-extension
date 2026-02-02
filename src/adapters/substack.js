@@ -362,9 +362,10 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
    * @returns {Promise<boolean>}
    */
   async waitForProfileLoad() {
-    // 0. Quick check for Navbar (Subdomain profile) - Fastest path
+    // 0. Quick check for Navbar (Subdomain profile) or Sidebar (Bare domain profile) - Fastest path
     const navbar = document.querySelector('.overflow-items');
-    if (navbar) {
+    const sidebar = document.querySelector('.reader-nav-root');
+    if (navbar || sidebar) {
       return true;
     }
 
