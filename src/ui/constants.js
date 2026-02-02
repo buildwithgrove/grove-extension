@@ -6,13 +6,13 @@
 
 /**
  * Default auto-reply message template for tips
- * Placeholders: {username}, {chain}, {tx_link}, {grove_link}
+ * Placeholders: {username}, {chain}, {tx_link}, {referral_link}
  */
 var DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I just sent you a tip on {chain} via #TipWithGrove!
 
 Tx: {tx_link}
 
-Tip creators you love → {grove_link}`;
+Tip anyone → {referral_link}`;
 
 var GROVE_COLORS = {
   primary: 'var(--grove-primary)',

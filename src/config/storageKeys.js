@@ -44,6 +44,7 @@ var STORAGE_KEYS = {
 
   // Account profile
   HANDLE: 'GROVE_HANDLE',
+  REFERRAL_CODE: 'GROVE_REFERRAL_CODE',
 
   // CDP Identity info (stored after successful auth)
   CDP_IDENTITY_TYPE: 'GROVE_CDP_IDENTITY_TYPE',   // 'email' | 'sms'
