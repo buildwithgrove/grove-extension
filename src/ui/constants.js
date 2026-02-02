@@ -12,7 +12,7 @@ var DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I just sent you a tip on {cha
 
 Tx: {tx_link}
 
-Tip anyone, anywhere → {referral_link}`;
+Tip anyone, anywhere with my referral link → {referral_link}`;
 
 var GROVE_COLORS = {
   primary: 'var(--grove-primary)',
