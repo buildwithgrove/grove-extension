@@ -15,6 +15,9 @@ function buildAutoReplyMessage(template, data) {
   if (data.username) {
     message = message.replace(/{username}/g, data.username);
   }
+  if (data.amount != null) {
+    message = message.replace(/{amount}/g, '$' + Number(data.amount).toFixed(2));
+  }
   if (data.chain) {
     message = message.replace(/{chain}/g, data.chain);
   }
@@ -43,6 +46,7 @@ function buildAutoReplyMessage(template, data) {
  * @param {string} options.explorerBaseUrl - Block explorer base URL
  * @param {string} options.explorerSuffix - Block explorer URL suffix (e.g., ?cluster=devnet)
  * @param {string} options.referralLink - User's referral link (optional)
+ * @param {number} options.amount - Tip amount in USD
  * @returns {Promise<{didLike: boolean, didReply: boolean, likeFailed: boolean, replyFailed: boolean}>}
  */
 async function performXActionsAfterTip(options) {
@@ -56,7 +60,8 @@ async function performXActionsAfterTip(options) {
     chainName,
     explorerBaseUrl,
     explorerSuffix = '',
-    referralLink = ''
+    referralLink = '',
+    amount
   } = options;
 
   const result = {
@@ -112,6 +117,7 @@ async function performXActionsAfterTip(options) {
       // Build reply text from template
       const replyText = buildAutoReplyMessage(replyTemplate, {
         username: username,
+        amount: amount,
         chain: chainName,
         tx_link: txLink,
         grove_link: 'grove.city',
