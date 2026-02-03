@@ -588,6 +588,7 @@ const TweetTipHandler = {
                 if (this.callbacks.buildAutoReplyMessage) {
                   replyText = this.callbacks.buildAutoReplyMessage(autoReplyMessage, {
                     username: username,
+                    amount: tipAmount,
                     chain: chainName,
                     tx_link: txLink,
                     grove_link: 'grove.city',

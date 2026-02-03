@@ -719,6 +719,7 @@
               const referralLink = referralCode ? `https://app.grove.city/?ref=${encodeURIComponent(referralCode)}` : 'grove.city';
               const tweetText = buildAutoReplyMessage(autoReplyMessage, {
                 username: username,
+                amount: tipAmount,
                 chain: chainName,
                 tx_link: txLink,
                 grove_link: 'grove.city',
