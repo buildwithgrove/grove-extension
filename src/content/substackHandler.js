@@ -28,6 +28,7 @@ const SubstackHandler = {
 
   /**
    * Initialize Substack handler for the current page
+   * Uses API-based resolution for robust server-side parsing of Substack pages.
    * @param {Object} adapter - The Substack adapter
    * @returns {Promise<Object|null>} - The resolved address or null
    */
@@ -48,7 +49,7 @@ const SubstackHandler = {
 
     console.log('[Grove Substack] On a supported page, initializing...');
 
-    // Wait for the page to load
+    // Wait for the page to load (needed for button placement)
     const loaded = await adapter.waitForProfileLoad();
     if (!loaded) {
       console.log('[Grove Substack] Page did not load in time');
@@ -57,28 +58,54 @@ const SubstackHandler = {
 
     console.log('[Grove Substack] Page loaded');
 
-    // Try to extract bio from page content (might have address)
-    const pageBio = adapter.extractBio();
-    console.log('[Grove Substack] Page bio:', pageBio);
+    // Use API for resolution (instead of fragile client-side bio extraction)
+    const destination = this.buildDestinationUrl();
+    console.log('[Grove Substack] Resolving via API:', destination);
 
-    if (pageBio && this.callbacks.hasAddresses && this.callbacks.hasAddresses(pageBio)) {
-      const addressResult = this.callbacks.resolveAddress(pageBio);
-      console.log('[Grove Substack] Resolved address from page:', addressResult);
+    const result = await GroveAPI.resolveDestination(destination);
+    console.log('[Grove Substack] API response:', result);
 
-      if (addressResult && addressResult.address) {
-        // BUG FIX: Store page author address separately so hover cards don't overwrite it
-        this.pageAuthorAddress = addressResult;
-        this.resolvedAddress = addressResult; // Legacy: set for compatibility
-        this.injectPageButtons();
-      }
+    if (result.tippable && result.addresses.length > 0) {
+      // Use the first address (API returns them in priority order)
+      const primaryAddress = result.addresses[0];
+      const addressResult = {
+        address: primaryAddress.address,
+        type: primaryAddress.source || 'api', // 'bio', 'ens', 'direct', etc.
+        token: primaryAddress.token,
+        chain: primaryAddress.chain
+      };
+
+      console.log('[Grove Substack] Resolved address from API:', addressResult);
+
+      // Store page author address separately so hover cards don't overwrite it
+      this.pageAuthorAddress = addressResult;
+      this.resolvedAddress = addressResult; // Legacy: set for compatibility
+      this.injectPageButtons();
     } else {
-      console.log('[Grove Substack] No address in page bio, will check hover cards');
+      console.log('[Grove Substack] Not tippable via API:', result.error || 'no addresses found');
     }
 
-    // Always start hover card observer (bio might be in hover card)
+    // Always start hover card observer (for inline hover cards on post pages)
     this.startHoverCardObserver();
 
     return this.resolvedAddress;
+  },
+
+  /**
+   * Build the destination URL for API resolution
+   * Normalizes the current page URL to a format the API expects
+   * @returns {string}
+   */
+  buildDestinationUrl() {
+    const url = window.location.href;
+    // Clean up URL - remove trailing slashes and query params for cleaner resolution
+    try {
+      const urlObj = new URL(url);
+      // Keep just origin + pathname, strip query/hash
+      return `${urlObj.origin}${urlObj.pathname}`.replace(/\/$/, '');
+    } catch {
+      return url;
+    }
   },
 
   /**

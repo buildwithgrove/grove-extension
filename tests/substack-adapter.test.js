@@ -111,7 +111,11 @@ describe('SubstackAdapter', () => {
   });
 
   describe('extractBio', () => {
-    it('should return display name for address detection', () => {
+    // NOTE: extractBio() now returns null for full page views because
+    // full page resolution uses GroveAPI.resolveDestination() for robust
+    // server-side parsing. These tests verify the expected behavior.
+
+    it('should return null (API handles full page resolution)', () => {
       const adapter = new SubstackAdapter();
       document.body.innerHTML = `
         <div class="byline-wrapper">
@@ -120,58 +124,14 @@ describe('SubstackAdapter', () => {
           </a>
         </div>
       `;
-      const bio = adapter.extractBio();
-      expect(bio).toContain('vitalik.eth');
-    });
-
-    it('should return null if no author info found', () => {
-      const adapter = new SubstackAdapter();
-      document.body.innerHTML = `<div></div>`;
+      // extractBio now returns null; SubstackHandler uses API instead
       expect(adapter.extractBio()).toBeNull();
     });
 
-    it('should extract bio from author_bio in preloads JSON', () => {
+    it('should return null when no author info present', () => {
       const adapter = new SubstackAdapter();
-      document.body.innerHTML = `
-        <script>
-          window._preloads = {"author_bio":"Testing bio with olshansky.eth address"};
-        </script>
-      `;
-      const bio = adapter.extractBio();
-      expect(bio).toContain('olshansky.eth');
-    });
-
-    it('should extract bio from preloads.profile.bio (bare domain profile)', () => {
-      const adapter = new SubstackAdapter();
-      document.body.innerHTML = `
-        <script>
-          window._preloads = {
-            "profile": {
-              "id": 123,
-              "name": "Timour",
-              "bio": "Building Edge City. timour.eth"
-            }
-          };
-        </script>
-      `;
-      const bio = adapter.extractBio();
-      expect(bio).toContain('timour.eth');
-    });
-
-    it('should extract bio from preloads.pub.author_bio (subdomain profile)', () => {
-      const adapter = new SubstackAdapter();
-      document.body.innerHTML = `
-        <script>
-          window._preloads = {
-            "pub": {
-              "id": 456,
-              "author_bio": "olshansky.eth"
-            }
-          };
-        </script>
-      `;
-      const bio = adapter.extractBio();
-      expect(bio).toContain('olshansky.eth');
+      document.body.innerHTML = `<div></div>`;
+      expect(adapter.extractBio()).toBeNull();
     });
   });
 

@@ -818,6 +818,45 @@ class GroveAPI {
   }
 
   /**
+   * Resolve a destination URL/identifier to check if it's tippable.
+   * Uses the API's /v1/tip/resolve endpoint for robust server-side parsing.
+   *
+   * @param {string} destination - URL or identifier (e.g., "x.com/olshansky", "substack.com/@olshansky", "vitalik.eth")
+   * @returns {Promise<Object>} - { success, tippable, destinationKind, addresses, error }
+   */
+  static async resolveDestination(destination) {
+    const baseURL = await this.getBaseURL();
+    const params = new URLSearchParams({ destination });
+    const apiUrl = `${baseURL}/v1/tip/resolve?${params}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await response.json();
+
+      return {
+        success: response.ok,
+        tippable: data.tippable || false,
+        destinationKind: data.destination_kind || null,
+        addresses: data.addresses || [],
+        error: data.error || null
+      };
+    } catch (error) {
+      console.error('[Grove Extension] Destination resolution failed:', error);
+      return {
+        success: false,
+        tippable: false,
+        destinationKind: null,
+        addresses: [],
+        error: error.message
+      };
+    }
+  }
+
+  /**
    * Claim a handle for the authenticated user
    * @param {string} handle - Desired handle (4-15 chars, [a-z0-9_])
    * @param {string} groveApiJwt - JWT token for authentication
