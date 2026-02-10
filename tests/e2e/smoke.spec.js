@@ -153,9 +153,10 @@ test.describe('Extension Smoke Tests', () => {
   });
 
   test('Should inject on x.com/brian_armstrong/status/2020965896165130722', async () => {
-    // NOTE: Tweet page injection requires either:
-    //   1. Grove API resolving the tweet URL, OR
+    // TODO_IMPROVE: This test currently always skips because tweet page injection requires either:
+    //   1. Grove API resolving the tweet URL (currently returns 404), OR
     //   2. X authentication (for bio fetching via CSRF token)
+    //   Once API /v1/destination/resolve supports tweet URLs, remove the skip and assert injection.
     // In headless E2E (logged out), neither is available, so this test
     // verifies the extension doesn't crash and skips if no button appears.
     const page = await browserContext.newPage();

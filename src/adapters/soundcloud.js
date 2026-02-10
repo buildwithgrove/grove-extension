@@ -32,7 +32,7 @@ window.SoundCloudAdapter = class SoundCloudAdapter extends window.BaseAdapter {
 
       return true;
     } catch (err) {
-      console.error('[Grove Extension] detectProfilePage failed:', err);
+      console.error('[Grove Extension] detectTippablePage failed:', err);
       return false;
     }
   }

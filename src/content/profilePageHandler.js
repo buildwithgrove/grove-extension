@@ -59,6 +59,9 @@ const ProfilePageHandler = {
       }
 
       // Use API for resolution (consistent pattern for all full page views)
+      // TODO_IMPROVE: API /v1/destination/resolve currently returns 404 for most URLs.
+      //   Once the backend fully supports profile and tweet URL resolution,
+      //   the DOM fallback below can be removed or made truly exceptional.
       const destination = this.buildDestinationUrl();
       console.log('[Grove Extension] Resolving via API:', destination);
 

@@ -17,7 +17,8 @@ window.BaseAdapter = class BaseAdapter {
 
   /**
    * @deprecated Use detectTippablePage() instead
-   * Kept for backwards compatibility during transition
+   * TODO_TECHDEBT: Remove this shim once all external callers use detectTippablePage()
+   *   Why: Renamed to reflect that posts/tweets are also tippable, not just profiles
    */
   detectProfilePage() {
     return this.detectTippablePage();

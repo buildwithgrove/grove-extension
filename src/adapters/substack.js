@@ -46,7 +46,7 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
 
       return false;
     } catch (err) {
-      console.error('[Grove Substack] detectProfilePage failed:', err);
+      console.error('[Grove Substack] detectTippablePage failed:', err);
       return false;
     }
   }
@@ -393,9 +393,9 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
       return true;
     }
 
-    // If we're here, we might be on a profile page that didn't match selectors,
-    // or detection failed. If detectProfilePage() is true, we should probably proceed.
-    if (this.detectProfilePage()) {
+    // If we're here, we might be on a tippable page that didn't match selectors,
+    // or detection failed. If detectTippablePage() is true, we should probably proceed.
+    if (this.detectTippablePage()) {
         return true;
     }
 
