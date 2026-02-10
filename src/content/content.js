@@ -120,12 +120,37 @@
 
   // Address cache: uses shared AddressCache class from src/utils/addressCache.js
   // Cache entries expire after 10 minutes (configured in ADDRESS_CACHE_TTL)
-  const addressCache = typeof AddressCache !== 'undefined'
-    ? new AddressCache()
-    : new Map(); // Fallback for backwards compatibility
+  const addressCache = new AddressCache();
 
   // Track which SoundCloud tracks already have buttons to avoid duplicates
   const processedSoundCloudTracks = new WeakSet();
+
+  /**
+   * Ensure the SoundCloud button ordering CSS is loaded once
+   */
+  function ensureSoundCloudOrderStyles() {
+    if (document.querySelector('#grove-soundcloud-order-fix')) return;
+    const style = document.createElement('style');
+    style.id = 'grove-soundcloud-order-fix';
+    style.textContent = `
+      .sc-button-group > .grove-tip-button,
+      .sc-button-group > .grove-track-tip-button {
+        float: left !important;
+        margin-right: 16px !important;
+        order: -999 !important;
+      }
+      .playbackSoundBadge__actions > .grove-track-tip-button {
+        margin-right: 8px !important;
+      }
+      @media (max-width: 1079px) {
+        .sc-button-group > .grove-tip-button,
+        .sc-button-group > .grove-track-tip-button {
+          margin-right: 8px !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
   // Tweet processing state (processedTweets, pendingTweetButtons, tweetObserver)
   // is now managed by TweetProcessor module
@@ -313,6 +338,7 @@
 
     // For SoundCloud, handle profile page and track tip buttons
     if (currentAdapter.getPlatformName() === "soundcloud") {
+      ensureSoundCloudOrderStyles();
       // If on a tippable page, initialize profile button first (this caches the address)
       if (currentAdapter.detectTippablePage()) {
         if (typeof ProfilePageHandler !== 'undefined') {
@@ -836,29 +862,6 @@
     const buttonGroup = currentAdapter.getTrackButtonGroup(likeButton);
     if (!buttonGroup) return;
 
-    if (!document.querySelector('#grove-soundcloud-order-fix')) {
-      const style = document.createElement('style');
-      style.id = 'grove-soundcloud-order-fix';
-      style.textContent = `
-        .sc-button-group > .grove-tip-button,
-        .sc-button-group > .grove-track-tip-button {
-          float: left !important;
-          margin-right: 16px !important;
-          order: -999 !important;
-        }
-        .playbackSoundBadge__actions > .grove-track-tip-button {
-          margin-right: 8px !important;
-        }
-        @media (max-width: 1079px) {
-          .sc-button-group > .grove-tip-button,
-          .sc-button-group > .grove-track-tip-button {
-            margin-right: 8px !important;
-          }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-
     // Create tip button using the same TipButton class as the profile button
     const tipButtonInstance = new TipButton(
       (buttonInstance) => handleTipClick(buttonInstance),
@@ -909,43 +912,20 @@
 
   /**
    * Get cached address for a username
-   * Uses shared AddressCache class if available, falls back to Map-based implementation
    * @param {string} username - Twitter username
    * @returns {Object|string|null} - Cached address result, 'no-address', or null if not cached/expired
    */
   function getCachedAddress(username) {
-    // Use AddressCache.get() if available (handles TTL internally)
-    if (addressCache instanceof AddressCache) {
-      return addressCache.get(username);
-    }
-    // Fallback for Map-based cache
-    const cached = addressCache.get(username);
-    if (!cached) return null;
-    const ttl = typeof ADDRESS_CACHE_TTL !== 'undefined' ? ADDRESS_CACHE_TTL : 10 * 60 * 1000;
-    if (Date.now() - cached.timestamp > ttl) {
-      addressCache.delete(username);
-      return null;
-    }
-    return cached.data;
+    return addressCache.get(username);
   }
 
   /**
    * Set cached address for a username
-   * Uses shared AddressCache class if available
    * @param {string} username - Twitter username
    * @param {Object|string} data - Address result or 'no-address'
    */
   function setCachedAddress(username, data) {
-    // Use AddressCache.set() if available
-    if (addressCache instanceof AddressCache) {
-      addressCache.set(username, data);
-      return;
-    }
-    // Fallback for Map-based cache
-    addressCache.set(username, {
-      data,
-      timestamp: Date.now()
-    });
+    addressCache.set(username, data);
   }
 
   // Tweet processing (queueBioFetch, injectPendingButtons) is now handled by TweetProcessor

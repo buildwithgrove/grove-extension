@@ -187,35 +187,12 @@ const ProfilePageHandler = {
     const button = this.currentButton.create();
     button.classList.add('grove-ad-mode');
 
-    // For SoundCloud, use CSS order to position button first (left of Station)
+    // For SoundCloud, position button first (left of Station)
+    // CSS ordering styles are injected once by content.js ensureSoundCloudOrderStyles()
     if (platformName === 'soundcloud') {
-      // Inject CSS rule with high specificity to force order
-      if (!document.querySelector('#grove-soundcloud-order-fix')) {
-        const style = document.createElement('style');
-        style.id = 'grove-soundcloud-order-fix';
-        style.textContent = `
-          .sc-button-group > .grove-tip-button,
-          .sc-button-group > .grove-track-tip-button {
-            float: left !important;
-            margin-right: 16px !important;
-            order: -999 !important;
-          }
-          .playbackSoundBadge__actions > .grove-track-tip-button {
-            margin-right: 8px !important;
-          }
-          @media (max-width: 1079px) {
-            .sc-button-group > .grove-tip-button,
-            .sc-button-group > .grove-track-tip-button {
-              margin-right: 8px !important;
-            }
-          }
-        `;
-        document.head.appendChild(style);
-      }
       button.style.setProperty('float', 'left', 'important');
       button.style.setProperty('order', '-999', 'important');
       placement.insertBefore(button, placement.firstElementChild);
-      console.log('[Grove Extension] Inserted tip button with float/spacing + order: -999 !important + CSS rule');
     } else {
       this.currentButton.inject(placement);
     }
