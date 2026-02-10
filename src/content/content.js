@@ -288,8 +288,8 @@
 
     // For Twitter/X, handle tweet tip buttons on all pages
     if (currentAdapter.getPlatformName() === "twitter") {
-      // If on a profile page, initialize profile button first (this caches the address)
-      if (currentAdapter.detectProfilePage()) {
+      // If on a tippable page (profile or tweet), initialize profile button first (this caches the address)
+      if (currentAdapter.detectTippablePage()) {
         if (typeof ProfilePageHandler !== 'undefined') {
           const result = await ProfilePageHandler.initialize(currentAdapter);
           if (result) {
@@ -313,8 +313,8 @@
 
     // For SoundCloud, handle profile page and track tip buttons
     if (currentAdapter.getPlatformName() === "soundcloud") {
-      // If on a profile page, initialize profile button first (this caches the address)
-      if (currentAdapter.detectProfilePage()) {
+      // If on a tippable page, initialize profile button first (this caches the address)
+      if (currentAdapter.detectTippablePage()) {
         if (typeof ProfilePageHandler !== 'undefined') {
           const result = await ProfilePageHandler.initialize(currentAdapter);
           if (result) {
@@ -354,13 +354,13 @@
       return;
     }
 
-    // Check if we're on a profile page (for other platforms)
+    // Check if we're on a tippable page (for other platforms)
     try {
-      if (!currentAdapter.detectProfilePage()) {
+      if (!currentAdapter.detectTippablePage()) {
         return;
       }
     } catch (error) {
-      console.error("[Grove Extension] Profile detection failed:", error);
+      console.error("[Grove Extension] Tippable page detection failed:", error);
       return;
     }
 
@@ -407,6 +407,11 @@
   /**
    * Detect which platform we're on and return appropriate adapter
    * @returns {BaseAdapter|null}
+   *
+   * TODO_TECHDEBT: Implement PlatformRegistry pattern for cleaner extensibility
+   *   Why: Current detectPlatform() is a conditional chain requiring edits to add platforms
+   *   Approach: Create registry where adapters self-register with matcher functions
+   *   File: Consider src/config/platformRegistry.js for registry implementation
    */
   function detectPlatform() {
     const hostname = window.location.hostname;
@@ -445,16 +450,10 @@
   /**
    * Handle tip button click - shows popover for amount confirmation (if enabled)
    * @param {TipButton} buttonInstance - The button instance (for hover cards)
-   * @param {Object} targetAddress - Optional override address for the tip destination.
-   *                                 BUG FIX: Used by Substack hover cards to tip the correct user
-   *                                 instead of the page author (or whoever's address was last resolved).
    */
-  async function handleTipClick(buttonInstance, targetAddress = null) {
+  async function handleTipClick(buttonInstance) {
     // Use passed button instance or fall back to currentButton
     const button = buttonInstance || currentButton;
-
-    // Store target address for use in sendTip if provided
-    const tipTargetAddress = targetAddress;
 
     // Check if extension context is valid
     if (!isExtensionContextValid()) {
@@ -541,7 +540,7 @@
           console.error("[Grove Extension] Failed to mark first tip:", e);
         }
       }
-      sendTip(tipAmount, button, null, tipTargetAddress);
+      sendTip(tipAmount, button);
       return;
     }
 
@@ -590,7 +589,7 @@
             console.error("[Grove Extension] Failed to save tip preferences:", e);
           }
           // Send the tip with custom message
-          sendTip(amount, button, customMessage, tipTargetAddress);
+          sendTip(amount, button, customMessage);
         },
         () => {
           console.log("[Grove Extension] Tip cancelled");
@@ -600,7 +599,7 @@
       );
     } else {
       // Fallback: send tip directly if modal not available
-      sendTip(tipAmount, button, null, tipTargetAddress);
+      sendTip(tipAmount, button);
     }
   }
 
@@ -609,10 +608,8 @@
    * @param {number} tipAmount - The amount to tip
    * @param {TipButton} button - The button instance for state updates
    * @param {string|null} customMessage - Custom message for the tip (optional)
-   * @param {Object|null} targetAddress - Optional override address for the tip destination.
-   *                                      BUG FIX: Used by Substack hover cards to tip the correct user.
    */
-  async function sendTip(tipAmount, button, customMessage = null, targetAddress = null) {
+  async function sendTip(tipAmount, button, customMessage = null) {
     // Show loading animation with amount
     if (button) {
       button.setLoading(tipAmount);
@@ -647,14 +644,11 @@
       return;
     }
 
-    // Determine tip destination: use target address override, resolved address, or page URL
-    // BUG FIX: targetAddress is passed when clicking Substack hover card buttons to ensure
-    // the tip goes to the correct user (not the page author or whoever was last resolved).
+    // Determine tip destination: use resolved address if available (ENS or raw 0x), otherwise page URL
     let tipDestination = window.location.href;
-    const effectiveAddress = targetAddress || resolvedAddress;
-    if (effectiveAddress && effectiveAddress.address) {
-      tipDestination = effectiveAddress.address; // e.g., "vitalik.eth" or "0x..."
-      console.log(`[Grove Extension] Tipping to ${effectiveAddress.type} address: ${tipDestination}`);
+    if (resolvedAddress && resolvedAddress.address) {
+      tipDestination = resolvedAddress.address; // e.g., "vitalik.eth" or "0x..."
+      console.log(`[Grove Extension] Tipping to ${resolvedAddress.type} address: ${tipDestination}`);
     }
 
     // Build context metadata for the tip

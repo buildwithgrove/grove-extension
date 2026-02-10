@@ -1,13 +1,11 @@
 /**
  * Substack Adapter
- * Handles Substack post pages, profile pages, and author hover cards
- *
- * Full page resolution (posts and profiles) uses GroveAPI.resolveDestination()
- * for robust server-side parsing. Hover card detection still uses client-side
- * DOM parsing for inline content.
+ * Handles Substack post pages and author hover cards
  *
  * Requires: src/adapters/base.js (BaseAdapter)
  */
+
+// TODO: Add tip button on Substack user profiles (https://substack.com/@username)
 
 // Assign directly to window to ensure global availability
 window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
@@ -18,10 +16,10 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
   }
 
   /**
-   * Check if current page is a Substack post page or profile page
+   * Check if current page is a tippable Substack page (post or profile)
    * @returns {boolean}
    */
-  detectProfilePage() {
+  detectTippablePage() {
     try {
       const path = window.location.pathname;
       const hostname = window.location.hostname;
@@ -89,18 +87,97 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
   }
 
   /**
-   * Extract bio/description from Substack page.
-   * NOTE: Full page resolution now uses GroveAPI.resolveDestination() for robust
-   * server-side parsing. This method returns null for full pages.
-   * Hover card bio extraction happens in extractBioFromHoverCard().
+   * Extract bio/description from Substack post author
+   * Tries multiple sources: JSON preloads, meta tags, and display name
    * @returns {string|null}
-   * @deprecated Full page resolution uses API; kept for backwards compatibility
    */
   extractBio() {
-    // Full page resolution now happens via API in SubstackHandler.initialize()
-    // This method is kept for backwards compatibility but returns null
-    console.log('[Grove Substack] extractBio: using API for resolution');
+    const parts = [];
+
+    // 1. Get display name (might contain ENS)
+    const displayName = this.extractDisplayName();
+    if (displayName) {
+      parts.push(displayName);
+    }
+
+    // 2. Try to extract from window._preloads JSON (contains author bio)
+    const preloadsBio = this.extractBioFromPreloads();
+    if (preloadsBio) {
+      parts.push(preloadsBio);
+    }
+
+    // 3. Try meta description tag
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      const content = metaDesc.getAttribute('content');
+      if (content) {
+        parts.push(content);
+      }
+    }
+
+    const result = parts.join(' ');
+    console.log('[Grove Substack] extractBio result:', result);
+
+    return result || null;
+  }
+
+  /**
+   * Extract author bio from Substack's _preloads JSON
+   * @returns {string|null}
+   */
+  extractBioFromPreloads() {
+    try {
+      // Look for script tags containing _preloads
+      const scripts = document.querySelectorAll('script');
+      for (const script of scripts) {
+        const content = script.textContent || '';
+        if (content.includes('_preloads') || content.includes('author_bio') || content.includes('"bio"')) {
+          // Try to extract bio from JSON - check both "bio" and "author_bio" keys
+          const authorBioMatch = content.match(/[\\]?"author_bio[\\]?"\s*:\s*[\\]?"([^"\\]*(?:\\.[^"\\]*)*)[\\]?"/);
+          if (authorBioMatch) {
+            return this.decodeBioString(authorBioMatch[1]);
+          }
+          // Fallback to "bio" key
+          const bioMatch = content.match(/[\\]?"bio[\\]?"\s*:\s*[\\]?"([^"\\]*(?:\\.[^"\\]*)*)[\\]?"/);
+          if (bioMatch) {
+            return this.decodeBioString(bioMatch[1]);
+          }
+        }
+      }
+
+      // Also check if _preloads is already parsed
+      if (typeof window._preloads !== 'undefined') {
+        const preloads = window._preloads;
+        if (preloads?.author_bio) return preloads.author_bio;
+        if (preloads?.post?.author_bio) return preloads.post.author_bio;
+        if (preloads?.post?.author?.bio) return preloads.post.author.bio;
+        if (preloads?.publication?.author?.bio) return preloads.publication.author.bio;
+        
+        // Profile pages (bare domain)
+        if (preloads?.profile?.bio) return preloads.profile.bio;
+        
+        // Profile pages (subdomain) - 'pub' key often used instead of 'publication'
+        if (preloads?.pub?.author?.bio) return preloads.pub.author.bio;
+        if (preloads?.pub?.author_bio) return preloads.pub.author_bio;
+      }
+    } catch (err) {
+      console.log('[Grove Substack] Error extracting bio from preloads:', err);
+    }
     return null;
+  }
+
+  /**
+   * Decode escaped characters in bio string from JSON
+   * @param {string} bio - Raw bio string with escape sequences
+   * @returns {string}
+   */
+  decodeBioString(bio) {
+    return bio
+      .replace(/\\"/g, '"')
+      .replace(/\\n/g, ' ')
+      .replace(/\\u[\dA-Fa-f]{4}/g, (match) => {
+        return String.fromCharCode(parseInt(match.replace('\\u', ''), 16));
+      });
   }
 
   /**
@@ -192,54 +269,17 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
     const subscribeWidgetParent = document.querySelector('.subscribe-widget');
     if (subscribeWidgetParent) return subscribeWidgetParent;
 
-    // 3. Bare domain profile (Look for Subscribe/Subscribed/Follow button)
+    // 3. Bare domain profile (Look for Subscribe/Subscribed button)
     // Often in a flex container with "Message" or "More" buttons
-    const allButtons = Array.from(document.querySelectorAll('button'));
-    for (const button of allButtons) {
+    const buttons = Array.from(document.querySelectorAll('button'));
+    for (const button of buttons) {
       const text = (button.textContent || '').trim().toLowerCase();
-      // Check for various subscription-related button texts
-      if (text === 'subscribe' || text === 'subscribed' ||
-          text.includes('subscribe') || text === 'follow' || text === 'following') {
-        console.log('[Grove Substack] Found subscribe button:', text);
+      if (text === 'subscribe' || text === 'subscribed') {
         // Return the parent container to append next to it
         return button.parentElement;
       }
     }
 
-    // 4. Bare domain profile: Look for "Edit profile" or profile action buttons
-    // These are in the main content area, not the sidebar
-    for (const button of allButtons) {
-      const text = (button.textContent || '').trim().toLowerCase();
-      if (text === 'edit profile' || text === 'message') {
-        console.log('[Grove Substack] Found profile action button:', text);
-        // Return the parent container (the button row)
-        return button.parentElement;
-      }
-    }
-
-    // 5. Look for the "..." more options button next to Edit profile
-    // It's typically in a flex container with other profile buttons
-    const moreButton = document.querySelector('button[aria-label="More options"], button[aria-label="More"]');
-    if (moreButton?.parentElement) {
-      console.log('[Grove Substack] Found more options button');
-      return moreButton.parentElement;
-    }
-
-    // 6. Find buttons in main content area only (exclude sidebar nav)
-    const mainContent = document.querySelector('main, [role="main"], .main-content');
-    if (mainContent) {
-      const mainButtons = mainContent.querySelectorAll('button');
-      for (const button of mainButtons) {
-        const text = (button.textContent || '').trim().toLowerCase();
-        // Look for action buttons (Create, Edit, etc.) not nav buttons
-        if (text === 'create' || text.includes('edit') || text.includes('profile')) {
-          console.log('[Grove Substack] Found main content button:', text);
-          return button.parentElement;
-        }
-      }
-    }
-
-    console.log('[Grove Substack] No button placement found for profile page');
     return null;
   }
 

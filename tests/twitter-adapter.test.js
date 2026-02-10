@@ -42,6 +42,180 @@ describe('TwitterAdapter', () => {
     });
   });
 
+  describe('detectTippablePage', () => {
+    it('should return true for profile pages', () => {
+      const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
+        url: 'https://x.com/olshansky'
+      });
+      const ctx = {
+        window: dom.window,
+        document: dom.window.document,
+        console: console,
+        MutationObserver: dom.window.MutationObserver,
+        URL: dom.window.URL,
+        NodeList: dom.window.NodeList,
+        Element: dom.window.Element,
+        HTMLElement: dom.window.HTMLElement,
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        location: dom.window.location,
+      };
+      ctx.window = ctx;
+      loadBrowserScript('src/adapters/base.js', ctx);
+      loadBrowserScript('src/adapters/twitter.js', ctx);
+      const adapter = new ctx.TwitterAdapter();
+      expect(adapter.detectTippablePage()).toBe(true);
+    });
+
+    it('should return true for tweet pages', () => {
+      const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
+        url: 'https://x.com/olshansky/status/123456789'
+      });
+      const ctx = {
+        window: dom.window,
+        document: dom.window.document,
+        console: console,
+        MutationObserver: dom.window.MutationObserver,
+        URL: dom.window.URL,
+        NodeList: dom.window.NodeList,
+        Element: dom.window.Element,
+        HTMLElement: dom.window.HTMLElement,
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        location: dom.window.location,
+      };
+      ctx.window = ctx;
+      loadBrowserScript('src/adapters/base.js', ctx);
+      loadBrowserScript('src/adapters/twitter.js', ctx);
+      const adapter = new ctx.TwitterAdapter();
+      expect(adapter.detectTippablePage()).toBe(true);
+    });
+
+    it('should return false for system pages', () => {
+      const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
+        url: 'https://x.com/home'
+      });
+      const ctx = {
+        window: dom.window,
+        document: dom.window.document,
+        console: console,
+        MutationObserver: dom.window.MutationObserver,
+        URL: dom.window.URL,
+        NodeList: dom.window.NodeList,
+        Element: dom.window.Element,
+        HTMLElement: dom.window.HTMLElement,
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        location: dom.window.location,
+      };
+      ctx.window = ctx;
+      loadBrowserScript('src/adapters/base.js', ctx);
+      loadBrowserScript('src/adapters/twitter.js', ctx);
+      const adapter = new ctx.TwitterAdapter();
+      expect(adapter.detectTippablePage()).toBe(false);
+    });
+  });
+
+  describe('isProfilePage', () => {
+    it('should return true for profile pages', () => {
+      const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
+        url: 'https://x.com/olshansky'
+      });
+      const ctx = {
+        window: dom.window,
+        document: dom.window.document,
+        console: console,
+        MutationObserver: dom.window.MutationObserver,
+        URL: dom.window.URL,
+        NodeList: dom.window.NodeList,
+        Element: dom.window.Element,
+        HTMLElement: dom.window.HTMLElement,
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        location: dom.window.location,
+      };
+      ctx.window = ctx;
+      loadBrowserScript('src/adapters/base.js', ctx);
+      loadBrowserScript('src/adapters/twitter.js', ctx);
+      const adapter = new ctx.TwitterAdapter();
+      expect(adapter.isProfilePage()).toBe(true);
+    });
+
+    it('should return false for tweet pages', () => {
+      const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
+        url: 'https://x.com/olshansky/status/123456789'
+      });
+      const ctx = {
+        window: dom.window,
+        document: dom.window.document,
+        console: console,
+        MutationObserver: dom.window.MutationObserver,
+        URL: dom.window.URL,
+        NodeList: dom.window.NodeList,
+        Element: dom.window.Element,
+        HTMLElement: dom.window.HTMLElement,
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        location: dom.window.location,
+      };
+      ctx.window = ctx;
+      loadBrowserScript('src/adapters/base.js', ctx);
+      loadBrowserScript('src/adapters/twitter.js', ctx);
+      const adapter = new ctx.TwitterAdapter();
+      expect(adapter.isProfilePage()).toBe(false);
+    });
+  });
+
+  describe('isTweetPage', () => {
+    it('should return true for tweet pages', () => {
+      const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
+        url: 'https://x.com/olshansky/status/123456789'
+      });
+      const ctx = {
+        window: dom.window,
+        document: dom.window.document,
+        console: console,
+        MutationObserver: dom.window.MutationObserver,
+        URL: dom.window.URL,
+        NodeList: dom.window.NodeList,
+        Element: dom.window.Element,
+        HTMLElement: dom.window.HTMLElement,
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        location: dom.window.location,
+      };
+      ctx.window = ctx;
+      loadBrowserScript('src/adapters/base.js', ctx);
+      loadBrowserScript('src/adapters/twitter.js', ctx);
+      const adapter = new ctx.TwitterAdapter();
+      expect(adapter.isTweetPage()).toBe(true);
+    });
+
+    it('should return false for profile pages', () => {
+      const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
+        url: 'https://x.com/olshansky'
+      });
+      const ctx = {
+        window: dom.window,
+        document: dom.window.document,
+        console: console,
+        MutationObserver: dom.window.MutationObserver,
+        URL: dom.window.URL,
+        NodeList: dom.window.NodeList,
+        Element: dom.window.Element,
+        HTMLElement: dom.window.HTMLElement,
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        location: dom.window.location,
+      };
+      ctx.window = ctx;
+      loadBrowserScript('src/adapters/base.js', ctx);
+      loadBrowserScript('src/adapters/twitter.js', ctx);
+      const adapter = new ctx.TwitterAdapter();
+      expect(adapter.isTweetPage()).toBe(false);
+    });
+  });
+
   describe('isRetweet', () => {
     it('should return true for tweets with retweet social context', () => {
       const adapter = new TwitterAdapter();

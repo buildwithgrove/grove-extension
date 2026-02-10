@@ -36,10 +36,10 @@ beforeEach(() => {
 });
 
 describe('SoundCloudAdapter', () => {
-  describe('detectProfilePage', () => {
+  describe('detectTippablePage', () => {
     it('should return true for user profile pages', () => {
       const adapter = new SoundCloudAdapter();
-      expect(adapter.detectProfilePage()).toBe(true);
+      expect(adapter.detectTippablePage()).toBe(true);
     });
 
     it('should return false for system pages', () => {

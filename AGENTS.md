@@ -323,7 +323,7 @@ Adapters extend `BaseAdapter` and handle platform-specific DOM operations:
 ```javascript
 window.PlatformAdapter = class PlatformAdapter extends window.BaseAdapter {
   // Required methods
-  detectProfilePage() { }     // Returns true if on a tippable page
+  detectTippablePage() { }    // Returns true if on a tippable page (profiles AND posts)
   extractBio() { }            // Extract text that may contain crypto addresses
   getButtonPlacement() { }    // Return element to insert tip button near
   getPlatformName() { }       // Return platform identifier (e.g., 'substack')
@@ -405,8 +405,8 @@ Create `src/adapters/[platform].js`:
 
 ```javascript
 window.PlatformAdapter = class PlatformAdapter extends window.BaseAdapter {
-  detectProfilePage() {
-    // Return true if on a tippable page
+  detectTippablePage() {
+    // Return true if on a tippable page (profiles AND posts)
   }
 
   extractBio() {

@@ -818,38 +818,47 @@ class GroveAPI {
   }
 
   /**
-   * Resolve a destination URL/identifier to check if it's tippable.
-   * Uses the API's /v1/tip/resolve endpoint for robust server-side parsing.
-   *
-   * @param {string} destination - URL or identifier (e.g., "x.com/olshansky", "substack.com/@olshansky", "vitalik.eth")
-   * @returns {Promise<Object>} - { success, tippable, destinationKind, addresses, error }
+   * Resolve a destination URL to determine if it's tippable and get addresses
+   * Used for full page views (profiles, posts) to check tippability via API
+   * @param {string} destination - URL or identifier to resolve (e.g., "x.com/olshansky")
+   * @returns {Promise<Object>} - { tippable: boolean, addresses: Array, error?: string }
    */
   static async resolveDestination(destination) {
     const baseURL = await this.getBaseURL();
-    const params = new URLSearchParams({ destination });
-    const apiUrl = `${baseURL}/v1/tip/resolve?${params}`;
+    const tipDomain = this.buildTipDomainFromURL(destination);
+    const apiUrl = `${baseURL}/v1/destination/resolve`;
 
     try {
       const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ destination: tipDomain })
       });
 
       const data = await response.json();
 
+      if (!response.ok) {
+        return {
+          tippable: false,
+          addresses: [],
+          error: data.message || data.detail || `API request failed with status ${response.status}`
+        };
+      }
+
+      // API returns { tippable: boolean, addresses: [...], source?: string }
       return {
-        success: response.ok,
         tippable: data.tippable || false,
-        destinationKind: data.destination_kind || null,
         addresses: data.addresses || [],
-        error: data.error || null
+        source: data.source || null,
+        error: null
       };
+
     } catch (error) {
-      console.error('[Grove Extension] Destination resolution failed:', error);
+      console.error('[Grove Extension] Destination resolve failed:', error);
       return {
-        success: false,
         tippable: false,
-        destinationKind: null,
         addresses: [],
         error: error.message
       };

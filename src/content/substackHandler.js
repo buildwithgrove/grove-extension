@@ -8,14 +8,13 @@ const SubstackHandler = {
   callbacks: {
     hasAddresses: null,        // (text) => boolean
     resolveAddress: null,      // (text) => { address, type }
-    onTipClick: null,          // (buttonInstance, targetAddress) => void - targetAddress is optional override
+    onTipClick: null,          // (buttonInstance) => void
     createTipButton: null,     // (onTipClick, platform) => TipButton
   },
 
   // State
   currentButton: null,
-  resolvedAddress: null,       // Legacy: set for compatibility, prefer pageAuthorAddress
-  pageAuthorAddress: null,     // BUG FIX: Separate address for page author (not overwritten by hover cards)
+  resolvedAddress: null,
   adapter: null,
 
   /**
@@ -28,7 +27,6 @@ const SubstackHandler = {
 
   /**
    * Initialize Substack handler for the current page
-   * Uses API-based resolution for robust server-side parsing of Substack pages.
    * @param {Object} adapter - The Substack adapter
    * @returns {Promise<Object|null>} - The resolved address or null
    */
@@ -42,14 +40,14 @@ const SubstackHandler = {
     console.log('[Grove Substack] Initializing...');
 
     // Check if we're on a supported page (post or profile)
-    if (!adapter.detectProfilePage()) {
+    if (!adapter.detectTippablePage()) {
       console.log('[Grove Substack] Not a supported page, skipping');
       return null;
     }
 
     console.log('[Grove Substack] On a supported page, initializing...');
 
-    // Wait for the page to load (needed for button placement)
+    // Wait for the page to load
     const loaded = await adapter.waitForProfileLoad();
     if (!loaded) {
       console.log('[Grove Substack] Page did not load in time');
@@ -58,54 +56,26 @@ const SubstackHandler = {
 
     console.log('[Grove Substack] Page loaded');
 
-    // Use API for resolution (instead of fragile client-side bio extraction)
-    const destination = this.buildDestinationUrl();
-    console.log('[Grove Substack] Resolving via API:', destination);
+    // Try to extract bio from page content (might have address)
+    const pageBio = adapter.extractBio();
+    console.log('[Grove Substack] Page bio:', pageBio);
 
-    const result = await GroveAPI.resolveDestination(destination);
-    console.log('[Grove Substack] API response:', result);
+    if (pageBio && this.callbacks.hasAddresses && this.callbacks.hasAddresses(pageBio)) {
+      const addressResult = this.callbacks.resolveAddress(pageBio);
+      console.log('[Grove Substack] Resolved address from page:', addressResult);
 
-    if (result.tippable && result.addresses.length > 0) {
-      // Use the first address (API returns them in priority order)
-      const primaryAddress = result.addresses[0];
-      const addressResult = {
-        address: primaryAddress.address,
-        type: primaryAddress.source || 'api', // 'bio', 'ens', 'direct', etc.
-        token: primaryAddress.token,
-        chain: primaryAddress.chain
-      };
-
-      console.log('[Grove Substack] Resolved address from API:', addressResult);
-
-      // Store page author address separately so hover cards don't overwrite it
-      this.pageAuthorAddress = addressResult;
-      this.resolvedAddress = addressResult; // Legacy: set for compatibility
-      this.injectPageButtons();
+      if (addressResult && addressResult.address) {
+        this.resolvedAddress = addressResult;
+        this.injectPageButtons();
+      }
     } else {
-      console.log('[Grove Substack] Not tippable via API:', result.error || 'no addresses found');
+      console.log('[Grove Substack] No address in page bio, will check hover cards');
     }
 
-    // Always start hover card observer (for inline hover cards on post pages)
+    // Always start hover card observer (bio might be in hover card)
     this.startHoverCardObserver();
 
     return this.resolvedAddress;
-  },
-
-  /**
-   * Build the destination URL for API resolution
-   * Normalizes the current page URL to a format the API expects
-   * @returns {string}
-   */
-  buildDestinationUrl() {
-    const url = window.location.href;
-    // Clean up URL - remove trailing slashes and query params for cleaner resolution
-    try {
-      const urlObj = new URL(url);
-      // Keep just origin + pathname, strip query/hash
-      return `${urlObj.origin}${urlObj.pathname}`.replace(/\/$/, '');
-    } catch {
-      return url;
-    }
   },
 
   /**
@@ -120,22 +90,15 @@ const SubstackHandler = {
         console.log('[Grove Substack] Resolved address from hover card:', addressResult);
 
         if (addressResult && addressResult.address) {
-          // BUG FIX: Do NOT overwrite pageAuthorAddress or resolvedAddress here.
-          // Previously this.resolvedAddress was set to the hover card address, which
-          // caused page buttons to tip the wrong person (e.g., olshansky.eth instead of cdixon).
-          // Now we pass the hover card address directly to the button click handler.
+          this.resolvedAddress = addressResult;
 
           // Inject button in page (action bar or profile header) if not already done
-          // This handles the case where page author has NO address but hover card user does
-          if (!this.currentButton && !this.pageAuthorAddress) {
-            // If page has no author address, use this hover card as fallback for page buttons
-            this.pageAuthorAddress = addressResult;
-            this.resolvedAddress = addressResult;
+          if (!this.currentButton) {
             this.injectPageButtons();
           }
 
-          // Inject a tip button in the hover card with ITS OWN address
-          this.injectHoverCardButton(hoverCard, bioData.profileUrl, addressResult);
+          // Also inject a tip button in the hover card
+          this.injectHoverCardButton(hoverCard, bioData.profileUrl);
         }
       }
     });
@@ -238,15 +201,14 @@ const SubstackHandler = {
    * Inject tip button into a Substack hover card
    * @param {Element} hoverCard - The hover card element
    * @param {string} profileUrl - The author's profile URL
-   * @param {Object} hoverCardAddress - The resolved address for THIS hover card user
    */
-  injectHoverCardButton(hoverCard, profileUrl, hoverCardAddress) {
+  injectHoverCardButton(hoverCard, profileUrl) {
     // Check if button already exists in this hover card
     if (hoverCard.querySelector('.grove-tip-button')) {
       return;
     }
 
-    console.log('[Grove Substack] Injecting tip button into hover card for address:', hoverCardAddress?.address);
+    console.log('[Grove Substack] Injecting tip button into hover card');
 
     const placement = this.adapter.getHoverCardButtonPlacement(hoverCard);
     if (!placement) {
@@ -259,14 +221,11 @@ const SubstackHandler = {
     button.className = 'grove-tip-button grove-substack-hover-button';
     button.innerHTML = '<span class="grove-tip-label">Tip</span>';
 
-    // BUG FIX: Pass this hover card's address to the click handler, not the global resolvedAddress
     button.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       if (this.callbacks.onTipClick) {
-        // Pass null for buttonInstance (hover card buttons are simple DOM elements)
-        // Pass hoverCardAddress so the tip goes to THIS user, not the page author
-        this.callbacks.onTipClick(null, hoverCardAddress);
+        this.callbacks.onTipClick(null);
       }
     });
 
@@ -296,7 +255,6 @@ const SubstackHandler = {
   reset() {
     this.currentButton = null;
     this.resolvedAddress = null;
-    this.pageAuthorAddress = null;
     if (this.adapter) {
       this.adapter.stopHoverCardObserver();
     }
