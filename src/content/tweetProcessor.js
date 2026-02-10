@@ -384,3 +384,7 @@ const TweetProcessor = {
     this.pendingTweetButtons.delete(username);
   }
 };
+
+if (typeof window !== 'undefined') {
+  window.TweetProcessor = TweetProcessor;
+}

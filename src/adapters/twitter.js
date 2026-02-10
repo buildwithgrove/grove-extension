@@ -516,6 +516,12 @@ class TwitterAdapter extends BaseAdapter {
    * @returns {Promise<boolean>}
    */
   async waitForProfileLoad() {
+    // If on a tweet page, wait for the main tweet to load
+    if (this.isTweetPage()) {
+      const tweetElement = await this.waitForElement('article[data-testid="tweet"]', 8000);
+      return tweetElement !== null;
+    }
+
     // Wait for username to appear (indicates profile is loaded)
     // Use UserName instead of UserDescription since not all profiles have bios
     const userNameElement = await this.waitForElement('[data-testid="UserName"]', 8000);

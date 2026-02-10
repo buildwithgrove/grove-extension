@@ -127,4 +127,12 @@ test.describe('Extension Smoke Tests', () => {
     }
   });
 
+  test('Should inject on substack.com/@olshansky', async () => {
+    const page = await browserContext.newPage();
+    await page.goto('https://substack.com/@olshansky', { waitUntil: 'domcontentloaded' });
+    
+    const tipButton = page.locator('#grove-tip-button');
+    await expect(tipButton).toBeVisible({ timeout: 15000 });
+  });
+
 });
