@@ -8,13 +8,14 @@ const SubstackHandler = {
   callbacks: {
     hasAddresses: null,        // (text) => boolean
     resolveAddress: null,      // (text) => { address, type }
-    onTipClick: null,          // (buttonInstance) => void
+    onTipClick: null,          // (buttonInstance, targetAddress) => void - targetAddress is optional override
     createTipButton: null,     // (onTipClick, platform) => TipButton
   },
 
   // State
   currentButton: null,
-  resolvedAddress: null,
+  resolvedAddress: null,       // Legacy: set for compatibility, prefer pageAuthorAddress
+  pageAuthorAddress: null,     // BUG FIX: Separate address for page author (not overwritten by hover cards)
   adapter: null,
 
   /**
@@ -65,7 +66,9 @@ const SubstackHandler = {
       console.log('[Grove Substack] Resolved address from page:', addressResult);
 
       if (addressResult && addressResult.address) {
-        this.resolvedAddress = addressResult;
+        // BUG FIX: Store page author address separately so hover cards don't overwrite it
+        this.pageAuthorAddress = addressResult;
+        this.resolvedAddress = addressResult; // Legacy: set for compatibility
         this.injectPageButtons();
       }
     } else {
@@ -90,15 +93,22 @@ const SubstackHandler = {
         console.log('[Grove Substack] Resolved address from hover card:', addressResult);
 
         if (addressResult && addressResult.address) {
-          this.resolvedAddress = addressResult;
+          // BUG FIX: Do NOT overwrite pageAuthorAddress or resolvedAddress here.
+          // Previously this.resolvedAddress was set to the hover card address, which
+          // caused page buttons to tip the wrong person (e.g., olshansky.eth instead of cdixon).
+          // Now we pass the hover card address directly to the button click handler.
 
           // Inject button in page (action bar or profile header) if not already done
-          if (!this.currentButton) {
+          // This handles the case where page author has NO address but hover card user does
+          if (!this.currentButton && !this.pageAuthorAddress) {
+            // If page has no author address, use this hover card as fallback for page buttons
+            this.pageAuthorAddress = addressResult;
+            this.resolvedAddress = addressResult;
             this.injectPageButtons();
           }
 
-          // Also inject a tip button in the hover card
-          this.injectHoverCardButton(hoverCard, bioData.profileUrl);
+          // Inject a tip button in the hover card with ITS OWN address
+          this.injectHoverCardButton(hoverCard, bioData.profileUrl, addressResult);
         }
       }
     });
@@ -201,14 +211,15 @@ const SubstackHandler = {
    * Inject tip button into a Substack hover card
    * @param {Element} hoverCard - The hover card element
    * @param {string} profileUrl - The author's profile URL
+   * @param {Object} hoverCardAddress - The resolved address for THIS hover card user
    */
-  injectHoverCardButton(hoverCard, profileUrl) {
+  injectHoverCardButton(hoverCard, profileUrl, hoverCardAddress) {
     // Check if button already exists in this hover card
     if (hoverCard.querySelector('.grove-tip-button')) {
       return;
     }
 
-    console.log('[Grove Substack] Injecting tip button into hover card');
+    console.log('[Grove Substack] Injecting tip button into hover card for address:', hoverCardAddress?.address);
 
     const placement = this.adapter.getHoverCardButtonPlacement(hoverCard);
     if (!placement) {
@@ -221,11 +232,14 @@ const SubstackHandler = {
     button.className = 'grove-tip-button grove-substack-hover-button';
     button.innerHTML = '<span class="grove-tip-label">Tip</span>';
 
+    // BUG FIX: Pass this hover card's address to the click handler, not the global resolvedAddress
     button.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       if (this.callbacks.onTipClick) {
-        this.callbacks.onTipClick(null);
+        // Pass null for buttonInstance (hover card buttons are simple DOM elements)
+        // Pass hoverCardAddress so the tip goes to THIS user, not the page author
+        this.callbacks.onTipClick(null, hoverCardAddress);
       }
     });
 
@@ -255,6 +269,7 @@ const SubstackHandler = {
   reset() {
     this.currentButton = null;
     this.resolvedAddress = null;
+    this.pageAuthorAddress = null;
     if (this.adapter) {
       this.adapter.stopHoverCardObserver();
     }

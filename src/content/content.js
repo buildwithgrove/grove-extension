@@ -445,10 +445,16 @@
   /**
    * Handle tip button click - shows popover for amount confirmation (if enabled)
    * @param {TipButton} buttonInstance - The button instance (for hover cards)
+   * @param {Object} targetAddress - Optional override address for the tip destination.
+   *                                 BUG FIX: Used by Substack hover cards to tip the correct user
+   *                                 instead of the page author (or whoever's address was last resolved).
    */
-  async function handleTipClick(buttonInstance) {
+  async function handleTipClick(buttonInstance, targetAddress = null) {
     // Use passed button instance or fall back to currentButton
     const button = buttonInstance || currentButton;
+
+    // Store target address for use in sendTip if provided
+    const tipTargetAddress = targetAddress;
 
     // Check if extension context is valid
     if (!isExtensionContextValid()) {
@@ -535,7 +541,7 @@
           console.error("[Grove Extension] Failed to mark first tip:", e);
         }
       }
-      sendTip(tipAmount, button);
+      sendTip(tipAmount, button, null, tipTargetAddress);
       return;
     }
 
@@ -584,7 +590,7 @@
             console.error("[Grove Extension] Failed to save tip preferences:", e);
           }
           // Send the tip with custom message
-          sendTip(amount, button, customMessage);
+          sendTip(amount, button, customMessage, tipTargetAddress);
         },
         () => {
           console.log("[Grove Extension] Tip cancelled");
@@ -594,7 +600,7 @@
       );
     } else {
       // Fallback: send tip directly if modal not available
-      sendTip(tipAmount, button);
+      sendTip(tipAmount, button, null, tipTargetAddress);
     }
   }
 
@@ -603,8 +609,10 @@
    * @param {number} tipAmount - The amount to tip
    * @param {TipButton} button - The button instance for state updates
    * @param {string|null} customMessage - Custom message for the tip (optional)
+   * @param {Object|null} targetAddress - Optional override address for the tip destination.
+   *                                      BUG FIX: Used by Substack hover cards to tip the correct user.
    */
-  async function sendTip(tipAmount, button, customMessage = null) {
+  async function sendTip(tipAmount, button, customMessage = null, targetAddress = null) {
     // Show loading animation with amount
     if (button) {
       button.setLoading(tipAmount);
@@ -639,11 +647,14 @@
       return;
     }
 
-    // Determine tip destination: use resolved address if available (ENS or raw 0x), otherwise page URL
+    // Determine tip destination: use target address override, resolved address, or page URL
+    // BUG FIX: targetAddress is passed when clicking Substack hover card buttons to ensure
+    // the tip goes to the correct user (not the page author or whoever was last resolved).
     let tipDestination = window.location.href;
-    if (resolvedAddress && resolvedAddress.address) {
-      tipDestination = resolvedAddress.address; // e.g., "vitalik.eth" or "0x..."
-      console.log(`[Grove Extension] Tipping to ${resolvedAddress.type} address: ${tipDestination}`);
+    const effectiveAddress = targetAddress || resolvedAddress;
+    if (effectiveAddress && effectiveAddress.address) {
+      tipDestination = effectiveAddress.address; // e.g., "vitalik.eth" or "0x..."
+      console.log(`[Grove Extension] Tipping to ${effectiveAddress.type} address: ${tipDestination}`);
     }
 
     // Build context metadata for the tip
