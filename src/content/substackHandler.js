@@ -92,12 +92,8 @@ const SubstackHandler = {
         if (addressResult && addressResult.address) {
           this.resolvedAddress = addressResult;
 
-          // Inject button in page (action bar or profile header) if not already done
-          if (!this.currentButton) {
-            this.injectPageButtons();
-          }
-
-          // Also inject a tip button in the hover card
+          // Only inject a tip button in the hover card itself (not page-level buttons).
+          // Page buttons are injected during initialize() when the page author has an address.
           this.injectHoverCardButton(hoverCard, bioData.profileUrl);
         }
       }

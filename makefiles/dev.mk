@@ -10,26 +10,6 @@ dev_start: ## Show instructions to load extension in Chrome
 	@printf "$(CYAN)$(INFO) 3. Click Load unpacked and select this directory$(RESET)\n"
 	@printf "$(CYAN)$(INFO) 4. Extension will reload on file changes (click refresh)$(RESET)\n"
 
-.PHONY: dev_test
-dev_test: ## Run Vitest tests
-	$(call print_info_section,Running tests)
-	$(Q)$(NPM) run test
-
-.PHONY: dev_test_watch
-dev_test_watch: ## Run tests in watch mode
-	$(call print_info_section,Running tests in watch mode)
-	$(Q)$(NPM) run test:watch
-
-.PHONY: dev_test_coverage
-dev_test_coverage: ## Run tests with coverage
-	$(call print_info_section,Running tests with coverage)
-	$(Q)$(NPM) run test:coverage
-
-.PHONY: dev_test_e2e
-dev_test_e2e: ## Run Playwright E2E tests
-	$(call print_info_section,Running E2E tests)
-	$(Q)$(NPM) run test:e2e
-
 .PHONY: dev_lint
 dev_lint: ## Run ESLint (not yet configured)
 	$(call print_warning,ESLint not yet configured in package.json)

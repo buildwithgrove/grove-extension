@@ -531,14 +531,6 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
     hoverCard = this.findBySelector(node, popupSelectors);
     if (hoverCard) return hoverCard;
 
-    // Method 4: Check if node contains author profile link and bio-like content
-    if (node.querySelector?.('a[href*="/@"]')) {
-      const text = node.textContent || '';
-      if (text.length > 50 && (text.includes('@') || text.includes('.eth'))) {
-        return node;
-      }
-    }
-
     return null;
   }
 
