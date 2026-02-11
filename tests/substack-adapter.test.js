@@ -173,6 +173,23 @@ describe('SubstackAdapter', () => {
       const bio = adapter.extractBio();
       expect(bio).toContain('olshansky.eth');
     });
+
+    it('should NOT extract bio from nested recommendation objects in preloads scripts', () => {
+      const adapter = new SubstackAdapter();
+      document.body.innerHTML = `
+        <script>
+          window._preloads = {
+            "post": { "id": 1 },
+            "recommendations": [
+              { "author": { "bio": "Recommended author bio with vitalik.eth" } }
+            ]
+          };
+        </script>
+      `;
+
+      expect(adapter.extractBioFromPreloads()).toBeNull();
+      expect(adapter.extractBio()).toBeNull();
+    });
   });
 
   describe('getAuthorProfileUrl', () => {

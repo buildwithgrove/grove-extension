@@ -323,7 +323,7 @@ Page Load → GroveAPI.resolveDestination(url)
 
 - API resolution is the preferred path (consistent, server-side)
 - DOM fallback handles cases where the API doesn't yet support the URL
-- Substack uses its own handler (`SubstackHandler`) instead of `ProfilePageHandler`
+- Substack full pages (profiles/posts) also use `ProfilePageHandler`; `SubstackHandler` is used for Substack hover cards
 
 Reference: `src/content/profilePageHandler.js:initialize()`
 
@@ -340,7 +340,7 @@ The bio fetch feature solves this by:
 
 - `src/content/content.js` - Main orchestrator with all tip flows
 - `src/content/profilePageHandler.js` - API-first page resolution with DOM fallback
-- `src/content/substackHandler.js` - Substack-specific handler (hover cards, action bars)
+- `src/content/substackHandler.js` - Substack-specific hover card handler
 - `src/adapters/twitter.js` - Twitter-specific DOM extraction
 - `src/adapters/substack.js` - Substack DOM extraction and bio preload parsing
 - `src/parsers/address.js` - Address detection (0x, ENS patterns)
@@ -355,7 +355,7 @@ When extracting author bios from preloaded JSON (e.g., Substack `_preloads`):
 - **Always use specific author paths** (e.g., `preloads.post.author.bio`, `preloads.profile.bio`)
 - **Never use broad regex** matching generic keys like `"bio":` across all `<script>` tags
 - **Logged-in platforms inject personalized data** (recommendations, sidebar authors) that contains OTHER authors' bios — broad matching causes false-positive tip button injection
-- **Check `window._preloads` (parsed object) before regex** — navigating specific paths is always safer than string matching
+- **Check `window._preloads` (parsed object) and parsed script JSON only** — avoid regex matching across raw script text to prevent false positives
 
 Reference: `src/adapters/substack.js:extractBioFromPreloads()`
 

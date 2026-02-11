@@ -1,6 +1,9 @@
 /**
  * Substack Handler Module
- * Handles tip button initialization on Substack post pages and hover cards
+ * Handles tip button injection in Substack author hover cards
+ *
+ * Note: Page-level buttons (profiles/posts) are handled by ProfilePageHandler
+ * (API-first with DOM fallback).
  */
 
 const SubstackHandler = {
@@ -8,13 +11,11 @@ const SubstackHandler = {
   callbacks: {
     hasAddresses: null,        // (text) => boolean
     resolveAddress: null,      // (text) => { address, type }
-    onTipClick: null,          // (buttonInstance) => void
+    onTipClick: null,          // (buttonInstance, tipOverrides?) => void
     createTipButton: null,     // (onTipClick, platform) => TipButton
   },
 
   // State
-  currentButton: null,
-  resolvedAddress: null,
   adapter: null,
 
   /**
@@ -28,7 +29,7 @@ const SubstackHandler = {
   /**
    * Initialize Substack handler for the current page
    * @param {Object} adapter - The Substack adapter
-   * @returns {Promise<Object|null>} - The resolved address or null
+   * @returns {Promise<null>}
    */
   async initialize(adapter) {
     if (!adapter) {
@@ -37,7 +38,7 @@ const SubstackHandler = {
     }
 
     this.adapter = adapter;
-    console.log('[Grove Substack] Initializing...');
+    console.log('[Grove Substack] Initializing hover card observer...');
 
     // Check if we're on a supported page (post or profile)
     if (!adapter.detectTippablePage()) {
@@ -45,160 +46,116 @@ const SubstackHandler = {
       return null;
     }
 
-    console.log('[Grove Substack] On a supported page, initializing...');
-
-    // Wait for the page to load
-    const loaded = await adapter.waitForProfileLoad();
-    if (!loaded) {
-      console.log('[Grove Substack] Page did not load in time');
-      return null;
-    }
-
-    console.log('[Grove Substack] Page loaded');
-
-    // Try to extract bio from page content (might have address)
-    const pageBio = adapter.extractBio();
-    console.log('[Grove Substack] Page bio:', pageBio);
-
-    if (pageBio && this.callbacks.hasAddresses && this.callbacks.hasAddresses(pageBio)) {
-      const addressResult = this.callbacks.resolveAddress(pageBio);
-      console.log('[Grove Substack] Resolved address from page:', addressResult);
-
-      if (addressResult && addressResult.address) {
-        this.resolvedAddress = addressResult;
-        this.injectPageButtons();
-      }
-    } else {
-      console.log('[Grove Substack] No address in page bio, will check hover cards');
-    }
-
-    // Always start hover card observer (bio might be in hover card)
+    // Start hover card observer (bio/address might be in hover card)
     this.startHoverCardObserver();
 
-    return this.resolvedAddress;
+    return null;
   },
 
   /**
    * Start observing for hover cards
    */
   startHoverCardObserver() {
+    if (!this.adapter) return;
+
     this.adapter.startHoverCardObserver((hoverCard, bioData) => {
-      console.log('[Grove Substack] Hover card detected with bio:', bioData.bio?.substring(0, 100));
+      console.log('[Grove Substack] Hover card detected with bio:', bioData?.bio?.substring(0, 100));
 
-      if (bioData.bio && this.callbacks.hasAddresses && this.callbacks.hasAddresses(bioData.bio)) {
-        const addressResult = this.callbacks.resolveAddress(bioData.bio);
-        console.log('[Grove Substack] Resolved address from hover card:', addressResult);
+      if (!bioData?.bio || !this.callbacks.hasAddresses || !this.callbacks.resolveAddress) return;
+      if (!this.callbacks.hasAddresses(bioData.bio)) return;
 
-        if (addressResult && addressResult.address) {
-          this.resolvedAddress = addressResult;
+      const addressResult = this.callbacks.resolveAddress(bioData.bio);
+      console.log('[Grove Substack] Resolved address from hover card:', addressResult);
 
-          // Only inject a tip button in the hover card itself (not page-level buttons).
-          // Page buttons are injected during initialize() when the page author has an address.
-          this.injectHoverCardButton(hoverCard, bioData.profileUrl);
-        }
-      }
+      if (!addressResult?.address) return;
+
+      this.injectHoverCardButton(hoverCard, bioData, addressResult);
     });
   },
 
   /**
-   * Inject tip buttons into page (action bars or profile header)
+   * Normalize Substack profile URL.
+   * Hover cards often contain `"/@handle"` relative links which should resolve against substack.com,
+   * not the current publication subdomain.
+   * @param {string|null} profileUrl
+   * @returns {string|null}
    */
-  injectPageButtons() {
-    // 1. Try to inject into profile header (subscribe widget or similar)
-    const profilePlacement = this.adapter.getProfileButtonPlacement();
-    if (profilePlacement) {
-      this.injectProfileButton(profilePlacement);
+  normalizeProfileUrl(profileUrl) {
+    if (!profileUrl) return null;
+    try {
+      if (profileUrl.startsWith('http://') || profileUrl.startsWith('https://')) {
+        return profileUrl.replace(/\/$/, '');
+      }
+      if (profileUrl.startsWith('/@')) {
+        return `https://substack.com${profileUrl}`.replace(/\/$/, '');
+      }
+      return new URL(profileUrl, window.location.origin).toString().replace(/\/$/, '');
+    } catch {
+      return profileUrl;
     }
-
-    // 2. Inject into all visible action bars
-    const actionBars = this.adapter.getAllActionBars();
-    console.log('[Grove Substack] Found', actionBars.length, 'action bar(s)');
-
-    if (actionBars.length === 0) {
-      if (!profilePlacement) {
-        console.log('[Grove Substack] Could not find any button placement');
-      }
-      return;
-    }
-
-    actionBars.forEach((actionBar, index) => {
-      // Skip if already has a tip button
-      if (actionBar.querySelector('.grove-tip-button')) {
-        console.log('[Grove Substack] Action bar', index, 'already has tip button');
-        return;
-      }
-
-      const placement = this.adapter.getButtonPlacementInActionBar(actionBar);
-      if (!placement) {
-        console.log('[Grove Substack] Could not find button placement in action bar', index);
-        return;
-      }
-
-      // Find restack button to insert after
-      const restackButton = this.adapter.getRestackButtonInActionBar(actionBar);
-      console.log('[Grove Substack] Action bar', index, '- Restack button:', restackButton ? 'found' : 'not found');
-
-      // Create tip button for this action bar
-      const tipButton = this.callbacks.createTipButton(
-        (buttonInstance) => {
-          if (this.callbacks.onTipClick) {
-            this.callbacks.onTipClick(buttonInstance);
-          }
-        },
-        'substack'
-      );
-      tipButton.create();
-
-      // Store the first button as currentButton for compatibility if not set by profile
-      if (!this.currentButton && index === 0) {
-        this.currentButton = tipButton;
-      }
-
-      // Insert after restack button if found, otherwise append to placement
-      if (restackButton && restackButton.parentElement) {
-        restackButton.parentElement.insertBefore(tipButton.button, restackButton.nextSibling);
-        console.log('[Grove Substack] Tip button injected after restack button in action bar', index);
-      } else {
-        placement.appendChild(tipButton.button);
-        console.log('[Grove Substack] Tip button appended to placement in action bar', index);
-      }
-    });
   },
 
   /**
-   * Inject tip button into profile header
-   * @param {Element} placement - The container element to inject into
+   * Extract a Substack handle from a profile URL.
+   * @param {string|null} profileUrl
+   * @returns {string|null}
    */
-  injectProfileButton(placement) {
-    // Skip if already has a tip button
-    if (placement.querySelector('.grove-tip-button')) {
-      console.log('[Grove Substack] Profile header already has tip button');
-      return;
+  extractHandleFromProfileUrl(profileUrl) {
+    if (!profileUrl) return null;
+    try {
+      const url = new URL(profileUrl);
+      const match = url.pathname.match(/^\/@([^\/\?]+)/);
+      return match ? match[1] : null;
+    } catch {
+      const match = profileUrl.match(/\/@([^\/\?]+)/);
+      return match ? match[1] : null;
     }
+  },
 
-    // Create tip button
-    const tipButton = this.callbacks.createTipButton(
-      (buttonInstance) => {
-        if (this.callbacks.onTipClick) {
-          this.callbacks.onTipClick(buttonInstance);
-        }
-      },
-      'substack'
-    );
-    tipButton.create();
-    this.currentButton = tipButton;
+  /**
+   * Apply compact styling for hover-card buttons on top of TipButton's default styles.
+   * @param {TipButton} tipButton
+   */
+  applyHoverCardButtonStyle(tipButton) {
+    if (!tipButton?.button) return;
 
-    // Insert as last child of the placement container
-    placement.appendChild(tipButton.button);
-    console.log('[Grove Substack] Tip button injected into profile header');
+    const el = tipButton.button;
+
+    // Match the compact hover-card variant in src/ui/styles.css as closely as possible.
+    el.style.setProperty('background', 'linear-gradient(135deg, #000000 0%, #0a0a0a 100%)', 'important');
+    el.style.setProperty('border', '1px solid var(--grove-primary)', 'important');
+    el.style.setProperty('border-radius', '9999px', 'important');
+    el.style.setProperty('padding', '0 10px', 'important');
+    el.style.setProperty('height', '22px', 'important');
+    el.style.setProperty('min-height', '22px', 'important');
+    el.style.setProperty('max-height', '22px', 'important');
+    el.style.setProperty('min-width', 'auto', 'important');
+    el.style.setProperty('box-shadow', 'none', 'important');
+    el.style.setProperty('margin-left', '8px', 'important');
+    el.style.setProperty('margin-right', '0px', 'important');
+    el.style.setProperty('vertical-align', 'middle', 'important');
+
+    // Tighten inner text sizing
+    if (tipButton.textSpan) {
+      tipButton.textSpan.style.setProperty('font-size', '11px', 'important');
+      tipButton.textSpan.style.setProperty('font-weight', '600', 'important');
+      tipButton.textSpan.style.setProperty('color', 'white', 'important');
+    }
+    if (tipButton.emojiSpan) {
+      tipButton.emojiSpan.style.setProperty('font-size', '12px', 'important');
+    }
+    if (tipButton.sheenOverlay) {
+      tipButton.sheenOverlay.style.setProperty('display', 'none', 'important');
+    }
   },
 
   /**
    * Inject tip button into a Substack hover card
    * @param {Element} hoverCard - The hover card element
-   * @param {string} profileUrl - The author's profile URL
+   * @param {{handle: string|null, profileUrl: string|null}} bioData
+   * @param {{address: string, type: string}} addressResult
    */
-  injectHoverCardButton(hoverCard, profileUrl) {
+  injectHoverCardButton(hoverCard, bioData, addressResult) {
     // Check if button already exists in this hover card
     if (hoverCard.querySelector('.grove-tip-button')) {
       return;
@@ -212,45 +169,47 @@ const SubstackHandler = {
       return;
     }
 
-    // Create hover card tip button using CSS class instead of inline styles
-    const button = document.createElement('button');
-    button.className = 'grove-tip-button grove-substack-hover-button';
-    button.innerHTML = '<span class="grove-tip-label">Tip</span>';
+    if (!this.callbacks.createTipButton) {
+      console.log('[Grove Substack] No createTipButton callback provided');
+      return;
+    }
 
-    button.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (this.callbacks.onTipClick) {
-        this.callbacks.onTipClick(null);
-      }
-    });
+    const recipientProfileUrl = this.normalizeProfileUrl(bioData?.profileUrl || null);
+    const recipientUsername = bioData?.handle || this.extractHandleFromProfileUrl(recipientProfileUrl);
 
-    placement.appendChild(button);
+    const tipOverrides = {
+      resolvedAddress: addressResult,
+      recipient_username: recipientUsername,
+      recipient_profile_url: recipientProfileUrl,
+      source_post_url: window.location.href
+    };
+
+    const tipButton = this.callbacks.createTipButton(
+      (buttonInstance) => {
+        if (this.callbacks.onTipClick) {
+          this.callbacks.onTipClick(buttonInstance, tipOverrides);
+        }
+      },
+      'substack'
+    );
+
+    tipButton.create();
+
+    // Allow multiple hover-card buttons by removing the global ID.
+    if (tipButton.button) {
+      tipButton.button.id = '';
+      tipButton.button.classList.add('grove-substack-hover-button');
+    }
+
+    this.applyHoverCardButtonStyle(tipButton);
+    placement.appendChild(tipButton.button);
     console.log('[Grove Substack] Hover card tip button injected');
-  },
-
-  /**
-   * Get the current button instance
-   * @returns {TipButton|null}
-   */
-  getButton() {
-    return this.currentButton;
-  },
-
-  /**
-   * Get the resolved address
-   * @returns {Object|null}
-   */
-  getResolvedAddress() {
-    return this.resolvedAddress;
   },
 
   /**
    * Reset state (for page navigation)
    */
   reset() {
-    this.currentButton = null;
-    this.resolvedAddress = null;
     if (this.adapter) {
       this.adapter.stopHoverCardObserver();
     }

@@ -29,7 +29,10 @@ test.describe('Extension Smoke Tests', () => {
   });
 
   test.afterEach(async () => {
-    await browserContext.close();
+    if (browserContext) {
+      await browserContext.close();
+      browserContext = undefined;
+    }
   });
 
   test('Should NOT inject on claude.ai', async () => {
@@ -241,17 +244,13 @@ test.describe('Extension Smoke Tests', () => {
     const page = await browserContext.newPage();
     await page.goto('https://olshansky.substack.com/p/chatgpt-started-sending-me-substack', { waitUntil: 'domcontentloaded' });
 
-    // Substack post pages have top and bottom action bars, each with a tip button
+    // Substack post pages may have multiple action bars; verify at least one button exists
     const tipButton = page.locator('#grove-tip-button').first();
     await expect(tipButton).toBeVisible({ timeout: 15000 });
   });
 
-  // TODO_IMPROVE: This E2E test runs headless/logged-out, so it does NOT catch the bug where
-  //   logged-in Substack injects recommended authors' bios (with .eth addresses) into <script>
-  //   tags, causing false-positive tip button injection. Add a unit test for
-  //   SubstackAdapter.extractBioFromPreloads() that mocks a <script> tag containing both the
-  //   page author's data (no crypto) and a nested recommendation with a "bio" containing .eth,
-  //   and asserts the recommended author's bio is NOT returned.
+  // NOTE: This E2E test runs headless/logged-out, so it does not reproduce the logged-in Substack
+  // `_preloads` recommendations false-positive bug. That case is covered by unit tests.
   test('Should NOT inject on latecheckout.substack.com (no crypto address)', async () => {
     const page = await browserContext.newPage();
     await page.goto('https://latecheckout.substack.com/', { waitUntil: 'domcontentloaded' });

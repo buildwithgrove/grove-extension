@@ -355,8 +355,20 @@
       return;
     }
 
-    // For Substack, use the dedicated SubstackHandler
+    // For Substack, use ProfilePageHandler for full pages (API-first), and SubstackHandler for hover cards
     if (currentAdapter.getPlatformName() === "substack") {
+      // Page-level button: resolve via API first (fallback to DOM parsing)
+      if (currentAdapter.detectTippablePage()) {
+        if (typeof ProfilePageHandler !== 'undefined') {
+          const result = await ProfilePageHandler.initialize(currentAdapter);
+          if (result) {
+            resolvedAddress = result;
+            currentButton = ProfilePageHandler.getButton();
+          }
+        }
+      }
+
+      // Hover card buttons: Substack-specific
       if (typeof SubstackHandler !== 'undefined') {
         SubstackHandler.init({
           hasAddresses: (text) => AddressParser.hasAddresses(text),
@@ -365,11 +377,10 @@
           createTipButton: (onClick, platform) => new TipButton(onClick, platform),
         });
 
-        const result = await SubstackHandler.initialize(currentAdapter);
-        if (result) {
-          resolvedAddress = result;
-          currentButton = SubstackHandler.getButton();
-        }
+        // Does not inject page-level buttons (handled above); only observes hover cards.
+        SubstackHandler.initialize(currentAdapter).catch((err) => {
+          console.error('[Grove Substack] Hover card init failed:', err);
+        });
       }
       return;
     }
@@ -476,8 +487,9 @@
   /**
    * Handle tip button click - shows popover for amount confirmation (if enabled)
    * @param {TipButton} buttonInstance - The button instance (for hover cards)
+   * @param {Object|null} tipOverrides - Optional overrides for destination/context (e.g., hover cards)
    */
-  async function handleTipClick(buttonInstance) {
+  async function handleTipClick(buttonInstance, tipOverrides = null) {
     // Use passed button instance or fall back to currentButton
     const button = buttonInstance || currentButton;
 
@@ -566,7 +578,7 @@
           console.error("[Grove Extension] Failed to mark first tip:", e);
         }
       }
-      sendTip(tipAmount, button);
+      sendTip(tipAmount, button, null, tipOverrides);
       return;
     }
 
@@ -584,7 +596,7 @@
 
     if (tipModal) {
       // Get username for profile tips
-      const recipientUsername = extractUsernameFromUrl(window.location.href);
+      const recipientUsername = tipOverrides?.recipient_username || extractUsernameFromUrl(window.location.href);
 
       // Configure display based on whether this is the first tip
       const displayOptions = hasTipped
@@ -615,7 +627,7 @@
             console.error("[Grove Extension] Failed to save tip preferences:", e);
           }
           // Send the tip with custom message
-          sendTip(amount, button, customMessage);
+          sendTip(amount, button, customMessage, tipOverrides);
         },
         () => {
           console.log("[Grove Extension] Tip cancelled");
@@ -625,7 +637,7 @@
       );
     } else {
       // Fallback: send tip directly if modal not available
-      sendTip(tipAmount, button);
+      sendTip(tipAmount, button, null, tipOverrides);
     }
   }
 
@@ -634,8 +646,9 @@
    * @param {number} tipAmount - The amount to tip
    * @param {TipButton} button - The button instance for state updates
    * @param {string|null} customMessage - Custom message for the tip (optional)
+   * @param {Object|null} tipOverrides - Optional overrides for destination/context
    */
-  async function sendTip(tipAmount, button, customMessage = null) {
+  async function sendTip(tipAmount, button, customMessage = null, tipOverrides = null) {
     // Show loading animation with amount
     if (button) {
       button.setLoading(tipAmount);
@@ -670,34 +683,39 @@
       return;
     }
 
-    // Determine tip destination: use resolved address if available (ENS or raw 0x), otherwise page URL
-    let tipDestination = window.location.href;
-    if (resolvedAddress && resolvedAddress.address) {
+    // Determine tip destination: use overrides first, then resolved address, otherwise page URL
+    let tipDestination = tipOverrides?.resolvedAddress?.address || window.location.href;
+    if (!tipOverrides?.resolvedAddress?.address && resolvedAddress && resolvedAddress.address) {
       tipDestination = resolvedAddress.address; // e.g., "vitalik.eth" or "0x..."
       console.log(`[Grove Extension] Tipping to ${resolvedAddress.type} address: ${tipDestination}`);
+    } else if (tipOverrides?.resolvedAddress?.address) {
+      console.log(`[Grove Extension] Tipping to ${tipOverrides.resolvedAddress.type} address (override): ${tipDestination}`);
     }
 
     // Build context metadata for the tip
-    const platformName = currentAdapter.getPlatformName();
-    const username = extractUsernameFromUrl(window.location.href);
+    const platformName = currentAdapter?.getPlatformName?.() || 'generic';
+    const recipientUsername = tipOverrides?.recipient_username || extractUsernameFromUrl(window.location.href);
     
     // Determine platform name from adapter, default to generic
     const senderPlatform = currentAdapter ? currentAdapter.getApiPlatformName() : 'generic';
 
     const context = {
-      source_post_url: window.location.href
+      source_post_url: tipOverrides?.source_post_url || window.location.href
     };
 
     if (senderPlatform && senderPlatform !== 'generic') {
       context.sender_platform = senderPlatform;
     }
-    if (username) {
-      context.recipient_username = username;
+    if (recipientUsername) {
+      context.recipient_username = recipientUsername;
       if (platformName === 'twitter') {
-        context.recipient_profile_url = `https://x.com/${username}`;
+        context.recipient_profile_url = `https://x.com/${recipientUsername}`;
       } else if (platformName === 'soundcloud') {
-        context.recipient_profile_url = `https://soundcloud.com/${username}`;
+        context.recipient_profile_url = `https://soundcloud.com/${recipientUsername}`;
       }
+    }
+    if (tipOverrides?.recipient_profile_url) {
+      context.recipient_profile_url = tipOverrides.recipient_profile_url;
     }
 
     // Add sender info if X is authenticated (from xFeatures.js)
@@ -728,11 +746,11 @@
         try {
           // Get X feature settings
           const xSettings = await chrome.storage.local.get(['GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'GROVE_REFERRAL_CODE', 'groveChain', 'groveEndpoint', 'groveEnvironment']);
-          const autoReplyEnabled = xSettings.GROVE_AUTO_REPLY !== false;
+            const autoReplyEnabled = xSettings.GROVE_AUTO_REPLY !== false;
 
-          if (autoReplyEnabled) {
-            const isLoggedIn = await XAuth.isLoggedIn();
-            if (isLoggedIn && username) {
+            if (autoReplyEnabled) {
+              const isLoggedIn = await XAuth.isLoggedIn();
+              if (isLoggedIn && recipientUsername) {
               // Get chain config for the message from centralized config
               // Use testnet explorer URL when on localhost or testnet endpoints
               const rawChain = xSettings.groveChain || 'base';
@@ -745,17 +763,17 @@
               const txLink = `${explorerBaseUrl}${txHash}`;
 
               // Build tweet text from template (prefer custom message from modal)
-              const autoReplyMessage = customMessage || xSettings.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
-              const referralCode = xSettings.GROVE_REFERRAL_CODE;
-              const referralLink = referralCode ? `https://app.grove.city/?ref=${encodeURIComponent(referralCode)}` : 'grove.city';
-              const tweetText = buildAutoReplyMessage(autoReplyMessage, {
-                username: username,
-                amount: tipAmount,
-                chain: chainName,
-                tx_link: txLink,
-                grove_link: 'grove.city',
-                referral_link: referralLink
-              });
+                const autoReplyMessage = customMessage || xSettings.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
+                const referralCode = xSettings.GROVE_REFERRAL_CODE;
+                const referralLink = referralCode ? `https://app.grove.city/?ref=${encodeURIComponent(referralCode)}` : 'grove.city';
+                const tweetText = buildAutoReplyMessage(autoReplyMessage, {
+                  username: recipientUsername,
+                  amount: tipAmount,
+                  chain: chainName,
+                  tx_link: txLink,
+                  grove_link: 'grove.city',
+                  referral_link: referralLink
+                });
 
               try {
                 await XAuth.postTweet(tweetText);
@@ -952,6 +970,9 @@
     }
     if (typeof TweetProcessor !== 'undefined') {
       TweetProcessor.reset();
+    }
+    if (typeof SubstackHandler !== 'undefined') {
+      SubstackHandler.reset();
     }
     if (tipModal) {
       tipModal.hide();

@@ -5,8 +5,6 @@
  * Requires: src/adapters/base.js (BaseAdapter)
  */
 
-// TODO: Add tip button on Substack user profiles (https://substack.com/@username)
-
 // Assign directly to window to ensure global availability
 window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
   constructor() {
@@ -132,7 +130,6 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
    * Strategy:
    *   1. Check window._preloads (parsed object) — safest, uses specific paths
    *   2. Parse _preloads JSON from <script> tags — same specific paths
-   *   3. Regex fallback for "author_bio" key only (Substack-specific, top-level)
    *
    * We deliberately do NOT regex-match the generic "bio" key because it appears
    * in nested objects (recommendations, sidebar authors) and causes false positives.
@@ -186,7 +183,6 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
 
   /**
    * Try to extract and parse _preloads JSON from script tags, then check specific author paths.
-   * Falls back to regex for "author_bio" only (NOT generic "bio" — too broad).
    * @returns {string|null}
    */
   extractBioFromScriptPreloads() {
@@ -222,31 +218,8 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
           // Direct assignment might not be valid JSON (could be JS object), fall through
         }
       }
-
-      // Regex fallback: ONLY match "author_bio" (Substack-specific top-level key).
-      // Do NOT match generic "bio" — it appears in nested recommendation/sidebar objects.
-      if (content.includes('author_bio')) {
-        const authorBioMatch = content.match(/[\\]?"author_bio[\\]?"\s*:\s*[\\]?"([^"\\]*(?:\\.[^"\\]*)*)[\\]?"/);
-        if (authorBioMatch) {
-          return this.decodeBioString(authorBioMatch[1]);
-        }
-      }
     }
     return null;
-  }
-
-  /**
-   * Decode escaped characters in bio string from JSON
-   * @param {string} bio - Raw bio string with escape sequences
-   * @returns {string}
-   */
-  decodeBioString(bio) {
-    return bio
-      .replace(/\\"/g, '"')
-      .replace(/\\n/g, ' ')
-      .replace(/\\u[\dA-Fa-f]{4}/g, (match) => {
-        return String.fromCharCode(parseInt(match.replace('\\u', ''), 16));
-      });
   }
 
   /**
