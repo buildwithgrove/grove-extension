@@ -122,46 +122,115 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
   }
 
   /**
-   * Extract author bio from Substack's _preloads JSON
+   * Extract the page author's bio from Substack's _preloads JSON.
+   *
+   * IMPORTANT: Only extract bio from the page's own author data, NOT from
+   * recommended/cross-posted authors. On logged-in Substack, preloaded JSON
+   * may include other authors (e.g., recommendations sidebar) whose bios
+   * contain crypto addresses that don't belong to the page author.
+   *
+   * Strategy:
+   *   1. Check window._preloads (parsed object) — safest, uses specific paths
+   *   2. Parse _preloads JSON from <script> tags — same specific paths
+   *   3. Regex fallback for "author_bio" key only (Substack-specific, top-level)
+   *
+   * We deliberately do NOT regex-match the generic "bio" key because it appears
+   * in nested objects (recommendations, sidebar authors) and causes false positives.
+   *
    * @returns {string|null}
    */
   extractBioFromPreloads() {
     try {
-      // Look for script tags containing _preloads
-      const scripts = document.querySelectorAll('script');
-      for (const script of scripts) {
-        const content = script.textContent || '';
-        if (content.includes('_preloads') || content.includes('author_bio') || content.includes('"bio"')) {
-          // Try to extract bio from JSON - check both "bio" and "author_bio" keys
-          const authorBioMatch = content.match(/[\\]?"author_bio[\\]?"\s*:\s*[\\]?"([^"\\]*(?:\\.[^"\\]*)*)[\\]?"/);
-          if (authorBioMatch) {
-            return this.decodeBioString(authorBioMatch[1]);
-          }
-          // Fallback to "bio" key
-          const bioMatch = content.match(/[\\]?"bio[\\]?"\s*:\s*[\\]?"([^"\\]*(?:\\.[^"\\]*)*)[\\]?"/);
-          if (bioMatch) {
-            return this.decodeBioString(bioMatch[1]);
-          }
+      // 1. Check window._preloads (parsed object) — safest approach
+      const preloadsBio = this.extractBioFromParsedPreloads(window._preloads);
+      if (preloadsBio) return preloadsBio;
+
+      // 2. Try to find and parse _preloads JSON from script tags
+      const scriptBio = this.extractBioFromScriptPreloads();
+      if (scriptBio) return scriptBio;
+
+    } catch (err) {
+      console.log('[Grove Substack] Error extracting bio from preloads:', err);
+    }
+    return null;
+  }
+
+  /**
+   * Extract author bio from a parsed _preloads object using specific author paths.
+   * Only checks paths that belong to the page author, not recommendations or sidebar.
+   * @param {Object} preloads - The _preloads object
+   * @returns {string|null}
+   */
+  extractBioFromParsedPreloads(preloads) {
+    if (!preloads || typeof preloads !== 'object') return null;
+
+    // Top-level author_bio (post pages)
+    if (preloads.author_bio) return preloads.author_bio;
+
+    // Post author paths
+    if (preloads.post?.author_bio) return preloads.post.author_bio;
+    if (preloads.post?.author?.bio) return preloads.post.author.bio;
+
+    // Publication author paths
+    if (preloads.publication?.author?.bio) return preloads.publication.author.bio;
+
+    // Profile pages (bare domain)
+    if (preloads.profile?.bio) return preloads.profile.bio;
+
+    // Profile pages (subdomain) - 'pub' key often used instead of 'publication'
+    if (preloads.pub?.author?.bio) return preloads.pub.author.bio;
+    if (preloads.pub?.author_bio) return preloads.pub.author_bio;
+
+    return null;
+  }
+
+  /**
+   * Try to extract and parse _preloads JSON from script tags, then check specific author paths.
+   * Falls back to regex for "author_bio" only (NOT generic "bio" — too broad).
+   * @returns {string|null}
+   */
+  extractBioFromScriptPreloads() {
+    const scripts = document.querySelectorAll('script');
+    for (const script of scripts) {
+      const content = script.textContent || '';
+      if (!content.includes('_preloads')) continue;
+
+      // Try to extract the JSON string from: window._preloads = JSON.parse("...")
+      const jsonStringMatch = content.match(/window\._preloads\s*=\s*JSON\.parse\(\s*"((?:[^"\\]|\\.)*)"\s*\)/);
+      if (jsonStringMatch) {
+        try {
+          // The captured group is a JSON-encoded string (with escaped quotes, etc.)
+          const innerJson = jsonStringMatch[1]
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, '\\');
+          const preloads = JSON.parse(innerJson);
+          const bio = this.extractBioFromParsedPreloads(preloads);
+          if (bio) return bio;
+        } catch (parseErr) {
+          console.log('[Grove Substack] Failed to parse _preloads JSON from script:', parseErr.message);
         }
       }
 
-      // Also check if _preloads is already parsed
-      if (typeof window._preloads !== 'undefined') {
-        const preloads = window._preloads;
-        if (preloads?.author_bio) return preloads.author_bio;
-        if (preloads?.post?.author_bio) return preloads.post.author_bio;
-        if (preloads?.post?.author?.bio) return preloads.post.author.bio;
-        if (preloads?.publication?.author?.bio) return preloads.publication.author.bio;
-        
-        // Profile pages (bare domain)
-        if (preloads?.profile?.bio) return preloads.profile.bio;
-        
-        // Profile pages (subdomain) - 'pub' key often used instead of 'publication'
-        if (preloads?.pub?.author?.bio) return preloads.pub.author.bio;
-        if (preloads?.pub?.author_bio) return preloads.pub.author_bio;
+      // Try direct assignment: window._preloads = {...}
+      const directMatch = content.match(/window\._preloads\s*=\s*(\{[\s\S]*\})\s*;?\s*$/);
+      if (directMatch) {
+        try {
+          const preloads = JSON.parse(directMatch[1]);
+          const bio = this.extractBioFromParsedPreloads(preloads);
+          if (bio) return bio;
+        } catch (parseErr) {
+          // Direct assignment might not be valid JSON (could be JS object), fall through
+        }
       }
-    } catch (err) {
-      console.log('[Grove Substack] Error extracting bio from preloads:', err);
+
+      // Regex fallback: ONLY match "author_bio" (Substack-specific top-level key).
+      // Do NOT match generic "bio" — it appears in nested recommendation/sidebar objects.
+      if (content.includes('author_bio')) {
+        const authorBioMatch = content.match(/[\\]?"author_bio[\\]?"\s*:\s*[\\]?"([^"\\]*(?:\\.[^"\\]*)*)[\\]?"/);
+        if (authorBioMatch) {
+          return this.decodeBioString(authorBioMatch[1]);
+        }
+      }
     }
     return null;
   }
