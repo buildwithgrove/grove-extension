@@ -8,11 +8,20 @@ console.log('[Grove Extension] Loading base.js...');
 // Assign directly to window to ensure global availability
 window.BaseAdapter = class BaseAdapter {
   /**
-   * Check if current page is a profile page for this platform
-   * @returns {boolean} - True if on a profile page
+   * Check if current page is a tippable page for this platform (profiles AND posts)
+   * @returns {boolean} - True if on a tippable page where we want to show a tip button
+   */
+  detectTippablePage() {
+    throw new Error('detectTippablePage() must be implemented by subclass');
+  }
+
+  /**
+   * @deprecated Use detectTippablePage() instead
+   * TODO_TECHDEBT: Remove this shim once all external callers use detectTippablePage()
+   *   Why: Renamed to reflect that posts/tweets are also tippable, not just profiles
    */
   detectProfilePage() {
-    throw new Error('detectProfilePage() must be implemented by subclass');
+    return this.detectTippablePage();
   }
 
   /**

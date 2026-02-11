@@ -652,3 +652,7 @@ const TweetTipHandler = {
     }
   }
 };
+
+if (typeof window !== 'undefined') {
+  window.TweetTipHandler = TweetTipHandler;
+}

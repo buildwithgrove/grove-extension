@@ -5,8 +5,6 @@
  * Requires: src/adapters/base.js (BaseAdapter)
  */
 
-// TODO: Add tip button on Substack user profiles (https://substack.com/@username)
-
 // Assign directly to window to ensure global availability
 window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
   constructor() {
@@ -16,10 +14,10 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
   }
 
   /**
-   * Check if current page is a Substack post page or profile page
+   * Check if current page is a tippable Substack page (post or profile)
    * @returns {boolean}
    */
-  detectProfilePage() {
+  detectTippablePage() {
     try {
       const path = window.location.pathname;
       const hostname = window.location.hostname;
@@ -46,7 +44,7 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
 
       return false;
     } catch (err) {
-      console.error('[Grove Substack] detectProfilePage failed:', err);
+      console.error('[Grove Substack] detectTippablePage failed:', err);
       return false;
     }
   }
@@ -122,44 +120,32 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
   }
 
   /**
-   * Extract author bio from Substack's _preloads JSON
+   * Extract the page author's bio from Substack's _preloads JSON.
+   *
+   * IMPORTANT: Only extract bio from the page's own author data, NOT from
+   * recommended/cross-posted authors. On logged-in Substack, preloaded JSON
+   * may include other authors (e.g., recommendations sidebar) whose bios
+   * contain crypto addresses that don't belong to the page author.
+   *
+   * Strategy:
+   *   1. Check window._preloads (parsed object) — safest, uses specific paths
+   *   2. Parse _preloads JSON from <script> tags — same specific paths
+   *
+   * We deliberately do NOT regex-match the generic "bio" key because it appears
+   * in nested objects (recommendations, sidebar authors) and causes false positives.
+   *
    * @returns {string|null}
    */
   extractBioFromPreloads() {
     try {
-      // Look for script tags containing _preloads
-      const scripts = document.querySelectorAll('script');
-      for (const script of scripts) {
-        const content = script.textContent || '';
-        if (content.includes('_preloads') || content.includes('author_bio') || content.includes('"bio"')) {
-          // Try to extract bio from JSON - check both "bio" and "author_bio" keys
-          const authorBioMatch = content.match(/[\\]?"author_bio[\\]?"\s*:\s*[\\]?"([^"\\]*(?:\\.[^"\\]*)*)[\\]?"/);
-          if (authorBioMatch) {
-            return this.decodeBioString(authorBioMatch[1]);
-          }
-          // Fallback to "bio" key
-          const bioMatch = content.match(/[\\]?"bio[\\]?"\s*:\s*[\\]?"([^"\\]*(?:\\.[^"\\]*)*)[\\]?"/);
-          if (bioMatch) {
-            return this.decodeBioString(bioMatch[1]);
-          }
-        }
-      }
+      // 1. Check window._preloads (parsed object) — safest approach
+      const preloadsBio = this.extractBioFromParsedPreloads(window._preloads);
+      if (preloadsBio) return preloadsBio;
 
-      // Also check if _preloads is already parsed
-      if (typeof window._preloads !== 'undefined') {
-        const preloads = window._preloads;
-        if (preloads?.author_bio) return preloads.author_bio;
-        if (preloads?.post?.author_bio) return preloads.post.author_bio;
-        if (preloads?.post?.author?.bio) return preloads.post.author.bio;
-        if (preloads?.publication?.author?.bio) return preloads.publication.author.bio;
-        
-        // Profile pages (bare domain)
-        if (preloads?.profile?.bio) return preloads.profile.bio;
-        
-        // Profile pages (subdomain) - 'pub' key often used instead of 'publication'
-        if (preloads?.pub?.author?.bio) return preloads.pub.author.bio;
-        if (preloads?.pub?.author_bio) return preloads.pub.author_bio;
-      }
+      // 2. Try to find and parse _preloads JSON from script tags
+      const scriptBio = this.extractBioFromScriptPreloads();
+      if (scriptBio) return scriptBio;
+
     } catch (err) {
       console.log('[Grove Substack] Error extracting bio from preloads:', err);
     }
@@ -167,17 +153,73 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
   }
 
   /**
-   * Decode escaped characters in bio string from JSON
-   * @param {string} bio - Raw bio string with escape sequences
-   * @returns {string}
+   * Extract author bio from a parsed _preloads object using specific author paths.
+   * Only checks paths that belong to the page author, not recommendations or sidebar.
+   * @param {Object} preloads - The _preloads object
+   * @returns {string|null}
    */
-  decodeBioString(bio) {
-    return bio
-      .replace(/\\"/g, '"')
-      .replace(/\\n/g, ' ')
-      .replace(/\\u[\dA-Fa-f]{4}/g, (match) => {
-        return String.fromCharCode(parseInt(match.replace('\\u', ''), 16));
-      });
+  extractBioFromParsedPreloads(preloads) {
+    if (!preloads || typeof preloads !== 'object') return null;
+
+    // Top-level author_bio (post pages)
+    if (preloads.author_bio) return preloads.author_bio;
+
+    // Post author paths
+    if (preloads.post?.author_bio) return preloads.post.author_bio;
+    if (preloads.post?.author?.bio) return preloads.post.author.bio;
+
+    // Publication author paths
+    if (preloads.publication?.author?.bio) return preloads.publication.author.bio;
+
+    // Profile pages (bare domain)
+    if (preloads.profile?.bio) return preloads.profile.bio;
+
+    // Profile pages (subdomain) - 'pub' key often used instead of 'publication'
+    if (preloads.pub?.author?.bio) return preloads.pub.author.bio;
+    if (preloads.pub?.author_bio) return preloads.pub.author_bio;
+
+    return null;
+  }
+
+  /**
+   * Try to extract and parse _preloads JSON from script tags, then check specific author paths.
+   * @returns {string|null}
+   */
+  extractBioFromScriptPreloads() {
+    const scripts = document.querySelectorAll('script');
+    for (const script of scripts) {
+      const content = script.textContent || '';
+      if (!content.includes('_preloads')) continue;
+
+      // Try to extract the JSON string from: window._preloads = JSON.parse("...")
+      const jsonStringMatch = content.match(/window\._preloads\s*=\s*JSON\.parse\(\s*"((?:[^"\\]|\\.)*)"\s*\)/);
+      if (jsonStringMatch) {
+        try {
+          // The captured group is a JSON-encoded string (with escaped quotes, etc.)
+          const innerJson = jsonStringMatch[1]
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, '\\');
+          const preloads = JSON.parse(innerJson);
+          const bio = this.extractBioFromParsedPreloads(preloads);
+          if (bio) return bio;
+        } catch (parseErr) {
+          console.log('[Grove Substack] Failed to parse _preloads JSON from script:', parseErr.message);
+        }
+      }
+
+      // Try direct assignment: window._preloads = {...}
+      const directMatch = content.match(/window\._preloads\s*=\s*(\{[\s\S]*\})\s*;?\s*$/);
+      if (directMatch) {
+        try {
+          const preloads = JSON.parse(directMatch[1]);
+          const bio = this.extractBioFromParsedPreloads(preloads);
+          if (bio) return bio;
+        } catch (parseErr) {
+          // Direct assignment might not be valid JSON (could be JS object), fall through
+        }
+      }
+    }
+    return null;
   }
 
   /**
@@ -393,9 +435,9 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
       return true;
     }
 
-    // If we're here, we might be on a profile page that didn't match selectors,
-    // or detection failed. If detectProfilePage() is true, we should probably proceed.
-    if (this.detectProfilePage()) {
+    // If we're here, we might be on a tippable page that didn't match selectors,
+    // or detection failed. If detectTippablePage() is true, we should probably proceed.
+    if (this.detectTippablePage()) {
         return true;
     }
 
@@ -530,14 +572,6 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
     const popupSelectors = '.popup, .popover, .tooltip, [class*="hover-card"], [class*="HoverCard"], [class*="profile-popup"]';
     hoverCard = this.findBySelector(node, popupSelectors);
     if (hoverCard) return hoverCard;
-
-    // Method 4: Check if node contains author profile link and bio-like content
-    if (node.querySelector?.('a[href*="/@"]')) {
-      const text = node.textContent || '';
-      if (text.length > 50 && (text.includes('@') || text.includes('.eth'))) {
-        return node;
-      }
-    }
 
     return null;
   }

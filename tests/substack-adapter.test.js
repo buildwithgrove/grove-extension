@@ -34,46 +34,46 @@ beforeEach(() => {
 });
 
 describe('SubstackAdapter', () => {
-  describe('detectProfilePage', () => {
+  describe('detectTippablePage', () => {
     it('should return true for post pages with /p/ in URL', () => {
       const adapter = new SubstackAdapter();
-      expect(adapter.detectProfilePage()).toBe(true);
+      expect(adapter.detectTippablePage()).toBe(true);
     });
 
     it('should return true for bare domain reader view (/@user/p-digits)', () => {
       const ctx = createContext('https://substack.com/@timour/p-184358935');
       const adapter = new ctx.SubstackAdapter();
-      expect(adapter.detectProfilePage()).toBe(true);
+      expect(adapter.detectTippablePage()).toBe(true);
     });
 
     it('should return true for bare domain home post view (/home/post/p-digits)', () => {
       const ctx = createContext('https://substack.com/home/post/p-184358935');
       const adapter = new ctx.SubstackAdapter();
-      expect(adapter.detectProfilePage()).toBe(true);
+      expect(adapter.detectTippablePage()).toBe(true);
     });
 
     it('should return true for bare domain profile page (/@user)', () => {
       const ctx = createContext('https://substack.com/@timour');
       const adapter = new ctx.SubstackAdapter();
-      expect(adapter.detectProfilePage()).toBe(true);
+      expect(adapter.detectTippablePage()).toBe(true);
     });
 
     it('should return true for subdomain profile page (root)', () => {
       const ctx = createContext('https://olshansky.substack.com/');
       const adapter = new ctx.SubstackAdapter();
-      expect(adapter.detectProfilePage()).toBe(true);
+      expect(adapter.detectTippablePage()).toBe(true);
     });
 
     it('should return true for subdomain profile page (about)', () => {
       const ctx = createContext('https://olshansky.substack.com/about');
       const adapter = new ctx.SubstackAdapter();
-      expect(adapter.detectProfilePage()).toBe(true);
+      expect(adapter.detectTippablePage()).toBe(true);
     });
 
     it('should return true for all subdomain pages', () => {
       const ctx = createContext('https://olshansky.substack.com/archive');
       const adapter = new ctx.SubstackAdapter();
-      expect(adapter.detectProfilePage()).toBe(true);
+      expect(adapter.detectTippablePage()).toBe(true);
     });
   });
 
@@ -172,6 +172,23 @@ describe('SubstackAdapter', () => {
       `;
       const bio = adapter.extractBio();
       expect(bio).toContain('olshansky.eth');
+    });
+
+    it('should NOT extract bio from nested recommendation objects in preloads scripts', () => {
+      const adapter = new SubstackAdapter();
+      document.body.innerHTML = `
+        <script>
+          window._preloads = {
+            "post": { "id": 1 },
+            "recommendations": [
+              { "author": { "bio": "Recommended author bio with vitalik.eth" } }
+            ]
+          };
+        </script>
+      `;
+
+      expect(adapter.extractBioFromPreloads()).toBeNull();
+      expect(adapter.extractBio()).toBeNull();
     });
   });
 

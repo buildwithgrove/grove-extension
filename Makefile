@@ -8,7 +8,8 @@
 HELP_PATTERNS := \
 	'^help:' \
 	'^build_.*:' \
-	'^dev_.*:'
+	'^dev_.*:' \
+	'^test_.*:'
 
 .PHONY: help
 help: ## Show all available targets with descriptions
@@ -24,6 +25,9 @@ help: ## Show all available targets with descriptions
 	@printf "\n"
 	@printf "$(BOLD)=== 🔧 Development ===$(RESET)\n"
 	@grep -h -E '^dev_.*:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-42s$(RESET) %s\n", $$1, $$2}' | sort -u
+	@printf "\n"
+	@printf "$(BOLD)=== 🧪 Testing ===$(RESET)\n"
+	@grep -h -E '^test_.*:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-42s$(RESET) %s\n", $$1, $$2}' | sort -u
 	@printf "\n"
 
 .PHONY: help-unclassified
@@ -51,6 +55,7 @@ include ./makefiles/colors.mk
 include ./makefiles/common.mk
 include ./makefiles/build.mk
 include ./makefiles/dev.mk
+include ./makefiles/test.mk
 
 ############################
 ### Legacy Target Aliases ##

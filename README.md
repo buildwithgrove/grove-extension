@@ -131,13 +131,32 @@ Requires `gh` CLI (`brew install gh`).
 - **Tip confirmation** - Confirm amount before sending (on by default, can be disabled in settings)
 - **Like & reply on tip** - When X is connected, the confirmation modal lets you like and/or reply to the tweet
 
+### Address Resolution Matrix
+
+The extension uses different resolution strategies for different page types:
+
+| Platform | Page Type | Resolution Method | Description |
+|----------|-----------|-------------------|-------------|
+| **X/Twitter** | Profile (`/username`) | API `/resolve` | Full page uses backend API |
+| **X/Twitter** | Tweet (`/status/123`) | API `/resolve` | Full page uses backend API |
+| **X/Twitter** | Timeline/Feed | BioFetcher | Display name + async bio fetch |
+| **X/Twitter** | Hover Cards | DOM parse | Client-side parsing |
+| **Substack** | Profile | API `/resolve` | Full page uses backend API |
+| **Substack** | Post | API `/resolve` | Full page uses backend API |
+| **Substack** | Hover Cards | DOM parse | Client-side parsing |
+| **SoundCloud** | Profile | API `/resolve` | Full page uses backend API |
+| **Generic** | Any | llms.txt fetch | Metadata file lookup |
+
+**Key principle:** Full pages use API resolution; Inline content uses client-side DOM parsing.
+
 ### How Tip Buttons Appear on X/Twitter
 
 Tip buttons are shown when a user has a tippable address (0x or ENS) in their profile:
 
 | Location         | How Address is Found                                                        |
 | ---------------- | --------------------------------------------------------------------------- |
-| **Profile page** | Extracted from visible bio on the page                                      |
+| **Profile page** | Resolved via API (fallback: visible bio on page)                            |
+| **Tweet page**   | Resolved via API (fallback: visible bio on page)                            |
 | **Hover card**   | Extracted from popup card's display name/bio                                |
 | **Feed tweets**  | Display name checked first; if no address, bio is fetched via Twitter's API |
 | **Quote tweets** | Same as feed tweets, for the quoted author                                  |

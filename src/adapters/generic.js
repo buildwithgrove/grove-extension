@@ -15,7 +15,7 @@ class GenericAdapter extends BaseAdapter {
    * Returns true for any website (fallback adapter)
    * @returns {boolean}
    */
-  detectProfilePage() {
+  detectTippablePage() {
     // Generic adapter always returns true - we'll check metadata instead
     return true;
   }

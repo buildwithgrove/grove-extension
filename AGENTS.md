@@ -22,10 +22,26 @@
   - [Keeping Tokens Updated](#keeping-tokens-updated)
   - [After Cloning](#after-cloning)
   - [Making Token Changes](#making-token-changes)
+- [Tip Button Flows](#tip-button-flows)
+  - [Button Types and Tip Destinations](#button-types-and-tip-destinations)
+  - [Flow Details](#flow-details)
+  - [API-First Resolution Pattern](#api-first-resolution-pattern)
+  - [Why Feed Tweets Pass Address Directly](#why-feed-tweets-pass-address-directly)
+  - [Key Files](#key-files)
+- [Bio Extraction Safety](#bio-extraction-safety)
 - [Adding Support for New Platforms](#adding-support-for-new-platforms)
+  - [Architecture Overview](#architecture-overview)
+  - [Component Patterns](#component-patterns)
   - [Step 1: Capture Platform Structure](#step-1-capture-platform-structure)
-  - [Step 2: Use AI to Generate the Adapter](#step-2-use-ai-to-generate-the-adapter)
-  - [Step 3: Integration Checklist](#step-3-integration-checklist)
+  - [Step 2: Create the Adapter](#step-2-create-the-adapter)
+  - [Step 3: Create the Handler (if needed)](#step-3-create-the-handler-if-needed)
+  - [Step 4: Integration Checklist](#step-4-integration-checklist)
+- [Testing](#testing)
+  - [Running Tests](#running-tests)
+  - [Testing Requirements](#testing-requirements)
+  - [Test File Naming](#test-file-naming)
+  - [E2E Limitations](#e2e-limitations)
+  - [Browser Script Testing](#browser-script-testing)
 
 ## Color Palette
 
@@ -220,17 +236,22 @@ The extension surfaces tip buttons in different contexts, each with its own flow
 ### Flow Details
 
 #### 1. Profile Page Button
-User visits a Twitter profile page (e.g., `x.com/vitalikbuterin`).
+User visits a profile page (e.g., `x.com/vitalikbuterin`).
+
+Uses `ProfilePageHandler.initialize()` with the [API-First Resolution Pattern](#api-first-resolution-pattern):
 
 ```
-Profile URL → initializeProfileButton() → extractBio() → AddressParser.resolveAddress()
-                                                                    ↓
-                                                          resolvedAddress (global)
-                                                                    ↓
+Profile URL → ProfilePageHandler.initialize() → GroveAPI.resolveDestination(url)
+                                                        ↓ (success)           ↓ (404 / error)
+                                                 Use API address        extractBio() → AddressParser
+                                                        ↓                        ↓
+                                                 resolvedAddress (global)  resolvedAddress (global)
+                                                        ↓
 Click → handleTipClick() → sendTip() → tipDestination = ENS name or profile URL
 ```
 
-- Bio is extracted from the visible profile page
+- API resolution is attempted first (preferred path)
+- Falls back to DOM bio extraction if API returns 404 or errors
 - If ENS name found, it's sent directly to API
 - Otherwise, the profile URL is sent (backend resolves from profile)
 
@@ -288,6 +309,24 @@ The quoted tweet inside a quote tweet has a tippable author.
 
 Same flow as #3 or #4, but uses `extractQuotedTweetAuthor()` and injects button into the quoted tweet element.
 
+### API-First Resolution Pattern
+
+`ProfilePageHandler` uses an API-first strategy for all full page views:
+
+```
+Page Load → GroveAPI.resolveDestination(url)
+                    ↓ (success)           ↓ (404 / error)
+             Use API address        Fall back to DOM parsing
+                    ↓                        ↓
+             Cache + inject          extractBio() → AddressParser
+```
+
+- API resolution is the preferred path (consistent, server-side)
+- DOM fallback handles cases where the API doesn't yet support the URL
+- Substack full pages (profiles/posts) also use `ProfilePageHandler`; `SubstackHandler` is used for Substack hover cards
+
+Reference: `src/content/profilePageHandler.js:initialize()`
+
 ### Why Feed Tweets Pass Address Directly
 
 For profile pages and hover cards, the backend receives a profile URL and can look up the user's bio to find the address. But for feed tweets, the backend only receives a tweet URL - it doesn't know to look in the author's bio.
@@ -300,9 +339,25 @@ The bio fetch feature solves this by:
 ### Key Files
 
 - `src/content/content.js` - Main orchestrator with all tip flows
+- `src/content/profilePageHandler.js` - API-first page resolution with DOM fallback
+- `src/content/substackHandler.js` - Substack-specific hover card handler
 - `src/adapters/twitter.js` - Twitter-specific DOM extraction
+- `src/adapters/substack.js` - Substack DOM extraction and bio preload parsing
 - `src/parsers/address.js` - Address detection (0x, ENS patterns)
+- `src/utils/addressCache.js` - Address caching with TTL
+- `src/utils/api.js` - Grove API client (resolveDestination, etc.)
 - `tests/bio-fetch.test.js` - Tests for bio fetch logic
+
+## Bio Extraction Safety
+
+When extracting author bios from preloaded JSON (e.g., Substack `_preloads`):
+
+- **Always use specific author paths** (e.g., `preloads.post.author.bio`, `preloads.profile.bio`)
+- **Never use broad regex** matching generic keys like `"bio":` across all `<script>` tags
+- **Logged-in platforms inject personalized data** (recommendations, sidebar authors) that contains OTHER authors' bios — broad matching causes false-positive tip button injection
+- **Check `window._preloads` (parsed object) and parsed script JSON only** — avoid regex matching across raw script text to prevent false positives
+
+Reference: `src/adapters/substack.js:extractBioFromPreloads()`
 
 ## Adding Support for New Platforms
 
@@ -318,27 +373,9 @@ Each platform requires three main components:
 
 #### Adapters
 
-Adapters extend `BaseAdapter` and handle platform-specific DOM operations:
+Adapters extend `BaseAdapter` and handle platform-specific DOM operations. See [Step 2: Create the Adapter](#step-2-create-the-adapter) for the template.
 
-```javascript
-window.PlatformAdapter = class PlatformAdapter extends window.BaseAdapter {
-  // Required methods
-  detectProfilePage() { }     // Returns true if on a tippable page
-  extractBio() { }            // Extract text that may contain crypto addresses
-  getButtonPlacement() { }    // Return element to insert tip button near
-  getPlatformName() { }       // Return platform identifier (e.g., 'substack')
-
-  // Optional: DRY pattern for parameterized methods
-  getButtonPlacement() {
-    const container = document.querySelector('.container');
-    return this.getButtonPlacementInContainer(container);
-  }
-
-  getButtonPlacementInContainer(container) {
-    // Reusable logic
-  }
-};
-```
+Required methods: `detectTippablePage()`, `extractBio()`, `getButtonPlacement()`, `getPlatformName()`
 
 Reference examples:
 - Simple: `src/adapters/soundcloud.js`
@@ -405,8 +442,8 @@ Create `src/adapters/[platform].js`:
 
 ```javascript
 window.PlatformAdapter = class PlatformAdapter extends window.BaseAdapter {
-  detectProfilePage() {
-    // Return true if on a tippable page
+  detectTippablePage() {
+    // Return true if on a tippable page (profiles AND posts)
   }
 
   extractBio() {
@@ -466,9 +503,30 @@ Tests are located in the `tests/` directory and use Vitest.
 
 ### Running Tests
 
+**All unit tests (Vitest):**
+
 ```bash
-npm test
+make test_unit
 ```
+
+**All E2E tests (Playwright):**
+
+```bash
+make test_e2e
+```
+
+**Platform-specific:**
+
+| Command                     | Description                     |
+| --------------------------- | ------------------------------- |
+| `make test_unit_substack`   | Substack adapter unit tests     |
+| `make test_unit_twitter`    | Twitter adapter unit tests      |
+| `make test_unit_soundcloud` | SoundCloud adapter unit tests   |
+| `make test_e2e_substack`    | Substack E2E tests              |
+| `make test_e2e_twitter`     | Twitter/X E2E tests             |
+| `make test_e2e_soundcloud`  | SoundCloud E2E tests            |
+| `make test_watch`           | Run tests in watch mode         |
+| `make test_coverage`        | Run tests with coverage         |
 
 ### Testing Requirements
 
@@ -484,6 +542,15 @@ npm test
 Test files should match their source files:
 - `src/ui/tipModal.js` → `tests/tipModal.test.js`
 - `src/parsers/address.js` → `tests/address.test.js`
+
+### E2E Limitations
+
+Playwright E2E tests run headless and **logged out**. This means:
+
+- Bugs triggered by **personalized/recommendation data** (logged-in Substack, authenticated X/Twitter) are NOT caught
+- Platform-specific features requiring auth (CSRF tokens, GraphQL bio fetching) will be skipped
+- **Unit tests mocking the DOM** are needed to cover logged-in scenarios (e.g., mock a `<script>` tag with recommendation data containing other authors' bios)
+- E2E negative tests (e.g., "should NOT inject on latecheckout.substack.com") may pass for the wrong reason — the bug path isn't exercised without auth
 
 ### Browser Script Testing
 

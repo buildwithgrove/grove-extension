@@ -120,12 +120,37 @@
 
   // Address cache: uses shared AddressCache class from src/utils/addressCache.js
   // Cache entries expire after 10 minutes (configured in ADDRESS_CACHE_TTL)
-  const addressCache = typeof AddressCache !== 'undefined'
-    ? new AddressCache()
-    : new Map(); // Fallback for backwards compatibility
+  const addressCache = new AddressCache();
 
   // Track which SoundCloud tracks already have buttons to avoid duplicates
   const processedSoundCloudTracks = new WeakSet();
+
+  /**
+   * Ensure the SoundCloud button ordering CSS is loaded once
+   */
+  function ensureSoundCloudOrderStyles() {
+    if (document.querySelector('#grove-soundcloud-order-fix')) return;
+    const style = document.createElement('style');
+    style.id = 'grove-soundcloud-order-fix';
+    style.textContent = `
+      .sc-button-group > .grove-tip-button,
+      .sc-button-group > .grove-track-tip-button {
+        float: left !important;
+        margin-right: 16px !important;
+        order: -999 !important;
+      }
+      .playbackSoundBadge__actions > .grove-track-tip-button {
+        margin-right: 8px !important;
+      }
+      @media (max-width: 1079px) {
+        .sc-button-group > .grove-tip-button,
+        .sc-button-group > .grove-track-tip-button {
+          margin-right: 8px !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
   // Tweet processing state (processedTweets, pendingTweetButtons, tweetObserver)
   // is now managed by TweetProcessor module
@@ -288,8 +313,8 @@
 
     // For Twitter/X, handle tweet tip buttons on all pages
     if (currentAdapter.getPlatformName() === "twitter") {
-      // If on a profile page, initialize profile button first (this caches the address)
-      if (currentAdapter.detectProfilePage()) {
+      // If on a tippable page (profile or tweet), initialize profile button first (this caches the address)
+      if (currentAdapter.detectTippablePage()) {
         if (typeof ProfilePageHandler !== 'undefined') {
           const result = await ProfilePageHandler.initialize(currentAdapter);
           if (result) {
@@ -313,8 +338,9 @@
 
     // For SoundCloud, handle profile page and track tip buttons
     if (currentAdapter.getPlatformName() === "soundcloud") {
-      // If on a profile page, initialize profile button first (this caches the address)
-      if (currentAdapter.detectProfilePage()) {
+      ensureSoundCloudOrderStyles();
+      // If on a tippable page, initialize profile button first (this caches the address)
+      if (currentAdapter.detectTippablePage()) {
         if (typeof ProfilePageHandler !== 'undefined') {
           const result = await ProfilePageHandler.initialize(currentAdapter);
           if (result) {
@@ -329,8 +355,31 @@
       return;
     }
 
-    // For Substack, use the dedicated SubstackHandler
+    // For Substack, use ProfilePageHandler for full pages (API-first), and SubstackHandler for hover cards
     if (currentAdapter.getPlatformName() === "substack") {
+      const isSubstackTippablePage = currentAdapter.detectTippablePage();
+      const hasProfilePageHandler = typeof ProfilePageHandler !== 'undefined';
+      console.log('[Grove Substack] Full-page init precheck:', {
+        isSubstackTippablePage,
+        hasProfilePageHandler
+      });
+
+      // Page-level button: resolve via API first (fallback to DOM parsing)
+      if (isSubstackTippablePage) {
+        if (hasProfilePageHandler) {
+          const result = await ProfilePageHandler.initialize(currentAdapter);
+          if (result) {
+            resolvedAddress = result;
+            currentButton = ProfilePageHandler.getButton();
+          }
+        } else {
+          console.warn('[Grove Substack] ProfilePageHandler is undefined; skipping full-page API/DOM resolution');
+        }
+      } else {
+        console.log('[Grove Substack] Page did not match detectTippablePage(); skipping full-page resolution');
+      }
+
+      // Hover card buttons: Substack-specific
       if (typeof SubstackHandler !== 'undefined') {
         SubstackHandler.init({
           hasAddresses: (text) => AddressParser.hasAddresses(text),
@@ -339,11 +388,10 @@
           createTipButton: (onClick, platform) => new TipButton(onClick, platform),
         });
 
-        const result = await SubstackHandler.initialize(currentAdapter);
-        if (result) {
-          resolvedAddress = result;
-          currentButton = SubstackHandler.getButton();
-        }
+        // Does not inject page-level buttons (handled above); only observes hover cards.
+        SubstackHandler.initialize(currentAdapter).catch((err) => {
+          console.error('[Grove Substack] Hover card init failed:', err);
+        });
       }
       return;
     }
@@ -354,13 +402,13 @@
       return;
     }
 
-    // Check if we're on a profile page (for other platforms)
+    // Check if we're on a tippable page (for other platforms)
     try {
-      if (!currentAdapter.detectProfilePage()) {
+      if (!currentAdapter.detectTippablePage()) {
         return;
       }
     } catch (error) {
-      console.error("[Grove Extension] Profile detection failed:", error);
+      console.error("[Grove Extension] Tippable page detection failed:", error);
       return;
     }
 
@@ -407,6 +455,11 @@
   /**
    * Detect which platform we're on and return appropriate adapter
    * @returns {BaseAdapter|null}
+   *
+   * TODO_TECHDEBT: Implement PlatformRegistry pattern for cleaner extensibility
+   *   Why: Current detectPlatform() is a conditional chain requiring edits to add platforms
+   *   Approach: Create registry where adapters self-register with matcher functions
+   *   File: Consider src/config/platformRegistry.js for registry implementation
    */
   function detectPlatform() {
     const hostname = window.location.hostname;
@@ -445,8 +498,9 @@
   /**
    * Handle tip button click - shows popover for amount confirmation (if enabled)
    * @param {TipButton} buttonInstance - The button instance (for hover cards)
+   * @param {Object|null} tipOverrides - Optional overrides for destination/context (e.g., hover cards)
    */
-  async function handleTipClick(buttonInstance) {
+  async function handleTipClick(buttonInstance, tipOverrides = null) {
     // Use passed button instance or fall back to currentButton
     const button = buttonInstance || currentButton;
 
@@ -535,7 +589,7 @@
           console.error("[Grove Extension] Failed to mark first tip:", e);
         }
       }
-      sendTip(tipAmount, button);
+      sendTip(tipAmount, button, null, tipOverrides);
       return;
     }
 
@@ -553,7 +607,7 @@
 
     if (tipModal) {
       // Get username for profile tips
-      const recipientUsername = extractUsernameFromUrl(window.location.href);
+      const recipientUsername = tipOverrides?.recipient_username || extractUsernameFromUrl(window.location.href);
 
       // Configure display based on whether this is the first tip
       const displayOptions = hasTipped
@@ -584,7 +638,7 @@
             console.error("[Grove Extension] Failed to save tip preferences:", e);
           }
           // Send the tip with custom message
-          sendTip(amount, button, customMessage);
+          sendTip(amount, button, customMessage, tipOverrides);
         },
         () => {
           console.log("[Grove Extension] Tip cancelled");
@@ -594,7 +648,7 @@
       );
     } else {
       // Fallback: send tip directly if modal not available
-      sendTip(tipAmount, button);
+      sendTip(tipAmount, button, null, tipOverrides);
     }
   }
 
@@ -603,8 +657,9 @@
    * @param {number} tipAmount - The amount to tip
    * @param {TipButton} button - The button instance for state updates
    * @param {string|null} customMessage - Custom message for the tip (optional)
+   * @param {Object|null} tipOverrides - Optional overrides for destination/context
    */
-  async function sendTip(tipAmount, button, customMessage = null) {
+  async function sendTip(tipAmount, button, customMessage = null, tipOverrides = null) {
     // Show loading animation with amount
     if (button) {
       button.setLoading(tipAmount);
@@ -639,34 +694,39 @@
       return;
     }
 
-    // Determine tip destination: use resolved address if available (ENS or raw 0x), otherwise page URL
-    let tipDestination = window.location.href;
-    if (resolvedAddress && resolvedAddress.address) {
+    // Determine tip destination: use overrides first, then resolved address, otherwise page URL
+    let tipDestination = tipOverrides?.resolvedAddress?.address || window.location.href;
+    if (!tipOverrides?.resolvedAddress?.address && resolvedAddress && resolvedAddress.address) {
       tipDestination = resolvedAddress.address; // e.g., "vitalik.eth" or "0x..."
       console.log(`[Grove Extension] Tipping to ${resolvedAddress.type} address: ${tipDestination}`);
+    } else if (tipOverrides?.resolvedAddress?.address) {
+      console.log(`[Grove Extension] Tipping to ${tipOverrides.resolvedAddress.type} address (override): ${tipDestination}`);
     }
 
     // Build context metadata for the tip
-    const platformName = currentAdapter.getPlatformName();
-    const username = extractUsernameFromUrl(window.location.href);
+    const platformName = currentAdapter?.getPlatformName?.() || 'generic';
+    const recipientUsername = tipOverrides?.recipient_username || extractUsernameFromUrl(window.location.href);
     
     // Determine platform name from adapter, default to generic
     const senderPlatform = currentAdapter ? currentAdapter.getApiPlatformName() : 'generic';
 
     const context = {
-      source_post_url: window.location.href
+      source_post_url: tipOverrides?.source_post_url || window.location.href
     };
 
     if (senderPlatform && senderPlatform !== 'generic') {
       context.sender_platform = senderPlatform;
     }
-    if (username) {
-      context.recipient_username = username;
+    if (recipientUsername) {
+      context.recipient_username = recipientUsername;
       if (platformName === 'twitter') {
-        context.recipient_profile_url = `https://x.com/${username}`;
+        context.recipient_profile_url = `https://x.com/${recipientUsername}`;
       } else if (platformName === 'soundcloud') {
-        context.recipient_profile_url = `https://soundcloud.com/${username}`;
+        context.recipient_profile_url = `https://soundcloud.com/${recipientUsername}`;
       }
+    }
+    if (tipOverrides?.recipient_profile_url) {
+      context.recipient_profile_url = tipOverrides.recipient_profile_url;
     }
 
     // Add sender info if X is authenticated (from xFeatures.js)
@@ -697,11 +757,11 @@
         try {
           // Get X feature settings
           const xSettings = await chrome.storage.local.get(['GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'GROVE_REFERRAL_CODE', 'groveChain', 'groveEndpoint', 'groveEnvironment']);
-          const autoReplyEnabled = xSettings.GROVE_AUTO_REPLY !== false;
+            const autoReplyEnabled = xSettings.GROVE_AUTO_REPLY !== false;
 
-          if (autoReplyEnabled) {
-            const isLoggedIn = await XAuth.isLoggedIn();
-            if (isLoggedIn && username) {
+            if (autoReplyEnabled) {
+              const isLoggedIn = await XAuth.isLoggedIn();
+              if (isLoggedIn && recipientUsername) {
               // Get chain config for the message from centralized config
               // Use testnet explorer URL when on localhost or testnet endpoints
               const rawChain = xSettings.groveChain || 'base';
@@ -714,17 +774,17 @@
               const txLink = `${explorerBaseUrl}${txHash}`;
 
               // Build tweet text from template (prefer custom message from modal)
-              const autoReplyMessage = customMessage || xSettings.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
-              const referralCode = xSettings.GROVE_REFERRAL_CODE;
-              const referralLink = referralCode ? `https://app.grove.city/?ref=${encodeURIComponent(referralCode)}` : 'grove.city';
-              const tweetText = buildAutoReplyMessage(autoReplyMessage, {
-                username: username,
-                amount: tipAmount,
-                chain: chainName,
-                tx_link: txLink,
-                grove_link: 'grove.city',
-                referral_link: referralLink
-              });
+                const autoReplyMessage = customMessage || xSettings.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
+                const referralCode = xSettings.GROVE_REFERRAL_CODE;
+                const referralLink = referralCode ? `https://app.grove.city/?ref=${encodeURIComponent(referralCode)}` : 'grove.city';
+                const tweetText = buildAutoReplyMessage(autoReplyMessage, {
+                  username: recipientUsername,
+                  amount: tipAmount,
+                  chain: chainName,
+                  tx_link: txLink,
+                  grove_link: 'grove.city',
+                  referral_link: referralLink
+                });
 
               try {
                 await XAuth.postTweet(tweetText);
@@ -831,29 +891,6 @@
     const buttonGroup = currentAdapter.getTrackButtonGroup(likeButton);
     if (!buttonGroup) return;
 
-    if (!document.querySelector('#grove-soundcloud-order-fix')) {
-      const style = document.createElement('style');
-      style.id = 'grove-soundcloud-order-fix';
-      style.textContent = `
-        .sc-button-group > .grove-tip-button,
-        .sc-button-group > .grove-track-tip-button {
-          float: left !important;
-          margin-right: 16px !important;
-          order: -999 !important;
-        }
-        .playbackSoundBadge__actions > .grove-track-tip-button {
-          margin-right: 8px !important;
-        }
-        @media (max-width: 1079px) {
-          .sc-button-group > .grove-tip-button,
-          .sc-button-group > .grove-track-tip-button {
-            margin-right: 8px !important;
-          }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-
     // Create tip button using the same TipButton class as the profile button
     const tipButtonInstance = new TipButton(
       (buttonInstance) => handleTipClick(buttonInstance),
@@ -904,43 +941,20 @@
 
   /**
    * Get cached address for a username
-   * Uses shared AddressCache class if available, falls back to Map-based implementation
    * @param {string} username - Twitter username
    * @returns {Object|string|null} - Cached address result, 'no-address', or null if not cached/expired
    */
   function getCachedAddress(username) {
-    // Use AddressCache.get() if available (handles TTL internally)
-    if (addressCache instanceof AddressCache) {
-      return addressCache.get(username);
-    }
-    // Fallback for Map-based cache
-    const cached = addressCache.get(username);
-    if (!cached) return null;
-    const ttl = typeof ADDRESS_CACHE_TTL !== 'undefined' ? ADDRESS_CACHE_TTL : 10 * 60 * 1000;
-    if (Date.now() - cached.timestamp > ttl) {
-      addressCache.delete(username);
-      return null;
-    }
-    return cached.data;
+    return addressCache.get(username);
   }
 
   /**
    * Set cached address for a username
-   * Uses shared AddressCache class if available
    * @param {string} username - Twitter username
    * @param {Object|string} data - Address result or 'no-address'
    */
   function setCachedAddress(username, data) {
-    // Use AddressCache.set() if available
-    if (addressCache instanceof AddressCache) {
-      addressCache.set(username, data);
-      return;
-    }
-    // Fallback for Map-based cache
-    addressCache.set(username, {
-      data,
-      timestamp: Date.now()
-    });
+    addressCache.set(username, data);
   }
 
   // Tweet processing (queueBioFetch, injectPendingButtons) is now handled by TweetProcessor
@@ -967,6 +981,9 @@
     }
     if (typeof TweetProcessor !== 'undefined') {
       TweetProcessor.reset();
+    }
+    if (typeof SubstackHandler !== 'undefined') {
+      SubstackHandler.reset();
     }
     if (tipModal) {
       tipModal.hide();

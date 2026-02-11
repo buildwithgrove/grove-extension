@@ -10,10 +10,10 @@ console.log('[Grove Extension] Loading soundcloud.js... window.BaseAdapter =', t
 // Assign directly to window to ensure global availability
 window.SoundCloudAdapter = class SoundCloudAdapter extends window.BaseAdapter {
   /**
-   * Check if current page is a SoundCloud profile page
+   * Check if current page is a tippable SoundCloud page
    * @returns {boolean}
    */
-  detectProfilePage() {
+  detectTippablePage() {
     try {
       const url = new URL(window.location.href);
       const segments = url.pathname.split('/').filter(Boolean); // e.g., ['geeseband', 'tracks']
@@ -32,7 +32,7 @@ window.SoundCloudAdapter = class SoundCloudAdapter extends window.BaseAdapter {
 
       return true;
     } catch (err) {
-      console.error('[Grove Extension] detectProfilePage failed:', err);
+      console.error('[Grove Extension] detectTippablePage failed:', err);
       return false;
     }
   }

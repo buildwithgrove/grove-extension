@@ -7,10 +7,10 @@
 
 class TwitterAdapter extends BaseAdapter {
   /**
-   * Check if current page is a Twitter profile page
+   * Check if current page is a tippable Twitter page (profile OR tweet)
    * @returns {boolean}
    */
-  detectProfilePage() {
+  detectTippablePage() {
     try {
       const url = new URL(window.location.href);
       const segments = url.pathname.split('/').filter(Boolean); // e.g., ['olshansky', 'likes']
@@ -27,8 +27,36 @@ class TwitterAdapter extends BaseAdapter {
       ];
       if (systemRoutes.includes(username.toLowerCase())) return false;
 
-      // Profile subpages like /user/likes, /user/media are still profile pages.
-      // Only /user/status/* are individual tweet pages (not profiles).
+      // Profile subpages like /user/likes, /user/media are tippable profile pages
+      // Tweet pages like /user/status/123 are also tippable
+      // Both cases return true now
+      return true;
+    } catch (err) {
+      console.error('[Grove Extension] detectTippablePage failed:', err);
+      return false;
+    }
+  }
+
+  /**
+   * Check if current page is specifically a profile page (not a tweet)
+   * Used internally for determining button placement
+   * @returns {boolean}
+   */
+  isProfilePage() {
+    try {
+      const url = new URL(window.location.href);
+      const segments = url.pathname.split('/').filter(Boolean);
+
+      if (segments.length === 0) return false;
+
+      const username = segments[0];
+      const systemRoutes = [
+        'home', 'i', 'intent', 'search', 'explore', 'settings',
+        'messages', 'notifications', 'compose', 'login', 'signup'
+      ];
+      if (systemRoutes.includes(username.toLowerCase())) return false;
+
+      // Check if it's a tweet page
       const subpage = segments[1];
       const tweetPagePrefixes = ['status', 'statuses'];
       if (subpage && tweetPagePrefixes.some(prefix => subpage.toLowerCase().startsWith(prefix))) {
@@ -37,7 +65,24 @@ class TwitterAdapter extends BaseAdapter {
 
       return true;
     } catch (err) {
-      console.error('[Grove Extension] detectProfilePage failed:', err);
+      return false;
+    }
+  }
+
+  /**
+   * Check if current page is a tweet/status page
+   * @returns {boolean}
+   */
+  isTweetPage() {
+    try {
+      const url = new URL(window.location.href);
+      const segments = url.pathname.split('/').filter(Boolean);
+
+      if (segments.length < 2) return false;
+
+      const subpage = segments[1];
+      return subpage && (subpage.toLowerCase() === 'status' || subpage.toLowerCase() === 'statuses');
+    } catch (err) {
       return false;
     }
   }
@@ -471,6 +516,12 @@ class TwitterAdapter extends BaseAdapter {
    * @returns {Promise<boolean>}
    */
   async waitForProfileLoad() {
+    // If on a tweet page, wait for the main tweet to load
+    if (this.isTweetPage()) {
+      const tweetElement = await this.waitForElement('article[data-testid="tweet"]', 8000);
+      return tweetElement !== null;
+    }
+
     // Wait for username to appear (indicates profile is loaded)
     // Use UserName instead of UserDescription since not all profiles have bios
     const userNameElement = await this.waitForElement('[data-testid="UserName"]', 8000);
