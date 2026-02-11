@@ -357,15 +357,26 @@
 
     // For Substack, use ProfilePageHandler for full pages (API-first), and SubstackHandler for hover cards
     if (currentAdapter.getPlatformName() === "substack") {
+      const isSubstackTippablePage = currentAdapter.detectTippablePage();
+      const hasProfilePageHandler = typeof ProfilePageHandler !== 'undefined';
+      console.log('[Grove Substack] Full-page init precheck:', {
+        isSubstackTippablePage,
+        hasProfilePageHandler
+      });
+
       // Page-level button: resolve via API first (fallback to DOM parsing)
-      if (currentAdapter.detectTippablePage()) {
-        if (typeof ProfilePageHandler !== 'undefined') {
+      if (isSubstackTippablePage) {
+        if (hasProfilePageHandler) {
           const result = await ProfilePageHandler.initialize(currentAdapter);
           if (result) {
             resolvedAddress = result;
             currentButton = ProfilePageHandler.getButton();
           }
+        } else {
+          console.warn('[Grove Substack] ProfilePageHandler is undefined; skipping full-page API/DOM resolution');
         }
+      } else {
+        console.log('[Grove Substack] Page did not match detectTippablePage(); skipping full-page resolution');
       }
 
       // Hover card buttons: Substack-specific

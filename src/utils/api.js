@@ -826,43 +826,123 @@ class GroveAPI {
   static async resolveDestination(destination) {
     const baseURL = await this.getBaseURL();
     const tipDomain = this.buildTipDomainFromURL(destination);
-    const apiUrl = `${baseURL}/v1/destination/resolve`;
+    const tipResolveUrl = `${baseURL}/v1/tip/resolve?destination=${encodeURIComponent(tipDomain)}`;
+    const legacyResolveUrl = `${baseURL}/v1/destination/resolve`;
+    let endpointDebug = null;
 
     try {
-      const response = await fetch(apiUrl, {
+      if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+        const settings = await chrome.storage.local.get(['groveEnvironment', 'groveEndpoint']);
+        endpointDebug = {
+          groveEnvironment: settings.groveEnvironment || 'prod',
+          groveEndpoint: settings.groveEndpoint || 'production'
+        };
+      }
+    } catch (debugError) {
+      console.warn('[Grove API] resolveDestination debug settings read failed:', debugError.message);
+    }
+
+    const endpointAttempts = [
+      {
+        label: 'v1_tip_resolve',
+        method: 'GET',
+        url: tipResolveUrl,
+      },
+      {
+        label: 'v1_destination_resolve_legacy',
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        url: legacyResolveUrl,
         body: JSON.stringify({ destination: tipDomain })
+      }
+    ];
+
+    let lastErrorMessage = null;
+
+    for (let i = 0; i < endpointAttempts.length; i++) {
+      const attempt = endpointAttempts[i];
+      const isLastAttempt = i === endpointAttempts.length - 1;
+
+      console.log('[Grove API] resolveDestination request:', {
+        attempt: attempt.label,
+        baseURL,
+        apiUrl: attempt.url,
+        method: attempt.method,
+        destination,
+        tipDomain,
+        endpointDebug
       });
 
-      const data = await response.json();
+      try {
+        const requestOptions = {
+          method: attempt.method,
+          headers: { 'Content-Type': 'application/json' }
+        };
+        if (attempt.body) {
+          requestOptions.body = attempt.body;
+        }
 
-      if (!response.ok) {
+        const response = await fetch(attempt.url, requestOptions);
+
+        let data = null;
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          console.error('[Grove API] resolveDestination JSON parse failed:', parseError);
+          data = {};
+        }
+
+        console.log('[Grove API] resolveDestination response:', {
+          attempt: attempt.label,
+          status: response.status,
+          ok: response.ok,
+          body: data
+        });
+
+        if (!response.ok) {
+          lastErrorMessage = data.message || data.detail || `API request failed with status ${response.status}`;
+
+          // Production API migrated to /v1/tip/resolve; keep legacy fallback for compatibility.
+          if (!isLastAttempt && response.status === 404) {
+            console.warn(`[Grove API] resolveDestination ${attempt.label} returned 404, trying fallback endpoint`);
+            continue;
+          }
+
+          return {
+            tippable: false,
+            addresses: [],
+            error: lastErrorMessage
+          };
+        }
+
+        // API returns { tippable: boolean, addresses: [...], source?: string, destination_kind?: string }
+        return {
+          tippable: data.tippable || false,
+          addresses: data.addresses || [],
+          source: data.source || data.destination_kind || null,
+          error: null
+        };
+      } catch (error) {
+        lastErrorMessage = error.message;
+        console.error(`[Grove API] resolveDestination ${attempt.label} failed:`, error);
+
+        if (!isLastAttempt) {
+          console.warn(`[Grove API] resolveDestination ${attempt.label} failed, trying fallback endpoint`);
+          continue;
+        }
+
         return {
           tippable: false,
           addresses: [],
-          error: data.message || data.detail || `API request failed with status ${response.status}`
+          error: error.message
         };
       }
-
-      // API returns { tippable: boolean, addresses: [...], source?: string }
-      return {
-        tippable: data.tippable || false,
-        addresses: data.addresses || [],
-        source: data.source || null,
-        error: null
-      };
-
-    } catch (error) {
-      console.error('[Grove Extension] Destination resolve failed:', error);
-      return {
-        tippable: false,
-        addresses: [],
-        error: error.message
-      };
     }
+
+    return {
+      tippable: false,
+      addresses: [],
+      error: lastErrorMessage || 'All resolve endpoints failed'
+    };
   }
 
   /**

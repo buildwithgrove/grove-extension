@@ -6,6 +6,7 @@
  * - Full pages (profiles, posts): Use API /resolve for consistent resolution
  * - Inline content (feeds, hover cards): Use client-side DOM parsing (handled elsewhere)
  */
+console.log('[Grove Extension] profilePageHandler.js loaded');
 
 const ProfilePageHandler = {
   // Callbacks for interacting with parent context
@@ -63,7 +64,10 @@ const ProfilePageHandler = {
       //   Once the backend fully supports profile and tweet URL resolution,
       //   the DOM fallback below can be removed or made truly exceptional.
       const destination = this.buildDestinationUrl();
-      console.log('[Grove Extension] Resolving via API:', destination);
+      console.log('[Grove Extension] [Resolve] Calling API for full page:', {
+        platform: adapter.getPlatformName?.() || 'unknown',
+        destination
+      });
 
       // Check if GroveAPI is available
       if (typeof GroveAPI === 'undefined' || typeof GroveAPI.resolveDestination !== 'function') {
@@ -72,19 +76,38 @@ const ProfilePageHandler = {
       }
 
       const result = await GroveAPI.resolveDestination(destination);
-      console.log('[Grove Extension] API response:', result);
+      console.log('[Grove Extension] [Resolve] API parsed result:', result);
 
       if (!result.tippable || !result.addresses || result.addresses.length === 0) {
-        console.log('[Grove Extension] Not tippable via API:', result.error || 'No addresses found');
+        console.log('[Grove Extension] [Resolve] API returned non-tippable result; falling back to DOM parsing:', {
+          error: result.error || 'No addresses found',
+          addressesCount: result.addresses?.length || 0
+        });
         // Fallback to DOM parsing for backwards compatibility
         return this.initializeWithDomParsing(adapter);
       }
 
       // Use first address from API response
       const primaryAddress = result.addresses[0];
+      const resolvedApiAddress = primaryAddress?.address || null;
+
+      // Guard against malformed API parsing results (e.g., random words from bio).
+      // If the returned value is not a valid address/ENS by client-side parser rules,
+      // treat API result as non-authoritative and fall back to DOM parsing.
+      if (!resolvedApiAddress || !this.callbacks.resolveAddress) {
+        console.warn('[Grove Extension] [Resolve] API returned unusable address; falling back to DOM parsing:', primaryAddress);
+        return this.initializeWithDomParsing(adapter);
+      }
+
+      const validation = this.callbacks.resolveAddress(resolvedApiAddress);
+      if (!validation?.address) {
+        console.warn('[Grove Extension] [Resolve] API returned invalid address; falling back to DOM parsing:', primaryAddress);
+        return this.initializeWithDomParsing(adapter);
+      }
+
       this.resolvedAddress = {
-        address: primaryAddress.address,
-        type: primaryAddress.source || 'api',
+        address: validation.address,
+        type: primaryAddress.source || validation.type || 'api',
         token: primaryAddress.token,
         chain: primaryAddress.chain
       };
@@ -95,14 +118,16 @@ const ProfilePageHandler = {
       const username = this.callbacks.extractUsernameFromUrl?.(window.location.href);
       if (username && this.callbacks.setCachedAddress) {
         this.callbacks.setCachedAddress(username, this.resolvedAddress);
-        console.log(`[Grove Extension] Cached address for @${username}`);
+        console.log(`[Grove Extension] [Cache] Stored resolved address for @${username}`);
+      } else {
+        console.log('[Grove Extension] [Cache] Skipping cache write: no cache key extracted from URL', window.location.href);
       }
 
       // Inject button
       return this.injectButton(adapter);
 
     } catch (error) {
-      console.error('[Grove Extension] Profile button initialization failed:', error);
+      console.error('[Grove Extension] [Resolve] Profile button initialization failed; falling back to DOM parsing:', error);
       // Fallback to DOM parsing on error
       return this.initializeWithDomParsing(adapter);
     }
@@ -115,33 +140,33 @@ const ProfilePageHandler = {
    * @returns {Promise<Object|null>} - The resolved address or null
    */
   async initializeWithDomParsing(adapter) {
-    console.log('[Grove Extension] Falling back to DOM parsing');
+    console.log('[Grove Extension] [Resolve] Entering DOM fallback path');
 
     // Extract bio to check for addresses
     const bio = adapter.extractBio();
 
     if (!bio) {
-      console.log('[Grove Extension] No bio found - not showing button');
+      console.log('[Grove Extension] [Resolve] DOM fallback: no bio extracted; not showing button');
       return null;
     }
 
-    console.log('[Grove Extension] Bio extracted via DOM');
+    console.log('[Grove Extension] [Resolve] DOM fallback: bio extracted');
 
     // Check if bio contains tippable address
     if (!this.callbacks.hasAddresses || !this.callbacks.hasAddresses(bio)) {
-      console.log('[Grove Extension] No tippable address found in bio - not showing button');
+      console.log('[Grove Extension] [Resolve] DOM fallback: bio has no tippable address; not showing button');
       return null;
     }
 
     // Extract address (ENS names are resolved by the backend)
     if (!this.callbacks.resolveAddress) {
-      console.log('[Grove Extension] No resolveAddress callback provided');
+      console.log('[Grove Extension] [Resolve] DOM fallback: resolveAddress callback missing');
       return null;
     }
 
     const result = this.callbacks.resolveAddress(bio);
     if (!result || !result.address) {
-      console.log('[Grove Extension] Could not extract address - not showing button');
+      console.log('[Grove Extension] [Resolve] DOM fallback: could not extract address; not showing button');
       return null;
     }
 

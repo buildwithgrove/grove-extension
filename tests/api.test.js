@@ -348,7 +348,7 @@ describe('GroveAPI', () => {
 
   describe('resolveDestination', () => {
     it('should return tippable result with addresses', async () => {
-      mockFetch.mockResponse('POST', 'https://api.grove.city/v1/destination/resolve',
+      mockFetch.mockResponse('GET', 'https://api.grove.city/v1/tip/resolve?destination=x.com%2Fvitalik',
         {
           tippable: true,
           addresses: [
@@ -369,7 +369,7 @@ describe('GroveAPI', () => {
     });
 
     it('should return not tippable when no addresses found', async () => {
-      mockFetch.mockResponse('POST', 'https://api.grove.city/v1/destination/resolve',
+      mockFetch.mockResponse('GET', 'https://api.grove.city/v1/tip/resolve?destination=x.com%2Fnoaddress',
         {
           tippable: false,
           addresses: []
@@ -385,7 +385,7 @@ describe('GroveAPI', () => {
     });
 
     it('should handle API errors', async () => {
-      mockFetch.mockResponse('POST', 'https://api.grove.city/v1/destination/resolve',
+      mockFetch.mockResponse('GET', 'https://api.grove.city/v1/tip/resolve?destination=invalid',
         { message: 'Invalid destination format' },
         { status: 400 }
       );
@@ -398,6 +398,7 @@ describe('GroveAPI', () => {
     });
 
     it('should handle network errors', async () => {
+      mockFetch.mockError('GET', 'https://api.grove.city/v1/tip/resolve?destination=x.com%2Ftest', 'Network failure');
       mockFetch.mockError('POST', 'https://api.grove.city/v1/destination/resolve', 'Network failure');
 
       const result = await GroveAPI.resolveDestination('https://x.com/test');
@@ -408,10 +409,8 @@ describe('GroveAPI', () => {
     });
 
     it('should strip trailing slash from URL', async () => {
-      mockFetch.mockHandler('POST', 'https://api.grove.city/v1/destination/resolve', (url, options) => {
-        const body = JSON.parse(options.body);
-        // buildTipDomainFromURL strips protocol and trailing slash
-        expect(body.destination).toBe('x.com/olshansky');
+      mockFetch.mockHandler('GET', 'https://api.grove.city/v1/tip/resolve?destination=x.com%2Folshansky', (url, options) => {
+        expect(options.method).toBe('GET');
         return {
           ok: true,
           status: 200,
@@ -423,7 +422,7 @@ describe('GroveAPI', () => {
     });
 
     it('should return multiple addresses when available', async () => {
-      mockFetch.mockResponse('POST', 'https://api.grove.city/v1/destination/resolve',
+      mockFetch.mockResponse('GET', 'https://api.grove.city/v1/tip/resolve?destination=x.com%2Fvitalik',
         {
           tippable: true,
           addresses: [
@@ -440,6 +439,30 @@ describe('GroveAPI', () => {
       expect(result.addresses).toHaveLength(2);
       expect(result.addresses[0].address).toBe('vitalik.eth');
       expect(result.addresses[1].address).toBe('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045');
+    });
+
+    it('should fallback to legacy resolve endpoint when new endpoint returns 404', async () => {
+      mockFetch.mockResponse(
+        'GET',
+        'https://api.grove.city/v1/tip/resolve?destination=substack.com%2F%40olshansky',
+        { detail: 'Not Found' },
+        { status: 404 }
+      );
+      mockFetch.mockResponse(
+        'POST',
+        'https://api.grove.city/v1/destination/resolve',
+        {
+          tippable: true,
+          addresses: [{ address: 'olshansky.eth', source: 'bio' }]
+        },
+        { status: 200 }
+      );
+
+      const result = await GroveAPI.resolveDestination('https://substack.com/@olshansky');
+
+      expect(result.tippable).toBe(true);
+      expect(result.addresses).toHaveLength(1);
+      expect(result.addresses[0].address).toBe('olshansky.eth');
     });
   });
 });
