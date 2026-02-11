@@ -246,6 +246,12 @@ test.describe('Extension Smoke Tests', () => {
     await expect(tipButton).toBeVisible({ timeout: 15000 });
   });
 
+  // TODO_IMPROVE: This E2E test runs headless/logged-out, so it does NOT catch the bug where
+  //   logged-in Substack injects recommended authors' bios (with .eth addresses) into <script>
+  //   tags, causing false-positive tip button injection. Add a unit test for
+  //   SubstackAdapter.extractBioFromPreloads() that mocks a <script> tag containing both the
+  //   page author's data (no crypto) and a nested recommendation with a "bio" containing .eth,
+  //   and asserts the recommended author's bio is NOT returned.
   test('Should NOT inject on latecheckout.substack.com (no crypto address)', async () => {
     const page = await browserContext.newPage();
     await page.goto('https://latecheckout.substack.com/', { waitUntil: 'domcontentloaded' });
