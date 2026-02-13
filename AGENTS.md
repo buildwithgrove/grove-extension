@@ -7,6 +7,10 @@
   - [Text Colors](#text-colors)
   - [Transaction History Colors](#transaction-history-colors)
   - [Content Script Colors (`src/ui/constants.js`)](#content-script-colors-srcuiconstantsjs)
+- [Environment Configuration](#environment-configuration)
+  - [Environment Resolution](#environment-resolution)
+  - [Script Load Order](#script-load-order)
+  - [Adding a New Environment](#adding-a-new-environment)
 - [Chain/Network Configuration](#chainnetwork-configuration)
   - [Default Chain](#default-chain)
   - [Network Naming](#network-naming)
@@ -104,14 +108,46 @@ GROVE_COLORS = {
 };
 ```
 
+## Environment Configuration
+
+`src/config/environments.js` is the **single source of truth** for API URLs, app URLs, JWT keys, chain defaults, and dev-mode flags. Do not hardcode these elsewhere — use `GroveEnv` helpers.
+
+| Environment  | API URL                          | App URL                          | Default Chain  | Dev Mode |
+| ------------ | -------------------------------- | -------------------------------- | -------------- | -------- |
+| `production` | `https://api.grove.city`         | `https://app.grove.city`         | `base`         | No       |
+| `testnet`    | `https://api.testnet.grove.city` | `https://app.testnet.grove.city` | `base-sepolia` | Yes      |
+| `localhost`  | `http://localhost:8000`          | `http://localhost:3000`          | `base`         | Yes      |
+
+**Localhost uses mainnet chains (`base`), not testnet chains.** Localhost = production chain, local API.
+
+### Environment Resolution
+
+The extension stores `groveEnvironment` (`'local'`/`'prod'`) and `groveEndpoint` (`'production'`/`'testnet'`/`'localhost'`) in `chrome.storage.local`. **Always use `GroveEnv.resolveActiveEnvId(groveEnvironment, groveEndpoint)`** to resolve these to a canonical env ID — never write your own if/else chain.
+
+Key `GroveEnv` helpers: `get(envId)`, `defaultChain(envId)`, `allowedChains(envId)`, `jwtKeyForEnv(envId)`, `topUpUrl(envId)`, `isTestChains(envId)`.
+
+### Script Load Order
+
+In `manifest.json` and `popup.html`, `environments.js` must load first:
+
+1. `src/config/environments.js`
+2. `src/config/storageKeys.js`
+3. `src/config/chains.js`
+4. Everything else
+
+### Adding a New Environment
+
+1. Add entry to `GROVE_ENVIRONMENTS` in `src/config/environments.js`
+2. Add label in `GroveEnv.apiLabel()`
+3. Update `GroveEnv.isTestChains()` / `allowedChains()` if needed
+4. Add radio button in `popup.html`
+5. Add tests in `tests/environments.test.js`
+
 ## Chain/Network Configuration
 
 ### Default Chain
 
-The default chain is `base` (mainnet). This should be consistent across:
-
-- `popup.js`: `DEFAULT_CHAIN = 'base'`
-- `content.js`: Default fallback should be `'base'`
+Default chain is `base` (mainnet), defined per environment in `src/config/environments.js` and as `DEFAULT_CHAIN` in `src/config/chains.js`. Use `GroveEnv.defaultChain(envId)` to get the correct default for the active environment.
 
 ### Network Naming
 
