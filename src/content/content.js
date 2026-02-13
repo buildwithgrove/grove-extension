@@ -71,20 +71,9 @@
             return;
           }
 
-          const isDevMode = result[STORAGE_KEYS.ENVIRONMENT] === 'local';
-          const endpoint = result[STORAGE_KEYS.ENDPOINT] || 'production';
-
-          let jwt;
-          if (!isDevMode) {
-            jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
-          } else if (endpoint === 'localhost') {
-            jwt = result[STORAGE_KEYS.JWT_LOCALHOST];
-          } else if (endpoint === 'testnet') {
-            jwt = result[STORAGE_KEYS.JWT_TESTNET];
-          } else {
-            jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
-          }
-          resolve(jwt || null);
+          const envId = GroveEnv.resolveActiveEnvId(result[STORAGE_KEYS.ENVIRONMENT], result[STORAGE_KEYS.ENDPOINT]);
+          const jwt = result[GroveEnv.jwtKeyForEnv(envId)] || null;
+          resolve(jwt);
         });
       } catch (e) {
         reject(new Error('Extension was reloaded. Please refresh the page.'));

@@ -69,11 +69,12 @@ function getTestnetChain(rawChain) {
  * @returns {string} - Chain to use for explorer URLs (testnet if in test environment)
  */
 function getExplorerChain(rawChain, settings = {}) {
-  const env = settings.groveEnvironment || 'prod';
-  const storedEndpoint = settings.groveEndpoint || 'production';
-  const endpoint = env === 'local' ? storedEndpoint : 'production';
-  const isTestEnvironment = endpoint === 'localhost' || endpoint === 'testnet';
-  return isTestEnvironment ? getTestnetChain(rawChain) : rawChain;
+  const envId = typeof GroveEnv !== 'undefined'
+    ? GroveEnv.resolveActiveEnvId(settings.groveEnvironment || 'prod', settings.groveEndpoint || 'production')
+    : 'production';
+  return (typeof GroveEnv !== 'undefined' && GroveEnv.isTestChains(envId))
+    ? getTestnetChain(rawChain)
+    : rawChain;
 }
 
 /**

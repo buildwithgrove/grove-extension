@@ -4,41 +4,7 @@
  */
 
 class GroveAPI {
-  static ENDPOINTS = {
-    'production': 'https://api.grove.city',
-    'testnet': 'https://api.testnet.grove.city',
-    'localhost': 'http://localhost:8000',
-    'localhost:8000': 'http://localhost:8000',
-  };
-
   static DEFAULT_TIP_AMOUNT = 0.05; // $0.05 default
-
-  static CHAIN_RPC_ENDPOINTS = {
-    'base': {
-      name: 'Base',
-      chainId: 8453,
-      rpcUrl: 'https://mainnet.base.org',
-      explorerUrl: 'https://basescan.org'
-    },
-    'base-sepolia': {
-      name: 'Base Sepolia',
-      chainId: 84532,
-      rpcUrl: 'https://sepolia.base.org',
-      explorerUrl: 'https://sepolia.basescan.org'
-    },
-    'solana': {
-      name: 'Solana',
-      chainId: null,
-      rpcUrl: 'https://api.mainnet-beta.solana.com',
-      explorerUrl: 'https://explorer.solana.com'
-    },
-    'solana-devnet': {
-      name: 'Solana Devnet',
-      chainId: null,
-      rpcUrl: 'https://api.devnet.solana.com',
-      explorerUrl: 'https://explorer.solana.com?cluster=devnet'
-    }
-  };
 
   static GROVE_API_JWT = ''; // Placeholder for now
 
@@ -49,13 +15,11 @@ class GroveAPI {
   static async getBaseURL() {
     try {
       const result = await chrome.storage.local.get(['groveEndpoint', 'groveEnvironment']);
-      const env = result.groveEnvironment || 'prod';
-      const storedEndpoint = result.groveEndpoint || 'production';
-      const endpoint = env === 'local' ? storedEndpoint : 'production';
-      return this.ENDPOINTS[endpoint] || this.ENDPOINTS['production'];
+      const envId = GroveEnv.resolveActiveEnvId(result.groveEnvironment, result.groveEndpoint);
+      return GroveEnv.get(envId).apiUrl;
     } catch (error) {
       console.log("[Grove Extension] Endpoint load failed, using production");
-      return this.ENDPOINTS['production'];
+      return GROVE_ENVIRONMENTS.production.apiUrl;
     }
   }
 
@@ -79,7 +43,7 @@ class GroveAPI {
    */
   static async getChainConfig() {
     const chain = await this.getChainId();
-    return this.CHAIN_RPC_ENDPOINTS[chain] || this.CHAIN_RPC_ENDPOINTS['base'];
+    return CHAIN_CONFIG[chain] || CHAIN_CONFIG['base'];
   }
 
   /**

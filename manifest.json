@@ -35,6 +35,7 @@
     {
       "matches": ["https://twitter.com/*", "https://x.com/*"],
       "js": [
+        "src/config/environments.js",
         "src/config/storageKeys.js",
         "src/config/chains.js",
         "src/utils/darkMode.js",
@@ -64,7 +65,9 @@
     {
       "matches": ["https://soundcloud.com/*"],
       "js": [
+        "src/config/environments.js",
         "src/config/storageKeys.js",
+        "src/config/chains.js",
         "src/utils/darkMode.js",
         "src/utils/addressCache.js",
         "src/parsers/addressMatchers.js",
@@ -86,7 +89,9 @@
     {
       "matches": ["https://*.substack.com/*", "https://substack.com/*"],
       "js": [
+        "src/config/environments.js",
         "src/config/storageKeys.js",
+        "src/config/chains.js",
         "src/utils/darkMode.js",
         "src/utils/addressCache.js",
         "src/parsers/addressMatchers.js",
@@ -119,7 +124,9 @@
         "https://substack.com/*"
       ],
       "js": [
+        "src/config/environments.js",
         "src/config/storageKeys.js",
+        "src/config/chains.js",
         "src/utils/darkMode.js",
         "src/utils/addressCache.js",
         "src/parsers/addressMatchers.js",

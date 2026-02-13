@@ -1,4 +1,5 @@
 // Import shared modules
+importScripts('src/config/environments.js');
 importScripts('src/config/storageKeys.js');
 importScripts('src/utils/updateChecker.js');
 importScripts('src/auth/xOAuthBackground.js');
@@ -31,42 +32,24 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
     // Determine which slot to store the JWT in based on environment
     // Accept both 'local' and 'localhost' for local development
     const env = message.environment === 'local' ? 'localhost' : (message.environment || 'production');
-    let jwtStorageKey;
-    if (env === 'localhost') {
-      jwtStorageKey = STORAGE_KEYS.JWT_LOCALHOST;
-    } else if (env === 'testnet') {
-      jwtStorageKey = STORAGE_KEYS.JWT_TESTNET;
-    } else {
-      jwtStorageKey = STORAGE_KEYS.JWT_PRODUCTION;
-    }
-
-    // Both localhost and testnet use Base Sepolia; production uses Base mainnet
-    const isNonProduction = env === 'testnet' || env === 'localhost';
+    const envConfig = GroveEnv.get(env) || GroveEnv.get('production');
 
     const dataToStore = {
-      [jwtStorageKey]: message.jwt,
+      [envConfig.jwtStorageKey]: message.jwt,
       groveEndpoint: env,
-      groveChain: isNonProduction ? 'base-sepolia' : 'base'
+      groveChain: envConfig.defaultChain,
+      groveEnvironment: envConfig.isDevMode ? 'local' : 'prod',
+      GROVE_LAST_BALANCES: {},
     };
 
-    // Auto-switch developer mode based on environment
-    if (isNonProduction) {
-      dataToStore.groveEnvironment = 'local'; // Enable dev mode for testnet/local
-      console.log(`${env} JWT received - enabling developer mode`);
-    } else {
-      dataToStore.groveEnvironment = 'prod'; // Disable dev mode for production
-      console.log('Production JWT received - disabling developer mode');
-    }
-
-    // Clear cached balances and user data when switching accounts
-    dataToStore.GROVE_LAST_BALANCES = {};
+    console.log(`${env} JWT received - ${envConfig.isDevMode ? 'enabling' : 'disabling'} developer mode`);
 
     chrome.storage.local.set(dataToStore, () => {
       console.log(`JWT stored in ${env} slot`);
       sendResponse({
         success: true,
         environment: env,
-        devModeEnabled: isNonProduction
+        devModeEnabled: envConfig.isDevMode
       });
 
       // Open the extension popup window so the user sees it's activated
@@ -99,23 +82,11 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       // Normalize 'local' to 'localhost'
       const reqEnv = message.environment === 'local' ? 'localhost' : message.environment;
 
-      let jwt;
-      if (reqEnv === 'localhost') {
-        jwt = result[STORAGE_KEYS.JWT_LOCALHOST];
-      } else if (reqEnv === 'testnet') {
-        jwt = result[STORAGE_KEYS.JWT_TESTNET];
-      } else if (reqEnv === 'production') {
-        jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
-      } else {
-        // No environment specified - use current endpoint
-        if (endpoint === 'localhost') {
-          jwt = result[STORAGE_KEYS.JWT_LOCALHOST];
-        } else if (endpoint === 'testnet') {
-          jwt = result[STORAGE_KEYS.JWT_TESTNET];
-        } else {
-          jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
-        }
-      }
+      // Use requested env if specified, otherwise resolve from current state
+      const envId = reqEnv
+        ? (GroveEnv.get(reqEnv) ? reqEnv : 'production')
+        : GroveEnv.resolveActiveEnvId(result.groveEnvironment, endpoint);
+      const jwt = result[GroveEnv.jwtKeyForEnv(envId)];
       sendResponse({ jwt: jwt || null, isDevMode, environment: endpoint });
     });
     return true;
@@ -129,25 +100,11 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       // Normalize 'local' to 'localhost'
       const reqEnv = message.environment === 'local' ? 'localhost' : message.environment;
 
-      // If environment is specified, check that specific slot
-      // Otherwise fall back to current endpoint
-      let jwt;
-      if (reqEnv === 'localhost') {
-        jwt = result[STORAGE_KEYS.JWT_LOCALHOST];
-      } else if (reqEnv === 'testnet') {
-        jwt = result[STORAGE_KEYS.JWT_TESTNET];
-      } else if (reqEnv === 'production') {
-        jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
-      } else {
-        // No environment specified - use current endpoint
-        if (endpoint === 'localhost') {
-          jwt = result[STORAGE_KEYS.JWT_LOCALHOST];
-        } else if (endpoint === 'testnet') {
-          jwt = result[STORAGE_KEYS.JWT_TESTNET];
-        } else {
-          jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
-        }
-      }
+      // Use requested env if specified, otherwise resolve from current state
+      const envId = reqEnv
+        ? (GroveEnv.get(reqEnv) ? reqEnv : 'production')
+        : GroveEnv.resolveActiveEnvId(result.groveEnvironment, endpoint);
+      const jwt = result[GroveEnv.jwtKeyForEnv(envId)];
 
       const hasKey = !!(jwt && jwt.length > 0);
       sendResponse({ hasKey, isDevMode, environment: reqEnv || endpoint });

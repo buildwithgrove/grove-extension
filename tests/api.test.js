@@ -24,7 +24,9 @@ beforeEach(() => {
   };
   context.window = context;
 
-  // Load script
+  // Load dependencies, then the script under test
+  loadBrowserScript('src/config/environments.js', context);
+  loadBrowserScript('src/config/chains.js', context);
   loadBrowserScript('src/utils/api.js', context);
 
   GroveAPI = context.GroveAPI;
