@@ -57,7 +57,7 @@ describe('GroveAPI', () => {
     it('should return localhost URL when environment is local and endpoint is localhost', async () => {
       mockChrome.storage.local._setData({ groveEnvironment: 'local', groveEndpoint: 'localhost' });
       const url = await GroveAPI.getBaseURL();
-      expect(url).toBe('http://localhost:3000');
+      expect(url).toBe('http://localhost:8000');
     });
   });
 

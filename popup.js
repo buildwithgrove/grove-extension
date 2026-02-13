@@ -207,7 +207,7 @@ const TESTNET_CHAINS = ['base-sepolia', 'solana-devnet'];
 const ENDPOINT_LABELS = {
   'production': 'api.grove.city',
   'testnet': 'api.testnet.grove.city',
-  'localhost': 'localhost:3000',
+  'localhost': 'localhost:8000',
 };
 
 /**
@@ -2292,7 +2292,7 @@ function updateTestnetKeyVisibility(devModeEnabled) {
 }
 
 function isTestEndpoint(endpoint) {
-  return endpoint === 'testnet' || endpoint === 'localhost';
+  return endpoint === 'testnet';
 }
 
 function getDefaultChainForEndpoint(endpoint) {
