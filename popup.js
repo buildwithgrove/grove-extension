@@ -188,7 +188,7 @@ let cdpAuthState = {
 
 // Defaults
 const DEFAULT_TIP_AMOUNT = 0.02;
-const DEFAULT_CHAIN = 'base';
+// DEFAULT_CHAIN is provided by src/config/chains.js
 const DEFAULT_ENV = 'prod';
 const DEFAULT_ENDPOINT = 'production';
 // FormatUtils.DEFAULT_BALANCE_DISPLAY is now in FormatUtils
