@@ -81,6 +81,9 @@ var GroveEnv = {
     return `${env.appUrl}/extension`;
   },
 
+  // TODO_IMPROVE: Derive apiLabel() from apiUrl instead of hardcoded map
+  //   Why: Adding a new environment requires updating two places
+  //   How: Use new URL(env.apiUrl).host in apiLabel()
   /**
    * Display label for the API endpoint.
    * @param {string} envId
@@ -95,6 +98,9 @@ var GroveEnv = {
     return labels[envId] || 'api.grove.city';
   },
 
+  // TODO_IMPROVE: Derive allowedChains() from CHAIN_CONFIG + TESTNET_CHAIN_MAP
+  //   Why: Adding a new chain requires updating chains.js AND environments.js
+  //   How: Use Object.keys(TESTNET_CHAIN_MAP) for mainnet, Object.values() for testnet
   /**
    * Allowed chains for an environment.
    * @param {string} envId
