@@ -404,39 +404,67 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
    * @returns {Promise<boolean>}
    */
   async waitForProfileLoad() {
-    // 0. Quick check for Navbar (Subdomain profile) or Sidebar (Bare domain profile) - Fastest path
+    const path = window.location.pathname;
+    const hostname = window.location.hostname;
+    const isPostPage = path.includes('/p/') || /\/p-\d+/.test(path);
+    const isProfilePage = (hostname === 'substack.com' && path.startsWith('/@')) ||
+                          (hostname.endsWith('.substack.com') && !isPostPage);
+
+    // 0. Quick check for elements already in the DOM - fastest path
     const navbar = document.querySelector('.overflow-items');
     const sidebar = document.querySelector('.reader-nav-root');
     if (navbar || sidebar) {
       return true;
     }
 
-    // 1. Check for Post page elements
-    const actionBar = await this.waitForEither(
-      '.post-ufi',
-      'button[aria-label="Restack"]',
-      2000 // Short timeout for post detection
-    );
-    
-    if (actionBar) {
-      // It's a post page, wait for byline
-      await this.waitForElement('.byline-wrapper', 5000);
-      return true;
+    // 1. Post pages: wait for action bar, then byline
+    if (isPostPage) {
+      const actionBar = await this.waitForEither(
+        '.post-ufi',
+        'button[aria-label="Restack"]',
+        10000
+      );
+      if (actionBar) {
+        await this.waitForElement('.byline-wrapper', 5000);
+        return true;
+      }
     }
 
-    // 2. Check for Profile page elements
-    const profileElement = await this.waitForEither(
-      '.subscribe-widget', // Subdomain profile
-      '.reader-nav-page',  // Bare domain profile container
-      10000
-    );
-
-    if (profileElement) {
-      return true;
+    // 2. Profile pages: wait for subscribe widget or reader nav
+    if (isProfilePage) {
+      const profileElement = await this.waitForEither(
+        '.subscribe-widget', // Subdomain profile
+        '.reader-nav-page',  // Bare domain profile container
+        10000
+      );
+      if (profileElement) {
+        return true;
+      }
     }
 
-    // If we're here, we might be on a tippable page that didn't match selectors,
-    // or detection failed. If detectTippablePage() is true, we should probably proceed.
+    // 3. Fallback: if we didn't match post or profile above, try both sequentially
+    if (!isPostPage && !isProfilePage) {
+      const actionBar = await this.waitForEither(
+        '.post-ufi',
+        'button[aria-label="Restack"]',
+        2000
+      );
+      if (actionBar) {
+        await this.waitForElement('.byline-wrapper', 5000);
+        return true;
+      }
+
+      const profileElement = await this.waitForEither(
+        '.subscribe-widget',
+        '.reader-nav-page',
+        5000
+      );
+      if (profileElement) {
+        return true;
+      }
+    }
+
+    // If URL says it's tippable, proceed anyway
     if (this.detectTippablePage()) {
         return true;
     }

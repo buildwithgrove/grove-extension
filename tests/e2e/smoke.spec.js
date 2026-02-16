@@ -216,37 +216,37 @@ test.describe('Extension Smoke Tests', () => {
 
   test('Should inject on substack.com/@olshansky', async () => {
     const page = await browserContext.newPage();
-    await page.goto('https://substack.com/@olshansky', { waitUntil: 'domcontentloaded' });
+    await page.goto('https://substack.com/@olshansky', { waitUntil: 'load' });
 
     const tipButton = page.locator('#grove-tip-button');
-    await expect(tipButton).toBeVisible({ timeout: 15000 });
+    await expect(tipButton).toBeVisible({ timeout: 30000 });
   });
 
   test('Should inject on substack.com/@olshansky with query params', async () => {
     const page = await browserContext.newPage();
-    await page.goto('https://substack.com/@olshansky?utm_source=user-menu', { waitUntil: 'domcontentloaded' });
+    await page.goto('https://substack.com/@olshansky?utm_source=user-menu', { waitUntil: 'load' });
 
     const tipButton = page.locator('#grove-tip-button');
-    await expect(tipButton).toBeVisible({ timeout: 15000 });
+    await expect(tipButton).toBeVisible({ timeout: 30000 });
   });
 
   test('Should inject on olshansky.substack.com (subdomain profile)', async () => {
     const page = await browserContext.newPage();
-    await page.goto('https://olshansky.substack.com/', { waitUntil: 'domcontentloaded' });
+    await page.goto('https://olshansky.substack.com/', { waitUntil: 'load' });
 
     // Substack pages may have multiple action bars; verify at least one button exists
     const tipButtons = page.locator('#grove-tip-button');
-    await expect(tipButtons.first()).toBeAttached({ timeout: 15000 });
+    await expect(tipButtons.first()).toBeAttached({ timeout: 30000 });
     expect(await tipButtons.count()).toBeGreaterThan(0);
   });
 
   test('Should inject on olshansky.substack.com/p/ (post page)', async () => {
     const page = await browserContext.newPage();
-    await page.goto('https://olshansky.substack.com/p/chatgpt-started-sending-me-substack', { waitUntil: 'domcontentloaded' });
+    await page.goto('https://olshansky.substack.com/p/chatgpt-started-sending-me-substack', { waitUntil: 'load' });
 
     // Substack post pages may have multiple action bars; verify at least one button exists
     const tipButton = page.locator('#grove-tip-button').first();
-    await expect(tipButton).toBeVisible({ timeout: 15000 });
+    await expect(tipButton).toBeVisible({ timeout: 30000 });
   });
 
   // NOTE: This E2E test runs headless/logged-out, so it does not reproduce the logged-in Substack
