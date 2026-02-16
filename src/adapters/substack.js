@@ -161,8 +161,6 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
   extractBioFromParsedPreloads(preloads) {
     if (!preloads || typeof preloads !== 'object') return null;
 
-    console.log('[Grove Substack] extractBioFromParsedPreloads keys:', Object.keys(preloads));
-
     // Top-level author_bio (post pages)
     if (preloads.author_bio) return preloads.author_bio;
 

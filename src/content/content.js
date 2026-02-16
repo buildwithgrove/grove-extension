@@ -765,6 +765,9 @@
               // Build tweet text from template (prefer custom message from modal)
                 const autoReplyMessage = customMessage || xSettings.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
                 const referralCode = xSettings.GROVE_REFERRAL_CODE;
+                // TODO_CONSIDERATION: Referral links always point to production — intentional?
+                //   Why: During local/testnet dev, auto-reply tweets still link to production app
+                //   How: Use GroveEnv.get(envId).appUrl if referrals should match the active environment
                 const referralLink = referralCode ? `https://app.grove.city/?ref=${encodeURIComponent(referralCode)}` : 'grove.city';
                 const tweetText = buildAutoReplyMessage(autoReplyMessage, {
                   username: recipientUsername,

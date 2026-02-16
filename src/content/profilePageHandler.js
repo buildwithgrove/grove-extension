@@ -51,22 +51,17 @@ const ProfilePageHandler = {
     }
 
     try {
-      console.log('[Grove Extension] [Resolve] ProfilePageHandler initializing for:', window.location.href);
-
       // Wait for page to load (if adapter supports it)
       if (typeof adapter.waitForProfileLoad === 'function') {
-        console.log('[Grove Extension] [Resolve] Waiting for page load...');
         const loaded = await adapter.waitForProfileLoad();
-        console.log('[Grove Extension] [Resolve] Page load result:', loaded);
         if (!loaded) {
-          console.log('[Grove Extension] [Resolve] Page did not load within timeout; aborting');
+          console.warn('[Grove Extension] ProfilePageHandler: page did not load within timeout');
           return null;
         }
       }
 
       // Double check tippable page status after load
       if (typeof adapter.detectTippablePage === 'function' && !adapter.detectTippablePage()) {
-        console.log('[Grove Extension] [Resolve] Page no longer matches tippable pattern; aborting');
         return null;
       }
 
