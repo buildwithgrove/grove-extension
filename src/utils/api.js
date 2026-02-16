@@ -837,15 +837,20 @@ class GroveAPI {
       });
 
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
         const requestOptions = {
           method: attempt.method,
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal
         };
         if (attempt.body) {
           requestOptions.body = attempt.body;
         }
 
         const response = await fetch(attempt.url, requestOptions);
+        clearTimeout(timeoutId);
 
         let data = null;
         try {

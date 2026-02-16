@@ -21,6 +21,9 @@ beforeEach(() => {
     URL: URL,
     URLSearchParams: URLSearchParams,
     BigInt: BigInt, // Needed for balance calculation
+    AbortController: AbortController,
+    setTimeout: setTimeout,
+    clearTimeout: clearTimeout,
   };
   context.window = context;
 
