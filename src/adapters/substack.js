@@ -161,6 +161,8 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
   extractBioFromParsedPreloads(preloads) {
     if (!preloads || typeof preloads !== 'object') return null;
 
+    console.log('[Grove Substack] extractBioFromParsedPreloads keys:', Object.keys(preloads));
+
     // Top-level author_bio (post pages)
     if (preloads.author_bio) return preloads.author_bio;
 
@@ -428,7 +430,7 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
     const profileElement = await this.waitForEither(
       '.subscribe-widget', // Subdomain profile
       '.reader-nav-page',  // Bare domain profile container
-      5000
+      10000
     );
 
     if (profileElement) {

@@ -820,7 +820,7 @@ class GroveAPI {
       }
     ];
 
-    let lastErrorMessage = null;
+    let firstErrorMessage = null;
 
     for (let i = 0; i < endpointAttempts.length; i++) {
       const attempt = endpointAttempts[i];
@@ -858,23 +858,23 @@ class GroveAPI {
         console.log('[Grove API] resolveDestination response:', {
           attempt: attempt.label,
           status: response.status,
-          ok: response.ok,
-          body: data
+          ok: response.ok
         });
 
         if (!response.ok) {
-          lastErrorMessage = data.message || data.detail || `API request failed with status ${response.status}`;
+          const currentErrorMessage = data.message || data.detail || `API request failed with status ${response.status}`;
+          if (i === 0) firstErrorMessage = currentErrorMessage;
 
-          // Production API migrated to /v1/tip/resolve; keep legacy fallback for compatibility.
-          if (!isLastAttempt && response.status === 404) {
-            console.warn(`[Grove API] resolveDestination ${attempt.label} returned 404, trying fallback endpoint`);
+          // If this is not the last attempt, continue to the fallback endpoint.
+          if (!isLastAttempt) {
+            console.warn(`[Grove API] resolveDestination ${attempt.label} failed with ${response.status}, trying fallback endpoint`);
             continue;
           }
 
           return {
             tippable: false,
             addresses: [],
-            error: lastErrorMessage
+            error: firstErrorMessage || currentErrorMessage
           };
         }
 
@@ -886,7 +886,7 @@ class GroveAPI {
           error: null
         };
       } catch (error) {
-        lastErrorMessage = error.message;
+        if (i === 0) firstErrorMessage = error.message;
         console.error(`[Grove API] resolveDestination ${attempt.label} failed:`, error);
 
         if (!isLastAttempt) {
@@ -897,7 +897,7 @@ class GroveAPI {
         return {
           tippable: false,
           addresses: [],
-          error: error.message
+          error: firstErrorMessage || error.message
         };
       }
     }
@@ -905,7 +905,7 @@ class GroveAPI {
     return {
       tippable: false,
       addresses: [],
-      error: lastErrorMessage || 'All resolve endpoints failed'
+      error: firstErrorMessage || 'All resolve endpoints failed'
     };
   }
 
