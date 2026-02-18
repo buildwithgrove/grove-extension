@@ -533,6 +533,10 @@ For simple platforms, use `ProfilePageHandler`. For complex platforms (hover car
 - [ ] Add tests in `tests/[platform]-adapter.test.js`
 - [ ] Test on multiple pages/profiles
 
+## Pull Request Hygiene
+
+When pushing commits, update the connected PR's title and description to reflect the current state of the branch. Use `gh pr list --head <branch>` to find the PR, then `gh pr edit <number> --title "..." --body "..."`. The title should summarize the full scope of the branch (not just the latest commit), and the body should list all notable changes. Do this on every push so reviewers always see an accurate summary.
+
 ## Testing
 
 Tests are located in the `tests/` directory and use Vitest.
