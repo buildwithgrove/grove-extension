@@ -30,6 +30,7 @@ INCLUDE_FILES := \
 	popup.js \
 	README.md \
 	design-system \
+	dist \
 	icons \
 	src
 
@@ -46,7 +47,7 @@ EXCLUDE_PATTERNS := \
 
 # Internal target for building the zip (no instructions shown)
 .PHONY: _build_extension_zip
-_build_extension_zip: dev_clean $(BUILD_DIR)
+_build_extension_zip: build_cdp dev_clean $(BUILD_DIR)
 	@VERSION=$$(grep '"version"' manifest.json | sed 's/.*: "\([^"]*\)".*/\1/'); \
 	GIT_SHA=$$(git rev-parse --short HEAD); \
 	VERSION_FULL="$$VERSION-$$GIT_SHA"; \
