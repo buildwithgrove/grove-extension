@@ -196,7 +196,12 @@ class GroveAPI {
             tipCount: entry.tip_count || 0,
             lastTipDestination: entry.last_tip_destination,
             lastTipSocialGraph: entry.last_tip_social_graph,
-            lastTipContext: entry.last_tip_context
+            lastTipContext: entry.last_tip_context,
+            topTipDestination: entry.top_tip_destination,
+            topTipContext: entry.top_tip_context,
+            handle: entry.handle,
+            base_name: entry.base_name,
+            ens_name: entry.ens_name
           }))
         }
       };
@@ -238,7 +243,12 @@ class GroveAPI {
             tipCount: entry.tip_count || 0,
             lastTipDestination: entry.last_tip_destination,
             lastTipSocialGraph: entry.last_tip_social_graph,
-            lastTipContext: entry.last_tip_context
+            lastTipContext: entry.last_tip_context,
+            topTipDestination: entry.top_tip_destination,
+            topTipContext: entry.top_tip_context,
+            handle: entry.handle,
+            base_name: entry.base_name,
+            ens_name: entry.ens_name
           }))
         }
       };
@@ -597,6 +607,41 @@ class GroveAPI {
   }
 
   /**
+   * Get referral commission earnings for the authenticated user
+   * @param {string} groveApiJwt - JWT token for authentication
+   * @param {string} window - Time window: '24h', '7d', '30d', or 'all'
+   * @returns {Promise<Object>} - Referral earnings data
+   */
+  static async getReferralEarnings(groveApiJwt, window = 'all') {
+    const baseURL = await this.getBaseURL();
+    const params = new URLSearchParams({ window });
+    const apiUrl = `${baseURL}/v1/referrals/earnings?${params}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${groveApiJwt}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data: data
+      };
+    } catch (error) {
+      console.error('[Grove Extension] Referral earnings fetch failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
    * Send a tip to the current page URL
    * @param {string} pageUrl - Full page URL (e.g., "https://twitter.com/olshansky")
    * @param {number} tipAmount - Tip amount in dollars (default: 0.05)
@@ -680,9 +725,9 @@ class GroveAPI {
    * @param {number} params.offset - Pagination offset (default: 0)
    * @returns {Promise<Object>} - Giveaways list with totals
    */
-  static async listGiveaways({ status = 'active', limit = 50, offset = 0 } = {}) {
+  static async listGiveaways({ browseable = true, limit = 50, offset = 0 } = {}) {
     const baseURL = await this.getBaseURL();
-    const params = new URLSearchParams({ status, limit: String(limit), offset: String(offset) });
+    const params = new URLSearchParams({ browseable: String(browseable), limit: String(limit), offset: String(offset) });
     const apiUrl = `${baseURL}/v1/giveaways?${params}`;
 
     try {

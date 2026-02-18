@@ -2871,7 +2871,7 @@ async function loadGiveaways() {
   error.classList.add('hidden');
   list.innerHTML = '';
 
-  const result = await GroveAPI.listGiveaways({ status: 'active', limit: 50 });
+  const result = await GroveAPI.listGiveaways({ browseable: true, limit: 50 });
 
   loading.classList.add('hidden');
 
@@ -3951,6 +3951,7 @@ async function loadReferralData() {
   const referralLinkInput = document.getElementById('referralLinkInput');
   const referralCount = document.getElementById('referralCount');
   const referralEarnings = document.getElementById('referralEarnings');
+  const referralCommission = document.getElementById('referralCommission');
   const referralRefereesList = document.getElementById('referralRefereesList');
   const referralRefereesEmpty = document.getElementById('referralRefereesEmpty');
 
@@ -4012,6 +4013,22 @@ async function loadReferralData() {
     // Referees list
     if (referralRefereesList && referees) {
       renderRefereesList(referees, referralRefereesList, referralRefereesEmpty);
+    }
+
+    // Fetch referral commission earnings
+    if (referralCommission) {
+      try {
+        const earningsRes = await GroveAPI.getReferralEarnings(jwt);
+        if (earningsRes.success && earningsRes.data) {
+          const commission = parseFloat(earningsRes.data.total_usd || '0');
+          referralCommission.textContent = `$${isNaN(commission) ? '0.00' : commission.toFixed(2)}`;
+        } else {
+          referralCommission.textContent = '$0.00';
+        }
+      } catch (earningsError) {
+        console.log('[Referrals] Failed to load commission earnings:', earningsError.message);
+        referralCommission.textContent = '$0.00';
+      }
     }
   } catch (error) {
     console.log('[Referrals] Failed to load referral data:', error.message);

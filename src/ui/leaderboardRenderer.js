@@ -251,8 +251,9 @@ const LeaderboardRenderer = {
    * @returns {string} HTML string
    */
   renderTipperEntry(entry, index) {
-    const ctx = entry.lastTipContext || {};
-    const parsed = entry.lastTipDestination ? parseDestination(entry.lastTipDestination) : {};
+    const ctx = entry.topTipContext || entry.lastTipContext || {};
+    const tipDest = entry.topTipDestination || entry.lastTipDestination;
+    const parsed = tipDest ? parseDestination(tipDest) : {};
 
     const rankIcon = `<span class="rank-number">${index + 1}</span>`;
 
@@ -265,17 +266,18 @@ const LeaderboardRenderer = {
     // Platform icon for the tipper
     const platformLinkHtml = this.getPlatformIcon(display.platform, display.url);
 
+    const tipLabel = entry.topTipContext ? 'Top tip' : 'Latest tip';
     let descriptionHtml;
     if (ctx.recipient_username) {
       const postUrl = ctx.source_post_url || parsed.postUrl;
       const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
       const linkUrl = postUrl || profileUrl;
       const linkText = postUrl ? `@${FormatUtils.escapeHtml(ctx.recipient_username)}'s post` : `@${FormatUtils.escapeHtml(ctx.recipient_username)}`;
-      descriptionHtml = `Latest tip: <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${linkText}</a>`;
+      descriptionHtml = `${tipLabel}: <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${linkText}</a>`;
     } else if (parsed.profileHandle) {
       const linkUrl = parsed.postUrl || parsed.profileUrl;
       const linkText = parsed.postUrl ? `${parsed.profileHandle}'s post` : parsed.profileHandle;
-      descriptionHtml = `Latest tip: <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${linkText}</a>`;
+      descriptionHtml = `${tipLabel}: <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${linkText}</a>`;
     } else {
       descriptionHtml = `${entry.tipCount.toLocaleString()} tips sent`;
     }
@@ -484,8 +486,9 @@ const LeaderboardRenderer = {
   getContentPlatform(entry) {
     // Only surface actual content platforms, not identity platforms
     const contentPlatforms = new Set(['x', 'substack', 'website']);
-    const ctx = entry.lastTipContext || entry.context || {};
-    const destination = entry.lastTipDestination || entry.destination;
+    // Prefer top tip (highest volume) over last tip for more meaningful display
+    const ctx = entry.topTipContext || entry.lastTipContext || entry.context || {};
+    const destination = entry.topTipDestination || entry.lastTipDestination || entry.destination;
 
     // Prefer source post URL (most specific content link)
     const contentUrl = ctx.source_post_url || destination;
