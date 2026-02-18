@@ -36,10 +36,8 @@
 - [Adding Support for New Platforms](#adding-support-for-new-platforms)
   - [Architecture Overview](#architecture-overview)
   - [Component Patterns](#component-patterns)
-  - [Step 1: Capture Platform Structure](#step-1-capture-platform-structure)
-  - [Step 2: Create the Adapter](#step-2-create-the-adapter)
-  - [Step 3: Create the Handler (if needed)](#step-3-create-the-handler-if-needed)
-  - [Step 4: Integration Checklist](#step-4-integration-checklist)
+  - [Guided Workflow](#guided-workflow)
+  - [Integration Checklist](#integration-checklist)
 - [Testing](#testing)
   - [Running Tests](#running-tests)
   - [Testing Requirements](#testing-requirements)
@@ -229,23 +227,29 @@ Token naming: `--grove-colors-brand-primary`, `--grove-colors-accent-orange`, et
 
 ### Keeping Tokens Updated
 
-```bash
-# Pull latest design system changes
-git submodule update --remote
+**Pull latest design system changes:**
 
-# Commit the updated reference
-git add design-system
-git commit -m "chore: update design-system tokens"
-git push
+```bash
+git submodule update --remote
+```
+
+**Commit the updated reference:**
+
+```bash
+git add design-system && git commit -m "chore: update design-system tokens" && git push
 ```
 
 ### After Cloning
 
-```bash
-# Clone with submodules
-git clone --recurse-submodules <repo-url>
+**Clone with submodules:**
 
-# Or initialize after cloning
+```bash
+git clone --recurse-submodules <repo-url>
+```
+
+**Or initialize after cloning:**
+
+```bash
 git submodule update --init
 ```
 
@@ -410,7 +414,7 @@ Each platform requires three main components:
 
 #### Adapters
 
-Adapters extend `BaseAdapter` and handle platform-specific DOM operations. See [Step 2: Create the Adapter](#step-2-create-the-adapter) for the template.
+Adapters extend `BaseAdapter` and handle platform-specific DOM operations.
 
 Required methods: `detectTippablePage()`, `extractBio()`, `getButtonPlacement()`, `getPlatformName()`
 
@@ -462,77 +466,35 @@ Use CSS classes instead of inline styles. Define platform-specific classes in `s
 .grove-[platform]-hover-button { }
 ```
 
-### Step 1: Capture Platform Structure
+### Guided Workflow
 
-1. **Take a screenshot** of where you want the button to appear
-   - Navigate to a profile/video/post page on the target platform
-   - Screenshot the action buttons area (Share, Like, etc.)
+Run `/grove_add_social_graph` for a step-by-step guided workflow covering platform discovery, DOM research, implementation, and ecosystem integration.
 
-2. **Extract the HTML structure**
-   - Right-click on the target area → Inspect
-   - Copy the container element structure
-   - Note class names, IDs, and data attributes
-
-### Step 2: Create the Adapter
-
-Create `src/adapters/[platform].js`:
-
-```javascript
-window.PlatformAdapter = class PlatformAdapter extends window.BaseAdapter {
-  detectTippablePage() {
-    // Return true if on a tippable page (profiles AND posts)
-  }
-
-  extractBio() {
-    // Combine display name + bio for address detection
-    const parts = [];
-    const displayName = this.extractDisplayName();
-    if (displayName) parts.push(displayName);
-    const bio = document.querySelector('.bio')?.textContent;
-    if (bio) parts.push(bio);
-    return parts.join(' ') || null;
-  }
-
-  getButtonPlacement() {
-    // Return element to insert button near
-  }
-
-  getPlatformName() {
-    return 'platform';
-  }
-};
-```
-
-### Step 3: Create the Handler (if needed)
-
-For simple platforms, use `ProfilePageHandler`. For complex platforms (hover cards, multiple button locations), create `src/content/[platform]Handler.js`.
-
-### Step 4: Integration Checklist
+### Integration Checklist
 
 - [ ] Create `src/adapters/[platform].js`
 - [ ] Create `src/content/[platform]Handler.js` (if complex)
-- [ ] Add platform detection in `src/content/content.js`:
-  ```javascript
-  if (hostname.includes('[platform].com')) {
-    return new window.PlatformAdapter();
-  }
-  ```
-- [ ] Add handler initialization in `src/content/content.js`:
-  ```javascript
-  if (currentAdapter.getPlatformName() === '[platform]') {
-    // Initialize handler with callbacks
-  }
-  ```
+- [ ] Add platform detection in `src/content/content.js`
+- [ ] Add handler initialization in `src/content/content.js` (if custom handler)
 - [ ] Add CSS styles in `src/ui/styles.css`
-- [ ] Update `manifest.json`:
-  ```json
-  {
-    "matches": ["https://[platform].com/*"],
-    "js": ["src/adapters/[platform].js", "src/content/[platform]Handler.js", ...]
-  }
-  ```
+- [ ] Update `manifest.json` with content script entry
 - [ ] Add tests in `tests/[platform]-adapter.test.js`
 - [ ] Test on multiple pages/profiles
+- [ ] Add platform to `src/ui/leaderboardRenderer.js`:
+  - SVG icon in `icons` object
+  - Detection in `detectPlatform()`
+  - Entry in `getPlatformIcon()` icon map
+  - Entry in `buildPlatformIconCell()` icon map
+  - Platform name in `contentPlatforms` set in `getContentPlatform()`
+- [ ] Add platform to `src/ui/historyRenderer.js`:
+  - SVG icon in `icons` object
+  - URL detection helper (e.g., `isYouTubeUrl()`)
+  - Platform branch in `buildPlatformLink()`
+- [ ] Add platform dark mode detection in `src/utils/darkMode.js` (if non-generic)
+- [ ] Add platform to README.md Address Resolution Matrix
+- [ ] Add E2E tests in `tests/e2e/smoke.spec.js` (positive + negative)
+- [ ] Add `test_e2e_<platform>` target in `makefiles/test.mk`
+- [ ] Add platform to `.claude/commands/grove_extension_review.md` (test tables + manual checklist)
 
 ## Testing
 
