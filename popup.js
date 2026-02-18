@@ -2328,7 +2328,7 @@ async function updateAppLinks() {
   // Update create giveaway link
   const createGiveawayLink = document.getElementById('createGiveawayLink');
   if (createGiveawayLink) {
-    createGiveawayLink.href = appUrl + '/profile?tab=giveaways';
+    createGiveawayLink.href = appUrl + '/dashboard?tab=giveaways';
   }
 }
 
