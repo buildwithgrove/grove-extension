@@ -98,6 +98,25 @@ test.describe('Extension Smoke Tests', () => {
     await expect(tipButton).toBeVisible({ timeout: 20000 });
   });
 
+  test('Should inject on youtube.com/@Dolshansky', async () => {
+    const page = await browserContext.newPage();
+    await page.goto('https://www.youtube.com/@Dolshansky', { waitUntil: 'domcontentloaded' });
+
+    const tipButton = page.locator('#grove-tip-button');
+    await expect(tipButton).toBeVisible({ timeout: 20000 });
+  });
+
+  test('Should NOT inject on youtube.com/@MrBeast (no crypto address)', async () => {
+    const page = await browserContext.newPage();
+    await page.goto('https://www.youtube.com/@MrBeast', { waitUntil: 'domcontentloaded' });
+
+    // Wait for page to settle and extension to run
+    await page.waitForTimeout(5000);
+
+    const tipButton = page.locator('#grove-tip-button');
+    await expect(tipButton).toHaveCount(0);
+  });
+
   test('Should inject on x.com/olshansky', async () => {
     const page = await browserContext.newPage();
     await page.goto('https://x.com/olshansky', { waitUntil: 'domcontentloaded' });

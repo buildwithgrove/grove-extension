@@ -506,6 +506,32 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
   }
 
   /**
+   * Extract username from a Substack URL
+   * @param {string} url - The URL to parse
+   * @returns {string|null} - Username or null
+   */
+  extractUsernameFromUrl(url) {
+    // Bare domain: substack.com/@username
+    const bareMatch = url.match(/substack\.com\/@([^\/\?]+)/);
+    if (bareMatch) return bareMatch[1];
+
+    // Subdomain: username.substack.com
+    const subdomainMatch = url.match(/^https?:\/\/([^.]+)\.substack\.com/);
+    if (subdomainMatch && subdomainMatch[1] !== 'www') return subdomainMatch[1];
+
+    return null;
+  }
+
+  /**
+   * Get the profile URL for a Substack username
+   * @param {string} username - The username
+   * @returns {string} - Profile URL
+   */
+  getProfileUrl(username) {
+    return `https://substack.com/@${username}`;
+  }
+
+  /**
    * Start observing for hover card popups
    * @param {Function} onHoverCardFound - Callback when a tippable hover card is found
    */

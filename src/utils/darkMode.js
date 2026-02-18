@@ -45,6 +45,12 @@ function detectDarkMode(platform) {
     // Fall through to generic detection if variable not found
   }
 
+  if (platform === 'youtube') {
+    // YouTube uses dark attribute on html element
+    if (document.documentElement.hasAttribute('dark')) return true;
+    // Fall through to generic detection
+  }
+
   // Check body background (most reliable for platforms that set it)
   const bodyBg = document.body.style.backgroundColor ||
                  window.getComputedStyle(document.body).backgroundColor;

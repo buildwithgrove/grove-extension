@@ -344,6 +344,20 @@
       return;
     }
 
+    // For YouTube, use ProfilePageHandler (simple path like SoundCloud without track observer)
+    if (currentAdapter.getPlatformName() === "youtube") {
+      if (currentAdapter.detectTippablePage()) {
+        if (typeof ProfilePageHandler !== 'undefined') {
+          const result = await ProfilePageHandler.initialize(currentAdapter);
+          if (result) {
+            resolvedAddress = result;
+            currentButton = ProfilePageHandler.getButton();
+          }
+        }
+      }
+      return;
+    }
+
     // For Substack, use ProfilePageHandler for full pages (API-first), and SubstackHandler for hover cards
     if (currentAdapter.getPlatformName() === "substack") {
       const isSubstackTippablePage = currentAdapter.detectTippablePage();
@@ -462,6 +476,11 @@
     if (hostname.includes("soundcloud.com")) {
       console.log('[Grove Extension] Detected SoundCloud');
       return new window.SoundCloudAdapter();
+    }
+
+    if (hostname.includes("youtube.com")) {
+      console.log('[Grove Extension] Detected YouTube');
+      return new window.YouTubeAdapter();
     }
 
     if (hostname.includes("substack.com")) {
@@ -708,10 +727,12 @@
     }
     if (recipientUsername) {
       context.recipient_username = recipientUsername;
-      if (platformName === 'twitter') {
-        context.recipient_profile_url = `https://x.com/${recipientUsername}`;
-      } else if (platformName === 'soundcloud') {
-        context.recipient_profile_url = `https://soundcloud.com/${recipientUsername}`;
+      // Use adapter's getProfileUrl if available, otherwise fall back to hardcoded patterns
+      if (currentAdapter && typeof currentAdapter.getProfileUrl === 'function') {
+        const profileUrl = currentAdapter.getProfileUrl(recipientUsername);
+        if (profileUrl) {
+          context.recipient_profile_url = profileUrl;
+        }
       }
     }
     if (tipOverrides?.recipient_profile_url) {
@@ -911,11 +932,19 @@
   // ============= End SoundCloud Track Handling =============
 
   /**
-   * Extract username from Twitter profile URL
+   * Extract username from a platform URL
+   * Delegates to the current adapter if available, with hardcoded fallback
    * @param {string} url - The URL to parse
    * @returns {string|null} - Username or null
    */
   function extractUsernameFromUrl(url) {
+    // Delegate to adapter if available
+    if (currentAdapter && typeof currentAdapter.extractUsernameFromUrl === 'function') {
+      const result = currentAdapter.extractUsernameFromUrl(url);
+      if (result) return result;
+    }
+
+    // Fallback: hardcoded patterns for backward compatibility
     // Twitter/X pattern
     const xMatch = url.match(/^https:\/\/(twitter|x)\.com\/([^\/\?]+)\/?/);
     if (xMatch && xMatch[2] && !['home', 'explore', 'search', 'notifications', 'messages', 'settings', 'i'].includes(xMatch[2])) {

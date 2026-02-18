@@ -24,6 +24,11 @@ test_unit_soundcloud: ## Run SoundCloud adapter unit tests
 	$(call print_info_section,Running SoundCloud unit tests)
 	$(Q)npx vitest run tests/soundcloud-adapter.test.js
 
+.PHONY: test_unit_youtube
+test_unit_youtube: ## Run YouTube adapter unit tests
+	$(call print_info_section,Running YouTube unit tests)
+	$(Q)npx vitest run tests/youtube-adapter.test.js
+
 .PHONY: test_watch
 test_watch: ## Run tests in watch mode
 	$(call print_info_section,Running tests in watch mode)
@@ -55,3 +60,8 @@ test_e2e_twitter: ## Run Twitter/X E2E tests
 test_e2e_soundcloud: ## Run SoundCloud E2E tests
 	$(call print_info_section,Running SoundCloud E2E tests)
 	$(Q)npx playwright test --grep "soundcloud"
+
+.PHONY: test_e2e_youtube
+test_e2e_youtube: ## Run YouTube E2E tests
+	$(call print_info_section,Running YouTube E2E tests)
+	$(Q)npx playwright test --grep "youtube"

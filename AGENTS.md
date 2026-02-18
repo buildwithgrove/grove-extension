@@ -379,6 +379,7 @@ The bio fetch feature solves this by:
 - `src/content/substackHandler.js` - Substack-specific hover card handler
 - `src/adapters/twitter.js` - Twitter-specific DOM extraction
 - `src/adapters/substack.js` - Substack DOM extraction and bio preload parsing
+- `src/adapters/youtube.js` - YouTube channel/video DOM extraction
 - `src/parsers/address.js` - Address detection (0x, ENS patterns)
 - `src/utils/addressCache.js` - Address caching with TTL
 - `src/utils/api.js` - Grove API client (resolveDestination, etc.)
@@ -414,7 +415,7 @@ Adapters extend `BaseAdapter` and handle platform-specific DOM operations. See [
 Required methods: `detectTippablePage()`, `extractBio()`, `getButtonPlacement()`, `getPlatformName()`
 
 Reference examples:
-- Simple: `src/adapters/soundcloud.js`
+- Simple: `src/adapters/soundcloud.js`, `src/adapters/youtube.js`
 - Complex (with hover cards): `src/adapters/substack.js`
 - Feature-rich: `src/adapters/twitter.js`
 
@@ -558,9 +559,11 @@ make test_e2e
 | `make test_unit_substack`   | Substack adapter unit tests     |
 | `make test_unit_twitter`    | Twitter adapter unit tests      |
 | `make test_unit_soundcloud` | SoundCloud adapter unit tests   |
+| `make test_unit_youtube`    | YouTube adapter unit tests      |
 | `make test_e2e_substack`    | Substack E2E tests              |
 | `make test_e2e_twitter`     | Twitter/X E2E tests             |
 | `make test_e2e_soundcloud`  | SoundCloud E2E tests            |
+| `make test_e2e_youtube`     | YouTube E2E tests               |
 | `make test_watch`           | Run tests in watch mode         |
 | `make test_coverage`        | Run tests with coverage         |
 

@@ -145,6 +145,7 @@ The extension uses different resolution strategies for different page types:
 | **Substack** | Post | API `/resolve` | Full page uses backend API |
 | **Substack** | Hover Cards | DOM parse | Client-side parsing |
 | **SoundCloud** | Profile | API `/resolve` | Full page uses backend API |
+| **YouTube** | Channel/Video | API `/resolve` | Full page uses backend API |
 | **Generic** | Any | llms.txt fetch | Metadata file lookup |
 
 **Key principle:** Full pages use API resolution; Inline content uses client-side DOM parsing.
