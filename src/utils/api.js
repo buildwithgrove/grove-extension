@@ -59,6 +59,11 @@ class GroveAPI {
       );
     });
 
+    // TODO_OPTIMIZE: Clean up AbortSignal listener after messagePromise resolves
+    //   Why: The abort listener holds a reference to the reject fn after the race settles
+    //   How: Add .then(cleanup, cleanup) to remove the event listener
+    //   Priority: Low — signals and promises are short-lived
+
     // Race against AbortSignal if provided (used by resolveDestination timeout)
     if (signal) {
       return Promise.race([
