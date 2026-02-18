@@ -2827,6 +2827,7 @@ async function loadLeaderboardStats() {
  * Giveaways State
  */
 let giveawaysData = [];
+let giveawayFilter = 'hot';
 let selectedGiveawayId = null;
 let giveawayRefreshTimeout = null;
 
@@ -2844,6 +2845,18 @@ function setupGiveawaysTab() {
     backBtn.addEventListener('click', closeGiveawayDetail);
   }
 
+  // Filter pill handlers
+  const filterBtns = document.querySelectorAll('#giveaway-filter .filter-btn');
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const filter = e.target.dataset.giveawayFilter;
+      giveawayFilter = filter;
+      filterBtns.forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      renderFilteredGiveaways();
+    });
+  });
+
   // Delegate click on giveaway cards
   const list = document.getElementById('giveaway-list');
   if (list) {
@@ -2858,7 +2871,83 @@ function setupGiveawaysTab() {
 }
 
 /**
- * Load Giveaways list
+ * Filter giveaways by category (matching app's BrowseGiveaways logic)
+ * @param {string} category - 'hot', 'ending', or 'new'
+ * @returns {Array} Filtered and sorted giveaway items
+ */
+function filterGiveaways(category) {
+  const now = new Date();
+  const MS_48H = 48 * 60 * 60 * 1000;
+  const MS_24H = 24 * 60 * 60 * 1000;
+
+  switch (category) {
+    case 'hot': {
+      // Active with start_at <= now, PLUS ended with end_at >= now - 48h
+      const filtered = giveawaysData.filter(item => {
+        const g = item.giveaway;
+        const startAt = new Date(g.start_at);
+        const endAt = new Date(g.end_at);
+        if (g.status === 'active' && startAt <= now) return true;
+        if (g.status === 'ended' && endAt >= new Date(now - MS_48H)) return true;
+        return false;
+      });
+      filtered.sort((a, b) => (b.stats.unique_participants || 0) - (a.stats.unique_participants || 0));
+      return filtered;
+    }
+    case 'ending': {
+      // Active only, start_at <= now, end_at > now, end_at - now <= 24h
+      const filtered = giveawaysData.filter(item => {
+        const g = item.giveaway;
+        if (g.status !== 'active') return false;
+        const startAt = new Date(g.start_at);
+        const endAt = new Date(g.end_at);
+        return startAt <= now && endAt > now && (endAt - now) <= MS_24H;
+      });
+      filtered.sort((a, b) => new Date(a.giveaway.end_at) - new Date(b.giveaway.end_at));
+      return filtered;
+    }
+    case 'new': {
+      // Active only, start_at within now - 48h to now + 48h
+      const filtered = giveawaysData.filter(item => {
+        const g = item.giveaway;
+        if (g.status !== 'active') return false;
+        const startAt = new Date(g.start_at);
+        return startAt >= new Date(now - MS_48H) && startAt <= new Date(now.getTime() + MS_48H);
+      });
+      filtered.sort((a, b) => new Date(a.giveaway.start_at) - new Date(b.giveaway.start_at));
+      return filtered;
+    }
+    default:
+      return giveawaysData;
+  }
+}
+
+/**
+ * Render the giveaway list based on the active filter
+ */
+function renderFilteredGiveaways() {
+  const empty = document.getElementById('giveaway-empty');
+  const list = document.getElementById('giveaway-list');
+
+  const filtered = filterGiveaways(giveawayFilter);
+
+  if (filtered.length === 0) {
+    list.innerHTML = '';
+    const messages = {
+      hot: 'No giveaways right now',
+      ending: 'No giveaways ending soon',
+      new: 'No new giveaways'
+    };
+    list.innerHTML = `<p class="giveaway-filter-empty">${messages[giveawayFilter] || 'No giveaways found'}</p>`;
+    empty.classList.add('hidden');
+  } else {
+    empty.classList.add('hidden');
+    list.innerHTML = GiveawaysRenderer.renderGiveawaysList(filtered);
+  }
+}
+
+/**
+ * Load Giveaways list (active + recently ended)
  */
 async function loadGiveaways() {
   const loading = document.getElementById('giveaway-loading');
@@ -2871,24 +2960,41 @@ async function loadGiveaways() {
   error.classList.add('hidden');
   list.innerHTML = '';
 
-  const result = await GroveAPI.listGiveaways({ browseable: true, limit: 50 });
+  // Fetch active and recently ended giveaways in parallel
+  const [activeResult, endedResult] = await Promise.all([
+    GroveAPI.listGiveaways({ status: 'active', limit: 100 }),
+    GroveAPI.listGiveaways({ status: 'ended', limit: 50 })
+  ]);
 
   loading.classList.add('hidden');
 
-  if (!result.success) {
+  if (!activeResult.success && !endedResult.success) {
     error.classList.remove('hidden');
     return;
   }
 
-  const giveaways = result.data.giveaways;
-  if (!giveaways || giveaways.length === 0) {
+  // Merge active and ended giveaways, dedup by ID
+  const seen = new Set();
+  const allGiveaways = [];
+  for (const result of [activeResult, endedResult]) {
+    if (result.success) {
+      for (const g of (result.data.giveaways || [])) {
+        if (!seen.has(g.id)) {
+          seen.add(g.id);
+          allGiveaways.push(g);
+        }
+      }
+    }
+  }
+
+  if (allGiveaways.length === 0) {
     empty.classList.remove('hidden');
     return;
   }
 
   // Fetch stats for each giveaway in parallel
   const withStats = await Promise.all(
-    giveaways.map(async (g) => {
+    allGiveaways.map(async (g) => {
       try {
         const detail = await GroveAPI.getGiveaway(g.id);
         if (detail.success) {
@@ -2902,11 +3008,7 @@ async function loadGiveaways() {
   );
 
   giveawaysData = withStats;
-
-  // Sort by total entries descending (most popular first)
-  withStats.sort((a, b) => (b.stats.total_entries || 0) - (a.stats.total_entries || 0));
-
-  list.innerHTML = GiveawaysRenderer.renderGiveawaysList(withStats);
+  renderFilteredGiveaways();
 }
 
 /**

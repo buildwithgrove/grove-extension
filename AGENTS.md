@@ -566,6 +566,8 @@ make test_e2e
 
 ### Testing Requirements
 
+**Never commit or push fake/mock data in production code.** Fake data used for local visual testing must be removed before any commit. If you add temporary fake data to a source file (e.g., `popup.js`), mark it clearly with `// --- FAKE DATA — remove before committing ---` comments and strip it before staging.
+
 **Every PR should include appropriate test changes:**
 
 - When adding new features: Add tests for the new functionality

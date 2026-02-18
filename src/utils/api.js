@@ -718,16 +718,19 @@ class GroveAPI {
   }
 
   /**
-   * Fetch active giveaways
+   * Fetch giveaways
    * @param {Object} params - Query parameters
-   * @param {string} params.status - Filter by status (default: 'active')
+   * @param {boolean} [params.browseable] - Filter browseable giveaways
+   * @param {string} [params.status] - Filter by status ('active', 'ended')
    * @param {number} params.limit - Max results (default: 50)
    * @param {number} params.offset - Pagination offset (default: 0)
    * @returns {Promise<Object>} - Giveaways list with totals
    */
-  static async listGiveaways({ browseable = true, limit = 50, offset = 0 } = {}) {
+  static async listGiveaways({ browseable, status, limit = 50, offset = 0 } = {}) {
     const baseURL = await this.getBaseURL();
-    const params = new URLSearchParams({ browseable: String(browseable), limit: String(limit), offset: String(offset) });
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (browseable !== undefined) params.set('browseable', String(browseable));
+    if (status) params.set('status', status);
     const apiUrl = `${baseURL}/v1/giveaways?${params}`;
 
     try {

@@ -522,7 +522,23 @@
 
     <!-- Giveaways Page -->
     <div class="page" id="tab-giveaways">
-      <h2 class="page-title">Giveaways</h2>
+      <div class="giveaway-header">
+        <h2 class="page-title">Giveaways</h2>
+        <a href="https://app.grove.city/dashboard?tab=giveaways" target="_blank" rel="noopener noreferrer" class="giveaway-create-btn" id="createGiveawayLink">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Create</span>
+        </a>
+      </div>
+
+      <!-- Filter Pills -->
+      <div class="history-filter" id="giveaway-filter">
+        <button class="filter-btn active" data-giveaway-filter="hot">Popular</button>
+        <button class="filter-btn" data-giveaway-filter="ending">Ending Soon</button>
+        <button class="filter-btn" data-giveaway-filter="new">New</button>
+      </div>
 
       <!-- Loading State -->
       <div class="giveaway-loading" id="giveaway-loading">
@@ -554,17 +570,6 @@
       <!-- Giveaway Cards List -->
       <div class="giveaway-list" id="giveaway-list"></div>
 
-      <!-- Create Giveaway CTA -->
-      <div class="giveaway-create-cta">
-        <a href="https://app.grove.city/dashboard?tab=giveaways" target="_blank" rel="noopener noreferrer" class="card-action-btn secondary" id="createGiveawayLink">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-            <polyline points="15 3 21 3 21 9"></polyline>
-            <line x1="10" y1="14" x2="21" y2="3"></line>
-          </svg>
-          <span>Create Giveaway</span>
-        </a>
-      </div>
 
       <!-- Giveaway Detail Overlay -->
       <div class="giveaway-detail-overlay hidden" id="giveaway-detail-overlay">
