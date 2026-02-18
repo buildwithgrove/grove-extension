@@ -135,7 +135,7 @@ const LeaderboardRenderer = {
   /**
    * Detect platform from URL or destination
    * @param {string} destination - URL or destination string
-   * @returns {string} Platform name: 'x', 'substack', 'grove', 'base', 'ens', 'website', or null
+   * @returns {string} Platform name: 'x', 'substack', 'youtube', 'grove', 'base', 'ens', 'website', or null
    */
   detectPlatform(destination) {
     if (!destination) return null;
