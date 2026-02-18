@@ -12,9 +12,10 @@ beforeEach(() => {
   mockChrome = setupChromeMock();
   mockFetch = setupFetchMock();
 
-  // Create context with mocks
+  // Create context with mocks (simulate popup / chrome-extension:// context)
   context = {
     window: {},
+    location: { protocol: 'chrome-extension:', hostname: 'mock-extension-id' },
     console: console,
     chrome: mockChrome,
     fetch: mockFetch.fetch,

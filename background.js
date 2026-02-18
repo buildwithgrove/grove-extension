@@ -13,6 +13,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  // Proxy API fetch requests from content scripts (avoids CORS blocks)
+  // Content scripts inherit the page's origin; the service worker uses chrome-extension://
+  if (message.type === 'API_FETCH') {
+    const { url, options } = message;
+    fetch(url, options)
+      .then(async (response) => {
+        const body = await response.text();
+        const headers = {};
+        response.headers.forEach((value, key) => { headers[key] = value; });
+        sendResponse({ ok: response.ok, status: response.status, statusText: response.statusText, headers, body });
+      })
+      .catch((error) => {
+        sendResponse({ error: error.message, ok: false, status: 0, statusText: '', headers: {}, body: '' });
+      });
+    return true; // Keep channel open for async response
+  }
+
   // X (Twitter) OAuth Login
   if (message.type === 'X_LOGIN') {
     handleXLogin().then(result => {
