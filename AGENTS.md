@@ -604,7 +604,7 @@ loadBrowserScript('src/ui/tipModal.js', context);
 
 The extension and the [Grove web app](https://github.com/buildwithgrove/grove-app) share API surfaces, deep links, and a message-passing contract. Changes to either repo can silently break the other. **Always cross-check the sibling repo when touching shared interfaces.**
 
-Sibling repo location: `~/Developer/app`
+Sibling repo: [`grove-app`](https://github.com/buildwithgrove/grove-app)
 
 See also: [GitHub Issue #103](https://github.com/buildwithgrove/grove-extension/issues/103)
 
