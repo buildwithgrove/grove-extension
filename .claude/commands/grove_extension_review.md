@@ -22,6 +22,7 @@ Your goal is to review code changes in this branch before merging.
   - [Pre-Review Checklist Status](#pre-review-checklist-status)
   - [Detailed Findings](#detailed-findings)
   - [Required Actions](#required-actions)
+  - [Manual Testing Checklist](#manual-testing-checklist)
   - [Suggestions for Future (TODO Comments)](#suggestions-for-future-todo-comments)
 
 ## Review Process
@@ -242,7 +243,90 @@ Numbered list of specific actions needed before merge:
    - What to do: Specific instructions
    - Command (if applicable): `make <target>`
 
-### Suggestions for Future (TODO Comments)
+### Manual Testing Checklist
+
+Since E2E tests hit live sites and are inherently flaky (rate limits, auth walls, DOM changes), always generate a manual testing checklist based on what changed. Only include sections relevant to the changed files.
+
+**How to generate**: Analyze the changed files from Phase 1 and include the matching sections below. Skip sections where no files changed.
+
+---
+
+**If adapter or content script files changed for a platform, include that platform's section:**
+
+#### Twitter/X (`src/adapters/twitter.js`, `src/content/content.js`) <!-- omit in toc -->
+
+Load the extension unpacked in Chrome, then verify:
+
+- [ ] Visit `x.com/<user_with_crypto_in_bio>` — tip button appears on profile
+- [ ] Visit `x.com/<user>/status/<id>` — tip button appears on tweet page
+- [ ] Hover over a username in the feed — hover card shows tip button (if address found)
+- [ ] Scroll the feed — inline tip buttons appear on tweets from tippable authors
+- [ ] Navigate between profiles (SPA) — old button cleans up, new button injects
+
+#### Substack (`src/adapters/substack.js`, `src/content/substackHandler.js`) <!-- omit in toc -->
+
+- [ ] Visit `<author>.substack.com` (subdomain profile) — tip button appears
+- [ ] Visit `substack.com/@<author>` (bare domain profile) — tip button appears
+- [ ] Visit `<author>.substack.com/p/<post>` (post page) — tip button appears
+- [ ] Visit a Substack with NO crypto address — tip button does NOT appear
+- [ ] While logged in to Substack, verify tip button targets the page author (not a recommended/sidebar author)
+
+#### SoundCloud (`src/adapters/soundcloud.js`) <!-- omit in toc -->
+
+- [ ] Visit `soundcloud.com/<artist_with_crypto>` — tip button appears
+- [ ] Navigate between artists (SPA) — button updates correctly
+- [ ] Visit an artist with no crypto address — no button appears
+
+---
+
+**If environment/config files changed (`src/config/environments.js`, `src/config/chains.js`, `src/config/endpoints.js`, `popup.js`):**
+
+#### Environment Switching <!-- omit in toc -->
+
+- [ ] Open popup → toggle Developer Mode ON → confirm endpoint switches to testnet
+- [ ] Toggle Developer Mode OFF → confirm endpoint switches back to production
+- [ ] In dev mode, switch between testnet/localhost endpoints → chain selector updates correctly
+- [ ] Verify the "Top Up" link points to the correct app URL for each environment
+- [ ] Verify all "Open App" links point to the correct app URL
+
+#### JWT / Auth <!-- omit in toc -->
+
+- [ ] Sign in via the Grove web app (production) → extension receives JWT and activates
+- [ ] Switch to testnet → sign in via testnet app → testnet JWT stored separately
+- [ ] Switch back to production → production JWT still works (not overwritten)
+
+---
+
+**If `src/utils/api.js` or `src/content/profilePageHandler.js` changed:**
+
+#### API Resolution <!-- omit in toc -->
+
+- [ ] Visit a tippable profile → check console for `[Grove Extension] [Resolve]` logs → API resolution succeeds
+- [ ] Visit a non-tippable profile → no button injected, no errors in console
+- [ ] Disconnect internet → visit a tippable profile → graceful fallback, no crash
+
+---
+
+**If `background.js` or `src/storage/keyManager.js` changed:**
+
+#### Background / Storage <!-- omit in toc -->
+
+- [ ] Fresh install (no previous data) → open popup → defaults load correctly
+- [ ] Existing install with legacy JWT → verify migration works (check console for `[KeyManager] Migrated`)
+- [ ] Inspect `chrome.storage.local` → JWT keys match expected slots (`GROVE_JWT_PRODUCTION`, etc.)
+
+---
+
+**Always include (quick smoke test):**
+
+#### Smoke Test <!-- omit in toc -->
+
+- [ ] Load extension unpacked in Chrome (`chrome://extensions` → Load unpacked)
+- [ ] No errors on the extensions page
+- [ ] Open popup → UI renders without errors
+- [ ] Open DevTools console on a content script page → no uncaught errors
+
+
 
 Use appropriate TODO prefixes:
 

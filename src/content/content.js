@@ -71,20 +71,9 @@
             return;
           }
 
-          const isDevMode = result[STORAGE_KEYS.ENVIRONMENT] === 'local';
-          const endpoint = result[STORAGE_KEYS.ENDPOINT] || 'production';
-
-          let jwt;
-          if (!isDevMode) {
-            jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
-          } else if (endpoint === 'localhost') {
-            jwt = result[STORAGE_KEYS.JWT_LOCALHOST];
-          } else if (endpoint === 'testnet') {
-            jwt = result[STORAGE_KEYS.JWT_TESTNET];
-          } else {
-            jwt = result[STORAGE_KEYS.JWT_PRODUCTION];
-          }
-          resolve(jwt || null);
+          const envId = GroveEnv.resolveActiveEnvId(result[STORAGE_KEYS.ENVIRONMENT], result[STORAGE_KEYS.ENDPOINT]);
+          const jwt = result[GroveEnv.jwtKeyForEnv(envId)] || null;
+          resolve(jwt);
         });
       } catch (e) {
         reject(new Error('Extension was reloaded. Please refresh the page.'));
@@ -776,6 +765,9 @@
               // Build tweet text from template (prefer custom message from modal)
                 const autoReplyMessage = customMessage || xSettings.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
                 const referralCode = xSettings.GROVE_REFERRAL_CODE;
+                // TODO_CONSIDERATION: Referral links always point to production — intentional?
+                //   Why: During local/testnet dev, auto-reply tweets still link to production app
+                //   How: Use GroveEnv.get(envId).appUrl if referrals should match the active environment
                 const referralLink = referralCode ? `https://app.grove.city/?ref=${encodeURIComponent(referralCode)}` : 'grove.city';
                 const tweetText = buildAutoReplyMessage(autoReplyMessage, {
                   username: recipientUsername,

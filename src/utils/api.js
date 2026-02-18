@@ -4,41 +4,7 @@
  */
 
 class GroveAPI {
-  static ENDPOINTS = {
-    'production': 'https://api.grove.city',
-    'testnet': 'https://api.testnet.grove.city',
-    'localhost': 'http://localhost:3000',
-    'localhost:3000': 'http://localhost:3000',
-  };
-
   static DEFAULT_TIP_AMOUNT = 0.05; // $0.05 default
-
-  static CHAIN_RPC_ENDPOINTS = {
-    'base': {
-      name: 'Base',
-      chainId: 8453,
-      rpcUrl: 'https://mainnet.base.org',
-      explorerUrl: 'https://basescan.org'
-    },
-    'base-sepolia': {
-      name: 'Base Sepolia',
-      chainId: 84532,
-      rpcUrl: 'https://sepolia.base.org',
-      explorerUrl: 'https://sepolia.basescan.org'
-    },
-    'solana': {
-      name: 'Solana',
-      chainId: null,
-      rpcUrl: 'https://api.mainnet-beta.solana.com',
-      explorerUrl: 'https://explorer.solana.com'
-    },
-    'solana-devnet': {
-      name: 'Solana Devnet',
-      chainId: null,
-      rpcUrl: 'https://api.devnet.solana.com',
-      explorerUrl: 'https://explorer.solana.com?cluster=devnet'
-    }
-  };
 
   static GROVE_API_JWT = ''; // Placeholder for now
 
@@ -49,13 +15,11 @@ class GroveAPI {
   static async getBaseURL() {
     try {
       const result = await chrome.storage.local.get(['groveEndpoint', 'groveEnvironment']);
-      const env = result.groveEnvironment || 'prod';
-      const storedEndpoint = result.groveEndpoint || 'production';
-      const endpoint = env === 'local' ? storedEndpoint : 'production';
-      return this.ENDPOINTS[endpoint] || this.ENDPOINTS['production'];
+      const envId = GroveEnv.resolveActiveEnvId(result.groveEnvironment, result.groveEndpoint);
+      return GroveEnv.get(envId).apiUrl;
     } catch (error) {
       console.log("[Grove Extension] Endpoint load failed, using production");
-      return this.ENDPOINTS['production'];
+      return GROVE_ENVIRONMENTS.production.apiUrl;
     }
   }
 
@@ -79,7 +43,7 @@ class GroveAPI {
    */
   static async getChainConfig() {
     const chain = await this.getChainId();
-    return this.CHAIN_RPC_ENDPOINTS[chain] || this.CHAIN_RPC_ENDPOINTS['base'];
+    return CHAIN_CONFIG[chain] || CHAIN_CONFIG['base'];
   }
 
   /**
@@ -856,7 +820,7 @@ class GroveAPI {
       }
     ];
 
-    let lastErrorMessage = null;
+    let firstErrorMessage = null;
 
     for (let i = 0; i < endpointAttempts.length; i++) {
       const attempt = endpointAttempts[i];
@@ -873,15 +837,20 @@ class GroveAPI {
       });
 
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
         const requestOptions = {
           method: attempt.method,
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal
         };
         if (attempt.body) {
           requestOptions.body = attempt.body;
         }
 
         const response = await fetch(attempt.url, requestOptions);
+        clearTimeout(timeoutId);
 
         let data = null;
         try {
@@ -894,23 +863,23 @@ class GroveAPI {
         console.log('[Grove API] resolveDestination response:', {
           attempt: attempt.label,
           status: response.status,
-          ok: response.ok,
-          body: data
+          ok: response.ok
         });
 
         if (!response.ok) {
-          lastErrorMessage = data.message || data.detail || `API request failed with status ${response.status}`;
+          const currentErrorMessage = data.message || data.detail || `API request failed with status ${response.status}`;
+          if (i === 0) firstErrorMessage = currentErrorMessage;
 
-          // Production API migrated to /v1/tip/resolve; keep legacy fallback for compatibility.
-          if (!isLastAttempt && response.status === 404) {
-            console.warn(`[Grove API] resolveDestination ${attempt.label} returned 404, trying fallback endpoint`);
+          // If this is not the last attempt, continue to the fallback endpoint.
+          if (!isLastAttempt) {
+            console.warn(`[Grove API] resolveDestination ${attempt.label} failed with ${response.status}, trying fallback endpoint`);
             continue;
           }
 
           return {
             tippable: false,
             addresses: [],
-            error: lastErrorMessage
+            error: firstErrorMessage || currentErrorMessage
           };
         }
 
@@ -922,7 +891,7 @@ class GroveAPI {
           error: null
         };
       } catch (error) {
-        lastErrorMessage = error.message;
+        if (i === 0) firstErrorMessage = error.message;
         console.error(`[Grove API] resolveDestination ${attempt.label} failed:`, error);
 
         if (!isLastAttempt) {
@@ -933,7 +902,7 @@ class GroveAPI {
         return {
           tippable: false,
           addresses: [],
-          error: error.message
+          error: firstErrorMessage || error.message
         };
       }
     }
@@ -941,7 +910,7 @@ class GroveAPI {
     return {
       tippable: false,
       addresses: [],
-      error: lastErrorMessage || 'All resolve endpoints failed'
+      error: firstErrorMessage || 'All resolve endpoints failed'
     };
   }
 

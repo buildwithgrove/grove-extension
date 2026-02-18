@@ -68,12 +68,16 @@ function getTestnetChain(rawChain) {
  * @param {Object} settings - Storage settings with groveEnvironment and groveEndpoint
  * @returns {string} - Chain to use for explorer URLs (testnet if in test environment)
  */
+// TODO_CONSIDERATION: Remove typeof GroveEnv guard once environments.js load order is guaranteed
+//   Why: environments.js is always loaded first in manifest.json now
+//   How: Remove the guard and let it fail loudly if load order breaks
 function getExplorerChain(rawChain, settings = {}) {
-  const env = settings.groveEnvironment || 'prod';
-  const storedEndpoint = settings.groveEndpoint || 'production';
-  const endpoint = env === 'local' ? storedEndpoint : 'production';
-  const isTestEnvironment = endpoint === 'localhost' || endpoint === 'testnet';
-  return isTestEnvironment ? getTestnetChain(rawChain) : rawChain;
+  const envId = typeof GroveEnv !== 'undefined'
+    ? GroveEnv.resolveActiveEnvId(settings.groveEnvironment || 'prod', settings.groveEndpoint || 'production')
+    : 'production';
+  return (typeof GroveEnv !== 'undefined' && GroveEnv.isTestChains(envId))
+    ? getTestnetChain(rawChain)
+    : rawChain;
 }
 
 /**

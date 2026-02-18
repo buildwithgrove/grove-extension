@@ -55,8 +55,14 @@ const ProfilePageHandler = {
       if (typeof adapter.waitForProfileLoad === 'function') {
         const loaded = await adapter.waitForProfileLoad();
         if (!loaded) {
+          console.warn('[Grove Extension] ProfilePageHandler: page did not load within timeout');
           return null;
         }
+      }
+
+      // Double check tippable page status after load
+      if (typeof adapter.detectTippablePage === 'function' && !adapter.detectTippablePage()) {
+        return null;
       }
 
       // Use API for resolution (consistent pattern for all full page views)

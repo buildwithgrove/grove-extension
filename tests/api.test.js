@@ -21,10 +21,15 @@ beforeEach(() => {
     URL: URL,
     URLSearchParams: URLSearchParams,
     BigInt: BigInt, // Needed for balance calculation
+    AbortController: AbortController,
+    setTimeout: setTimeout,
+    clearTimeout: clearTimeout,
   };
   context.window = context;
 
-  // Load script
+  // Load dependencies, then the script under test
+  loadBrowserScript('src/config/environments.js', context);
+  loadBrowserScript('src/config/chains.js', context);
   loadBrowserScript('src/utils/api.js', context);
 
   GroveAPI = context.GroveAPI;
@@ -57,7 +62,7 @@ describe('GroveAPI', () => {
     it('should return localhost URL when environment is local and endpoint is localhost', async () => {
       mockChrome.storage.local._setData({ groveEnvironment: 'local', groveEndpoint: 'localhost' });
       const url = await GroveAPI.getBaseURL();
-      expect(url).toBe('http://localhost:3000');
+      expect(url).toBe('http://localhost:8000');
     });
   });
 

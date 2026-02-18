@@ -188,27 +188,11 @@ let cdpAuthState = {
 
 // Defaults
 const DEFAULT_TIP_AMOUNT = 0.02;
-const DEFAULT_CHAIN = 'base';
+// DEFAULT_CHAIN is provided by src/config/chains.js
 const DEFAULT_ENV = 'prod';
 const DEFAULT_ENDPOINT = 'production';
 // FormatUtils.DEFAULT_BALANCE_DISPLAY is now in FormatUtils
-const TOP_UP_URLS = {
-  mainnet: 'https://app.grove.city/wallets?action=topup',
-  testnet: 'https://app.testnet.grove.city/wallets?action=topup',
-  localhost: 'http://localhost:3000/wallets?action=topup'
-};
-const APP_URLS = {
-  production: 'https://app.grove.city',
-  testnet: 'https://app.testnet.grove.city',
-  localhost: 'http://localhost:3000'
-};
-const MAINNET_CHAINS = ['base', 'solana'];
-const TESTNET_CHAINS = ['base-sepolia', 'solana-devnet'];
-const ENDPOINT_LABELS = {
-  'production': 'api.grove.city',
-  'testnet': 'api.testnet.grove.city',
-  'localhost': 'localhost:3000',
-};
+// Environment constants are now provided by GroveEnv (src/config/environments.js)
 
 /**
  * Initialize Popup
@@ -227,7 +211,7 @@ async function init() {
     // Use stored environment, or fall back to active slot if not stored (legacy keys)
     const environment = storedEnv || await KeyManager.getActiveSlotId();
     const slotConfig = KeyManager.getEnvConfig(environment);
-    const chain = slotConfig?.isDevMode ? 'base-sepolia' : 'base';
+    const chain = GroveEnv.defaultChain(environment);
 
     // Archive current key in that slot first (if any)
     const currentJwt = await KeyManager.getJWT(environment);
@@ -1161,7 +1145,7 @@ async function saveJwt() {
   // Save to the currently active slot
   const environment = await KeyManager.getActiveSlotId();
   const slotConfig = KeyManager.getEnvConfig(environment);
-  const chain = slotConfig.isDevMode ? 'base-sepolia' : 'base';
+  const chain = GroveEnv.defaultChain(environment);
 
   // Get current JWT in that slot before saving new one
   const currentJwt = await KeyManager.getJWT(environment);
@@ -2101,16 +2085,17 @@ async function handleDevModeToggle(e) {
     if (endpointSelector) endpointSelector.classList.remove('hidden');
     updateTestnetKeyVisibility(true);
 
-    // Switch to testnet endpoint and Base Sepolia
+    // Switch to testnet endpoint and its default chain
+    const testnetChain = GroveEnv.defaultChain('testnet');
     await chrome.storage.local.set({
       [STORAGE_KEYS.ENDPOINT]: 'testnet',
-      [STORAGE_KEYS.CHAIN]: 'base-sepolia',
+      [STORAGE_KEYS.CHAIN]: testnetChain,
       [STORAGE_KEYS.LAST_BALANCES]: {}, // Clear cached balances
     });
     await loadEndpoint();
     setTestModeBannerText('testnet');
-    updateChainUI('base-sepolia');
-    updateTopUpLink('base-sepolia');
+    updateChainUI(testnetChain);
+    updateTopUpLink(testnetChain);
     updateAppLinks();
     updateNetworkSelectorVisibility('testnet');
 
@@ -2140,16 +2125,17 @@ async function handleDevModeToggle(e) {
     if (endpointSelector) endpointSelector.classList.add('hidden');
     updateTestnetKeyVisibility(false);
 
-    // Reset to production endpoint and Base mainnet
+    // Reset to production endpoint and its default chain
+    const prodChain = GroveEnv.defaultChain('production');
     await chrome.storage.local.set({
       [STORAGE_KEYS.ENDPOINT]: 'production',
-      [STORAGE_KEYS.CHAIN]: 'base',
+      [STORAGE_KEYS.CHAIN]: prodChain,
       [STORAGE_KEYS.LAST_BALANCES]: {}, // Clear cached balances
     });
     await loadEndpoint();
     setTestModeBannerText('production');
-    updateChainUI('base');
-    updateTopUpLink('base');
+    updateChainUI(prodChain);
+    updateTopUpLink(prodChain);
     updateAppLinks();
     updateNetworkSelectorVisibility('production');
 
@@ -2206,7 +2192,7 @@ async function handleEndpointChange(e) {
   await chrome.storage.local.set({ [STORAGE_KEYS.ENDPOINT]: endpoint });
 
   const chainResult = await chrome.storage.local.get([STORAGE_KEYS.CHAIN]);
-  const allowedChains = isTestEndpoint(endpoint) ? TESTNET_CHAINS : MAINNET_CHAINS;
+  const allowedChains = GroveEnv.allowedChains(endpoint);
   let chain = chainResult[STORAGE_KEYS.CHAIN] || getDefaultChainForEndpoint(endpoint);
   const chainChangedBecauseEndpoint = !allowedChains.includes(chain);
   if (chainChangedBecauseEndpoint) {
@@ -2254,7 +2240,7 @@ async function loadChain() {
     const result = await chrome.storage.local.get([STORAGE_KEYS.CHAIN, STORAGE_KEYS.ENDPOINT]);
     const endpoint = result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
     const storedChain = result[STORAGE_KEYS.CHAIN] || getDefaultChainForEndpoint(endpoint);
-    const allowedChains = isTestEndpoint(endpoint) ? TESTNET_CHAINS : MAINNET_CHAINS;
+    const allowedChains = GroveEnv.allowedChains(endpoint);
     const chain = allowedChains.includes(storedChain) ? storedChain : getDefaultChainForEndpoint(endpoint);
 
     if (storedChain !== chain) {
@@ -2292,15 +2278,15 @@ function updateTestnetKeyVisibility(devModeEnabled) {
 }
 
 function isTestEndpoint(endpoint) {
-  return endpoint === 'testnet' || endpoint === 'localhost';
+  return GroveEnv.isTestChains(endpoint);
 }
 
 function getDefaultChainForEndpoint(endpoint) {
-  return isTestEndpoint(endpoint) ? TESTNET_CHAINS[0] : MAINNET_CHAINS[0];
+  return GroveEnv.defaultChain(endpoint);
 }
 
 function getEndpointLabel(endpoint) {
-  return ENDPOINT_LABELS[endpoint] || endpoint || 'api.grove.city';
+  return GroveEnv.apiLabel(endpoint);
 }
 
 function setTestModeBannerText(endpoint) {
@@ -2314,18 +2300,12 @@ function setTestModeBannerText(endpoint) {
 async function updateTopUpLink(chain) {
   if (!topUpBtn) return;
 
-  // Check if we're in localhost mode
-  const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
-  const endpoint = result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
-
-  if (endpoint === 'localhost') {
-    topUpBtn.href = TOP_UP_URLS.localhost;
-    return;
-  }
-
-  const config = NETWORKS[chain] || NETWORKS[DEFAULT_CHAIN];
-  const isTestnet = (config.type || '').toLowerCase() === 'testnet';
-  topUpBtn.href = isTestnet ? TOP_UP_URLS.testnet : TOP_UP_URLS.mainnet;
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT, STORAGE_KEYS.ENVIRONMENT]);
+  const envId = GroveEnv.resolveActiveEnvId(
+    result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV,
+    result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT
+  );
+  topUpBtn.href = GroveEnv.topUpUrl(envId);
 }
 
 /**
@@ -2333,9 +2313,12 @@ async function updateTopUpLink(chain) {
  * Should be called on init and when endpoint changes
  */
 async function updateAppLinks() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
-  const endpoint = result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT;
-  const appUrl = APP_URLS[endpoint] || APP_URLS.production;
+  const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT, STORAGE_KEYS.ENVIRONMENT]);
+  const envId = GroveEnv.resolveActiveEnvId(
+    result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV,
+    result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT
+  );
+  const appUrl = GroveEnv.get(envId).appUrl;
 
   // Update wallet sign-in button
   if (walletSignInBtn) {

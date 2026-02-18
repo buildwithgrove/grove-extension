@@ -15,30 +15,17 @@ const MAX_KEYS = 10;
 
 /**
  * Environment configuration for each slot
+ * Derived from GROVE_ENVIRONMENTS (src/config/environments.js)
  */
-const ENV_CONFIG = {
-  production: {
-    label: 'Mainnet',
-    storageKey: 'GROVE_JWT_PRODUCTION',
-    appUrl: 'https://app.grove.city/extension',
-    apiUrl: 'https://api.grove.city',
-    isDevMode: false,
-  },
-  testnet: {
-    label: 'Testnet',
-    storageKey: 'GROVE_JWT_TESTNET',
-    appUrl: 'https://app.testnet.grove.city/extension',
-    apiUrl: 'https://api.testnet.grove.city',
-    isDevMode: true,
-  },
-  localhost: {
-    label: 'Localhost',
-    storageKey: 'GROVE_JWT_LOCALHOST',
-    appUrl: 'http://localhost:3000/extension',
-    apiUrl: 'http://localhost:3000',
-    isDevMode: true,
-  },
-};
+const ENV_CONFIG = Object.fromEntries(
+  Object.entries(GROVE_ENVIRONMENTS).map(([id, env]) => [id, {
+    label: env.label,
+    storageKey: env.jwtStorageKey,
+    appUrl: `${env.appUrl}/extension`,
+    apiUrl: env.apiUrl,
+    isDevMode: env.isDevMode,
+  }])
+);
 
 class KeyManager {
   /**
@@ -89,14 +76,10 @@ class KeyManager {
    */
   static async getActiveSlotId() {
     const result = await chrome.storage.local.get(['groveEndpoint', 'groveEnvironment']);
-    const endpoint = result['groveEndpoint'] || 'production';
-    const env = result['groveEnvironment'] || 'prod';
-    const isDevMode = env === 'local';
-
-    if (!isDevMode) return 'production';
-    if (endpoint === 'localhost') return 'localhost';
-    if (endpoint === 'testnet') return 'testnet';
-    return 'production';
+    return GroveEnv.resolveActiveEnvId(
+      result['groveEnvironment'] || 'prod',
+      result['groveEndpoint'] || 'production'
+    );
   }
 
   /**
