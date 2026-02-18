@@ -533,6 +533,10 @@ For simple platforms, use `ProfilePageHandler`. For complex platforms (hover car
 - [ ] Add tests in `tests/[platform]-adapter.test.js`
 - [ ] Test on multiple pages/profiles
 
+## Pull Request Hygiene
+
+When pushing commits, update the connected PR's title and description to reflect the current state of the branch. Use `gh pr list --head <branch>` to find the PR, then `gh pr edit <number> --title "..." --body "..."`. The title should summarize the full scope of the branch (not just the latest commit), and the body should list all notable changes. Do this on every push so reviewers always see an accurate summary.
+
 ## Testing
 
 Tests are located in the `tests/` directory and use Vitest.
@@ -565,6 +569,8 @@ make test_e2e
 | `make test_coverage`        | Run tests with coverage         |
 
 ### Testing Requirements
+
+**Never commit or push fake/mock data in production code.** Fake data used for local visual testing must be removed before any commit. If you add temporary fake data to a source file (e.g., `popup.js`), mark it clearly with `// --- FAKE DATA — remove before committing ---` comments and strip it before staging.
 
 **Every PR should include appropriate test changes:**
 
@@ -599,3 +605,134 @@ import { loadBrowserScript } from './helpers/load-script.js';
 loadBrowserScript('src/ui/constants.js', context);
 loadBrowserScript('src/ui/tipModal.js', context);
 ```
+
+## Cross-Repo Sync with Grove App
+
+The extension and the [Grove web app](https://github.com/buildwithgrove/grove-app) share API surfaces, deep links, and a message-passing contract. Changes to either repo can silently break the other. **Always cross-check the sibling repo when touching shared interfaces.**
+
+Sibling repo: [`grove-app`](https://github.com/buildwithgrove/grove-app)
+
+See also: [GitHub Issue #103](https://github.com/buildwithgrove/grove-extension/issues/103)
+
+### When to Cross-Check the App
+
+- Adding/removing/renaming API response fields (giveaway model, leaderboard entries, tip history, etc.)
+- Changing deep-link URL paths or query params
+- Modifying `chrome.runtime` message types or response shapes
+- Updating `externally_connectable` in `manifest.json`
+- Changing storage key names or JWT slot logic
+
+### Deep Links (Extension → App)
+
+URLs the extension opens in the app. Defined statically in `popup.html` (fallback) and dynamically in `popup.js` via `GroveEnv.get(envId).appUrl`.
+
+| Feature | URL Pattern | Files |
+|---------|-------------|-------|
+| Top Up | `{appUrl}/wallets?action=topup` | `popup.html:225`, `popup.js` via `GroveEnv.topUpUrl()` |
+| Wallet Sign-In | `{appUrl}/extension` | `popup.html:979`, `popup.js` via `GroveEnv.extensionUrl()` |
+| Create Giveaway | `{appUrl}/dashboard?tab=giveaways` | `popup.html:559`, `popup.js:2331` |
+| General Settings | `{appUrl}` | `popup.html:1064` |
+| Referral Link | `https://app.grove.city/?ref={code}` | `popup.js:3997` (hardcoded to production — intentional) |
+
+**App URL values** (from `src/config/environments.js`):
+
+| Environment | `appUrl` |
+|-------------|----------|
+| production | `https://app.grove.city` |
+| testnet | `https://app.testnet.grove.city` |
+| localhost | `http://localhost:3000` |
+
+### chrome.runtime Message Passing
+
+The app sends messages to the extension via `chrome.runtime.sendMessage(extensionId, ...)`. The extension handles them in `background.js` via `onMessageExternal`.
+
+**Extension ID**: `jheejecmpfgifgdodgipilpgfaiecndm` (hardcoded in app at `src/lib/constants.ts`)
+
+| Message Type | Direction | Request | Response |
+|-------------|-----------|---------|----------|
+| `SET_JWT` | App → Ext | `{ type, jwt, environment }` | `{ success, environment, devModeEnabled }` |
+| `GET_JWT` | App → Ext | `{ type, environment? }` | `{ jwt, isDevMode, environment }` |
+| `PING` | App → Ext | `{ type, environment? }` | `{ hasKey, isDevMode, environment }` |
+| `OPEN_POPUP` | App → Ext | `{ type }` | `{ success, opened, reason? }` |
+| `OPEN_POPUP_TO_X_SETTINGS` | App → Ext | `{ type }` | `{ success, opened, reason? }` |
+
+`environment` values: `'production'`, `'testnet'`, `'localhost'` (app sends `'local'` which is normalized to `'localhost'`)
+
+### externally_connectable (manifest.json)
+
+Origins allowed to message the extension:
+
+```json
+"externally_connectable": {
+  "matches": [
+    "http://localhost:*/*",
+    "https://app.grove.city/*",
+    "https://app.testnet.grove.city/*"
+  ]
+}
+```
+
+### Shared API Endpoints
+
+Both the extension and app call these Grove API endpoints. When the API response shape changes, both consumers must be updated.
+
+**Account & Auth:**
+
+| Endpoint | Auth | Extension File |
+|----------|------|----------------|
+| `GET /v1/account` | JWT | `api.js` |
+| `POST /v1/auth/exchange-cdp-token` | None | `src/auth/cdpAuth.js` |
+| `POST /v1/account/handle` | JWT | `api.js` |
+
+**Tipping:**
+
+| Endpoint | Auth | Extension File |
+|----------|------|----------------|
+| `POST /v1/tip` | JWT | `api.js` |
+| `GET /v1/tip/resolve?destination=` | None | `api.js` |
+
+**Activity & Earnings:**
+
+| Endpoint | Auth | Extension File |
+|----------|------|----------------|
+| `GET /v1/account/tip_history?limit=&offset=` | JWT | `api.js` |
+| `GET /v1/account/fund_history?limit=&offset=` | JWT | `api.js` |
+| `GET /v1/account/earnings/summary?window=` | JWT | `api.js` |
+
+**Giveaways:**
+
+| Endpoint | Auth | Extension File |
+|----------|------|----------------|
+| `GET /v1/giveaways?browseable=&limit=&offset=` | None | `api.js` |
+| `GET /v1/giveaway/{id}` | None | `api.js` |
+
+**Leaderboard:**
+
+| Endpoint | Auth | Extension File |
+|----------|------|----------------|
+| `GET /v1/leaderboard/tippers?window=&limit=` | None | `api.js` |
+| `GET /v1/leaderboard/tippees?window=&limit=` | None | `api.js` |
+| `GET /v1/leaderboard/tippers/recent?limit=` | None | `api.js` |
+| `GET /v1/leaderboard/tippees/recent?limit=` | None | `api.js` |
+| `GET /v1/leaderboard/funders?window=&limit=` | None | `api.js` |
+| `GET /v1/leaderboard/funds/total` | None | `api.js` |
+| `GET /v1/leaderboard/tips/total` | None | `api.js` |
+
+**Referrals:**
+
+| Endpoint | Auth | Extension File |
+|----------|------|----------------|
+| `GET /v1/referrals?limit=&offset=` | JWT | `api.js` |
+| `GET /v1/referrals/earnings?window=` | JWT | `api.js` |
+
+### Key App Files (for cross-reference)
+
+| App File | What It Does |
+|----------|-------------|
+| `src/lib/constants.ts` | Extension ID constant |
+| `src/lib/config.ts` | `getExtensionEnvironment()` — env mapping |
+| `src/components/SecretKeyCard.tsx` | All `chrome.runtime` message sends |
+| `src/app/extension/page.tsx` | `/extension` route, inline `SET_JWT` |
+| `src/app/wallets/page.tsx` | `/wallets?action=topup` handler |
+| `src/app/dashboard/page.tsx` | `?tab=` routing for all dashboard tabs |
+| `src/modules/api/groveApiClient.ts` | App-side API client (canonical field names) |
