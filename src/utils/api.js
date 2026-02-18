@@ -9,6 +9,97 @@ class GroveAPI {
   static GROVE_API_JWT = ''; // Placeholder for now
 
   /**
+   * Drop-in replacement for fetch() that works from ANY extension context.
+   *
+   * Problem: Code injected into twitter.com sends requests *as* twitter.com,
+   *          so the Grove API rejects them (CORS).
+   * Solution: When running on a page, relay the request through the background
+   *           service worker, which sends it as chrome-extension:// (always allowed).
+   *           From the popup or service worker itself, just use normal fetch().
+   *
+   * Why not always go through background.js?
+   *   - The service worker can't message itself (sendMessage doesn't work that way)
+   *   - The popup already runs as chrome-extension:// — no CORS issue, no proxy needed
+   *   - Direct fetch() returns a real Response; the proxy returns a shim (see below)
+   */
+  static async _fetch(url, options = {}) {
+    // Popup or service worker context → direct fetch
+    if (typeof window === 'undefined' || window.location?.protocol === 'chrome-extension:') {
+      return fetch(url, options);
+    }
+
+    // Content script context → relay through background service worker
+    const { signal, ...serializableOptions } = options;
+
+    const messagePromise = new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { type: 'API_FETCH', url, options: serializableOptions },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
+          if (!response) {
+            reject(new Error('No response from background service worker'));
+            return;
+          }
+          if (response.error) {
+            reject(new Error(response.error));
+            return;
+          }
+          // Shim: only the subset of the Response API that our call sites use.
+          // Popup/service-worker contexts get a real Response via direct fetch().
+          // If you need .clone(), .blob(), .body, .arrayBuffer(), etc., either:
+          //   1. Extend this shim, or
+          //   2. Move the call to background.js where real fetch() is available.
+          const shim = {
+            ok: response.ok,
+            status: response.status,
+            statusText: response.statusText,
+            headers: new Headers(response.headers || {}),
+            json: () => Promise.resolve(JSON.parse(response.body)),
+            text: () => Promise.resolve(response.body),
+          };
+
+          // Trap unsupported Response methods so callers get a clear error
+          // instead of a silent `undefined is not a function` at runtime.
+          const unsupported = ['clone', 'blob', 'arrayBuffer', 'formData', 'bytes'];
+          for (const method of unsupported) {
+            shim[method] = () => {
+              throw new Error(`Response.${method}() is not supported by the _fetch() CORS proxy shim`);
+            };
+          }
+
+          resolve(shim);
+        }
+      );
+    });
+
+    // TODO_OPTIMIZE: Clean up AbortSignal listener after messagePromise resolves
+    //   Why: The abort listener holds a reference to the reject fn after the race settles
+    //   How: Add .then(cleanup, cleanup) to remove the event listener
+    //   Priority: Low — signals and promises are short-lived
+
+    // Race against AbortSignal if provided (used by resolveDestination timeout)
+    if (signal) {
+      return Promise.race([
+        messagePromise,
+        new Promise((_, reject) => {
+          if (signal.aborted) {
+            reject(new DOMException('The operation was aborted.', 'AbortError'));
+            return;
+          }
+          signal.addEventListener('abort', () => {
+            reject(new DOMException('The operation was aborted.', 'AbortError'));
+          }, { once: true });
+        })
+      ]);
+    }
+
+    return messagePromise;
+  }
+
+  /**
    * Get the base URL based on endpoint setting
    * @returns {Promise<string>} - Base URL
    */
@@ -66,7 +157,7 @@ class GroveAPI {
 
 
     try {
-      const response = await fetch(rpcUrl, {
+      const response = await GroveAPI._fetch(rpcUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -129,7 +220,7 @@ class GroveAPI {
     const apiUrl = `${baseURL}/v1/account`;
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await GroveAPI._fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${groveApiJwt}`,
@@ -176,7 +267,7 @@ class GroveAPI {
     const apiUrl = `${baseURL}/v1/leaderboard/tippers?window=${window}&limit=${limit}`;
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await GroveAPI._fetch(apiUrl, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -218,7 +309,7 @@ class GroveAPI {
     const apiUrl = `${baseURL}/v1/leaderboard/tippees?window=${window}&limit=${limit}`;
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await GroveAPI._fetch(apiUrl, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -262,8 +353,8 @@ class GroveAPI {
     try {
       // Fetch both endpoints in parallel (like the website)
       const [tippeesRes, tippersRes] = await Promise.all([
-        fetch(tippeesUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } }),
-        fetch(tippersUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } })
+        GroveAPI._fetch(tippeesUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } }),
+        GroveAPI._fetch(tippersUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } })
       ]);
 
       if (!tippeesRes.ok) {
@@ -318,7 +409,7 @@ class GroveAPI {
     const apiUrl = `${baseURL}/v1/leaderboard/funds/total`;
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await GroveAPI._fetch(apiUrl, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -352,7 +443,7 @@ class GroveAPI {
     const apiUrl = `${baseURL}/v1/leaderboard/tips/total`;
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await GroveAPI._fetch(apiUrl, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -414,15 +505,15 @@ class GroveAPI {
       const window = { 'day': '24h', 'week': '7d', 'month': '30d' }[period] || '24h';
 
       const [fundersRes, tippersRes, tippeesRes] = await Promise.all([
-        fetch(`${baseURL}/v1/leaderboard/funders?window=${window}&limit=500`, {
+        GroveAPI._fetch(`${baseURL}/v1/leaderboard/funders?window=${window}&limit=500`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' }
         }),
-        fetch(`${baseURL}/v1/leaderboard/tippers?window=${window}&limit=500`, {
+        GroveAPI._fetch(`${baseURL}/v1/leaderboard/tippers?window=${window}&limit=500`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' }
         }),
-        fetch(`${baseURL}/v1/leaderboard/tippees?window=${window}&limit=500`, {
+        GroveAPI._fetch(`${baseURL}/v1/leaderboard/tippees?window=${window}&limit=500`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' }
         })
@@ -477,7 +568,7 @@ class GroveAPI {
     const apiUrl = `${baseURL}/v1/account/tip_history?${params}`;
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await GroveAPI._fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${groveApiJwt}`,
@@ -519,7 +610,7 @@ class GroveAPI {
     const apiUrl = `${baseURL}/v1/account/fund_history?${params}`;
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await GroveAPI._fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${groveApiJwt}`,
@@ -561,7 +652,7 @@ class GroveAPI {
     const apiUrl = `${baseURL}/v1/referrals?${params}`;
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await GroveAPI._fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${groveApiJwt}`,
@@ -629,7 +720,7 @@ class GroveAPI {
     }
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await GroveAPI._fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${groveApiJwt}`,
@@ -686,7 +777,7 @@ class GroveAPI {
     const apiUrl = `${baseURL}/v1/giveaways?${params}`;
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await GroveAPI._fetch(apiUrl, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -719,7 +810,7 @@ class GroveAPI {
     const apiUrl = `${baseURL}/v1/giveaway/${giveawayId}`;
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await GroveAPI._fetch(apiUrl, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -754,7 +845,7 @@ class GroveAPI {
     const apiUrl = `${baseURL}/v1/account/earnings/summary?${params}`;
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await GroveAPI._fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${groveApiJwt}`,
@@ -849,7 +940,7 @@ class GroveAPI {
           requestOptions.body = attempt.body;
         }
 
-        const response = await fetch(attempt.url, requestOptions);
+        const response = await GroveAPI._fetch(attempt.url, requestOptions);
         clearTimeout(timeoutId);
 
         let data = null;
@@ -925,7 +1016,7 @@ class GroveAPI {
     const apiUrl = `${baseURL}/v1/account/handle`;
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await GroveAPI._fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${groveApiJwt}`,
