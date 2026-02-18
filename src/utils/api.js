@@ -9,17 +9,18 @@ class GroveAPI {
   static GROVE_API_JWT = ''; // Placeholder for now
 
   /**
-   * Proxy fetch through the background service worker when called from a content script.
-   * Content scripts inherit the page's origin (e.g., https://twitter.com) which gets
-   * CORS-blocked by the API. The background service worker runs as chrome-extension://
-   * which is always allowed.
+   * Drop-in replacement for fetch() that works from ANY extension context.
    *
-   * In popup / service-worker context (chrome-extension:// protocol) this falls through
-   * to a normal fetch() so behaviour is unchanged.
+   * Problem: Code injected into twitter.com sends requests *as* twitter.com,
+   *          so the Grove API rejects them (CORS).
+   * Solution: When running on a page, relay the request through the background
+   *           service worker, which sends it as chrome-extension:// (always allowed).
+   *           From the popup or service worker itself, just use normal fetch().
    *
-   * @param {string} url - Request URL
-   * @param {RequestInit} options - fetch options (method, headers, body, signal, etc.)
-   * @returns {Promise<Response|{ok,status,statusText,headers,json(),text()}>}
+   * Why not always go through background.js?
+   *   - The service worker can't message itself (sendMessage doesn't work that way)
+   *   - The popup already runs as chrome-extension:// — no CORS issue, no proxy needed
+   *   - Direct fetch() returns a real Response; the proxy returns a shim (see below)
    */
   static async _fetch(url, options = {}) {
     // Popup or service worker context → direct fetch
@@ -46,15 +47,30 @@ class GroveAPI {
             reject(new Error(response.error));
             return;
           }
-          // Build Response-like object so all existing call sites work unchanged
-          resolve({
+          // Shim: only the subset of the Response API that our call sites use.
+          // Popup/service-worker contexts get a real Response via direct fetch().
+          // If you need .clone(), .blob(), .body, .arrayBuffer(), etc., either:
+          //   1. Extend this shim, or
+          //   2. Move the call to background.js where real fetch() is available.
+          const shim = {
             ok: response.ok,
             status: response.status,
             statusText: response.statusText,
             headers: new Headers(response.headers || {}),
             json: () => Promise.resolve(JSON.parse(response.body)),
             text: () => Promise.resolve(response.body),
-          });
+          };
+
+          // Trap unsupported Response methods so callers get a clear error
+          // instead of a silent `undefined is not a function` at runtime.
+          const unsupported = ['clone', 'blob', 'arrayBuffer', 'formData', 'bytes'];
+          for (const method of unsupported) {
+            shim[method] = () => {
+              throw new Error(`Response.${method}() is not supported by the _fetch() CORS proxy shim`);
+            };
+          }
+
+          resolve(shim);
         }
       );
     });
