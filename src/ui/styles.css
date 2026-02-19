@@ -376,6 +376,12 @@
   cursor: wait !important;
 }
 
+/* Video action bar alignment overrides */
+.grove-youtube-tip-button.grove-youtube-video-action {
+  margin-left: 0 !important;
+  margin-right: 8px !important;
+}
+
 /* Navbar item wrapper for Substack */
 .grove-navbar-item {
   display: flex !important;

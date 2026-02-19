@@ -37,6 +37,7 @@
       "js": [
         "src/config/environments.js",
         "src/config/storageKeys.js",
+        "src/config/devFlags.js",
         "src/config/chains.js",
         "src/utils/darkMode.js",
         "src/utils/addressCache.js",
@@ -67,6 +68,7 @@
       "js": [
         "src/config/environments.js",
         "src/config/storageKeys.js",
+        "src/config/devFlags.js",
         "src/config/chains.js",
         "src/utils/darkMode.js",
         "src/utils/addressCache.js",
@@ -91,6 +93,7 @@
       "js": [
         "src/config/environments.js",
         "src/config/storageKeys.js",
+        "src/config/devFlags.js",
         "src/config/chains.js",
         "src/utils/darkMode.js",
         "src/utils/addressCache.js",
@@ -116,6 +119,7 @@
       "js": [
         "src/config/environments.js",
         "src/config/storageKeys.js",
+        "src/config/devFlags.js",
         "src/config/chains.js",
         "src/utils/darkMode.js",
         "src/utils/addressCache.js",
@@ -152,6 +156,7 @@
       "js": [
         "src/config/environments.js",
         "src/config/storageKeys.js",
+        "src/config/devFlags.js",
         "src/config/chains.js",
         "src/utils/darkMode.js",
         "src/utils/addressCache.js",

@@ -1,3 +1,19 @@
+##########################
+###   Developer Flags  ###
+##########################
+
+.PHONY: dev_force_inject_on
+dev_force_inject_on: ## Enable force-inject tip button (skips address resolution)
+	$(call print_info_section,Enabling dev force-inject flag)
+	$(Q)sed -i '' 's/forceInject: false/forceInject: true/' src/config/devFlags.js
+	@echo "GROVE_DEV_FLAGS.forceInject = true — reload extension to apply"
+
+.PHONY: dev_force_inject_off
+dev_force_inject_off: ## Disable force-inject tip button (normal behavior)
+	$(call print_info_section,Disabling dev force-inject flag)
+	$(Q)sed -i '' 's/forceInject: true/forceInject: false/' src/config/devFlags.js
+	@echo "GROVE_DEV_FLAGS.forceInject = false — reload extension to apply"
+
 ####################
 ###   Testing    ###
 ####################

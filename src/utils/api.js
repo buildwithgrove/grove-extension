@@ -112,7 +112,8 @@ class GroveAPI {
       const urlObj = new URL(url);
       const domain = urlObj.hostname.replace(/^www\./, '');
       const path = urlObj.pathname.replace(/\/$/, ''); // Remove trailing slash
-      return `${domain}${path}`;
+      const search = urlObj.search; // Preserve query params (e.g., ?v=ID for YouTube)
+      return `${domain}${path}${search}`;
     } catch (error) {
       console.error('[Grove Extension] Invalid URL:', url);
       return url;

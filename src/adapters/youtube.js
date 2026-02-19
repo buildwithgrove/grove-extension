@@ -52,17 +52,30 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
    */
   extractDisplayName() {
     // Channel pages: ytd-channel-name in header
-    const channelName = document.querySelector('ytd-channel-name #text');
-    if (channelName?.textContent?.trim()) return channelName.textContent.trim();
+    const channelName = document.querySelector('ytd-channel-name #text')
+      || document.querySelector('yt-formatted-string.ytd-channel-name')
+      || document.querySelector('#channel-header-container #text');
+    if (channelName?.textContent?.trim()) {
+      console.log('[Grove Extension] YouTube displayName from header:', channelName.textContent.trim());
+      return channelName.textContent.trim();
+    }
 
     // Video pages: channel name below video
-    const ownerName = document.querySelector('#owner #channel-name #text a');
-    if (ownerName?.textContent?.trim()) return ownerName.textContent.trim();
+    const ownerName = document.querySelector('#owner #channel-name #text a')
+      || document.querySelector('ytd-video-owner-renderer #channel-name a');
+    if (ownerName?.textContent?.trim()) {
+      console.log('[Grove Extension] YouTube displayName from owner section:', ownerName.textContent.trim());
+      return ownerName.textContent.trim();
+    }
 
     // Fallback: meta tag
     const metaTitle = document.querySelector('meta[property="og:title"]');
-    if (metaTitle) return metaTitle.getAttribute('content');
+    if (metaTitle) {
+      console.log('[Grove Extension] YouTube displayName from meta og:title:', metaTitle.getAttribute('content'));
+      return metaTitle.getAttribute('content');
+    }
 
+    console.log('[Grove Extension] YouTube displayName: none found');
     return null;
   }
 
@@ -82,21 +95,45 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
     const path = window.location.pathname;
 
     if (path.startsWith('/@') || path.startsWith('/channel/') || path.startsWith('/c/')) {
-      // Channel page: description container
+      // Channel page: try multiple selectors for the channel description
       const descEl = document.querySelector('#description-container')
-        || document.querySelector('yt-formatted-string#description');
+        || document.querySelector('yt-formatted-string#description')
+        || document.querySelector('yt-attributed-string#description-text')
+        || document.querySelector('yt-description-snippet-renderer')
+        || document.querySelector('.description-snippet')
+        || document.querySelector('#channel-header-container #description')
+        || document.querySelector('[slot="description"]')
+        || document.querySelector('.description');
       if (descEl?.textContent?.trim()) {
         parts.push(descEl.textContent.trim());
+      }
+
+      // Also check channel tagline/handle area for ENS
+      const tagline = document.querySelector('#channel-tagline #tagline-text')
+        || document.querySelector('yt-formatted-string.ytd-channel-tagline-renderer')
+        || document.querySelector('#header-author #handle');
+      if (tagline?.textContent?.trim()) {
+        parts.push(tagline.textContent.trim());
       }
     }
 
     if (path === '/watch' || path.startsWith('/shorts/')) {
-      // Video/Shorts page: video description
+      // Video/Shorts page: video description (may contain ENS)
       const videoDesc = document.querySelector('ytd-text-inline-expander #plain-snippet-text')
         || document.querySelector('#description-inner ytd-text-inline-expander')
-        || document.querySelector('#description yt-formatted-string');
+        || document.querySelector('#description yt-formatted-string')
+        || document.querySelector('ytd-text-inline-expander .ytd-text-inline-expander')
+        || document.querySelector('.ytd-video-secondary-info-renderer #description');
       if (videoDesc?.textContent?.trim()) {
         parts.push(videoDesc.textContent.trim());
+      }
+
+      // Also check channel handle/tagline in the owner section
+      const ownerHandle = document.querySelector('#owner #channel-name + yt-formatted-string')
+        || document.querySelector('#owner ytd-channel-name + yt-formatted-string')
+        || document.querySelector('#owner #owner-sub-count');
+      if (ownerHandle?.textContent?.trim()) {
+        parts.push(ownerHandle.textContent.trim());
       }
     }
 
@@ -110,6 +147,13 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
     }
 
     const result = parts.join(' ');
+    console.log('[Grove Extension] YouTube extractBio result:', {
+      path,
+      displayName,
+      partsCount: parts.length,
+      bioLength: result?.length || 0,
+      bioPreview: result ? result.substring(0, 200) : null
+    });
     return result || null;
   }
 
@@ -120,27 +164,80 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
   getButtonPlacement() {
     const path = window.location.pathname;
 
-    // Channel pages: subscribe button area
+    // Channel pages: subscribe button (used as existence check; actual injection via injectTipButton)
     if (path.startsWith('/@') || path.startsWith('/channel/') || path.startsWith('/c/')) {
       const subscribeBtn = document.querySelector('#subscribe-button');
+      console.log('[Grove Extension] YouTube getButtonPlacement channel:', {
+        '#subscribe-button': !!subscribeBtn,
+        childCount: subscribeBtn?.children?.length,
+        className: subscribeBtn?.className
+      });
       if (subscribeBtn) return subscribeBtn;
 
-      // Fallback: channel header actions
       const headerActions = document.querySelector('#inner-header-container #buttons');
       if (headerActions) return headerActions;
     }
 
-    // Video/Shorts pages: owner area near subscribe button
+    // Video/Shorts pages: actions row (Share, Ask, Save, Download)
     if (path === '/watch' || path.startsWith('/shorts/')) {
+      const actionsRow = document.querySelector('#top-level-buttons-computed');
+      console.log('[Grove Extension] YouTube getButtonPlacement video:', {
+        '#top-level-buttons-computed': !!actionsRow,
+        childCount: actionsRow?.children?.length
+      });
+      if (actionsRow) return actionsRow;
+
+      // Fallback: actions container
+      const actions = document.querySelector('#actions ytd-menu-renderer');
+      if (actions) return actions;
+
+      // Last fallback: subscribe area
       const ownerSubscribe = document.querySelector('#owner #subscribe-button');
       if (ownerSubscribe) return ownerSubscribe;
-
-      // Fallback: top-row actions
-      const topRow = document.querySelector('#above-the-fold #top-row #actions');
-      if (topRow) return topRow;
     }
 
+    console.log('[Grove Extension] YouTube getButtonPlacement: no placement found for path:', path);
     return null;
+  }
+
+  /**
+   * Custom tip button injection for YouTube
+   * Handles different placement per page type:
+   * - Channel pages: sibling after subscribe button
+   * - Video/Shorts: first in actions row (before Share)
+   * @param {HTMLElement} buttonElement - The tip button element
+   * @returns {boolean} - True if injection succeeded
+   */
+  injectTipButton(buttonElement) {
+    const path = window.location.pathname;
+
+    // Add common YouTube-specific styling class
+    buttonElement.classList.add('grove-youtube-tip-button');
+
+    if (path === '/watch' || path.startsWith('/shorts/')) {
+      // Video/Shorts: insert at start of actions row (before Share)
+      const actionsRow = document.querySelector('#top-level-buttons-computed');
+      if (actionsRow) {
+        buttonElement.classList.add('grove-youtube-video-action');
+        actionsRow.insertBefore(buttonElement, actionsRow.firstElementChild);
+        console.log('[Grove Extension] YouTube injectTipButton: inserted into actions row');
+        return true;
+      }
+    }
+
+    // Channel pages: insert right after subscribe button as sibling
+    // We target the renderer or the button container
+    const subscribeBtn = document.querySelector('#subscribe-button ytd-subscribe-button-renderer')
+      || document.querySelector('#subscribe-button');
+
+    if (subscribeBtn) {
+      subscribeBtn.insertAdjacentElement('afterend', buttonElement);
+      console.log('[Grove Extension] YouTube injectTipButton: inserted after subscribe button');
+      return true;
+    }
+
+    console.log('[Grove Extension] YouTube injectTipButton: no target found');
+    return false;
   }
 
   /**
@@ -150,10 +247,13 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
   async waitForProfileLoad() {
     const path = window.location.pathname;
 
-    // Channel pages: wait for channel name
+    // Channel pages: wait for channel name AND subscribe button to load (not skeleton)
     if (path.startsWith('/@') || path.startsWith('/channel/') || path.startsWith('/c/')) {
       const el = await this.waitForElement('ytd-channel-name #text', 8000);
-      return el !== null;
+      if (!el) return false;
+      // Wait for subscribe button to be populated (skeleton has 0 children)
+      await this.waitForElement('#subscribe-button > *', 5000);
+      return true;
     }
 
     // Video pages: wait for video owner info
