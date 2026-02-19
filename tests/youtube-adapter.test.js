@@ -209,6 +209,18 @@ describe('YouTubeAdapter', () => {
       expect(placement.id).toBe('subscribe-button');
     });
 
+    it('should return ytd-subscribe-button-renderer on new channel layout', () => {
+      const adapter = new YouTubeAdapter();
+      document.body.innerHTML = `
+        <ytd-subscribe-button-renderer>
+          <button>Subscribe</button>
+        </ytd-subscribe-button-renderer>
+      `;
+      const placement = adapter.getButtonPlacement();
+      expect(placement).not.toBeNull();
+      expect(placement.tagName.toLowerCase()).toBe('ytd-subscribe-button-renderer');
+    });
+
     it('should return owner subscribe button on video pages', () => {
       setupContext('https://www.youtube.com/watch?v=test123');
       const adapter = new YouTubeAdapter();

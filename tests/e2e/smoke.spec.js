@@ -106,6 +106,16 @@ test.describe('Extension Smoke Tests', () => {
     await expect(tipButton).toBeVisible({ timeout: 20000 });
   });
 
+  test('Should inject on youtube.com/@Dolshansky/community', async () => {
+    const page = await browserContext.newPage();
+    await page.goto('https://www.youtube.com/@Dolshansky/community', { waitUntil: 'domcontentloaded' });
+
+    // Community posts are in a toolbar below the post content
+    // They can use ytd-post-renderer or ytd-backstage-post-renderer
+    const tipButton = page.locator('ytd-post-renderer #toolbar #grove-tip-button, ytd-backstage-post-renderer #toolbar #grove-tip-button');
+    await expect(tipButton.first()).toBeAttached({ timeout: 30000 });
+  });
+
   test('Should NOT inject on youtube.com/@MrBeast (no crypto address)', async () => {
     const page = await browserContext.newPage();
     await page.goto('https://www.youtube.com/@MrBeast', { waitUntil: 'domcontentloaded' });

@@ -382,6 +382,13 @@
   margin-right: 8px !important;
 }
 
+/* Community action bar alignment overrides */
+.grove-youtube-tip-button.grove-youtube-community-action {
+  margin-left: 0 !important;
+  margin-right: 8px !important;
+  vertical-align: middle !important;
+}
+
 /* Navbar item wrapper for Substack */
 .grove-navbar-item {
   display: flex !important;
