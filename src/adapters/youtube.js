@@ -67,7 +67,8 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
     }
 
     // Channel pages: ytd-channel-name in header
-    const channelName = document.querySelector('ytd-channel-name #text')
+    const channelName = document.querySelector('ytd-page-header-renderer #page-header .page-header-view-model-wiz__title-text')
+      || document.querySelector('ytd-channel-name #text')
       || document.querySelector('yt-formatted-string.ytd-channel-name')
       || document.querySelector('#channel-header-container #text');
     if (channelName?.textContent?.trim()) {
@@ -198,14 +199,18 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
 
     // Channel pages: subscribe button (used as existence check; actual injection via injectTipButton)
     if (path.startsWith('/@') || path.startsWith('/channel/') || path.startsWith('/c/')) {
-      const subscribeBtn = document.querySelector('#subscribe-button')
-        || document.querySelector('ytd-subscribe-button-renderer')
-        || document.querySelector('#channel-header-container #buttons');
+      const subscribeBtn = document.querySelector('ytd-page-header-renderer #actions')
+        || document.querySelector('ytd-flexible-actions-view-model')
+        || document.querySelector('ytd-tabbed-page-header-renderer #buttons')
+        || document.querySelector('ytd-channel-header-renderer #buttons')
+        || document.querySelector('#subscribe-button:not(.skeleton-bg-color)')
+        || document.querySelector('ytd-subscribe-button-renderer:not(.skeleton-bg-color)');
       
       console.log('[Grove Extension] YouTube getButtonPlacement channel:', {
-        '#subscribe-button': !!document.querySelector('#subscribe-button'),
-        'ytd-subscribe-button-renderer': !!document.querySelector('ytd-subscribe-button-renderer'),
-        '#channel-header-container #buttons': !!document.querySelector('#channel-header-container #buttons')
+        'ytd-page-header-renderer #actions': !!document.querySelector('ytd-page-header-renderer #actions'),
+        'ytd-flexible-actions-view-model': !!document.querySelector('ytd-flexible-actions-view-model'),
+        'ytd-tabbed-page-header-renderer': !!document.querySelector('ytd-tabbed-page-header-renderer'),
+        '#subscribe-button': !!document.querySelector('#subscribe-button:not(.skeleton-bg-color)')
       });
 
       if (subscribeBtn) return subscribeBtn;
@@ -246,6 +251,12 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
 
     // Add common YouTube-specific styling class
     buttonElement.classList.add('grove-youtube-tip-button');
+    
+    // Override some restrictive inline styles from TipButton class for YouTube alignment
+    buttonElement.style.setProperty('vertical-align', 'middle', 'important');
+    buttonElement.style.setProperty('align-self', 'center', 'important');
+    buttonElement.style.setProperty('margin-top', '0', 'important');
+    buttonElement.style.setProperty('margin-bottom', '0', 'important');
 
     // Community posts: insert at start of toolbar
     if (path.startsWith('/post/') || path.includes('/community')) {
@@ -274,16 +285,96 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
       }
     }
 
-    // Channel pages: insert right after subscribe button as sibling
-    // We target the renderer or the button container
-    const subscribeBtn = document.querySelector('ytd-subscribe-button-renderer')
-      || document.querySelector('#subscribe-button ytd-subscribe-button-renderer')
-      || document.querySelector('#subscribe-button')
-      || document.querySelector('#channel-header-container #buttons #subscribe-button');
+    // Channel pages: Target the buttons container specifically to ensure side-by-side layout
+    const flexibleActions = document.querySelector('yt-flexible-actions-view-model')
+      || document.querySelector('ytd-page-header-renderer #actions');
 
-    if (subscribeBtn) {
-      subscribeBtn.insertAdjacentElement('afterend', buttonElement);
-      console.log('[Grove Extension] YouTube injectTipButton: inserted after subscribe button');
+    if (flexibleActions) {
+      // Find the subscribe button component
+      const subscribeComp = flexibleActions.querySelector('yt-subscribe-button-view-model')
+        || flexibleActions.querySelector('ytd-subscribe-button-renderer')
+        || flexibleActions.querySelector('.ytFlexibleActionsViewModelAction');
+
+      // Create a wrapper div to match YouTube's internal structure if it's the flexible actions model
+      let wrapper = null;
+      if (flexibleActions.tagName.toLowerCase() === 'yt-flexible-actions-view-model' || flexibleActions.classList.contains('ytFlexibleActionsViewModelHost')) {
+        wrapper = document.createElement('div');
+        wrapper.className = 'ytFlexibleActionsViewModelAction';
+        wrapper.appendChild(buttonElement);
+      }
+
+      const elementToInject = wrapper || buttonElement;
+
+      if (subscribeComp) {
+        // If the subscribe component is itself inside an action div, we should insert after that parent div
+        const target = subscribeComp.classList.contains('ytFlexibleActionsViewModelAction') 
+          ? subscribeComp 
+          : (subscribeComp.closest('.ytFlexibleActionsViewModelAction') || subscribeComp);
+        
+        target.insertAdjacentElement('afterend', elementToInject);
+        console.log('[Grove Extension] YouTube injectTipButton: inserted after subscribe component in flexible actions');
+      } else {
+        flexibleActions.appendChild(elementToInject);
+        console.log('[Grove Extension] YouTube injectTipButton: appended to flexible actions');
+      }
+      
+      // Ensure the container is using flex to prevent wrapping/vertical stacking
+      flexibleActions.style.setProperty('display', 'flex', 'important');
+      flexibleActions.style.setProperty('flex-direction', 'row', 'important');
+      flexibleActions.style.setProperty('align-items', 'center', 'important');
+      flexibleActions.style.setProperty('flex-wrap', 'nowrap', 'important');
+      
+      return true;
+    }
+
+    // Fallback for older channel header layouts
+    const buttonsContainer = document.querySelector('#buttons.ytd-channel-header-renderer')
+      || document.querySelector('#channel-header-container #buttons')
+      || document.querySelector('ytd-channel-header-renderer #inner-header-container #buttons');
+
+    if (buttonsContainer) {
+      // Find the subscribe button within the container
+      const subscribeBtn = buttonsContainer.querySelector('ytd-subscribe-button-renderer')
+        || buttonsContainer.querySelector('#subscribe-button');
+
+      if (subscribeBtn) {
+        // Ensure the container is using flex to prevent wrapping/vertical stacking
+        buttonsContainer.style.setProperty('display', 'flex', 'important');
+        buttonsContainer.style.setProperty('flex-direction', 'row', 'important');
+        buttonsContainer.style.setProperty('align-items', 'center', 'important');
+        buttonsContainer.style.setProperty('flex-wrap', 'nowrap', 'important');
+        
+        subscribeBtn.insertAdjacentElement('afterend', buttonElement);
+        console.log('[Grove Extension] YouTube injectTipButton: inserted after subscribe button in container');
+        return true;
+      }
+      
+      // Fallback: if no subscribe button, just append to container
+      buttonsContainer.appendChild(buttonElement);
+      console.log('[Grove Extension] YouTube injectTipButton: appended to buttons container');
+      return true;
+    }
+
+    // Ultimate fallback for channel pages - try to stay within header if possible
+    const header = document.querySelector('ytd-page-header-renderer')
+      || document.querySelector('ytd-channel-header-renderer')
+      || document.querySelector('#header-container');
+
+    const subscribeBtnFallback = (header ? header.querySelector('ytd-subscribe-button-renderer') : null)
+      || document.querySelector('ytd-subscribe-button-renderer')
+      || document.querySelector('#subscribe-button');
+
+    if (subscribeBtnFallback) {
+      // Ensure parent of fallback is also row if possible
+      const parent = subscribeBtnFallback.parentElement;
+      if (parent) {
+        parent.style.setProperty('display', 'flex', 'important');
+        parent.style.setProperty('flex-direction', 'row', 'important');
+        parent.style.setProperty('align-items', 'center', 'important');
+      }
+
+      subscribeBtnFallback.insertAdjacentElement('afterend', buttonElement);
+      console.log('[Grove Extension] YouTube injectTipButton: inserted after subscribe button (fallback)');
       return true;
     }
 
@@ -306,17 +397,19 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
 
     // Channel pages: wait for channel name AND subscribe button area to load
     if (path.startsWith('/@') || path.startsWith('/channel/') || path.startsWith('/c/')) {
-      // Wait for any of the potential channel name selectors
+      // Wait for any of the potential channel name selectors - preferring modern ones
       await Promise.race([
+        this.waitForElement('ytd-page-header-renderer #page-header .page-header-view-model-wiz__title-text', 8000),
         this.waitForElement('ytd-channel-name #text', 8000),
-        this.waitForElement('yt-formatted-string.ytd-channel-name', 8000),
-        this.waitForElement('#channel-header-container #text', 8000)
+        this.waitForElement('yt-formatted-string.ytd-channel-name', 8000)
       ]);
 
-      // Wait for subscribe button area
+      // Wait for subscribe button area - avoiding skeletons
       await Promise.race([
-        this.waitForElement('#subscribe-button', 5000),
-        this.waitForElement('ytd-subscribe-button-renderer', 5000)
+        this.waitForElement('ytd-subscribe-button-renderer:not(.skeleton-bg-color)', 5000),
+        this.waitForElement('yt-subscribe-button-view-model', 5000),
+        this.waitForElement('ytd-page-header-renderer #actions', 5000),
+        this.waitForElement('#subscribe-button:not(.skeleton-bg-color)', 5000)
       ]);
       
       return true;
