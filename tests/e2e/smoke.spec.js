@@ -137,21 +137,20 @@ test.describe('Extension Smoke Tests', () => {
       return;
     }
 
-    // Community posts are in a toolbar below the post content
-    // They can use ytd-post-renderer or ytd-backstage-post-renderer
-    const tipButton = page.locator('ytd-post-renderer #toolbar #grove-tip-button, ytd-backstage-post-renderer #toolbar #grove-tip-button');
+    // Wait for community posts to render — skip if they don't appear
+    // (headless CI may not load community content reliably)
+    const postRenderer = page.locator('ytd-post-renderer, ytd-backstage-post-renderer');
     try {
-      await expect(tipButton.first()).toBeAttached({ timeout: 30000 });
-    } catch (e) {
-      // Community tab may be empty or not loaded
-      const postRenderer = page.locator('ytd-post-renderer, ytd-backstage-post-renderer');
-      if (await postRenderer.count() === 0) {
-        console.log('No community posts found. Skipping.');
-        test.skip();
-        return;
-      }
-      throw e;
+      await expect(postRenderer.first()).toBeAttached({ timeout: 15000 });
+    } catch {
+      console.log('No community posts loaded within 15s. Skipping.');
+      test.skip();
+      return;
     }
+
+    // Community posts loaded — now check for the tip button in the toolbar
+    const tipButton = page.locator('ytd-post-renderer #toolbar #grove-tip-button, ytd-backstage-post-renderer #toolbar #grove-tip-button');
+    await expect(tipButton.first()).toBeAttached({ timeout: 15000 });
   });
 
   test('Should NOT inject on youtube.com/@MrBeast (no crypto address)', async () => {
