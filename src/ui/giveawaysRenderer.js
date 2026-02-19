@@ -72,7 +72,10 @@ const GiveawaysRenderer = {
     const g = item.giveaway;
     const stats = item.stats || {};
     const timeLeft = this.getTimeRemaining(g.end_at);
-    const isEndingSoon = timeLeft === 'Ending soon';
+    const isEnded = timeLeft === 'Ended';
+    const isEndingSoon = !isEnded && g.status === 'active' && new Date(g.end_at) > new Date() && (new Date(g.end_at) - new Date()) <= 24 * 60 * 60 * 1000;
+    const badgeClass = isEnded ? ' ended' : isEndingSoon ? ' ending-soon' : '';
+    const title = g.title ? this.truncateDescription(g.title, 60) : '';
     const description = this.truncateDescription(g.description);
     const creator = this.formatAddressShort(g.creator_address);
     const totalTipped = this.formatUsd(stats.total_tips_usd || '0');
@@ -83,9 +86,10 @@ const GiveawaysRenderer = {
     return `
       <div class="giveaway-card" data-giveaway-id="${FormatUtils.escapeHtml(g.id)}">
         <div class="giveaway-card-header">
-          <span class="giveaway-time-badge${isEndingSoon ? ' ending-soon' : ''}">${FormatUtils.escapeHtml(timeLeft)}</span>
+          <span class="giveaway-time-badge${badgeClass}">${FormatUtils.escapeHtml(timeLeft)}</span>
           <span class="giveaway-entries-count">${entries} ${entries === 1 ? 'entry' : 'entries'}</span>
         </div>
+        ${title ? `<h3 class="giveaway-card-title">${FormatUtils.escapeHtml(title)}</h3>` : ''}
         <p class="giveaway-card-description">${FormatUtils.escapeHtml(description)}</p>
         <div class="giveaway-card-stats">
           <div class="giveaway-stat">
@@ -131,6 +135,7 @@ const GiveawaysRenderer = {
     const g = giveaway;
     const timeLeft = this.getTimeRemaining(g.end_at);
     const isActive = g.status === 'active' && timeLeft !== 'Ended';
+    const title = g.title || '';
     const description = g.description || '';
     const creator = this.formatAddressShort(g.creator_address);
     const totalTipped = this.formatUsd(stats.total_tips_usd || '0');
@@ -143,6 +148,7 @@ const GiveawaysRenderer = {
       <div class="giveaway-detail-header">
         <span class="giveaway-time-badge${!isActive ? ' ended' : ''}">${FormatUtils.escapeHtml(timeLeft)}</span>
       </div>
+      ${title ? `<h2 class="giveaway-detail-title">${FormatUtils.escapeHtml(title)}</h2>` : ''}
       <p class="giveaway-detail-description">${FormatUtils.escapeHtml(description)}</p>
       <div class="giveaway-detail-stats">
         <div class="giveaway-detail-stat">

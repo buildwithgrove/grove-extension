@@ -1,5 +1,6 @@
 // Import shared modules
 importScripts('src/config/environments.js');
+importScripts('src/config/chains.js');
 importScripts('src/config/storageKeys.js');
 importScripts('src/utils/updateChecker.js');
 importScripts('src/auth/xOAuthBackground.js');
@@ -11,6 +12,34 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.action.setBadgeText({ text: '' });
     sendResponse({ success: true });
     return true;
+  }
+
+  // Proxy API fetch requests from content scripts (avoids CORS blocks)
+  // Content scripts inherit the page's origin; the service worker uses chrome-extension://
+  // Only proxy to known Grove API and chain RPC URLs to prevent abuse.
+  if (message.type === 'API_FETCH') {
+    const { url, options } = message;
+
+    const allowedPrefixes = [
+      ...Object.values(GROVE_ENVIRONMENTS).map(env => env.apiUrl),
+      ...Object.values(CHAIN_CONFIG).map(chain => chain.rpcUrl),
+    ];
+    if (!allowedPrefixes.some(prefix => url.startsWith(prefix))) {
+      sendResponse({ error: `Blocked: URL not in allowlist`, ok: false, status: 0, statusText: '', headers: {}, body: '' });
+      return true;
+    }
+
+    fetch(url, options)
+      .then(async (response) => {
+        const body = await response.text();
+        const headers = {};
+        response.headers.forEach((value, key) => { headers[key] = value; });
+        sendResponse({ ok: response.ok, status: response.status, statusText: response.statusText, headers, body });
+      })
+      .catch((error) => {
+        sendResponse({ error: error.message, ok: false, status: 0, statusText: '', headers: {}, body: '' });
+      });
+    return true; // Keep channel open for async response
   }
 
   // X (Twitter) OAuth Login

@@ -5235,14 +5235,6 @@ button.quick-access-item:hover .quick-access-icon {
   margin: 0 0 12px 0;
 }
 
-.referral-reward-note {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-warning);
-  text-align: center;
-  margin: 0 0 20px 0;
-}
-
 .referral-link-card {
   display: flex;
   gap: 8px;
@@ -5293,28 +5285,33 @@ button.quick-access-item:hover .quick-access-icon {
 
 .referral-stats {
   display: flex;
-  gap: 16px;
+  gap: 8px;
 }
 
 .referral-stat {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 16px 20px;
+  padding: 12px 8px;
   flex: 1;
   text-align: center;
+  min-width: 0;
 }
 
 .referral-stat-value {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--color-text-primary);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .referral-stat-label {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--color-text-secondary);
+  line-height: 1.3;
 }
 
 /* Referral Referees List */
@@ -5432,6 +5429,13 @@ button.quick-access-item:hover .quick-access-icon {
   margin-top: 4px;
 }
 
+.giveaway-filter-empty {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  padding: 32px 16px;
+}
+
 /* Giveaway Cards List */
 .giveaway-list {
   display: flex;
@@ -5476,9 +5480,9 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 .giveaway-time-badge.ending-soon {
-  background: rgba(249, 115, 22, 0.1);
-  border-color: rgba(249, 115, 22, 0.15);
-  color: var(--color-warning);
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.15);
+  color: var(--color-danger);
 }
 
 .giveaway-time-badge.ended {
@@ -5493,9 +5497,17 @@ button.quick-access-item:hover .quick-access-icon {
   font-weight: 500;
 }
 
+.giveaway-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 4px 0;
+  line-height: 1.3;
+}
+
 .giveaway-card-description {
   font-size: 13px;
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
   line-height: 1.4;
   margin-bottom: 12px;
 }
@@ -5553,9 +5565,34 @@ button.quick-access-item:hover .quick-access-icon {
   color: var(--color-text-secondary);
 }
 
-.giveaway-create-cta {
-  text-align: center;
-  padding: 16px 0 4px;
+.giveaway-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.giveaway-header .page-title {
+  margin: 0;
+}
+
+.giveaway-create-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-primary);
+  border: none;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.giveaway-create-btn:hover {
+  background: var(--color-primary-hover);
 }
 
 /* ============================================
@@ -5611,9 +5648,17 @@ button.quick-access-item:hover .quick-access-icon {
   margin-bottom: 12px;
 }
 
+.giveaway-detail-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
 .giveaway-detail-description {
   font-size: 14px;
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
   line-height: 1.5;
   margin-bottom: 16px;
 }
