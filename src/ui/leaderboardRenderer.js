@@ -14,6 +14,7 @@ const LeaderboardRenderer = {
     substack: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z"/></svg>',
     base: '<svg width="14" height="14" viewBox="0 0 111 111" fill="currentColor"><path d="M54.921 110.034c30.291 0 54.86-24.569 54.86-54.86S85.212.314 54.921.314C26.042.314 2.128 22.678.079 51.334h72.102v7.396H.08c2.048 28.656 25.963 51.304 54.842 51.304z"/></svg>',
     ens: '<svg width="14" height="14" viewBox="0 0 48 48" fill="currentColor"><path d="M10.502 6.748c.509-.841 1.437-1.322 2.382-1.322a2.7 2.7 0 011.404.403l18.09 11.19a3.4 3.4 0 011.467 2.292c.088.491.04.898.04 1.475l-.002 8.99c-.022.55-.088 1.16-.44 1.74l-5.854 9.678a.32.32 0 01-.556-.025l-.027-.072-5.476-17.52a3.74 3.74 0 01.02-2.213l3.62-10.72a.26.26 0 00-.347-.327l-12.98 6.067a.32.32 0 01-.465-.295l.002-8.56c.001-.32.041-.545.122-.782zm26.996 34.504c-.509.841-1.437 1.322-2.382 1.322a2.7 2.7 0 01-1.404-.403l-18.09-11.19a3.4 3.4 0 01-1.467-2.292c-.088-.491-.04-.898-.04-1.475l.002-8.99c.022-.55.088-1.16.44-1.74l5.854-9.678a.32.32 0 01.556.025l.027.072 5.476 17.52a3.74 3.74 0 01-.02 2.213l-3.62 10.72a.26.26 0 00.347.327l12.98-6.067a.32.32 0 01.465.295l-.002 8.56c-.001.32-.041.545-.122.782z"/></svg>',
+    youtube: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>',
     globe: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
   },
 
@@ -134,13 +135,14 @@ const LeaderboardRenderer = {
   /**
    * Detect platform from URL or destination
    * @param {string} destination - URL or destination string
-   * @returns {string} Platform name: 'x', 'substack', 'grove', 'base', 'ens', 'website', or null
+   * @returns {string} Platform name: 'x', 'substack', 'youtube', 'grove', 'base', 'ens', 'website', or null
    */
   detectPlatform(destination) {
     if (!destination) return null;
     const lower = destination.toLowerCase();
     if (lower.includes('x.com') || lower.includes('twitter.com')) return 'x';
     if (lower.includes('substack.com')) return 'substack';
+    if (lower.includes('youtube.com')) return 'youtube';
     if (lower.includes('grove.city')) return 'grove';
     if (lower.includes('base.org') || lower.includes('basescan.org')) return 'base';
     if (lower.includes('ens.domains') || lower.endsWith('.eth')) return 'ens';
@@ -161,6 +163,7 @@ const LeaderboardRenderer = {
     const iconMap = {
       'x': { icon: this.icons.xPlatform, title: 'View on X', cssClass: 'platform-x' },
       'substack': { icon: this.icons.substack, title: 'View on Substack', cssClass: 'platform-substack' },
+      'youtube': { icon: this.icons.youtube, title: 'View on YouTube', cssClass: 'platform-youtube' },
       'grove': { icon: this.icons.grove, title: 'View on Grove', cssClass: 'platform-grove' },
       'base': { icon: this.icons.base, title: 'View on Base', cssClass: 'platform-base' },
       'ens': { icon: this.icons.ens, title: 'View on ENS', cssClass: 'platform-ens' },
@@ -466,6 +469,7 @@ const LeaderboardRenderer = {
     const iconMap = {
       'x': { icon: this.icons.xPlatform, title: 'View on X' },
       'substack': { icon: this.icons.substack, title: 'View on Substack' },
+      'youtube': { icon: this.icons.youtube, title: 'View on YouTube' },
       'grove': { icon: this.icons.grove, title: 'View on Grove' },
       'base': { icon: this.icons.base, title: 'View on Base' },
       'ens': { icon: this.icons.ens, title: 'View on ENS' },
@@ -485,7 +489,7 @@ const LeaderboardRenderer = {
    */
   getContentPlatform(entry) {
     // Only surface actual content platforms, not identity platforms
-    const contentPlatforms = new Set(['x', 'substack', 'website']);
+    const contentPlatforms = new Set(['x', 'substack', 'youtube', 'website']);
     // Prefer top tip (highest volume) over last tip for more meaningful display
     const ctx = entry.topTipContext || entry.lastTipContext || entry.context || {};
     const destination = entry.topTipDestination || entry.lastTipDestination || entry.destination;

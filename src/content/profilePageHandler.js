@@ -65,6 +65,15 @@ const ProfilePageHandler = {
         return null;
       }
 
+      // Dev mode: force-inject button without address resolution (for testing button placement)
+      // Toggle via: `make dev_force_inject_on` / `make dev_force_inject_off`
+      // Safe: committed default is false; requires source-level change to enable
+      if (typeof GROVE_DEV_FLAGS !== 'undefined' && GROVE_DEV_FLAGS.forceInject) {
+        console.log('[Grove Extension] [DEV] Force-injecting tip button (GROVE_DEV_FLAGS.forceInject=true)');
+        this.resolvedAddress = { address: 'dev-force-inject.eth', type: 'dev' };
+        return this.injectButton(adapter);
+      }
+
       // Use API for resolution (consistent pattern for all full page views)
       // TODO_IMPROVE: API /v1/destination/resolve currently returns 404 for most URLs.
       //   Once the backend fully supports profile and tweet URL resolution,
@@ -207,8 +216,17 @@ const ProfilePageHandler = {
       return null;
     }
 
-    // Create and inject tip button
     const platformName = adapter.getPlatformName();
+    console.log('[Grove Extension] [Inject] Found placement for', platformName, {
+      tag: placement.tagName,
+      id: placement.id,
+      className: placement.className,
+      childCount: placement.children?.length,
+      parentTag: placement.parentElement?.tagName,
+      parentId: placement.parentElement?.id
+    });
+
+    // Create and inject tip button
     this.currentButton = new TipButton(
       (buttonInstance) => {
         if (this.callbacks.onTipClick) {
@@ -220,10 +238,25 @@ const ProfilePageHandler = {
 
     const button = this.currentButton.create();
     button.classList.add('grove-ad-mode');
+    if (platformName) {
+      button.classList.add(`grove-${platformName}-tip-button`);
+    }
 
-    // For SoundCloud, position button first (left of Station)
-    // CSS ordering styles are injected once by content.js ensureSoundCloudOrderStyles()
-    if (platformName === 'soundcloud') {
+    // Platform-specific injection
+    if (typeof adapter.injectTipButton === 'function') {
+      // Adapter handles its own placement (YouTube, etc.)
+      const injected = adapter.injectTipButton(button);
+      console.log('[Grove Extension] [Inject] adapter.injectTipButton() returned:', injected, {
+        buttonInDOM: document.contains(button),
+        buttonDimensions: `${button.offsetWidth}x${button.offsetHeight}`
+      });
+      if (!injected) {
+        // Fallback to generic injection
+        this.currentButton.inject(placement);
+      }
+    } else if (platformName === 'soundcloud') {
+      // SoundCloud: position button first (left of Station)
+      // CSS ordering styles are injected once by content.js ensureSoundCloudOrderStyles()
       button.style.setProperty('float', 'left', 'important');
       button.style.setProperty('order', '-999', 'important');
       placement.insertBefore(button, placement.firstElementChild);

@@ -5,3 +5,4 @@ node_modules/
 .gemini/
 test-results/
 dist/
+PR_DESCRIPTION.md

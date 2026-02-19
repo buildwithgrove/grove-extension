@@ -92,9 +92,11 @@ make test_e2e
 | `make test_unit_substack`  | Changes to `src/adapters/substack.js` or `src/content/substackHandler.js` |
 | `make test_unit_twitter`   | Changes to `src/adapters/twitter.js` or Twitter-related content scripts   |
 | `make test_unit_soundcloud`| Changes to `src/adapters/soundcloud.js` or SoundCloud-related logic       |
+| `make test_unit_youtube`   | Changes to `src/adapters/youtube.js` or YouTube-related content scripts   |
 | `make test_e2e_substack`   | Changes to Substack adapter, handler, or selectors                        |
 | `make test_e2e_twitter`    | Changes to Twitter adapter, handler, or selectors                         |
 | `make test_e2e_soundcloud` | Changes to SoundCloud adapter or selectors                                |
+| `make test_e2e_youtube`    | Changes to YouTube adapter or selectors                                   |
 
 **If any tests fail, tell the user to run:**
 
@@ -214,9 +216,11 @@ Current SHA: `<sha>`
 | `make test_unit_substack`   | pass/fail  | Substack adapter unit tests     |
 | `make test_unit_twitter`    | pass/fail  | Twitter adapter unit tests      |
 | `make test_unit_soundcloud` | pass/fail  | SoundCloud adapter unit tests   |
+| `make test_unit_youtube`    | pass/fail  | YouTube adapter unit tests      |
 | `make test_e2e_substack`    | pass/fail  | Substack E2E tests              |
 | `make test_e2e_twitter`     | pass/fail  | Twitter/X E2E tests             |
 | `make test_e2e_soundcloud`  | pass/fail  | SoundCloud E2E tests            |
+| `make test_e2e_youtube`     | pass/fail  | YouTube E2E tests               |
 
 ### Detailed Findings
 
@@ -276,6 +280,13 @@ Load the extension unpacked in Chrome, then verify:
 - [ ] Visit `soundcloud.com/<artist_with_crypto>` — tip button appears
 - [ ] Navigate between artists (SPA) — button updates correctly
 - [ ] Visit an artist with no crypto address — no button appears
+
+#### YouTube (`src/adapters/youtube.js`) <!-- omit in toc -->
+
+- [ ] Visit `youtube.com/@<channel_with_crypto>` — tip button appears
+- [ ] Visit `youtube.com/watch?v=<video_id>` — tip button appears near subscribe
+- [ ] Navigate between channels (SPA) — button updates correctly
+- [ ] Visit a channel with no crypto address — no button appears
 
 ---
 

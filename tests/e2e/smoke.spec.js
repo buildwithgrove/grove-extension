@@ -98,6 +98,80 @@ test.describe('Extension Smoke Tests', () => {
     await expect(tipButton).toBeVisible({ timeout: 20000 });
   });
 
+  test('Should inject on youtube.com/@Dolshansky', async () => {
+    const page = await browserContext.newPage();
+    await page.goto('https://www.youtube.com/@Dolshansky', { waitUntil: 'domcontentloaded' });
+
+    // YouTube may show a consent wall or bot challenge — skip if blocked
+    const consentForm = page.locator('form[action*="consent"]');
+    if (await consentForm.count() > 0) {
+      console.log('YouTube consent wall detected. Skipping.');
+      test.skip();
+      return;
+    }
+
+    const tipButton = page.locator('#grove-tip-button');
+    try {
+      await expect(tipButton).toBeVisible({ timeout: 20000 });
+    } catch (e) {
+      // Check if page failed to load channel content
+      const channelName = page.locator('ytd-channel-name #text, yt-formatted-string.ytd-channel-name');
+      if (await channelName.count() === 0) {
+        console.log('YouTube channel content did not load. Skipping.');
+        test.skip();
+        return;
+      }
+      throw e;
+    }
+  });
+
+  test('Should inject on youtube.com/@Dolshansky/community', async () => {
+    const page = await browserContext.newPage();
+    await page.goto('https://www.youtube.com/@Dolshansky/community', { waitUntil: 'domcontentloaded' });
+
+    // YouTube may show a consent wall or bot challenge — skip if blocked
+    const consentForm = page.locator('form[action*="consent"]');
+    if (await consentForm.count() > 0) {
+      console.log('YouTube consent wall detected. Skipping.');
+      test.skip();
+      return;
+    }
+
+    // Wait for community posts to render — skip if they don't appear
+    // (headless CI may not load community content reliably)
+    const postRenderer = page.locator('ytd-post-renderer, ytd-backstage-post-renderer');
+    try {
+      await expect(postRenderer.first()).toBeAttached({ timeout: 15000 });
+    } catch {
+      console.log('No community posts loaded within 15s. Skipping.');
+      test.skip();
+      return;
+    }
+
+    // Community posts loaded — now check for the tip button in the toolbar
+    const tipButton = page.locator('ytd-post-renderer #toolbar #grove-tip-button, ytd-backstage-post-renderer #toolbar #grove-tip-button');
+    await expect(tipButton.first()).toBeAttached({ timeout: 15000 });
+  });
+
+  test('Should NOT inject on youtube.com/@MrBeast (no crypto address)', async () => {
+    const page = await browserContext.newPage();
+    await page.goto('https://www.youtube.com/@MrBeast', { waitUntil: 'domcontentloaded' });
+
+    // YouTube may show a consent wall — skip if blocked
+    const consentForm = page.locator('form[action*="consent"]');
+    if (await consentForm.count() > 0) {
+      console.log('YouTube consent wall detected. Skipping.');
+      test.skip();
+      return;
+    }
+
+    // Wait for page to settle and extension to run
+    await page.waitForTimeout(5000);
+
+    const tipButton = page.locator('#grove-tip-button');
+    await expect(tipButton).toHaveCount(0);
+  });
+
   test('Should inject on x.com/olshansky', async () => {
     const page = await browserContext.newPage();
     await page.goto('https://x.com/olshansky', { waitUntil: 'domcontentloaded' });

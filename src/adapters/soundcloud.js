@@ -179,6 +179,31 @@ window.SoundCloudAdapter = class SoundCloudAdapter extends window.BaseAdapter {
   }
 
   /**
+   * Extract username from a SoundCloud URL
+   * @param {string} url - The URL to parse
+   * @returns {string|null} - Username or null
+   */
+  extractUsernameFromUrl(url) {
+    const match = url.match(/^https:\/\/soundcloud\.com\/([^\/\?]+)\/?/);
+    if (match && match[1]) {
+      const username = match[1];
+      const systemRoutes = ['discover', 'feed', 'notifications', 'messages', 'upload', 'settings', 'you', 'artists', 'search'];
+      if (systemRoutes.includes(username.toLowerCase())) return null;
+      return username;
+    }
+    return null;
+  }
+
+  /**
+   * Get the profile URL for a SoundCloud username
+   * @param {string} username - The username
+   * @returns {string} - Profile URL
+   */
+  getProfileUrl(username) {
+    return `https://soundcloud.com/${username}`;
+  }
+
+  /**
    * Get the profile username from the page URL
    * @returns {string|null}
    */

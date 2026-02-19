@@ -12,6 +12,7 @@ const HistoryRenderer = {
     failed: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>',
     default: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>',
     xPlatform: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+    youtube: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>',
     link: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'
   },
 
@@ -72,6 +73,15 @@ const HistoryRenderer = {
   },
 
   /**
+   * Check if URL is YouTube
+   * @param {string} url - URL to check
+   * @returns {boolean}
+   */
+  isYouTubeUrl(url) {
+    return url && url.includes('youtube.com');
+  },
+
+  /**
    * Build description HTML for a transaction
    * @param {Object} tx - Transaction object
    * @param {Object} parsed - Parsed destination
@@ -127,22 +137,47 @@ const HistoryRenderer = {
     const isTwitterFromSocialGraph = this.isTwitterUrl(tx.social_graph);
     const isTwitter = isTwitterFromContext || isTwitterFromDestination || isTwitterFromSocialGraph;
 
-    let platformUrl = null;
-    let platformTitle = 'View on X';
+    // YouTube detection
+    const isYouTubeFromContext = ctx.sender_platform === 'youtube' ||
+      (ctx.source_post_url && this.isYouTubeUrl(ctx.source_post_url));
+    const isYouTubeFromDestination = this.isYouTubeUrl(parsed.profileUrl);
+    const isYouTubeFromSocialGraph = this.isYouTubeUrl(tx.social_graph);
+    const isYouTube = isYouTubeFromContext || isYouTubeFromDestination || isYouTubeFromSocialGraph;
 
-    if (ctx.source_post_url) {
-      platformUrl = ctx.source_post_url;
-      platformTitle = ctx.source_post_url.includes('/status/') ? 'View post' : 'View profile';
-    } else if (isTwitterFromDestination) {
-      platformUrl = parsed.postUrl || parsed.profileUrl;
-      platformTitle = parsed.postUrl ? 'View post' : 'View profile';
-    } else if (isTwitterFromSocialGraph) {
-      platformUrl = tx.social_graph.startsWith('http') ? tx.social_graph : `https://${tx.social_graph}`;
-      platformTitle = 'View source';
+    let platformUrl = null;
+    let platformTitle = null;
+    let platformIcon = null;
+
+    if (isTwitter) {
+      platformTitle = 'View on X';
+      platformIcon = this.icons.xPlatform;
+      if (ctx.source_post_url) {
+        platformUrl = ctx.source_post_url;
+        platformTitle = ctx.source_post_url.includes('/status/') ? 'View post' : 'View profile';
+      } else if (isTwitterFromDestination) {
+        platformUrl = parsed.postUrl || parsed.profileUrl;
+        platformTitle = parsed.postUrl ? 'View post' : 'View profile';
+      } else if (isTwitterFromSocialGraph) {
+        platformUrl = tx.social_graph.startsWith('http') ? tx.social_graph : `https://${tx.social_graph}`;
+        platformTitle = 'View source';
+      }
+    } else if (isYouTube) {
+      platformTitle = 'View on YouTube';
+      platformIcon = this.icons.youtube;
+      if (ctx.source_post_url) {
+        platformUrl = ctx.source_post_url;
+        platformTitle = 'View on YouTube';
+      } else if (isYouTubeFromDestination) {
+        platformUrl = parsed.postUrl || parsed.profileUrl;
+        platformTitle = 'View on YouTube';
+      } else if (isYouTubeFromSocialGraph) {
+        platformUrl = tx.social_graph.startsWith('http') ? tx.social_graph : `https://${tx.social_graph}`;
+        platformTitle = 'View on YouTube';
+      }
     }
 
-    if (isTwitter && platformUrl) {
-      return `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="${platformTitle}">${this.icons.xPlatform}</a>`;
+    if (platformIcon && platformUrl) {
+      return `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="${platformTitle}">${platformIcon}</a>`;
     }
     return '<span class="history-platform-link history-platform-link-empty"></span>';
   },

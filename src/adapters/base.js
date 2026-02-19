@@ -58,6 +58,24 @@ window.BaseAdapter = class BaseAdapter {
   }
 
   /**
+   * Extract username from a platform URL
+   * @param {string} url - The URL to parse
+   * @returns {string|null} - Username or null
+   */
+  extractUsernameFromUrl(url) {
+    return null;
+  }
+
+  /**
+   * Get the profile URL for a username on this platform
+   * @param {string} username - The username
+   * @returns {string|null} - Profile URL or null
+   */
+  getProfileUrl(username) {
+    return null;
+  }
+
+  /**
    * Wait for an element to appear in the DOM
    * @param {string} selector - CSS selector
    * @param {number} timeout - Timeout in milliseconds

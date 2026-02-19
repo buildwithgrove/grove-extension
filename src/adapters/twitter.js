@@ -512,6 +512,31 @@ class TwitterAdapter extends BaseAdapter {
   }
 
   /**
+   * Extract username from a Twitter/X URL
+   * @param {string} url - The URL to parse
+   * @returns {string|null} - Username or null
+   */
+  extractUsernameFromUrl(url) {
+    const match = url.match(/^https:\/\/(twitter|x)\.com\/([^\/\?]+)\/?/);
+    if (match && match[2]) {
+      const username = match[2];
+      const systemRoutes = ['home', 'explore', 'search', 'notifications', 'messages', 'settings', 'i'];
+      if (systemRoutes.includes(username.toLowerCase())) return null;
+      return username;
+    }
+    return null;
+  }
+
+  /**
+   * Get the profile URL for a Twitter/X username
+   * @param {string} username - The username
+   * @returns {string} - Profile URL
+   */
+  getProfileUrl(username) {
+    return `https://x.com/${username}`;
+  }
+
+  /**
    * Wait for profile to fully load
    * @returns {Promise<boolean>}
    */

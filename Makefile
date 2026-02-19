@@ -24,7 +24,7 @@ help: ## Show all available targets with descriptions
 	@grep -h -E '^build_.*:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-42s$(RESET) %s\n", $$1, $$2}' | sort -u
 	@printf "\n"
 	@printf "$(BOLD)=== 🔧 Development ===$(RESET)\n"
-	@grep -h -E '^dev_.*:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-42s$(RESET) %s\n", $$1, $$2}' | sort -u
+	@grep -h -E '^dev_.*:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-42s$(RESET) %s\n", $$1, $$2}' | sort -u | awk '/force_inject/{held[++n]=$$0; next} {print} END{for(i=1;i<=n;i++) print held[i]}'
 	@printf "\n"
 	@printf "$(BOLD)=== 🧪 Testing ===$(RESET)\n"
 	@grep -h -E '^test_.*:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-42s$(RESET) %s\n", $$1, $$2}' | sort -u
