@@ -154,6 +154,18 @@ describe('GroveAPI', () => {
     it('should handle invalid URLs gracefully', () => {
       expect(GroveAPI.buildTipDomainFromURL('not a url')).toBe('not a url');
     });
+
+    it('should preserve query params for YouTube video URLs', () => {
+      expect(GroveAPI.buildTipDomainFromURL('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe('youtube.com/watch?v=dQw4w9WgXcQ');
+    });
+
+    it('should preserve query params for YouTube shorts URLs', () => {
+      expect(GroveAPI.buildTipDomainFromURL('https://www.youtube.com/shorts/abc123')).toBe('youtube.com/shorts/abc123');
+    });
+
+    it('should handle YouTube channel URLs without query params', () => {
+      expect(GroveAPI.buildTipDomainFromURL('https://www.youtube.com/@channelname')).toBe('youtube.com/@channelname');
+    });
   });
 
   describe('getAccount', () => {

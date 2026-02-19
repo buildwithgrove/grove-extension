@@ -1006,6 +1006,9 @@
     if (typeof SubstackHandler !== 'undefined') {
       SubstackHandler.reset();
     }
+    if (typeof ProfilePageHandler !== 'undefined') {
+      ProfilePageHandler.reset();
+    }
     if (tipModal) {
       tipModal.hide();
       tipModal = null;
@@ -1040,6 +1043,19 @@
       childList: true,
       subtree: true,
     });
+
+    // YouTube fires a custom event on SPA navigation that is more reliable
+    // than MutationObserver-based URL polling for its Web Component architecture
+    if (window.location.hostname.includes('youtube.com')) {
+      document.addEventListener('yt-navigate-finish', () => {
+        const currentUrl = window.location.href;
+        if (currentUrl !== lastUrl) {
+          lastUrl = currentUrl;
+          cleanup();
+          setTimeout(init, 1000);
+        }
+      });
+    }
   }
 
   // Start the extension
