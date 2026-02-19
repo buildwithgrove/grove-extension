@@ -3,6 +3,10 @@
  * Handles YouTube channel pages, video pages, and shorts
  *
  * Requires: src/adapters/base.js (BaseAdapter)
+ *
+ * TODO_IMPROVE: Add yt-navigate-finish SPA listener for YouTube
+ *   Why: YouTube is a full SPA; navigating between pages doesn't reload content scripts
+ *   How: Listen for `yt-navigate-finish` on document, call cleanup + re-init
  */
 
 window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
@@ -245,6 +249,10 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
    * - Video/Shorts: first in actions row (before Share)
    * @param {HTMLElement} buttonElement - The tip button element
    * @returns {boolean} - True if injection succeeded
+   *
+   * TODO_IMPROVE: Extract helper methods for each injection target
+   *   Why: This method is ~135 lines with many fallback branches for YouTube's DOM variants
+   *   How: Split into injectIntoFlexibleActions(), injectIntoLegacyHeader(), etc.
    */
   injectTipButton(buttonElement) {
     const path = window.location.pathname;

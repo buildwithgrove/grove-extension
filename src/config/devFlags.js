@@ -4,5 +4,5 @@
  * Only takes effect when dev mode is enabled (testnet/localhost)
  */
 var GROVE_DEV_FLAGS = {
-  forceInject: true
+  forceInject: false
 };

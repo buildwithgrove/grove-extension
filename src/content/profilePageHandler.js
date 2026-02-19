@@ -67,10 +67,22 @@ const ProfilePageHandler = {
 
       // Dev mode: force-inject button without address resolution (for testing button placement)
       // Toggle via: `make dev_force_inject_on` / `make dev_force_inject_off`
+      // Only takes effect when dev mode is enabled (testnet/localhost)
       if (typeof GROVE_DEV_FLAGS !== 'undefined' && GROVE_DEV_FLAGS.forceInject) {
-        console.log('[Grove Extension] [DEV] Force-injecting tip button (GROVE_DEV_FLAGS.forceInject=true)');
-        this.resolvedAddress = { address: 'dev-force-inject.eth', type: 'dev' };
-        return this.injectButton(adapter);
+        try {
+          const storage = await new Promise(resolve =>
+            chrome.storage.local.get([STORAGE_KEYS.ENVIRONMENT, STORAGE_KEYS.ENDPOINT], resolve));
+          const envId = GroveEnv.resolveActiveEnvId(storage[STORAGE_KEYS.ENVIRONMENT], storage[STORAGE_KEYS.ENDPOINT]);
+          const env = GroveEnv.get(envId);
+          if (env && env.isDevMode) {
+            console.log('[Grove Extension] [DEV] Force-injecting tip button (GROVE_DEV_FLAGS.forceInject=true, env=' + envId + ')');
+            this.resolvedAddress = { address: 'dev-force-inject.eth', type: 'dev' };
+            return this.injectButton(adapter);
+          }
+          console.log('[Grove Extension] [DEV] forceInject ignored — not in dev mode (env=' + envId + ')');
+        } catch (e) {
+          console.log('[Grove Extension] [DEV] forceInject check failed:', e);
+        }
       }
 
       // Use API for resolution (consistent pattern for all full page views)
