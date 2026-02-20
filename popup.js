@@ -305,7 +305,7 @@ async function init() {
 
   // Load cached handle for immediate home card display
   const cachedHandle = await chrome.storage.local.get([STORAGE_KEYS.HANDLE]);
-  updateUsernameCard(cachedHandle[STORAGE_KEYS.HANDLE] || null);
+  await updateUsernameCard(cachedHandle[STORAGE_KEYS.HANDLE] || null);
 
   // Fetch balance after everything is loaded (also updates client address)
   await fetchBalance();
@@ -1268,7 +1268,7 @@ async function disconnectSlot(slotId) {
     await updateAuthState(null);
     await updateEarnAddressDisplay(null);
     updateEnsNameDisplay(null);
-    updateUsernameCard(null);
+    await updateUsernameCard(null);
     await updateAccountInfoDisplay();
   }
 
@@ -1712,7 +1712,7 @@ async function fetchBalance() {
     } else {
       await chrome.storage.local.remove([STORAGE_KEYS.REFERRAL_CODE]);
     }
-    updateUsernameCard(handle);
+    await updateUsernameCard(handle);
 
     // Find the server wallet (Grove-controlled tipping wallet)
     const serverWallet = response.data.wallet_balances.find(
@@ -2487,7 +2487,7 @@ async function handleClaimUsername() {
 
     // Success — persist and update UI
     await chrome.storage.local.set({ [STORAGE_KEYS.HANDLE]: handle });
-    updateUsernameCard(handle);
+    await updateUsernameCard(handle);
     loadUsernameView();
     showToast(`Claimed @${handle}`);
   } catch (error) {
