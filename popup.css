@@ -678,27 +678,28 @@ body {
   gap: 12px;
 }
 
-/* Clickable Section Card (button) */
-button.section-card-btn {
+/* Clickable Section Card (button or link) */
+.section-card-btn {
   width: calc(100% - 32px);
   border: 1px solid var(--color-border);
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
   font-family: inherit;
+  text-decoration: none;
 }
 
-button.section-card-btn:hover {
+.section-card-btn:hover {
   background-color: var(--color-surface-hover);
   border-color: rgba(56, 159, 88, 0.3);
 }
 
-button.section-card-btn .quick-access-icon {
+.section-card-btn .quick-access-icon {
   color: var(--color-text-secondary);
   transition: color 0.15s ease;
 }
 
-button.section-card-btn:hover .quick-access-icon {
+.section-card-btn:hover .quick-access-icon {
   color: var(--color-primary);
 }
 
@@ -715,7 +716,7 @@ button.section-card-btn:hover .quick-access-icon {
   transition: color 0.15s ease;
 }
 
-button.section-card-btn:hover .card-chevron {
+.section-card-btn:hover .card-chevron {
   color: var(--color-primary);
 }
 
@@ -733,7 +734,11 @@ button.section-card-btn:hover .card-chevron {
 
 .settings-card-bottom {
   margin-top: auto;
-  padding: 14px 16px;
+  padding: 10px 16px;
+}
+
+.settings-card-bottom + .settings-card-bottom {
+  margin-top: 6px;
 }
 
 .settings-card-bottom .card-row {
@@ -755,7 +760,7 @@ button.section-card-btn:hover .card-chevron {
   font-size: 14px;
 }
 
-button.section-card-btn:hover .tipping-row-icon {
+.section-card-btn:hover .tipping-row-icon {
   background: rgba(56, 159, 88, 0.15);
   color: var(--color-primary);
 }

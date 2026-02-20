@@ -108,6 +108,7 @@ const usernameDisplayValue = document.getElementById('usernameDisplayValue');
 const usernameInput = document.getElementById('usernameInput');
 const usernameClaimBtn = document.getElementById('usernameClaimBtn');
 const usernameError = document.getElementById('usernameError');
+const homeProfileLink = document.getElementById('homeProfileLink');
 
 // Account Disconnect Button
 const accountDisconnectBtn = document.getElementById('accountLogoutBtn');
@@ -2378,12 +2379,28 @@ async function loadUsernameView() {
 /**
  * Update the home screen username card visibility and page title
  */
-function updateUsernameCard(handle) {
+async function updateUsernameCard(handle) {
   if (homeUsernameBtn) {
     if (handle) {
       homeUsernameBtn.classList.add('hidden');
     } else {
       homeUsernameBtn.classList.remove('hidden');
+    }
+  }
+
+  // Update profile link visibility and href
+  if (homeProfileLink) {
+    if (handle) {
+      const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT, STORAGE_KEYS.ENVIRONMENT]);
+      const envId = GroveEnv.resolveActiveEnvId(
+        result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV,
+        result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT
+      );
+      const appUrl = GroveEnv.get(envId).appUrl;
+      homeProfileLink.href = `${appUrl}/${encodeURIComponent(handle)}`;
+      homeProfileLink.classList.remove('hidden');
+    } else {
+      homeProfileLink.classList.add('hidden');
     }
   }
 
