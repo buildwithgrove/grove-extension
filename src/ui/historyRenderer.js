@@ -285,23 +285,22 @@ const HistoryRenderer = {
    * @returns {string} HTML string
    */
   renderStatsSummary(summary) {
-    const givenLabel = summary.givenCount === 1 ? 'tip' : 'tips';
-    const earnedLabel = summary.earnedCount === 1 ? 'tip' : 'tips';
-    const depositsLabel = summary.depositsCount === 1 ? 'deposit' : 'deposits';
-
     return `
       <div class="history-stats-row">
         <div class="history-stat-item given">
           <div class="history-stat-value">${FormatUtils.formatStatUSD(summary.givenAmount)}</div>
-          <div class="history-stat-label">${summary.givenCount} ${givenLabel}</div>
+          <div class="history-stat-count">${summary.givenCount}</div>
+          <div class="history-stat-label">tips sent</div>
         </div>
         <div class="history-stat-item earned">
           <div class="history-stat-value">${FormatUtils.formatStatUSD(summary.earnedAmount)}</div>
-          <div class="history-stat-label">${summary.earnedCount} ${earnedLabel}</div>
+          <div class="history-stat-count">${summary.earnedCount}</div>
+          <div class="history-stat-label">tips earned</div>
         </div>
         <div class="history-stat-item deposits">
           <div class="history-stat-value">${FormatUtils.formatStatUSD(summary.depositsAmount)}</div>
-          <div class="history-stat-label">${summary.depositsCount} ${depositsLabel}</div>
+          <div class="history-stat-count">${summary.depositsCount}</div>
+          <div class="history-stat-label">${summary.depositsCount === 1 ? 'deposit' : 'deposits'}</div>
         </div>
       </div>
     `;
