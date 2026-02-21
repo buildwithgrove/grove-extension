@@ -285,8 +285,8 @@ const HistoryRenderer = {
    * @returns {string} HTML string
    */
   renderStatsSummary(summary) {
-    const givenLabel = summary.givenCount === 1 ? 'tip' : 'tips';
-    const earnedLabel = summary.earnedCount === 1 ? 'tip' : 'tips';
+    const givenLabel = summary.givenCount === 1 ? 'tip sent' : 'tips sent';
+    const earnedLabel = summary.earnedCount === 1 ? 'tip received' : 'tips received';
     const depositsLabel = summary.depositsCount === 1 ? 'deposit' : 'deposits';
 
     return `
