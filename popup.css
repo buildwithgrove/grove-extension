@@ -4149,6 +4149,12 @@ button.quick-access-item:hover .quick-access-icon {
   margin-bottom: 2px;
 }
 
+.history-stat-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
 .history-stat-label {
   font-size: 10px;
   color: var(--color-text-tertiary);
