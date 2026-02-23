@@ -32,6 +32,7 @@ class TipModal {
    * @param {boolean} displayOptions.isProfileTip - Whether this is a profile tip (changes X action labels)
    * @param {string} displayOptions.recipientUsername - Username for profile tips (e.g., "vitalik")
    * @param {string} displayOptions.autoReplyMessage - Default auto-reply message template
+   * @param {boolean} displayOptions.isDarkMode - Whether to use dark mode styling (default: true)
    */
   show(anchorElement, defaultAmount, currentConfirmSetting, onConfirm, onCancel, xOptions = null, displayOptions = null) {
     // Remove any existing modal
@@ -39,6 +40,48 @@ class TipModal {
 
     this.onConfirm = onConfirm;
     this.onCancel = onCancel;
+
+    // Determine dark/light mode
+    const isDark = displayOptions?.isDarkMode !== false;
+
+    // Theme colors
+    const theme = isDark ? {
+      bg: 'linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%)',
+      shadow: '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(56, 159, 88, 0.1)',
+      overlay: 'rgba(0, 0, 0, 0.5)',
+      text: '#ffffff',
+      textMuted: 'rgba(255, 255, 255, 0.6)',
+      textSubtle: 'rgba(255, 255, 255, 0.5)',
+      textLabel: 'rgba(255, 255, 255, 0.85)',
+      textHelper: 'rgba(255, 255, 255, 0.4)',
+      inputBg: '#000',
+      inputBorder: 'rgba(255, 255, 255, 0.2)',
+      checkboxBg: 'rgba(255, 255, 255, 0.03)',
+      checkboxBgHover: 'rgba(255, 255, 255, 0.06)',
+      sectionBorder: 'rgba(255, 255, 255, 0.1)',
+      btnBg: 'linear-gradient(135deg, #000000 0%, #0a0a0a 100%)',
+      btnBgHover: 'linear-gradient(135deg, #0a0a0a 0%, #141414 100%)',
+      btnText: '#fff',
+      sheenBg: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)',
+    } : {
+      bg: 'linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%)',
+      shadow: '0 8px 32px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(56, 159, 88, 0.1)',
+      overlay: 'rgba(0, 0, 0, 0.3)',
+      text: '#1a1a1a',
+      textMuted: 'rgba(0, 0, 0, 0.5)',
+      textSubtle: 'rgba(0, 0, 0, 0.4)',
+      textLabel: 'rgba(0, 0, 0, 0.8)',
+      textHelper: 'rgba(0, 0, 0, 0.35)',
+      inputBg: '#f0f0f0',
+      inputBorder: 'rgba(0, 0, 0, 0.15)',
+      checkboxBg: 'rgba(0, 0, 0, 0.03)',
+      checkboxBgHover: 'rgba(0, 0, 0, 0.06)',
+      sectionBorder: 'rgba(0, 0, 0, 0.1)',
+      btnBg: 'linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%)',
+      btnBgHover: 'linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%)',
+      btnText: '#1a1a1a',
+      sheenBg: 'linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.06), transparent)',
+    };
 
     // Create overlay for clicking outside to close
     this.overlay = document.createElement('div');
@@ -50,7 +93,7 @@ class TipModal {
       right: 0;
       bottom: 0;
       z-index: 999998;
-      background: rgba(0, 0, 0, 0.5);
+      background: ${theme.overlay};
     `;
     this.overlay.addEventListener('click', (e) => {
       e.preventDefault();
@@ -64,12 +107,12 @@ class TipModal {
     this.modal.style.cssText = `
       position: fixed;
       z-index: 999999;
-      background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+      background: ${theme.bg};
       border: 2px solid ${GROVE_COLORS.primary};
       border-radius: 16px;
       padding: 20px 24px;
       width: 320px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(56, 159, 88, 0.1);
+      box-shadow: ${theme.shadow};
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       animation: grove-modal-in 0.2s ease-out;
     `;
@@ -112,7 +155,7 @@ class TipModal {
     const title = document.createElement('span');
     title.textContent = modalTitle;
     title.style.cssText = `
-      color: #ffffff;
+      color: ${theme.text};
       font-weight: 700;
       font-size: 16px;
     `;
@@ -122,7 +165,7 @@ class TipModal {
     closeBtn.style.cssText = `
       background: none;
       border: none;
-      color: rgba(255, 255, 255, 0.5);
+      color: ${theme.textSubtle};
       font-size: 22px;
       cursor: pointer;
       padding: 0;
@@ -130,10 +173,10 @@ class TipModal {
       transition: color 0.2s;
     `;
     closeBtn.addEventListener('mouseenter', () => {
-      closeBtn.style.color = '#fff';
+      closeBtn.style.color = theme.text;
     });
     closeBtn.addEventListener('mouseleave', () => {
-      closeBtn.style.color = 'rgba(255, 255, 255, 0.5)';
+      closeBtn.style.color = theme.textSubtle;
     });
     closeBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -149,7 +192,7 @@ class TipModal {
     amountLabel.textContent = 'Tip Amount';
     amountLabel.style.cssText = `
       display: block;
-      color: rgba(255, 255, 255, 0.6);
+      color: ${theme.textMuted};
       font-size: 11px;
       font-weight: 600;
       margin-bottom: 8px;
@@ -162,8 +205,8 @@ class TipModal {
     inputGroup.style.cssText = `
       display: flex;
       align-items: center;
-      background: #000;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: ${theme.inputBg};
+      border: 1px solid ${theme.inputBorder};
       border-radius: 8px;
       padding: 10px 12px;
       margin-bottom: 8px;
@@ -173,7 +216,7 @@ class TipModal {
     const currencySymbol = document.createElement('span');
     currencySymbol.textContent = '$';
     currencySymbol.style.cssText = `
-      color: rgba(255, 255, 255, 0.5);
+      color: ${theme.textSubtle};
       font-size: 18px;
       font-weight: 500;
       margin-right: 6px;
@@ -188,7 +231,7 @@ class TipModal {
     input.style.cssText = `
       background: transparent;
       border: none;
-      color: #fff;
+      color: ${theme.text};
       font-size: 18px;
       font-weight: 500;
       width: 100%;
@@ -201,7 +244,7 @@ class TipModal {
       input.select();
     });
     input.addEventListener('blur', () => {
-      inputGroup.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+      inputGroup.style.borderColor = theme.inputBorder;
     });
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
@@ -225,7 +268,7 @@ class TipModal {
     // Create helper text
     const helperText = document.createElement('p');
     helperText.style.cssText = `
-      color: rgba(255, 255, 255, 0.5);
+      color: ${theme.textSubtle};
       font-size: 12px;
       margin: 0 0 18px 0;
       line-height: 1.4;
@@ -241,15 +284,15 @@ class TipModal {
       cursor: pointer;
       margin-bottom: 20px;
       padding: 12px 14px;
-      background: rgba(255, 255, 255, 0.03);
+      background: ${theme.checkboxBg};
       border-radius: 8px;
       transition: background 0.2s;
     `;
     checkboxContainer.addEventListener('mouseenter', () => {
-      checkboxContainer.style.background = 'rgba(255, 255, 255, 0.06)';
+      checkboxContainer.style.background = theme.checkboxBgHover;
     });
     checkboxContainer.addEventListener('mouseleave', () => {
-      checkboxContainer.style.background = 'rgba(255, 255, 255, 0.03)';
+      checkboxContainer.style.background = theme.checkboxBg;
     });
 
     const confirmCheckbox = document.createElement('input');
@@ -267,7 +310,7 @@ class TipModal {
     const checkboxLabel = document.createElement('span');
     checkboxLabel.textContent = 'Always confirm before tipping';
     checkboxLabel.style.cssText = `
-      color: rgba(255, 255, 255, 0.85);
+      color: ${theme.textLabel};
       font-size: 13px;
     `;
 
@@ -285,9 +328,9 @@ class TipModal {
       xActionsContainer.style.cssText = `
         margin-bottom: 20px;
         padding: 12px 14px;
-        background: rgba(255, 255, 255, 0.03);
+        background: ${theme.checkboxBg};
         border-radius: 8px;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-top: 1px solid ${theme.sectionBorder};
       `;
 
       // X actions header
@@ -297,7 +340,7 @@ class TipModal {
         align-items: center;
         gap: 6px;
         margin-bottom: 10px;
-        color: rgba(255, 255, 255, 0.5);
+        color: ${theme.textSubtle};
         font-size: 11px;
         font-weight: 600;
         text-transform: uppercase;
@@ -330,7 +373,7 @@ class TipModal {
       const likeLabel = document.createElement('span');
       likeLabel.textContent = 'Like this post';
       likeLabel.style.cssText = `
-        color: rgba(255, 255, 255, 0.85);
+        color: ${theme.textLabel};
         font-size: 13px;
       `;
 
@@ -369,7 +412,7 @@ class TipModal {
         replyLabel.textContent = isProfileTip ? 'Let them know' : 'Reply to this post';
       }
       replyLabel.style.cssText = `
-        color: rgba(255, 255, 255, 0.85);
+        color: ${theme.textLabel};
         font-size: 13px;
       `;
 
@@ -397,7 +440,7 @@ class TipModal {
     messageLabel.textContent = 'Message';
     messageLabel.style.cssText = `
       display: block;
-      color: rgba(255, 255, 255, 0.6);
+      color: ${theme.textMuted};
       font-size: 11px;
       font-weight: 600;
       margin-bottom: 8px;
@@ -411,11 +454,11 @@ class TipModal {
     messageTextarea.style.cssText = `
       width: 100%;
       min-height: 80px;
-      background: #000;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: ${theme.inputBg};
+      border: 1px solid ${theme.inputBorder};
       border-radius: 8px;
       padding: 10px 12px;
-      color: #fff;
+      color: ${theme.text};
       font-size: 13px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       resize: vertical;
@@ -427,12 +470,12 @@ class TipModal {
       messageTextarea.style.borderColor = GROVE_COLORS.primary;
     });
     messageTextarea.addEventListener('blur', () => {
-      messageTextarea.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+      messageTextarea.style.borderColor = theme.inputBorder;
     });
 
     const messageHelper = document.createElement('p');
     messageHelper.style.cssText = `
-      color: rgba(255, 255, 255, 0.4);
+      color: ${theme.textHelper};
       font-size: 11px;
       margin: 6px 0 0 0;
       line-height: 1.4;
@@ -453,10 +496,10 @@ class TipModal {
     // Create send button (styled like the Tip button)
     const sendBtn = document.createElement('button');
     sendBtn.style.cssText = `
-      background: linear-gradient(135deg, #000000 0%, #0a0a0a 100%);
+      background: ${theme.btnBg};
       border: 2px solid ${GROVE_COLORS.primary};
       border-radius: 9999px;
-      color: #fff;
+      color: ${theme.btnText};
       font-size: 15px;
       font-weight: 600;
       padding: 12px 32px;
@@ -494,7 +537,7 @@ class TipModal {
       left: 0;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      background: ${theme.sheenBg};
       transform: translateX(-200%);
       animation: grove-sheen-slide 3s ease-in-out infinite;
       pointer-events: none;
@@ -506,12 +549,12 @@ class TipModal {
     sendBtn.appendChild(btnEmoji);
 
     sendBtn.addEventListener('mouseenter', () => {
-      sendBtn.style.background = 'linear-gradient(135deg, #0a0a0a 0%, #141414 100%)';
+      sendBtn.style.background = theme.btnBgHover;
       sendBtn.style.transform = 'translateY(-1px)';
       sendBtn.style.boxShadow = `0 4px 12px ${GROVE_COLORS.shadowHover}`;
     });
     sendBtn.addEventListener('mouseleave', () => {
-      sendBtn.style.background = 'linear-gradient(135deg, #000000 0%, #0a0a0a 100%)';
+      sendBtn.style.background = theme.btnBg;
       sendBtn.style.transform = 'translateY(0)';
       sendBtn.style.boxShadow = `0 2px 8px ${GROVE_COLORS.shadow}`;
     });

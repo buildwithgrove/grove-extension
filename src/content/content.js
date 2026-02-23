@@ -617,10 +617,14 @@
       // Get username for profile tips
       const recipientUsername = tipOverrides?.recipient_username || extractUsernameFromUrl(window.location.href);
 
+      // Detect dark mode for modal theming
+      const platform = currentAdapter ? currentAdapter.getPlatformName() : null;
+      const isDarkMode = typeof detectDarkMode === 'function' ? detectDarkMode(platform) : true;
+
       // Configure display based on whether this is the first tip
       const displayOptions = hasTipped
-        ? { title: 'Confirm Tip', showConfirmCheckbox: true, isProfileTip: true, recipientUsername, autoReplyMessage }
-        : { title: 'Your First Tip!', showConfirmCheckbox: true, isProfileTip: true, recipientUsername, autoReplyMessage };
+        ? { title: 'Confirm Tip', showConfirmCheckbox: true, isProfileTip: true, recipientUsername, autoReplyMessage, isDarkMode }
+        : { title: 'Your First Tip!', showConfirmCheckbox: true, isProfileTip: true, recipientUsername, autoReplyMessage, isDarkMode };
 
       tipModal.show(
         buttonElement,
