@@ -132,6 +132,14 @@ class TipModal {
             transform: translateY(0) scale(1);
           }
         }
+        .grove-first-tip-modal input[type="number"]::-webkit-inner-spin-button,
+        .grove-first-tip-modal input[type="number"]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        .grove-first-tip-modal input[type="checkbox"] {
+          color-scheme: dark;
+        }
       `;
       document.head.appendChild(style);
     }
