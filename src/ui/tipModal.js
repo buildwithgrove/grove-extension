@@ -16,6 +16,48 @@ class TipModal {
   }
 
   /**
+   * Create a custom-styled checkbox immune to page color-scheme
+   * @param {boolean} checked - Initial checked state
+   * @returns {HTMLInputElement}
+   */
+  _createCheckbox(checked) {
+    const checkSvg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 5L4 7.5L8.5 2.5' stroke='white' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`;
+    const baseStyle = `
+      width: 16px;
+      height: 16px;
+      -webkit-appearance: none;
+      appearance: none;
+      border-radius: 4px;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin: 0;
+      background-size: 10px;
+      background-position: center;
+      background-repeat: no-repeat;
+      transition: all 0.15s;
+    `;
+    const checkedStyle = `${baseStyle}
+      background-color: ${GROVE_COLORS.primary};
+      border: 1.5px solid ${GROVE_COLORS.primary};
+      background-image: ${checkSvg};
+    `;
+    const uncheckedStyle = `${baseStyle}
+      background-color: transparent;
+      border: 1.5px solid rgba(128, 128, 128, 0.4);
+      background-image: none;
+    `;
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = checked;
+    cb.style.cssText = checked ? checkedStyle : uncheckedStyle;
+    cb.addEventListener('change', () => {
+      cb.style.cssText = cb.checked ? checkedStyle : uncheckedStyle;
+    });
+    return cb;
+  }
+
+  /**
    * Show the tip modal
    * @param {HTMLElement} anchorElement - The button to position near
    * @param {number} defaultAmount - The default tip amount
@@ -136,9 +178,6 @@ class TipModal {
         .grove-first-tip-modal input[type="number"]::-webkit-outer-spin-button {
           -webkit-appearance: none;
           margin: 0;
-        }
-        .grove-first-tip-modal input[type="checkbox"] {
-          color-scheme: dark;
         }
       `;
       document.head.appendChild(style);
@@ -303,18 +342,8 @@ class TipModal {
       checkboxContainer.style.background = theme.checkboxBg;
     });
 
-    const confirmCheckbox = document.createElement('input');
-    confirmCheckbox.type = 'checkbox';
     // Always checked since we only show this modal when confirmation is enabled
-    confirmCheckbox.checked = true;
-    confirmCheckbox.style.cssText = `
-      width: 16px;
-      height: 16px;
-      accent-color: ${GROVE_COLORS.primary};
-      color-scheme: dark;
-      cursor: pointer;
-      flex-shrink: 0;
-    `;
+    const confirmCheckbox = this._createCheckbox(true);
 
     const checkboxLabel = document.createElement('span');
     checkboxLabel.textContent = 'Always confirm before tipping';
@@ -368,17 +397,7 @@ class TipModal {
         margin-bottom: 8px;
       `;
 
-      likeCheckbox = document.createElement('input');
-      likeCheckbox.type = 'checkbox';
-      likeCheckbox.checked = xOptions.likeOnTip !== false;
-      likeCheckbox.style.cssText = `
-        width: 16px;
-        height: 16px;
-        accent-color: ${GROVE_COLORS.primary};
-        color-scheme: dark;
-        cursor: pointer;
-        flex-shrink: 0;
-      `;
+      likeCheckbox = this._createCheckbox(xOptions.likeOnTip !== false);
 
       const likeLabel = document.createElement('span');
       likeLabel.textContent = 'Like this post';
@@ -403,17 +422,7 @@ class TipModal {
         cursor: pointer;
       `;
 
-      replyCheckbox = document.createElement('input');
-      replyCheckbox.type = 'checkbox';
-      replyCheckbox.checked = xOptions.autoReply !== false;
-      replyCheckbox.style.cssText = `
-        width: 16px;
-        height: 16px;
-        accent-color: ${GROVE_COLORS.primary};
-        color-scheme: dark;
-        cursor: pointer;
-        flex-shrink: 0;
-      `;
+      replyCheckbox = this._createCheckbox(xOptions.autoReply !== false);
 
       const replyLabel = document.createElement('span');
       // Use username in label if available
