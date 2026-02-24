@@ -648,6 +648,7 @@ Both the extension and app call these Grove API endpoints. When the API response
 | `GET /v1/account` | JWT | `api.js` |
 | `POST /v1/auth/exchange-cdp-token` | None | `src/auth/cdpAuth.js` |
 | `POST /v1/account/handle` | JWT | `api.js` |
+| `DELETE /v1/account/handle` | JWT | `api.js` |
 
 **Tipping:**
 

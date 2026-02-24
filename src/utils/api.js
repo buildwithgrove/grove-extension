@@ -1103,6 +1103,56 @@ class GroveAPI {
       };
     }
   }
+
+  /**
+   * Release the current handle for the authenticated user
+   * @param {string} groveApiJwt - JWT token for authentication
+   * @returns {Promise<Object>} - { success, data, error, status }
+   */
+  static async releaseHandle(groveApiJwt) {
+    const baseURL = await this.getBaseURL();
+    const apiUrl = `${baseURL}/v1/account/handle`;
+
+    try {
+      const response = await GroveAPI._fetch(apiUrl, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${groveApiJwt}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (_) {
+        data = {};
+      }
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data?.message || data?.error || `Request failed with status ${response.status}`,
+          status: response.status,
+          data
+        };
+      }
+
+      return {
+        success: true,
+        data,
+        status: response.status
+      };
+
+    } catch (error) {
+      console.error('[Grove Extension] Handle release failed:', error);
+      return {
+        success: false,
+        error: error.message,
+        status: null
+      };
+    }
+  }
 }
 
 if (typeof window !== 'undefined') {
