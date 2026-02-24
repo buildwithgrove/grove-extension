@@ -57,6 +57,10 @@ const GiveawaysRenderer = {
    * @returns {{ displayName: string, url: string|null }}
    */
   getCreatorDisplay(giveaway) {
+    const basescanUrl = giveaway.creator_address
+      ? `https://basescan.org/address/${giveaway.creator_address}`
+      : null;
+
     if (giveaway.creator_handle) {
       return {
         displayName: giveaway.creator_handle,
@@ -66,18 +70,18 @@ const GiveawaysRenderer = {
     if (giveaway.creator_base_name) {
       return {
         displayName: giveaway.creator_base_name,
-        url: `https://www.base.org/name/${encodeURIComponent(giveaway.creator_base_name)}`
+        url: basescanUrl
       };
     }
     if (giveaway.creator_ens_name) {
       return {
         displayName: giveaway.creator_ens_name,
-        url: `https://app.ens.domains/${encodeURIComponent(giveaway.creator_ens_name)}`
+        url: basescanUrl
       };
     }
     return {
       displayName: this.formatAddressShort(giveaway.creator_address),
-      url: null
+      url: basescanUrl
     };
   },
 
