@@ -565,6 +565,12 @@ function setupEventListeners() {
     usernameClaimBtn.addEventListener('click', handleClaimUsername);
   }
 
+  // Username release button
+  const usernameReleaseBtn = document.getElementById('usernameReleaseBtn');
+  if (usernameReleaseBtn) {
+    usernameReleaseBtn.addEventListener('click', handleReleaseUsername);
+  }
+
   // Home Referrals Card - navigate to Settings > Referrals view
   const homeReferralsBtn = document.getElementById('homeReferralsBtn');
   if (homeReferralsBtn) {
@@ -2497,6 +2503,57 @@ async function handleClaimUsername() {
   } finally {
     usernameClaimBtn.disabled = false;
     usernameClaimBtn.textContent = 'Claim';
+  }
+}
+
+/**
+ * Handle the "Release username" button click
+ */
+async function handleReleaseUsername() {
+  const releaseBtn = document.getElementById('usernameReleaseBtn');
+  if (!releaseBtn) return;
+
+  // Two-click confirmation
+  if (!releaseBtn.classList.contains('confirming')) {
+    releaseBtn.classList.add('confirming');
+    releaseBtn.textContent = 'Confirm release?';
+    setTimeout(() => {
+      if (releaseBtn.classList.contains('confirming')) {
+        releaseBtn.classList.remove('confirming');
+        releaseBtn.textContent = 'Release username';
+      }
+    }, 3000);
+    return;
+  }
+
+  releaseBtn.disabled = true;
+  releaseBtn.textContent = 'Releasing...';
+  releaseBtn.classList.remove('confirming');
+
+  try {
+    const jwt = await getActiveJWT();
+    if (!jwt) {
+      showToast('Not signed in.');
+      return;
+    }
+
+    const response = await GroveAPI.releaseHandle(jwt);
+
+    if (!response.success) {
+      showToast(response.error || 'Failed to release username.');
+      return;
+    }
+
+    await chrome.storage.local.remove(STORAGE_KEYS.HANDLE);
+    await updateUsernameCard(null);
+    loadUsernameView();
+    showToast('Username released');
+  } catch (error) {
+    console.error('[Grove Extension] Release username error:', error);
+    showToast('Something went wrong. Try again.');
+  } finally {
+    releaseBtn.disabled = false;
+    releaseBtn.textContent = 'Release username';
   }
 }
 

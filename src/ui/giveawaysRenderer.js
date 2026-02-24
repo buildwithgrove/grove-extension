@@ -51,6 +51,37 @@ const GiveawaysRenderer = {
   },
 
   /**
+   * Get display name for a giveaway creator
+   * Priority: handle > base_name > ens_name > truncated address
+   * @param {Object} giveaway - Giveaway object from API
+   * @returns {{ displayName: string, url: string|null }}
+   */
+  getCreatorDisplay(giveaway) {
+    if (giveaway.creator_handle) {
+      return {
+        displayName: `@${giveaway.creator_handle}`,
+        url: `https://grove.city/@${encodeURIComponent(giveaway.creator_handle)}`
+      };
+    }
+    if (giveaway.creator_base_name) {
+      return {
+        displayName: giveaway.creator_base_name,
+        url: `https://www.base.org/name/${encodeURIComponent(giveaway.creator_base_name)}`
+      };
+    }
+    if (giveaway.creator_ens_name) {
+      return {
+        displayName: giveaway.creator_ens_name,
+        url: `https://app.ens.domains/${encodeURIComponent(giveaway.creator_ens_name)}`
+      };
+    }
+    return {
+      displayName: this.formatAddressShort(giveaway.creator_address),
+      url: null
+    };
+  },
+
+  /**
    * Format USD for giveaway display
    * @param {string|number} amount - USD amount
    * @returns {string} Formatted amount
@@ -77,11 +108,15 @@ const GiveawaysRenderer = {
     const badgeClass = isEnded ? ' ended' : isEndingSoon ? ' ending-soon' : '';
     const title = g.title ? this.truncateDescription(g.title, 60) : '';
     const description = this.truncateDescription(g.description);
-    const creator = this.formatAddressShort(g.creator_address);
+    const { displayName: creatorName, url: creatorUrl } = this.getCreatorDisplay(g);
     const totalTipped = this.formatUsd(stats.total_tips_usd || '0');
     const participants = stats.unique_participants || 0;
     const entries = stats.total_entries || 0;
     const minTip = this.formatUsd(g.minimum_tip_usd);
+
+    const creatorHtml = creatorUrl
+      ? `<a href="${FormatUtils.escapeHtml(creatorUrl)}" target="_blank" rel="noopener noreferrer" class="giveaway-creator giveaway-creator-link">${FormatUtils.escapeHtml(creatorName)}</a>`
+      : `<span class="giveaway-creator">${FormatUtils.escapeHtml(creatorName)}</span>`;
 
     return `
       <div class="giveaway-card" data-giveaway-id="${FormatUtils.escapeHtml(g.id)}">
@@ -108,7 +143,7 @@ const GiveawaysRenderer = {
           </div>
         </div>
         <div class="giveaway-card-footer">
-          <span class="giveaway-creator">${FormatUtils.escapeHtml(creator)}</span>
+          ${creatorHtml}
           <span class="giveaway-min-tip">min ${minTip}</span>
         </div>
       </div>
@@ -137,12 +172,16 @@ const GiveawaysRenderer = {
     const isActive = g.status === 'active' && timeLeft !== 'Ended';
     const title = g.title || '';
     const description = g.description || '';
-    const creator = this.formatAddressShort(g.creator_address);
+    const { displayName: creatorName, url: creatorUrl } = this.getCreatorDisplay(g);
     const totalTipped = this.formatUsd(stats.total_tips_usd || '0');
     const participants = stats.unique_participants || 0;
     const entries = stats.total_entries || 0;
     const minTip = parseFloat(g.minimum_tip_usd) || 0;
     const minTipFormatted = this.formatUsd(g.minimum_tip_usd);
+
+    const creatorValueHtml = creatorUrl
+      ? `<a href="${FormatUtils.escapeHtml(creatorUrl)}" target="_blank" rel="noopener noreferrer" class="giveaway-creator-link">${FormatUtils.escapeHtml(creatorName)}</a>`
+      : FormatUtils.escapeHtml(creatorName);
 
     return `
       <div class="giveaway-detail-header">
@@ -167,7 +206,7 @@ const GiveawaysRenderer = {
       <div class="giveaway-detail-meta">
         <div class="giveaway-detail-meta-row">
           <span class="giveaway-detail-meta-label">Creator</span>
-          <span class="giveaway-detail-meta-value">${FormatUtils.escapeHtml(creator)}</span>
+          <span class="giveaway-detail-meta-value">${creatorValueHtml}</span>
         </div>
         <div class="giveaway-detail-meta-row">
           <span class="giveaway-detail-meta-label">Min Tip</span>

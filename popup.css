@@ -1041,6 +1041,10 @@ body {
   opacity: 0.9;
 }
 
+.btn-danger-text.confirming {
+  animation: pulse-danger 0.5s ease-in-out infinite alternate;
+}
+
 /* ========================================
    ONBOARDING - Multi-step Flow
    ======================================== */
@@ -5571,6 +5575,16 @@ button.quick-access-item:hover .quick-access-icon {
   color: var(--color-text-tertiary);
 }
 
+.giveaway-creator-link {
+  color: var(--color-text-tertiary);
+  text-decoration: none;
+}
+
+.giveaway-creator-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
 .giveaway-min-tip {
   font-weight: 600;
   color: var(--color-text-secondary);
@@ -5737,6 +5751,11 @@ button.quick-access-item:hover .quick-access-icon {
   font-size: 13px;
   font-weight: 600;
   color: var(--color-text-primary);
+}
+
+.giveaway-detail-meta-value .giveaway-creator-link {
+  color: var(--color-primary);
+  font-weight: 600;
 }
 
 /* Tip Form */
@@ -5951,4 +5970,9 @@ button.quick-access-item:hover .quick-access-icon {
   font-size: 13px;
   color: var(--color-text-secondary);
   margin-top: 8px;
+}
+
+.username-release-btn {
+  margin-top: 16px;
+  font-size: 12px;
 }
