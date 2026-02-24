@@ -311,6 +311,7 @@ class TipModal {
       width: 16px;
       height: 16px;
       accent-color: ${GROVE_COLORS.primary};
+      color-scheme: dark;
       cursor: pointer;
       flex-shrink: 0;
     `;
@@ -374,6 +375,7 @@ class TipModal {
         width: 16px;
         height: 16px;
         accent-color: ${GROVE_COLORS.primary};
+        color-scheme: dark;
         cursor: pointer;
         flex-shrink: 0;
       `;
@@ -408,6 +410,7 @@ class TipModal {
         width: 16px;
         height: 16px;
         accent-color: ${GROVE_COLORS.primary};
+        color-scheme: dark;
         cursor: pointer;
         flex-shrink: 0;
       `;
