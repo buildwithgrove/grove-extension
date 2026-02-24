@@ -373,10 +373,13 @@ const TweetTipHandler = {
         ? this.callbacks.extractUsernameFromUrl(tweetUrl)
         : null;
 
+      // Detect dark mode for modal theming
+      const isDarkMode = this.callbacks.detectDarkMode ? this.callbacks.detectDarkMode() : true;
+
       // Configure display based on whether this is the first tip
       const displayOptions = hasTipped
-        ? { title: 'Confirm Tip', showConfirmCheckbox: true, recipientUsername, autoReplyMessage }
-        : { title: 'Your First Tip!', showConfirmCheckbox: true, recipientUsername, autoReplyMessage };
+        ? { title: 'Confirm Tip', showConfirmCheckbox: true, recipientUsername, autoReplyMessage, isDarkMode }
+        : { title: 'Your First Tip!', showConfirmCheckbox: true, recipientUsername, autoReplyMessage, isDarkMode };
 
       this.tipModal.show(
         buttonWrapper.button,
