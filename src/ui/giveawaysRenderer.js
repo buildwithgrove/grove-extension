@@ -59,7 +59,7 @@ const GiveawaysRenderer = {
   getCreatorDisplay(giveaway) {
     if (giveaway.creator_handle) {
       return {
-        displayName: `@${giveaway.creator_handle}`,
+        displayName: giveaway.creator_handle,
         url: `https://grove.city/@${encodeURIComponent(giveaway.creator_handle)}`
       };
     }
