@@ -193,7 +193,7 @@ const LeaderboardRenderer = {
     if (entry.handle) {
       return {
         displayName: entry.handle,
-        url: `https://grove.city/@${encodeURIComponent(entry.handle)}`,
+        url: `https://app.grove.city/${encodeURIComponent(entry.handle)}`,
         platform: 'grove'
       };
     }
@@ -357,7 +357,7 @@ const LeaderboardRenderer = {
     // 1. Grove handle
     if (entry.handle) {
       displayName = entry.handle;
-      displayUrl = `https://grove.city/@${encodeURIComponent(entry.handle)}`;
+      displayUrl = `https://app.grove.city/${encodeURIComponent(entry.handle)}`;
       displayPlatform = 'grove';
     }
     // 2. Base name
@@ -586,7 +586,7 @@ const LeaderboardRenderer = {
       let displayName, displayUrl, displayPlatform;
       if (entry.handle) {
         displayName = entry.handle;
-        displayUrl = `https://grove.city/@${encodeURIComponent(entry.handle)}`;
+        displayUrl = `https://app.grove.city/${encodeURIComponent(entry.handle)}`;
         displayPlatform = 'grove';
       } else if (entry.base_name) {
         displayName = entry.base_name;
