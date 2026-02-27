@@ -122,7 +122,7 @@ class TipModal {
       btnBg: 'linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%)',
       btnBgHover: 'linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%)',
       btnText: '#1a1a1a',
-      sheenBg: 'linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.06), transparent)',
+      sheenBg: 'linear-gradient(90deg, transparent, rgba(56, 159, 88, 0.15), transparent)',
     };
 
     // Create overlay for clicking outside to close
