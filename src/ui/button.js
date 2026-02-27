@@ -131,7 +131,7 @@ class TipButton {
     const sheenOverlay = document.createElement('div');
     const sheenBg = this.isDarkMode
       ? 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)'
-      : 'linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.06), transparent)';
+      : 'linear-gradient(90deg, transparent, rgba(56, 159, 88, 0.15), transparent)';
     sheenOverlay.style.cssText = `
       position: absolute !important;
       top: 0 !important;
