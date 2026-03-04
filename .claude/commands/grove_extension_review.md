@@ -18,12 +18,8 @@ Your goal is to review code changes in this branch before merging.
   - [Adapter Changes](#adapter-changes)
   - [Common Gotchas](#common-gotchas)
 - [Output Format](#output-format)
-  - [Change Metrics Dashboard](#change-metrics-dashboard)
-  - [Pre-Review Checklist Status](#pre-review-checklist-status)
-  - [Detailed Findings](#detailed-findings)
-  - [Required Actions](#required-actions)
-  - [Manual Testing Checklist](#manual-testing-checklist)
-  - [Suggestions for Future (TODO Comments)](#suggestions-for-future-todo-comments)
+  - [Full Report File](#full-report-file)
+  - [Terminal Summary](#terminal-summary)
 
 ## Review Process
 
@@ -98,34 +94,14 @@ make test_e2e
 | `make test_e2e_soundcloud` | Changes to SoundCloud adapter or selectors                                |
 | `make test_e2e_youtube`    | Changes to YouTube adapter or selectors                                   |
 
-**If any tests fail, tell the user to run:**
-
-```bash
-make test_unit    # Fix and re-run unit tests
-make test_e2e     # Fix and re-run E2E tests
-```
-
-Then re-run the review.
-
 ### Phase 3: Code Review
 
 Apply relevant architecture checklists based on changed file types (see below).
 
 ### Phase 4: Reporting
 
-Provide structured report with metrics, findings, and actions (see Output Format below).
-
-**After reporting, ask the user:**
-
-> Want me to handle everything automatically?
->
-> Say **"DO ALL THE THINGS"** and I'll:
-> 1. Run all unit tests (`make test_unit`)
-> 2. Run all E2E tests (`make test_e2e`)
-> 3. Fix any issues found in review
-> 4. Add TODOs for deferred improvements
->
-> Or choose specific actions from the list above.
+1. **Write the full report** to `DO_NOT_COMMIT_GROVE_EXTENSION_REVIEW_RESULTS.md` (see [Full Report File](#full-report-file))
+2. **Print a compact terminal summary** (see [Terminal Summary](#terminal-summary))
 
 ## Architecture Checklists
 
@@ -183,77 +159,62 @@ Provide structured report with metrics, findings, and actions (see Output Format
 
 ## Output Format
 
-### Change Metrics Dashboard
+### Full Report File
+
+Write the complete review to `DO_NOT_COMMIT_GROVE_EXTENSION_REVIEW_RESULTS.md`. Include:
+
+- Change metrics (branch, SHA, files changed, lines changed)
+- Test results table (all commands run, pass/fail status)
+- Blocking issues with `[Category] file.js:line - description` format
+- Warnings
+- Strengths
+- Numbered required actions with file paths and specific instructions
+- Manual testing checklist (only sections relevant to changed files — see [Manual Testing Sections](#manual-testing-sections) below)
+- TODO suggestions with appropriate prefixes
+
+### Terminal Summary
+
+After writing the full report, print ONLY this compact summary to the terminal:
 
 ```
-Branch: <current_branch> (comparing to <detected_branch>)
-SHA: <current_sha>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Full report written to: DO_NOT_COMMIT_GROVE_EXTENSION_REVIEW_RESULTS.md
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Files Changed: X total
-├─ Adapters:        X files (src/adapters/)
-├─ Content Scripts: X files (src/content/)
-├─ Utils:           X files (src/utils/)
-├─ Tests:           X files (tests/)
-└─ Other:           X files
+Review Summary
 
-Lines Changed: +X -Y (~Z net)
-Complexity: [Low/Medium/High]
+Branch: <branch> → <base> | SHA: <sha> | <N> files changed
+
+<1-2 sentence summary of the changes and overall quality.>
+
+Checks: unit tests ✅/❌ | e2e ✅/❌/🔴
+
+<If failures exist, one line explaining root cause.>
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  Here's everything I found. What would you like me to fix?   ┃
+┃                                                              ┃
+┃  Say "DO ALL THE THINGS" to fix everything                   ┃
+┃  Or pick specific numbers (e.g., "1, 3, 5")                 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+1. <emoji> <Short action description> - <file or command>
+2. <emoji> <Short action description> - <file or command>
+...
+
+(Numbers correspond to findings in full report)
 ```
 
-### Pre-Review Checklist Status
+Use these emojis for action types:
+- `🔧` Fix / code change
+- `🧪` Add / fix tests
+- `🎨` Formatting / style
+- `📝` Documentation / comments
+- `✅` Verify / run checks
 
-Current SHA: `<sha>`
+### Manual Testing Sections
 
-| Command              | Status | Description                      |
-| -------------------- | ------ | -------------------------------- |
-| `make test_unit`     | pass/fail  | All Vitest unit tests (574+)     |
-| `make test_e2e`      | pass/fail  | All Playwright E2E tests (15+)   |
-
-**Platform-specific (if applicable):**
-
-| Command                     | Status | Description                     |
-| --------------------------- | ------ | ------------------------------- |
-| `make test_unit_substack`   | pass/fail  | Substack adapter unit tests     |
-| `make test_unit_twitter`    | pass/fail  | Twitter adapter unit tests      |
-| `make test_unit_soundcloud` | pass/fail  | SoundCloud adapter unit tests   |
-| `make test_unit_youtube`    | pass/fail  | YouTube adapter unit tests      |
-| `make test_e2e_substack`    | pass/fail  | Substack E2E tests              |
-| `make test_e2e_twitter`     | pass/fail  | Twitter/X E2E tests             |
-| `make test_e2e_soundcloud`  | pass/fail  | SoundCloud E2E tests            |
-| `make test_e2e_youtube`     | pass/fail  | YouTube E2E tests               |
-
-### Detailed Findings
-
-**Blocking Issues:**
-
-List critical issues that MUST be fixed before merge.
-
-Format: `[Category] file.js:line - Issue description`
-
-**Warnings:**
-
-List issues that should be addressed but don't block merge.
-
-**Strengths:**
-
-Highlight what was done well.
-
-### Required Actions
-
-Numbered list of specific actions needed before merge:
-
-1. **Action description**
-   - File: `path/to/file.js`
-   - What to do: Specific instructions
-   - Command (if applicable): `make <target>`
-
-### Manual Testing Checklist
-
-Since E2E tests hit live sites and are inherently flaky (rate limits, auth walls, DOM changes), always generate a manual testing checklist based on what changed. Only include sections relevant to the changed files.
-
-**How to generate**: Analyze the changed files from Phase 1 and include the matching sections below. Skip sections where no files changed.
-
----
+Generate the manual testing checklist based on changed files. Only include sections relevant to the changed files. Skip sections where no files changed.
 
 **If adapter or content script files changed for a platform, include that platform's section:**
 
@@ -337,7 +298,7 @@ Load the extension unpacked in Chrome, then verify:
 - [ ] Open popup → UI renders without errors
 - [ ] Open DevTools console on a content script page → no uncaught errors
 
-
+### TODO Comment Prefixes
 
 Use appropriate TODO prefixes:
 

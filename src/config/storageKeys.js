@@ -28,8 +28,8 @@ var STORAGE_KEYS = {
   // State tracking
   HAS_TIPPED: 'GROVE_HAS_TIPPED',
   LAST_BALANCES: 'GROVE_LAST_BALANCES',
-  EARNING_ADDRESS: 'GROVE_EARNING_ADDRESS',      // User's earning wallet
-  TIPPING_ADDRESS: 'GROVE_TIPPING_ADDRESS',     // Grove-managed tipping wallet
+  EARNING_ADDRESS: 'GROVE_EARNING_ADDRESS',       // User's earning wallet
+  TIPPING_ADDRESS: 'GROVE_TIPPING_ADDRESS',      // Grove-managed tipping wallet
   ENS_NAME: 'GROVE_ENS_NAME',
 
   // Onboarding/UI state
