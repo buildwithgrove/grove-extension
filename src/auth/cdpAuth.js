@@ -159,7 +159,7 @@ export async function verifyOTP(flowId, otp, method) {
  * @property {string} identity_type - 'email' | 'sms' | 'cdp_sub'
  * @property {string} identity_value - The normalized identity value
  * @property {string|null} address - Server wallet address
- * @property {string|null} onchain_address - Alias for address
+ * @property {string|null} tipping_address - Server wallet address for tipping
  * @property {boolean} is_new_account - True if account was just created
  */
 export async function exchangeForGroveJWT(cdpToken, endpoint, network = null) {
