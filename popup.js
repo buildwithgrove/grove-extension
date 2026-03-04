@@ -294,7 +294,7 @@ async function init() {
   // Clear stale ENS cache on init - will be re-resolved fresh
   await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
 
-  await loadClientAddress();
+  await loadEarnAddress();
   loadExtensionVersion();
   checkForUpdates();
   setupEventListeners();
@@ -310,7 +310,7 @@ async function init() {
   const cachedHandle = await chrome.storage.local.get([STORAGE_KEYS.HANDLE]);
   await updateUsernameCard(cachedHandle[STORAGE_KEYS.HANDLE] || null);
 
-  // Fetch balance after everything is loaded (also updates client address)
+  // Fetch balance after everything is loaded (also updates earn address)
   await fetchBalance();
 
   // Update account info display (shows identity/wallet in Settings)
@@ -1783,8 +1783,8 @@ async function updateEarnAddressDisplay(displayValue, hasEnsName = false) {
 /**
  * Migrate old wallet storage keys to new terminology (one-time).
  * CLIENT_ADDRESS → EARNING_ADDRESS
+ * EMBEDDED_WALLET_ADDRESS → EARNING_ADDRESS (fallback)
  * ONCHAIN_ADDRESS → TIPPING_ADDRESS
- * EMBEDDED_WALLET_ADDRESS → removed (no longer used)
  */
 async function migrateWalletStorageKeys() {
   const old = await chrome.storage.local.get([
@@ -1795,7 +1795,11 @@ async function migrateWalletStorageKeys() {
   const updates = {};
   if (old['GROVE_CLIENT_ADDRESS']) {
     updates[STORAGE_KEYS.EARNING_ADDRESS] = old['GROVE_CLIENT_ADDRESS'];
+  } else if (old['GROVE_EMBEDDED_WALLET_ADDRESS']) {
+    // Fallback to embedded wallet address if earn address is missing
+    updates[STORAGE_KEYS.EARNING_ADDRESS] = old['GROVE_EMBEDDED_WALLET_ADDRESS'];
   }
+
   if (old['GROVE_ONCHAIN_ADDRESS']) {
     updates[STORAGE_KEYS.TIPPING_ADDRESS] = old['GROVE_ONCHAIN_ADDRESS'];
   }
@@ -1821,7 +1825,7 @@ async function getEarnAddress() {
   return result[STORAGE_KEYS.EARNING_ADDRESS] || null;
 }
 
-async function loadClientAddress() {
+async function loadEarnAddress() {
   const address = await getEarnAddress();
 
   // Always show truncated address first, let loadAndResolveEnsName update to ENS after fresh resolution

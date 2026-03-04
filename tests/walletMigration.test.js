@@ -42,7 +42,11 @@ function getMigrateFunction() {
     const updates = {};
     if (old['GROVE_CLIENT_ADDRESS']) {
       updates[STORAGE_KEYS.EARNING_ADDRESS] = old['GROVE_CLIENT_ADDRESS'];
+    } else if (old['GROVE_EMBEDDED_WALLET_ADDRESS']) {
+      // Fallback to embedded wallet address if earn address is missing
+      updates[STORAGE_KEYS.EARNING_ADDRESS] = old['GROVE_EMBEDDED_WALLET_ADDRESS'];
     }
+
     if (old['GROVE_ONCHAIN_ADDRESS']) {
       updates[STORAGE_KEYS.TIPPING_ADDRESS] = old['GROVE_ONCHAIN_ADDRESS'];
     }
@@ -122,7 +126,7 @@ describe('migrateWalletStorageKeys', () => {
     expect(old['GROVE_ONCHAIN_ADDRESS']).toBeUndefined();
   });
 
-  it('should not set EARNING_ADDRESS from EMBEDDED_WALLET_ADDRESS alone', async () => {
+  it('should migrate EARNING_ADDRESS from EMBEDDED_WALLET_ADDRESS if CLIENT_ADDRESS is missing', async () => {
     await mockChrome.storage.local.set({
       'GROVE_EMBEDDED_WALLET_ADDRESS': '0xEmbedded',
     });
@@ -131,7 +135,20 @@ describe('migrateWalletStorageKeys', () => {
     await migrate();
 
     const result = await mockChrome.storage.local.get(['GROVE_EARNING_ADDRESS']);
-    expect(result['GROVE_EARNING_ADDRESS']).toBeUndefined();
+    expect(result['GROVE_EARNING_ADDRESS']).toBe('0xEmbedded');
+  });
+
+  it('should prioritize CLIENT_ADDRESS over EMBEDDED_WALLET_ADDRESS', async () => {
+    await mockChrome.storage.local.set({
+      'GROVE_CLIENT_ADDRESS': '0xClient',
+      'GROVE_EMBEDDED_WALLET_ADDRESS': '0xEmbedded',
+    });
+
+    const migrate = getMigrateFunction();
+    await migrate();
+
+    const result = await mockChrome.storage.local.get(['GROVE_EARNING_ADDRESS']);
+    expect(result['GROVE_EARNING_ADDRESS']).toBe('0xClient');
   });
 
   it('should be a no-op when no old keys exist', async () => {
