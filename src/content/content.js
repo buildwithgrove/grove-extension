@@ -427,32 +427,73 @@
 
   /**
    * Initialize tip button for generic websites
-   * Fetches llms.txt/ai.txt and shows floating button if address found
+   * Fetches llms.txt/ai.txt and shows floating button if address found.
+   * Falls back to API resolution for sites claimed on Grove profiles.
    */
   async function initializeGenericWebsite() {
     try {
       // Fetch metadata files
       const metadata = await currentAdapter.fetchMetadata();
 
-      if (!metadata.found) {
-        console.log("[Grove Extension] No metadata files with addresses found");
+      if (metadata.found) {
+        console.log(`[Grove Extension] Found address in ${metadata.source}: ${metadata.address.original || metadata.address.address}`);
+        resolvedAddress = metadata.address;
+        injectGenericFloatingButton();
         return;
       }
 
-      console.log(`[Grove Extension] Found address in ${metadata.source}: ${metadata.address.original || metadata.address.address}`);
+      // No metadata files — try API resolution as fallback
+      // This enables tip buttons on personal sites claimed via Grove profiles
+      console.log("[Grove Extension] No metadata files found, trying API resolve fallback");
 
-      // Store resolved address
-      resolvedAddress = metadata.address;
+      if (typeof GroveAPI === 'undefined' || typeof GroveAPI.resolveDestination !== 'function') {
+        console.log("[Grove Extension] GroveAPI.resolveDestination not available");
+        return;
+      }
 
-      // Create and inject floating tip button
-      currentButton = new TipButton(handleTipClick, 'generic');
-      currentButton.create();
-      currentButton.injectFloating();
+      const result = await GroveAPI.resolveDestination(window.location.origin);
 
-      console.log("[Grove Extension] Floating tip button injected");
+      if (!result.tippable || !result.addresses || result.addresses.length === 0) {
+        console.log("[Grove Extension] API resolve returned non-tippable for this site");
+        return;
+      }
+
+      // Validate the address client-side (same pattern as ProfilePageHandler)
+      const primaryAddress = result.addresses[0];
+      if (!primaryAddress?.address) {
+        console.log("[Grove Extension] API resolve returned empty address");
+        return;
+      }
+
+      const validation = AddressParser.resolveAddress(primaryAddress.address);
+      if (!validation?.address) {
+        console.log("[Grove Extension] API resolve returned address that failed client-side validation:", primaryAddress.address);
+        return;
+      }
+
+      resolvedAddress = {
+        address: validation.address,
+        type: primaryAddress.source || validation.type || 'grove_profile',
+        token: primaryAddress.token,
+        chain: primaryAddress.chain
+      };
+
+      console.log(`[Grove Extension] ✅ Address resolved via API fallback: ${resolvedAddress.address} (source: ${resolvedAddress.type})`);
+      injectGenericFloatingButton();
+
     } catch (error) {
       console.error("[Grove Extension] Generic website initialization failed:", error);
     }
+  }
+
+  /**
+   * Create and inject the floating tip button for generic websites
+   */
+  function injectGenericFloatingButton() {
+    currentButton = new TipButton(handleTipClick, 'generic');
+    currentButton.create();
+    currentButton.injectFloating();
+    console.log("[Grove Extension] Floating tip button injected");
   }
 
   /**
