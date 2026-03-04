@@ -1797,8 +1797,8 @@ async function migrateWalletStorageKeys() {
 /**
  * Migrate old wallet storage keys to new terminology (one-time).
  * CLIENT_ADDRESS → EARNING_ADDRESS
+ * EMBEDDED_WALLET_ADDRESS → EARNING_ADDRESS (fallback)
  * ONCHAIN_ADDRESS → TIPPING_ADDRESS
- * EMBEDDED_WALLET_ADDRESS → removed (no longer used)
  */
 async function migrateWalletStorageKeys() {
   const old = await chrome.storage.local.get([
@@ -1809,7 +1809,11 @@ async function migrateWalletStorageKeys() {
   const updates = {};
   if (old['GROVE_CLIENT_ADDRESS']) {
     updates[STORAGE_KEYS.EARNING_ADDRESS] = old['GROVE_CLIENT_ADDRESS'];
+  } else if (old['GROVE_EMBEDDED_WALLET_ADDRESS']) {
+    // Fallback to embedded wallet address if earn address is missing
+    updates[STORAGE_KEYS.EARNING_ADDRESS] = old['GROVE_EMBEDDED_WALLET_ADDRESS'];
   }
+
   if (old['GROVE_ONCHAIN_ADDRESS']) {
     updates[STORAGE_KEYS.TIPPING_ADDRESS] = old['GROVE_ONCHAIN_ADDRESS'];
   }
