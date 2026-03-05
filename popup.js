@@ -1268,6 +1268,8 @@ async function disconnectSlot(slotId) {
     await chrome.storage.local.remove([
       STORAGE_KEYS.EARNING_ADDRESS,
       STORAGE_KEYS.TIPPING_ADDRESS,
+      STORAGE_KEYS.SMART_ACCOUNT_ADDRESS,
+      STORAGE_KEYS.EXTERNAL_LINKED_WALLETS,
       STORAGE_KEYS.ENS_NAME,
       STORAGE_KEYS.HANDLE,
       STORAGE_KEYS.CDP_IDENTITY_TYPE,
@@ -1644,7 +1646,7 @@ async function fetchBalance() {
         await KeyManager.clearJWT(activeSlot);
 
         // Clear cached data
-        await chrome.storage.local.remove([STORAGE_KEYS.EARNING_ADDRESS, STORAGE_KEYS.TIPPING_ADDRESS, STORAGE_KEYS.ENS_NAME, STORAGE_KEYS.HANDLE, STORAGE_KEYS.LAST_BALANCES]);
+        await chrome.storage.local.remove([STORAGE_KEYS.EARNING_ADDRESS, STORAGE_KEYS.TIPPING_ADDRESS, STORAGE_KEYS.SMART_ACCOUNT_ADDRESS, STORAGE_KEYS.EXTERNAL_LINKED_WALLETS, STORAGE_KEYS.ENS_NAME, STORAGE_KEYS.HANDLE, STORAGE_KEYS.LAST_BALANCES]);
 
         // Update UI to show disconnected state
         await updateAuthState(null);
@@ -1681,6 +1683,14 @@ async function fetchBalance() {
       if (response.data.tipping_address) {
         addressUpdates[STORAGE_KEYS.TIPPING_ADDRESS] = response.data.tipping_address;
       }
+      // TODO_IDEA: smart_account_address is for ERC-4337 gas sponsorship — not user-facing yet
+      if (response.data.smart_account_address) {
+        addressUpdates[STORAGE_KEYS.SMART_ACCOUNT_ADDRESS] = response.data.smart_account_address;
+      }
+      // TODO_IDEA: external_linked_wallets are non-earning linked wallet addresses — not used yet
+      if (response.data.external_linked_wallets) {
+        addressUpdates[STORAGE_KEYS.EXTERNAL_LINKED_WALLETS] = response.data.external_linked_wallets;
+      }
       await chrome.storage.local.set(addressUpdates);
 
       // Show truncated earning address in Earn tab
@@ -1695,7 +1705,7 @@ async function fetchBalance() {
       }
     } else {
       // No earning address in response - clear cached data and show setup card
-      await chrome.storage.local.remove([STORAGE_KEYS.EARNING_ADDRESS, STORAGE_KEYS.TIPPING_ADDRESS, STORAGE_KEYS.ENS_NAME]);
+      await chrome.storage.local.remove([STORAGE_KEYS.EARNING_ADDRESS, STORAGE_KEYS.TIPPING_ADDRESS, STORAGE_KEYS.SMART_ACCOUNT_ADDRESS, STORAGE_KEYS.EXTERNAL_LINKED_WALLETS, STORAGE_KEYS.ENS_NAME]);
       await updateEarnAddressDisplay(null);
       updateEnsNameDisplay(null);
     }

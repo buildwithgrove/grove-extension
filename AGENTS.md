@@ -650,6 +650,13 @@ Both the extension and app call these Grove API endpoints. When the API response
 | `POST /v1/account/handle` | JWT | `api.js` |
 | `DELETE /v1/account/handle` | JWT | `api.js` |
 
+**Wallets:**
+
+| Endpoint | Auth | Extension File |
+|----------|------|----------------|
+| `GET /v1/account/wallets` | JWT | N/A (app only) |
+| `POST /v1/account/wallets/{id}/link` | JWT | N/A (app only) |
+
 **Tipping:**
 
 | Endpoint | Auth | Extension File |
@@ -690,6 +697,26 @@ Both the extension and app call these Grove API endpoints. When the API response
 |----------|------|----------------|
 | `GET /v1/referrals?limit=&offset=` | JWT | `api.js` |
 | `GET /v1/referrals/earnings?window=` | JWT | `api.js` |
+
+### AccountGetResponse Field Mapping
+
+`GET /v1/account` returns these key fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `earning_address` | `str` | User's earning wallet (embedded EOA) |
+| `tipping_address` | `str` | Server wallet (Grove-controlled, used for tips) |
+| `smart_account_address` | `str \| null` | ERC-4337 Smart Account (for gas sponsorship, not user-facing yet) |
+| `external_linked_wallets` | `list[str]` | Linked profile wallet addresses (non-earning) |
+| `handle` | `str \| null` | User's claimed handle |
+| `referral_code` | `str` | User's referral code |
+| `wallet_balances` | `list` | Balance info per wallet |
+
+**`wallet_balances[].wallet_type` values:**
+- `server` — Grove-controlled tipping wallet
+- `eoa_embedded` — CDP-managed embedded EOA (earning wallet)
+- `eoa_self_custodial` — User's self-custodial wallet
+- `external_linked` — Externally linked wallet
 
 ### Key App Files (for cross-reference)
 
