@@ -13,8 +13,9 @@ class XAuth {
    */
   static async _fetch(url, options = {}) {
     // Popup or service worker context → direct fetch
+    // credentials: 'omit' prevents sending twitter.com cookies which conflict with Bearer auth
     if (typeof window === 'undefined' || window.location?.protocol === 'chrome-extension:') {
-      return fetch(url, options);
+      return fetch(url, { ...options, credentials: 'omit' });
     }
 
     // Content script context → relay through background service worker

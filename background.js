@@ -30,7 +30,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
     }
 
-    fetch(url, options)
+    fetch(url, { ...options, credentials: 'omit' })
       .then(async (response) => {
         const body = await response.text();
         const headers = {};
