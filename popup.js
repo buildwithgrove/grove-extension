@@ -496,6 +496,13 @@ function setupEventListeners() {
   confirmTipToggle.addEventListener('change', handleConfirmTipToggle);
 
   // Tip Intro Modal - Page Navigation
+  const tipIntroEarnBtn = document.getElementById('tipIntroEarnBtn');
+  if (tipIntroEarnBtn) {
+    tipIntroEarnBtn.addEventListener('click', async () => {
+      await hideTipIntroModal();
+      document.querySelector('[data-target="tab-earn"]').click();
+    });
+  }
   if (tipIntroNextBtn) {
     tipIntroNextBtn.addEventListener('click', () => {
       // In intro mode, "Got it" button closes the modal
@@ -1040,8 +1047,7 @@ async function updateAuthState(jwt) {
     onboardingState.classList.add('hidden');
     connectedState.classList.remove('hidden');
 
-    // Show tip button intro modal if first time
-    checkAndShowTipIntroModal();
+    // Earn setup modal is triggered after fetchBalance() has account data
 
     // Get environment from storage to show in status
     const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT]);
@@ -1731,6 +1737,9 @@ async function fetchBalance() {
       await chrome.storage.local.remove([STORAGE_KEYS.REFERRAL_CODE]);
     }
     await updateUsernameCard(handle);
+
+    // Show earn setup modal if user hasn't set up their profile yet
+    checkAndShowEarnSetupModal(handle);
 
     // Find the server wallet (Grove-controlled tipping wallet)
     const serverWallet = response.data.wallet_balances.find(
@@ -3867,11 +3876,21 @@ function renderHistoryList() {
  * Twitter connect (page 2) is shown separately after conditions are met
  */
 
-async function checkAndShowTipIntroModal() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.TIP_INTRO_SEEN]);
-  if (!result[STORAGE_KEYS.TIP_INTRO_SEEN]) {
-    showIntroModalPage1Only();
+async function checkAndShowEarnSetupModal(handle) {
+  // Only show if user has no username AND no social links
+  if (handle) return;
+
+  try {
+    const jwt = await getActiveJWT();
+    if (!jwt) return;
+    const result = await GroveAPI.getSocialLinks(jwt);
+    const links = result.success && Array.isArray(result.data) ? result.data : [];
+    if (links.length > 0) return;
+  } catch {
+    return;
   }
+
+  showIntroModalPage1Only();
 }
 
 /**
@@ -3888,10 +3907,6 @@ function showIntroModalPage1Only() {
     // Hide the page indicator dots for intro-only mode
     const dotsContainer = document.querySelector('.tip-intro-indicators');
     if (dotsContainer) dotsContainer.style.display = 'none';
-    // Change Next button text to "Got it"
-    if (tipIntroNextBtn) {
-      tipIntroNextBtn.innerHTML = '<span>Got it</span>';
-    }
   }
 }
 
