@@ -332,10 +332,11 @@ class XAuth {
   }
 
   /**
-   * Post a quote tweet referencing another tweet
-   * Uses quote_tweet_id instead of reply (programmatic replies blocked by X API since Feb 2026)
-   * @param {string} tweetId - The ID of the tweet to quote
-   * @param {string} text - The quote tweet text
+   * Post a tweet about a tip (standalone tweet with @mention)
+   * Programmatic replies and quote tweets blocked by X API since Feb 2026,
+   * so we post a standalone tweet instead.
+   * @param {string} tweetId - Unused (kept for API compatibility)
+   * @param {string} text - The tweet text (should include @mention of tippee)
    * @returns {Promise<Object>} - The created tweet data
    */
   static async postReply(tweetId, text) {
@@ -346,7 +347,6 @@ class XAuth {
       },
       body: JSON.stringify({
         text: text,
-        quote_tweet_id: tweetId,
       }),
     });
 
