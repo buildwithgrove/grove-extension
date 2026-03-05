@@ -1104,7 +1104,7 @@ async function showJwtEditForSlot(slot) {
   jwtEditContainer.classList.remove('hidden');
 
   // Get config for this slot
-  const config = KeyManager.getEnvConfig(slot) || { label: 'Key', appUrl: 'https://app.grove.city/extension' };
+  const config = KeyManager.getEnvConfig(slot) || { label: 'Key', appUrl: 'https://grove.city/extension' };
 
   // Update the label and link based on slot
   if (jwtEditSlotLabel) {
@@ -4212,7 +4212,7 @@ async function loadReferralData() {
 
     // Referral link
     if (referralCode) {
-      referralLinkInput.value = `https://app.grove.city/?ref=${encodeURIComponent(referralCode)}`;
+      referralLinkInput.value = `https://grove.city/?ref=${encodeURIComponent(referralCode)}`;
     } else {
       referralLinkInput.placeholder = 'No referral code available';
     }
