@@ -1712,6 +1712,7 @@ async function fetchBalance() {
       // No earning address in response - clear cached data and show setup card
       await chrome.storage.local.remove([STORAGE_KEYS.EARNING_ADDRESS, STORAGE_KEYS.TIPPING_ADDRESS, STORAGE_KEYS.SMART_ACCOUNT_ADDRESS, STORAGE_KEYS.EXTERNAL_LINKED_WALLETS, STORAGE_KEYS.ENS_NAME]);
 
+
       updateEnsNameDisplay(null);
     }
 
