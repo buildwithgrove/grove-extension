@@ -14,7 +14,7 @@ var GROVE_ENVIRONMENTS = {
   production: {
     label: 'Mainnet',
     apiUrl: 'https://api.grove.city',
-    appUrl: 'https://app.grove.city',
+    appUrl: 'https://grove.city',
     defaultChain: 'base',
     jwtStorageKey: 'GROVE_JWT_PRODUCTION',
     isDevMode: false,
@@ -22,7 +22,7 @@ var GROVE_ENVIRONMENTS = {
   testnet: {
     label: 'Testnet',
     apiUrl: 'https://api.testnet.grove.city',
-    appUrl: 'https://app.testnet.grove.city',
+    appUrl: 'https://testnet.grove.city',
     defaultChain: 'base-sepolia',
     jwtStorageKey: 'GROVE_JWT_TESTNET',
     isDevMode: true,

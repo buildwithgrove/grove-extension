@@ -481,7 +481,7 @@ const TweetTipHandler = {
       }
       const referralCode = result.GROVE_REFERRAL_CODE;
       if (referralCode) {
-        referralLink = `https://app.grove.city/?ref=${encodeURIComponent(referralCode)}`;
+        referralLink = `https://grove.city/?ref=${encodeURIComponent(referralCode)}`;
       }
       console.log('[Grove TweetTipHandler] Storage loaded:', { hasJwt: !!jwt, autoReply: autoReplyEnabled, likeOnTip: likeOnTipEnabled, chain: result.groveChain, fromModal: !!xActions });
 

@@ -27,7 +27,7 @@ describe('GROVE_ENVIRONMENTS', () => {
   it('production should use mainnet config', () => {
     const prod = GROVE_ENVIRONMENTS.production;
     expect(prod.apiUrl).toBe('https://api.grove.city');
-    expect(prod.appUrl).toBe('https://app.grove.city');
+    expect(prod.appUrl).toBe('https://grove.city');
     expect(prod.defaultChain).toBe('base');
     expect(prod.jwtStorageKey).toBe('GROVE_JWT_PRODUCTION');
     expect(prod.isDevMode).toBe(false);
@@ -36,7 +36,7 @@ describe('GROVE_ENVIRONMENTS', () => {
   it('testnet should use testnet config', () => {
     const testnet = GROVE_ENVIRONMENTS.testnet;
     expect(testnet.apiUrl).toBe('https://api.testnet.grove.city');
-    expect(testnet.appUrl).toBe('https://app.testnet.grove.city');
+    expect(testnet.appUrl).toBe('https://testnet.grove.city');
     expect(testnet.defaultChain).toBe('base-sepolia');
     expect(testnet.jwtStorageKey).toBe('GROVE_JWT_TESTNET');
     expect(testnet.isDevMode).toBe(true);
@@ -90,20 +90,20 @@ describe('GroveEnv.resolveActiveEnvId', () => {
 
 describe('GroveEnv.topUpUrl', () => {
   it('should derive top-up URL from appUrl for each env', () => {
-    expect(GroveEnv.topUpUrl('production')).toBe('https://app.grove.city/wallets?action=topup');
-    expect(GroveEnv.topUpUrl('testnet')).toBe('https://app.testnet.grove.city/wallets?action=topup');
+    expect(GroveEnv.topUpUrl('production')).toBe('https://grove.city/wallets?action=topup');
+    expect(GroveEnv.topUpUrl('testnet')).toBe('https://testnet.grove.city/wallets?action=topup');
     expect(GroveEnv.topUpUrl('localhost')).toBe('http://localhost:3000/wallets?action=topup');
   });
 
   it('should fall back to production for unknown env', () => {
-    expect(GroveEnv.topUpUrl('unknown')).toBe('https://app.grove.city/wallets?action=topup');
+    expect(GroveEnv.topUpUrl('unknown')).toBe('https://grove.city/wallets?action=topup');
   });
 });
 
 describe('GroveEnv.extensionUrl', () => {
   it('should derive extension URL from appUrl', () => {
-    expect(GroveEnv.extensionUrl('production')).toBe('https://app.grove.city/extension');
-    expect(GroveEnv.extensionUrl('testnet')).toBe('https://app.testnet.grove.city/extension');
+    expect(GroveEnv.extensionUrl('production')).toBe('https://grove.city/extension');
+    expect(GroveEnv.extensionUrl('testnet')).toBe('https://testnet.grove.city/extension');
     expect(GroveEnv.extensionUrl('localhost')).toBe('http://localhost:3000/extension');
   });
 });
