@@ -1039,6 +1039,103 @@ class GroveAPI {
   }
 
   /**
+   * Get social links for the authenticated user
+   * @param {string} groveApiJwt - JWT token
+   * @returns {Promise<Object>} - { success, data: [{id, platform, url, verified, created_at}] }
+   */
+  static async getSocialLinks(groveApiJwt) {
+    const baseURL = await this.getBaseURL();
+    const apiUrl = `${baseURL}/v1/account/social-links`;
+
+    try {
+      const response = await GroveAPI._fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${groveApiJwt}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: data.message || data.error || 'Failed to get social links', status: response.status };
+      }
+
+      return { success: true, data, status: response.status };
+    } catch (error) {
+      console.error('[Grove Extension] Get social links failed:', error);
+      return { success: false, error: error.message, status: null };
+    }
+  }
+
+  /**
+   * Add a social link to the authenticated user's profile
+   * @param {string} platform - Platform key (e.g. 'x', 'youtube', 'github')
+   * @param {string} url - The URL or handle for the platform
+   * @param {string} groveApiJwt - JWT token
+   * @returns {Promise<Object>} - { success, data: {id, platform, url, verified, created_at} }
+   */
+  static async addSocialLink(platform, url, groveApiJwt) {
+    const baseURL = await this.getBaseURL();
+    const apiUrl = `${baseURL}/v1/account/social-links`;
+
+    try {
+      const response = await GroveAPI._fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groveApiJwt}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ platform, url })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: data.message || data.error || 'Failed to add social link', status: response.status };
+      }
+
+      return { success: true, data, status: response.status };
+    } catch (error) {
+      console.error('[Grove Extension] Add social link failed:', error);
+      return { success: false, error: error.message, status: null };
+    }
+  }
+
+  /**
+   * Remove a social link from the authenticated user's profile
+   * @param {string} platform - Platform key to remove
+   * @param {string} groveApiJwt - JWT token
+   * @returns {Promise<Object>} - { success }
+   */
+  static async removeSocialLink(platform, groveApiJwt) {
+    const baseURL = await this.getBaseURL();
+    const apiUrl = `${baseURL}/v1/account/social-links/${encodeURIComponent(platform)}`;
+
+    try {
+      const response = await GroveAPI._fetch(apiUrl, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${groveApiJwt}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        let data = {};
+        try { data = await response.json(); } catch (_) {}
+        return { success: false, error: data.message || data.error || 'Failed to remove social link', status: response.status };
+      }
+
+      return { success: true, status: response.status };
+    } catch (error) {
+      console.error('[Grove Extension] Remove social link failed:', error);
+      return { success: false, error: error.message, status: null };
+    }
+  }
+
+  /**
    * Release the current handle for the authenticated user
    * @param {string} groveApiJwt - JWT token for authentication
    * @returns {Promise<Object>} - { success, data, error, status }

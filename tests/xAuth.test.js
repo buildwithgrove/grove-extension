@@ -48,6 +48,7 @@ beforeEach(() => {
     URLSearchParams: URLSearchParams,
     Uint8Array: Uint8Array,
     Array: Array,
+    location: { protocol: 'chrome-extension:' },
   };
   context.window = context;
 
@@ -316,7 +317,7 @@ describe('XAuth', () => {
       mockChrome.storage.local._setData({});
 
       await expect(XAuth.likeTweet('123'))
-        .rejects.toThrow('Not logged in to X');
+        .rejects.toThrow('User ID not available');
     });
 
     it('should throw when user ID not available', async () => {
@@ -328,6 +329,58 @@ describe('XAuth', () => {
 
       await expect(XAuth.likeTweet('123'))
         .rejects.toThrow('User ID not available');
+    });
+  });
+
+  describe('retry on 401', () => {
+    it('should refresh token and retry when postReply gets 401', async () => {
+      // Set up a valid (non-expired) token that Twitter will reject
+      mockChrome.storage.local._setData({
+        [STORAGE_KEYS.ACCESS_TOKEN]: 'stale-token',
+        [STORAGE_KEYS.TOKEN_EXPIRY]: Date.now() + 3600000,
+        [STORAGE_KEYS.REFRESH_TOKEN]: 'valid-refresh-token',
+        [STORAGE_KEYS.USER_INFO]: { id: '123', username: 'testuser' }
+      });
+
+      let tweetCallCount = 0;
+      // Override fetch in the sandbox context directly
+      context.fetch = vi.fn(async (url, options) => {
+        if (url === 'https://api.twitter.com/2/oauth2/token') {
+          return {
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({
+              access_token: 'fresh-token',
+              refresh_token: 'new-refresh',
+              expires_in: 7200
+            }),
+            text: () => Promise.resolve(JSON.stringify({
+              access_token: 'fresh-token',
+              refresh_token: 'new-refresh',
+              expires_in: 7200
+            })),
+          };
+        }
+        tweetCallCount++;
+        if (tweetCallCount === 1) {
+          return {
+            ok: false,
+            status: 401,
+            json: () => Promise.resolve({ title: 'Unauthorized' }),
+            text: () => Promise.resolve('Unauthorized'),
+          };
+        }
+        return {
+          ok: true,
+          status: 201,
+          json: () => Promise.resolve({ data: { id: 'new-reply-123' } }),
+          text: () => Promise.resolve(JSON.stringify({ data: { id: 'new-reply-123' } })),
+        };
+      });
+
+      const result = await XAuth.postReply('tweet-456', 'Thanks!');
+      expect(result.data.id).toBe('new-reply-123');
+      expect(tweetCallCount).toBe(2); // First attempt failed, retry succeeded
     });
   });
 

@@ -221,9 +221,9 @@ describe('LeaderboardRenderer', () => {
       expect(html).toContain('lb-col-amount');
     });
 
-    it('should link handle-based users to app.grove.city', () => {
+    it('should link handle-based users to grove.city', () => {
       const html = LeaderboardRenderer.renderTippersTable(entries);
-      expect(html).toContain('app.grove.city/alice');
+      expect(html).toContain('grove.city/alice');
     });
   });
 

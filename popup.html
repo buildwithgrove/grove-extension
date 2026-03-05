@@ -135,7 +135,7 @@
                   </div>
                   <div class="feature-card-content">
                     <h3>Earn from your posts</h3>
-                    <p>Add wallet to bio to receive</p>
+                    <p>Create your profile to receive</p>
                   </div>
                 </div>
               </div>
@@ -612,172 +612,140 @@
     <div class="page" id="tab-earn">
       <h2 class="page-title">Earn Tips</h2>
 
-      <!-- Earnings Summary -->
-      <div class="section-card earn-stats-card" id="earnStatsCard">
-        <div class="earn-stats-row">
-          <div class="earn-stat">
-            <span class="earn-stat-value" id="earnTotalUsd">$0.00</span>
-            <span class="earn-stat-label">Earned</span>
-          </div>
-          <div class="earn-stat-divider"></div>
-          <div class="earn-stat">
-            <span class="earn-stat-value" id="earnTipCount">0</span>
-            <span class="earn-stat-label">Tips</span>
-          </div>
-          <div class="earn-stat-divider"></div>
-          <div class="earn-stat">
-            <span class="earn-stat-value" id="earnTipperCount">0</span>
-            <span class="earn-stat-label">Tippers</span>
-          </div>
+      <!-- Logged Out State -->
+      <div class="earn-logged-out hidden" id="earnLoggedOut">
+        <div class="earn-logged-out-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
         </div>
+        <h3 class="earn-logged-out-title">Earn for your content</h3>
+        <p class="earn-logged-out-desc">Set up your profile so anyone with the Grove extension can tip you anywhere on the web.</p>
+        <button class="earn-sign-in-btn" id="earnSignInBtn">
+          Sign In to Get Started
+        </button>
       </div>
 
-      <div class="section-card earn-card">
+      <!-- Logged In State -->
+      <div class="earn-logged-in hidden" id="earnLoggedIn">
 
-        <!-- Step 1: Copy your address -->
-        <div class="earn-section">
-          <div class="earn-section-label">
-            <span class="earn-step-number">1</span>
-            <span class="earn-section-title">Copy your address</span>
+        <!-- Earnings Summary -->
+        <div class="section-card earn-stats-card" id="earnStatsCard">
+          <div class="earn-stats-row">
+            <div class="earn-stat">
+              <span class="earn-stat-value" id="earnTotalUsd">$0.00</span>
+              <span class="earn-stat-label">Earned</span>
+            </div>
+            <div class="earn-stat-divider"></div>
+            <div class="earn-stat">
+              <span class="earn-stat-value" id="earnTipCount">0</span>
+              <span class="earn-stat-label">Tips</span>
+            </div>
+            <div class="earn-stat-divider"></div>
+            <div class="earn-stat">
+              <span class="earn-stat-value" id="earnTipperCount">0</span>
+              <span class="earn-stat-label">Tippers</span>
+            </div>
           </div>
+        </div>
 
-          <!-- Has address -->
-          <div id="earnAddressContent">
-            <div class="address-display-container">
-              <div class="address-display primary" id="earnAddressDisplay">
-                <span class="address-text" id="earnAddressText">Connect to see address</span>
-                <button class="copy-address-btn" id="copyEarnAddressBtn" title="Copy address" disabled>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                  </svg>
-                </button>
+        <!-- Setup Checklist -->
+        <div class="section-card earn-card">
+
+          <!-- Step 1: Claim Username -->
+          <div class="earn-checklist-item" id="earnUsernameStep">
+            <div class="earn-checklist-icon" id="earnUsernameCheck">
+              <span class="earn-step-number">1</span>
+              <svg class="earn-check-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <div class="earn-checklist-content">
+              <div class="earn-checklist-title">Claim your username</div>
+              <!-- Unclaimed: show input -->
+              <div class="earn-username-form" id="earnUsernameForm">
+                <div class="earn-username-input-row">
+                  <span class="earn-username-prefix">@</span>
+                  <input type="text" class="earn-username-input" id="earnUsernameInput" placeholder="username" maxlength="15" autocomplete="off" spellcheck="false" />
+                  <button class="earn-username-claim-btn" id="earnUsernameClaimBtn">Claim</button>
+                </div>
+                <p class="earn-username-hint">4-15 chars. Lowercase, numbers, underscores.</p>
+                <p class="earn-username-error hidden" id="earnUsernameError"></p>
+              </div>
+              <!-- Claimed: show handle -->
+              <div class="earn-username-claimed hidden" id="earnUsernameClaimed">
+                <span class="earn-username-value" id="earnUsernameValue"></span>
               </div>
             </div>
-            <div class="ens-links" id="ensLinksSection">
-              <span class="ens-label">Get a name:</span>
-              <a href="https://app.ens.domains" target="_blank" class="ens-link">.eth</a>
-              <span class="ens-separator">or</span>
-              <a href="https://www.base.org/names" target="_blank" class="ens-link">.base.eth</a>
+          </div>
+
+          <div class="earn-checklist-divider"></div>
+
+          <!-- Step 2: Add Social Links -->
+          <div class="earn-checklist-item" id="earnSocialStep">
+            <div class="earn-checklist-icon" id="earnSocialCheck">
+              <span class="earn-step-number">2</span>
+              <svg class="earn-check-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <div class="earn-checklist-content">
+              <div class="earn-checklist-title">Connect your accounts</div>
+              <p class="earn-checklist-desc">Add your social profiles so people can tip you.</p>
             </div>
           </div>
 
-          <!-- No address -->
-          <div id="earnSetupContent" class="hidden">
-            <div class="earn-setup-examples">
-              <code>vitalik.eth</code>
-              <code>jesse.base.eth</code>
-              <code>0x1234...abcd</code>
+          <!-- Social links & form (full width, outside the icon+content flex) -->
+          <div class="earn-social-section">
+            <div class="earn-social-form" id="earnSocialForm">
+              <div class="earn-social-input-row">
+                <select class="earn-social-select" id="earnSocialPlatformSelect">
+                  <option value="">Platform</option>
+                  <option value="x">X (Twitter)</option>
+                  <option value="youtube">YouTube</option>
+                  <option value="github">GitHub</option>
+                  <option value="soundcloud">SoundCloud</option>
+                  <option value="substack">Substack</option>
+                  <option value="instagram">Instagram</option>
+                  <option value="linkedin">LinkedIn</option>
+                  <option value="medium">Medium</option>
+                  <option value="reddit">Reddit</option>
+                  <option value="tiktok">TikTok</option>
+                  <option value="discord">Discord</option>
+                  <option value="telegram">Telegram</option>
+                  <option value="website">Website</option>
+                </select>
+                <input type="text" class="earn-social-input" id="earnSocialHandleInput" placeholder="Choose a platform..." disabled />
+                <button class="earn-social-add-btn" id="earnSocialAddBtn" disabled>Add</button>
+              </div>
+              <p class="earn-social-error hidden" id="earnSocialError"></p>
             </div>
-            <div class="ens-links">
-              <span class="ens-label">Get a name:</span>
-              <a href="https://app.ens.domains" target="_blank" class="ens-link">.eth</a>
-              <span class="ens-separator">or</span>
-              <a href="https://www.base.org/names" target="_blank" class="ens-link">.base.eth</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 2: Add to a platform -->
-        <div class="earn-section">
-          <div class="earn-section-label">
-            <span class="earn-step-number">2</span>
-            <span class="earn-section-title">Add to a platform</span>
-          </div>
-
-          <div class="platform-accordions">
-            <!-- Substack -->
-            <button class="platform-accordion-toggle" aria-expanded="false">
-              <svg class="platform-accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z"/>
-              </svg>
-              <span class="platform-accordion-name">Substack</span>
-              <svg class="platform-accordion-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-            <div class="platform-accordion-body">
-              <p class="platform-guide-desc">Go to Settings &rarr; Profile and paste your address anywhere in your bio.</p>
-              <a href="https://substack.com/profile/edit" target="_blank" class="platform-guide-link">
-                Edit Profile
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <line x1="10" y1="14" x2="21" y2="3"></line>
-                </svg>
-              </a>
-            </div>
-
-            <!-- Websites -->
-            <button class="platform-accordion-toggle" aria-expanded="false">
-              <svg class="platform-accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="2" y1="12" x2="22" y2="12"></line>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-              </svg>
-              <span class="platform-accordion-name">Websites</span>
-              <svg class="platform-accordion-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-            <div class="platform-accordion-body">
-              <p class="platform-guide-desc">Add your address to <code>/llms.txt</code>, <code>/ai.txt</code>, or as JSON-LD metadata in your page's <code>&lt;head&gt;</code>.</p>
-            </div>
-
-            <!-- X (Twitter) -->
-            <button class="platform-accordion-toggle" aria-expanded="false">
-              <svg class="platform-accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-              </svg>
-              <span class="platform-accordion-name">X (Twitter)</span>
-              <svg class="platform-accordion-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-            <div class="platform-accordion-body">
-              <p class="platform-guide-desc">Paste your address in your display name or anywhere in your bio.</p>
-              <a href="https://x.com/settings/profile" target="_blank" class="platform-guide-link">
-                Edit Profile
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <line x1="10" y1="14" x2="21" y2="3"></line>
-                </svg>
-              </a>
-            </div>
-
-            <!-- YouTube -->
-            <button class="platform-accordion-toggle" aria-expanded="false">
-              <svg class="platform-accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-              </svg>
-              <span class="platform-accordion-name">YouTube</span>
-              <svg class="platform-accordion-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-            <div class="platform-accordion-body">
-              <p class="platform-guide-desc">Paste your address in your channel description or video description.</p>
-              <a href="https://studio.youtube.com" target="_blank" class="platform-guide-link">
-                YouTube Studio
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <line x1="10" y1="14" x2="21" y2="3"></line>
-                </svg>
-              </a>
-            </div>
+            <div class="earn-social-links hidden" id="earnSocialLinks"></div>
           </div>
         </div>
 
-        <!-- Step 3: Start earning -->
-        <div class="earn-section earn-section-final">
-          <div class="earn-section-label">
-            <span class="earn-step-number">3</span>
-            <span class="earn-section-title">Start earning</span>
+        <!-- Profile Link -->
+        <a class="section-card section-card-btn settings-card-bottom earn-profile-link hidden" id="earnProfileLink" href="#" target="_blank">
+          <div class="card-row">
+            <div class="tipping-row-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <span class="settings-card-title">View Profile</span>
+            <div class="card-chevron">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </div>
           </div>
-          <p class="earn-section-desc">That's it. Anyone with the Grove extension can now tip you directly, anywhere on the web.</p>
-        </div>
+        </a>
 
       </div>
     </div>

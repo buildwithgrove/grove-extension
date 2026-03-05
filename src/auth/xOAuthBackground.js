@@ -164,6 +164,7 @@ async function exchangeCodeForTokens(code, codeVerifier) {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: params.toString(),
+    credentials: 'omit',
   });
 
   if (!response.ok) {
@@ -189,6 +190,7 @@ async function getXUserInfo(accessToken) {
     headers: {
       'Authorization': `Bearer ${accessToken}`,
     },
+    credentials: 'omit',
   });
 
   if (!response.ok) {

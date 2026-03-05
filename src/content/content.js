@@ -840,6 +840,7 @@
                   amount: tipAmount,
                   chain: chainName,
                   tx_link: txLink,
+                  tweet_url: '',
                   grove_link: 'grove.city',
                   referral_link: referralLink
                 });
