@@ -1379,6 +1379,8 @@ async function clearAllKeys() {
   await chrome.storage.local.remove([
     STORAGE_KEYS.EARNING_ADDRESS,
     STORAGE_KEYS.TIPPING_ADDRESS,
+    STORAGE_KEYS.SMART_ACCOUNT_ADDRESS,
+    STORAGE_KEYS.EXTERNAL_LINKED_WALLETS,
     STORAGE_KEYS.ENS_NAME,
     STORAGE_KEYS.CDP_IDENTITY_TYPE,
     STORAGE_KEYS.CDP_IDENTITY_VALUE,
@@ -1775,41 +1777,6 @@ async function migrateWalletStorageKeys() {
   if (old['GROVE_CLIENT_ADDRESS']) {
     updates[STORAGE_KEYS.EARNING_ADDRESS] = old['GROVE_CLIENT_ADDRESS'];
   } else if (old['GROVE_EMBEDDED_WALLET_ADDRESS']) {
-    updates[STORAGE_KEYS.EARNING_ADDRESS] = old['GROVE_EMBEDDED_WALLET_ADDRESS'];
-  }
-
-  if (old['GROVE_ONCHAIN_ADDRESS']) {
-    updates[STORAGE_KEYS.TIPPING_ADDRESS] = old['GROVE_ONCHAIN_ADDRESS'];
-  }
-  if (Object.keys(updates).length) {
-    await chrome.storage.local.set(updates);
-  }
-  await chrome.storage.local.remove([
-    'GROVE_CLIENT_ADDRESS',
-    'GROVE_EMBEDDED_WALLET_ADDRESS',
-    'GROVE_ONCHAIN_ADDRESS'
-  ]);
-  if (Object.keys(updates).length) {
-    console.log('[Grove Extension] Migrated wallet storage keys:', Object.keys(updates));
-  }
-}
-
-/**
- * Migrate old wallet storage keys to new terminology (one-time).
- * CLIENT_ADDRESS → EARNING_ADDRESS
- * EMBEDDED_WALLET_ADDRESS → EARNING_ADDRESS (fallback)
- * ONCHAIN_ADDRESS → TIPPING_ADDRESS
- */
-async function migrateWalletStorageKeys() {
-  const old = await chrome.storage.local.get([
-    'GROVE_CLIENT_ADDRESS',
-    'GROVE_EMBEDDED_WALLET_ADDRESS',
-    'GROVE_ONCHAIN_ADDRESS'
-  ]);
-  const updates = {};
-  if (old['GROVE_CLIENT_ADDRESS']) {
-    updates[STORAGE_KEYS.EARNING_ADDRESS] = old['GROVE_CLIENT_ADDRESS'];
-  } else if (old['GROVE_EMBEDDED_WALLET_ADDRESS']) {
     // Fallback to embedded wallet address if earn address is missing
     updates[STORAGE_KEYS.EARNING_ADDRESS] = old['GROVE_EMBEDDED_WALLET_ADDRESS'];
   }
@@ -1878,7 +1845,7 @@ function normalizeSocialUrl(platform, input) {
     case 'soundcloud': return `https://soundcloud.com/${handle}`;
     case 'tiktok': return `https://tiktok.com/@${handle}`;
     case 'telegram': return `https://t.me/${handle}`;
-    case 'discord': return handle; // No URL normalization for Discord
+    case 'discord': return handle.startsWith('http') ? handle : `https://discord.com/users/${handle}`;
     case 'website': return handle.includes('.') ? `https://${handle}` : handle;
     default: return trimmed;
   }
@@ -2214,7 +2181,13 @@ async function handleEarnAddSocialLink() {
     }
 
     // Add to cache and re-render
-    earnSocialLinksCache.push(result.data);
+    if (result.data && result.data.platform) {
+      earnSocialLinksCache.push(result.data);
+    } else {
+      // Unexpected shape — re-fetch from API for authoritative data
+      await loadEarnSocialLinks();
+      return;
+    }
     renderEarnSocialLinks();
     updateEarnSocialCheckmark();
     updateEarnPlatformOptions();

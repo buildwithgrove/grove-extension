@@ -32,6 +32,8 @@ function buildAutoReplyMessage(template, data) {
   }
   if (data.tweet_url) {
     message = message.replace(/{tweet_url}/g, data.tweet_url);
+  } else {
+    message = message.replace(/\s*\{tweet_url\}/g, '');
   }
   return message;
 }
