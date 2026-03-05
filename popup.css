@@ -601,6 +601,12 @@ body {
   line-height: 1;
 }
 
+.tipping-row-value .amount-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .tipping-divider {
   height: 1px;
   background: var(--color-border);
