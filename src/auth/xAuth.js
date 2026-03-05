@@ -7,6 +7,49 @@
 class XAuth {
   static CLIENT_ID = 'UHQwQXlCRFZHY1F1VmZ3RmVXU0Y6MTpjaQ';
 
+  /**
+   * Fetch wrapper that routes through background service worker in content script context
+   * to avoid CORS blocks (same pattern as GroveAPI._fetch)
+   */
+  static async _fetch(url, options = {}) {
+    // Popup or service worker context → direct fetch
+    // credentials: 'omit' prevents sending twitter.com cookies which conflict with Bearer auth
+    if (typeof window === 'undefined' || window.location?.protocol === 'chrome-extension:') {
+      return fetch(url, { ...options, credentials: 'omit' });
+    }
+
+    // Content script context → relay through background service worker
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { type: 'API_FETCH', url, options },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
+          if (!response) {
+            reject(new Error('No response from background service worker'));
+            return;
+          }
+          if (response.error) {
+            reject(new Error(response.error));
+            return;
+          }
+          // Build a Response-like shim (matches GroveAPI._fetch pattern)
+          const shim = {
+            ok: response.ok,
+            status: response.status,
+            statusText: response.statusText,
+            headers: new Headers(response.headers || {}),
+            json: () => Promise.resolve(JSON.parse(response.body)),
+            text: () => Promise.resolve(response.body),
+          };
+          resolve(shim);
+        }
+      );
+    });
+  }
+
   static STORAGE_KEYS = {
     ACCESS_TOKEN: 'GROVE_X_ACCESS_TOKEN',
     REFRESH_TOKEN: 'GROVE_X_REFRESH_TOKEN',
@@ -59,7 +102,7 @@ class XAuth {
     params.set('refresh_token', refreshToken);
     params.set('client_id', this.CLIENT_ID);
 
-    const response = await fetch(tokenUrl, {
+    const response = await XAuth._fetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -68,12 +111,15 @@ class XAuth {
     });
 
     if (!response.ok) {
+      const errorBody = await response.text().catch(() => '(unreadable)');
+      console.error('[Grove X Auth] Refresh failed:', response.status, errorBody);
       // Refresh token invalid - user needs to re-login
       await this.logout();
       throw new Error('Session expired - please login again');
     }
 
     const tokens = await response.json();
+    console.log('[Grove X Auth] Refresh successful, scopes:', tokens.scope, 'token length:', tokens.access_token?.length);
 
     // Update stored tokens
     const userResult = await chrome.storage.local.get([this.STORAGE_KEYS.USER_INFO]);
@@ -112,12 +158,67 @@ class XAuth {
   }
 
   /**
+   * Make an authenticated X API call with automatic retry on 401.
+   * If the first attempt returns 401, refreshes the token and retries once.
+   * @param {string} url - API URL
+   * @param {Object} options - fetch options (Authorization header will be set)
+   * @returns {Promise<Object>} - Response-like object
+   */
+  static async _authenticatedFetch(url, options = {}) {
+    let accessToken = await this.getAccessToken();
+    if (!accessToken) {
+      throw new Error('Not logged in to X');
+    }
+
+    const buildOptions = (token) => ({
+      ...options,
+      headers: {
+        ...options.headers,
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const response = await XAuth._fetch(url, buildOptions(accessToken));
+
+    if (response.status === 401) {
+      // Log what Twitter actually says for debugging
+      try {
+        const body = await response.text();
+        console.error('[Grove X Auth] 401 response body:', body);
+      } catch (_) { /* ignore */ }
+
+      // Token rejected server-side — try refreshing once
+      console.log('[Grove X Auth] Got 401, attempting token refresh...');
+      try {
+        accessToken = await this.refreshAccessToken();
+      } catch (refreshError) {
+        console.error('[Grove X Auth] Token refresh failed after 401:', refreshError);
+        await this.logout();
+        throw new Error('Session expired - please reconnect X account');
+      }
+      const retryResponse = await XAuth._fetch(url, buildOptions(accessToken));
+      if (retryResponse.status === 401) {
+        // Fresh token also rejected — log but don't logout (refresh token still works)
+        try {
+          const retryBody = await retryResponse.text();
+          console.error('[Grove X Auth] Retry 401 response body:', retryBody);
+        } catch (_) { /* ignore */ }
+        console.error('[Grove X Auth] Retry with fresh token still 401 — API may be rejecting requests');
+        throw new Error('X API request failed (401) - check app permissions');
+      }
+      return retryResponse;
+    }
+
+    return response;
+  }
+
+  /**
    * Get user info from Twitter API
    */
   static async getUserInfo(accessToken) {
     console.log('[Grove X Auth] Fetching user info...');
 
-    const response = await fetch('https://api.twitter.com/2/users/me', {
+    const response = await XAuth._fetch('https://api.twitter.com/2/users/me', {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },
@@ -173,7 +274,7 @@ class XAuth {
       const token = await this.getAccessToken();
       if (!token) return false;
 
-      const response = await fetch('https://api.twitter.com/2/users/me', {
+      const response = await XAuth._fetch('https://api.twitter.com/2/users/me', {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -212,16 +313,9 @@ class XAuth {
    * @returns {Promise<Object>} - The created tweet data
    */
   static async postTweet(text) {
-    const accessToken = await this.getAccessToken();
-
-    if (!accessToken) {
-      throw new Error('Not logged in to X');
-    }
-
-    const response = await fetch('https://api.twitter.com/2/tweets', {
+    const response = await this._authenticatedFetch('https://api.twitter.com/2/tweets', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -238,29 +332,21 @@ class XAuth {
   }
 
   /**
-   * Post a reply to a tweet
-   * @param {string} tweetId - The ID of the tweet to reply to
-   * @param {string} text - The reply text
+   * Post a tweet about a tip (standalone tweet with @mention)
+   * Programmatic replies and quote tweets blocked by X API since Feb 2026,
+   * so we post a standalone tweet instead.
+   * @param {string} tweetId - Unused (kept for API compatibility)
+   * @param {string} text - The tweet text (should include @mention of tippee)
    * @returns {Promise<Object>} - The created tweet data
    */
   static async postReply(tweetId, text) {
-    const accessToken = await this.getAccessToken();
-
-    if (!accessToken) {
-      throw new Error('Not logged in to X');
-    }
-
-    const response = await fetch('https://api.twitter.com/2/tweets', {
+    const response = await this._authenticatedFetch('https://api.twitter.com/2/tweets', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         text: text,
-        reply: {
-          in_reply_to_tweet_id: tweetId,
-        },
       }),
     });
 
@@ -278,25 +364,18 @@ class XAuth {
    * @returns {Promise<Object>} - The like result
    */
   static async likeTweet(tweetId) {
-    const accessToken = await this.getAccessToken();
-
-    if (!accessToken) {
-      throw new Error('Not logged in to X');
-    }
-
     // Get user info to get the user ID
     let userInfo = await this.getStoredUserInfo();
 
-    // If user ID is missing, try to fetch it now
+    // If user ID is missing, try to fetch it now (uses _authenticatedFetch for retry-on-401)
     if (!userInfo || !userInfo.id || userInfo.id === 'unknown') {
       try {
-        userInfo = await this.getUserInfo(accessToken);
-        // Update stored user info with the fetched data
-        const result = await chrome.storage.local.get([
-          this.STORAGE_KEYS.ACCESS_TOKEN,
-          this.STORAGE_KEYS.REFRESH_TOKEN,
-          this.STORAGE_KEYS.TOKEN_EXPIRY
-        ]);
+        const response = await this._authenticatedFetch('https://api.twitter.com/2/users/me');
+        if (!response.ok) {
+          throw new Error(`Failed to get user info: ${response.status}`);
+        }
+        const data = await response.json();
+        userInfo = data.data;
         await chrome.storage.local.set({
           [this.STORAGE_KEYS.USER_INFO]: userInfo
         });
@@ -306,10 +385,9 @@ class XAuth {
       }
     }
 
-    const response = await fetch(`https://api.twitter.com/2/users/${userInfo.id}/likes`, {
+    const response = await this._authenticatedFetch(`https://api.twitter.com/2/users/${userInfo.id}/likes`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

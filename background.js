@@ -23,13 +23,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const allowedPrefixes = [
       ...Object.values(GROVE_ENVIRONMENTS).map(env => env.apiUrl),
       ...Object.values(CHAIN_CONFIG).map(chain => chain.rpcUrl),
+      'https://api.twitter.com/',
     ];
     if (!allowedPrefixes.some(prefix => url.startsWith(prefix))) {
       sendResponse({ error: `Blocked: URL not in allowlist`, ok: false, status: 0, statusText: '', headers: {}, body: '' });
       return true;
     }
 
-    fetch(url, options)
+    fetch(url, { ...options, credentials: 'omit' })
       .then(async (response) => {
         const body = await response.text();
         const headers = {};

@@ -834,12 +834,13 @@
                 // TODO_CONSIDERATION: Referral links always point to production — intentional?
                 //   Why: During local/testnet dev, auto-reply tweets still link to production app
                 //   How: Use GroveEnv.get(envId).appUrl if referrals should match the active environment
-                const referralLink = referralCode ? `https://app.grove.city/?ref=${encodeURIComponent(referralCode)}` : 'grove.city';
+                const referralLink = referralCode ? `https://grove.city/?ref=${encodeURIComponent(referralCode)}` : 'grove.city';
                 const tweetText = buildAutoReplyMessage(autoReplyMessage, {
                   username: recipientUsername,
                   amount: tipAmount,
                   chain: chainName,
                   tx_link: txLink,
+                  tweet_url: '',
                   grove_link: 'grove.city',
                   referral_link: referralLink
                 });

@@ -158,8 +158,8 @@ export async function verifyOTP(flowId, otp, method) {
  * @property {string} api_key - Grove JWT ("Forever JWT")
  * @property {string} identity_type - 'email' | 'sms' | 'cdp_sub'
  * @property {string} identity_value - The normalized identity value
- * @property {string|null} address - Server wallet address
- * @property {string|null} onchain_address - Alias for address
+ * @property {string|null} earning_address - User's earning wallet address
+ * @property {string|null} tipping_address - Grove-managed tipping wallet address
  * @property {boolean} is_new_account - True if account was just created
  */
 export async function exchangeForGroveJWT(cdpToken, endpoint, network = null) {

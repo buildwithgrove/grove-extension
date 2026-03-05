@@ -28,9 +28,10 @@ var STORAGE_KEYS = {
   // State tracking
   HAS_TIPPED: 'GROVE_HAS_TIPPED',
   LAST_BALANCES: 'GROVE_LAST_BALANCES',
-  CLIENT_ADDRESS: 'GROVE_CLIENT_ADDRESS',       // User's logged-in wallet (connected wallet)
-  EMBEDDED_WALLET_ADDRESS: 'GROVE_EMBEDDED_WALLET_ADDRESS', // CDP embedded wallet
-  ONCHAIN_ADDRESS: 'GROVE_ONCHAIN_ADDRESS',     // Grove-managed tipping wallet
+  EARNING_ADDRESS: 'GROVE_EARNING_ADDRESS',       // User's earning wallet
+  TIPPING_ADDRESS: 'GROVE_TIPPING_ADDRESS',      // Grove-managed tipping wallet
+  SMART_ACCOUNT_ADDRESS: 'GROVE_SMART_ACCOUNT_ADDRESS', // ERC-4337 smart account
+  EXTERNAL_LINKED_WALLETS: 'GROVE_EXTERNAL_LINKED_WALLETS', // Linked profile wallets
   ENS_NAME: 'GROVE_ENS_NAME',
 
   // Onboarding/UI state
