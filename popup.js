@@ -1808,6 +1808,11 @@ async function getEarnAddress() {
 
 // ─── Earn Tab ───────────────────────────────────────────────────────────────
 
+// NOTE: When adding a new platform, update ALL of:
+//   1. SOCIAL_PLACEHOLDERS (below)
+//   2. PLATFORM_LABELS (below)
+//   3. normalizeSocialUrl() switch statement (below)
+//   4. The <select> options in popup.html (#earnSocialPlatformSelect)
 const SOCIAL_PLACEHOLDERS = {
   x: '@username',
   youtube: '@handle',
@@ -1977,6 +1982,28 @@ async function updateEarnProfileLink(handle) {
 }
 
 /**
+ * Core claim-handle logic shared by earn tab and settings tab.
+ * Returns { success: true } or { success: false, error: string }.
+ */
+async function claimHandleCore(handle) {
+  const jwt = await getActiveJWT();
+  if (!jwt) return { success: false, error: 'Not signed in.' };
+
+  const response = await GroveAPI.claimHandle(handle, jwt);
+  if (!response.success) {
+    const msg = response.status === 409 ? 'Already taken.' :
+                response.status === 400 ? (response.error || 'Invalid username.') :
+                (response.error || 'Failed to claim.');
+    return { success: false, error: msg };
+  }
+
+  await chrome.storage.local.set({ [STORAGE_KEYS.HANDLE]: handle });
+  await updateUsernameCard(handle);
+  loadUsernameView();
+  return { success: true };
+}
+
+/**
  * Handle username claim from earn tab
  */
 async function handleEarnClaimUsername() {
@@ -1997,26 +2024,12 @@ async function handleEarnClaimUsername() {
   btn.textContent = 'Claiming...';
 
   try {
-    const jwt = await getActiveJWT();
-    if (!jwt) {
-      if (errorEl) { errorEl.textContent = 'Not signed in.'; errorEl.classList.remove('hidden'); }
+    const result = await claimHandleCore(handle);
+    if (!result.success) {
+      if (errorEl) { errorEl.textContent = result.error; errorEl.classList.remove('hidden'); }
       return;
     }
-
-    const response = await GroveAPI.claimHandle(handle, jwt);
-
-    if (!response.success) {
-      const msg = response.status === 409 ? 'Already taken.' :
-                  response.status === 400 ? (response.error || 'Invalid username.') :
-                  (response.error || 'Failed to claim.');
-      if (errorEl) { errorEl.textContent = msg; errorEl.classList.remove('hidden'); }
-      return;
-    }
-
-    await chrome.storage.local.set({ [STORAGE_KEYS.HANDLE]: handle });
     updateEarnUsernameUI(handle);
-    await updateUsernameCard(handle);
-    loadUsernameView();
     showToast(`Claimed @${handle}`);
   } catch (error) {
     console.error('[Grove Extension] Earn claim username error:', error);
@@ -2351,13 +2364,12 @@ async function resolveEnsName(address) {
 }
 
 
-/**
- * Update unified address display in the UI when ENS name changes
- * This is called after ENS resolution completes
- */
+// TODO_TECHDEBT: updateEnsNameDisplay is now a no-op but still called from 6+ places
+//   (fetchBalance, disconnectSlot, clearAllKeys, handleDevModeToggle, etc.)
+//   Why: The earn tab address display was removed; ENS name is stored in storage for
+//   use across the extension but no longer rendered in the popup UI.
+//   How: Remove this function and all call sites in a follow-up cleanup.
 async function updateEnsNameDisplay(ensName) {
-  // ENS name is stored in storage for use across the extension
-  // No earn tab address display to update anymore
 }
 
 /**
@@ -2832,31 +2844,12 @@ async function handleClaimUsername() {
   usernameClaimBtn.textContent = 'Claiming...';
 
   try {
-    const jwt = await getActiveJWT();
-    if (!jwt) {
-      usernameError.textContent = 'Not signed in.';
+    const result = await claimHandleCore(handle);
+    if (!result.success) {
+      usernameError.textContent = result.error;
       usernameError.classList.remove('hidden');
       return;
     }
-
-    const response = await GroveAPI.claimHandle(handle, jwt);
-
-    if (!response.success) {
-      if (response.status === 409) {
-        usernameError.textContent = 'This username is already taken.';
-      } else if (response.status === 400) {
-        usernameError.textContent = response.error || 'Invalid username.';
-      } else {
-        usernameError.textContent = response.error || 'Failed to claim username.';
-      }
-      usernameError.classList.remove('hidden');
-      return;
-    }
-
-    // Success — persist and update UI
-    await chrome.storage.local.set({ [STORAGE_KEYS.HANDLE]: handle });
-    await updateUsernameCard(handle);
-    loadUsernameView();
     showToast(`Claimed @${handle}`);
   } catch (error) {
     console.error('[Grove Extension] Claim username error:', error);

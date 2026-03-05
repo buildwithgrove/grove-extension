@@ -332,14 +332,15 @@ class XAuth {
   }
 
   /**
-   * Post a tweet about a tip (standalone tweet with @mention)
-   * Programmatic replies and quote tweets blocked by X API since Feb 2026,
-   * so we post a standalone tweet instead.
-   * @param {string} tweetId - Unused (kept for API compatibility)
+   * Post a tweet about a tip (standalone tweet with @mention).
+   * NOTE: tweetId is intentionally ignored. X API blocked programmatic replies
+   * since Feb 2026. We now post standalone tweets with @mentions instead.
+   * Parameter kept in signature for call-site compatibility.
+   * @param {string} _tweetId - Unused (kept for API compatibility)
    * @param {string} text - The tweet text (should include @mention of tippee)
    * @returns {Promise<Object>} - The created tweet data
    */
-  static async postReply(tweetId, text) {
+  static async postReply(_tweetId, text) {
     const response = await this._authenticatedFetch('https://api.twitter.com/2/tweets', {
       method: 'POST',
       headers: {

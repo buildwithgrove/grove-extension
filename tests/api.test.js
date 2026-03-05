@@ -473,4 +473,114 @@ describe('GroveAPI', () => {
       expect(result.error).toBe('Not Found');
     });
   });
+
+  describe('getSocialLinks', () => {
+    it('should return social links on success', async () => {
+      const links = [
+        { id: '1', platform: 'x', url: 'https://x.com/user', verified: false, created_at: '2026-01-01' },
+        { id: '2', platform: 'github', url: 'https://github.com/user', verified: true, created_at: '2026-01-02' },
+      ];
+      mockFetch.mockPattern(/\/v1\/account\/social-links$/, links);
+
+      const result = await GroveAPI.getSocialLinks('test-jwt');
+
+      expect(result.success).toBe(true);
+      expect(result.data).toHaveLength(2);
+      expect(result.data[0].platform).toBe('x');
+    });
+
+    it('should return error on API failure', async () => {
+      mockFetch.mockPattern(
+        /\/v1\/account\/social-links$/,
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+
+      const result = await GroveAPI.getSocialLinks('bad-jwt');
+
+      expect(result.success).toBe(false);
+      expect(result.status).toBe(401);
+    });
+
+    it('should handle network error', async () => {
+      mockFetch.mockHandler('GET', 'https://api.grove.city/v1/account/social-links', () => {
+        throw new Error('Network error');
+      });
+
+      const result = await GroveAPI.getSocialLinks('test-jwt');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Network error');
+      expect(result.status).toBeNull();
+    });
+  });
+
+  describe('addSocialLink', () => {
+    it('should add social link on success', async () => {
+      const newLink = { id: '3', platform: 'youtube', url: 'https://youtube.com/@ch', verified: false };
+      mockFetch.mockResponse('POST', 'https://api.grove.city/v1/account/social-links', newLink);
+
+      const result = await GroveAPI.addSocialLink('youtube', 'https://youtube.com/@ch', 'test-jwt');
+
+      expect(result.success).toBe(true);
+      expect(result.data.platform).toBe('youtube');
+    });
+
+    it('should return error on 409 conflict', async () => {
+      mockFetch.mockResponse(
+        'POST', 'https://api.grove.city/v1/account/social-links',
+        { error: 'Link already exists' },
+        { status: 409 }
+      );
+
+      const result = await GroveAPI.addSocialLink('x', 'https://x.com/user', 'test-jwt');
+
+      expect(result.success).toBe(false);
+      expect(result.status).toBe(409);
+    });
+
+    it('should return error on 400 bad request', async () => {
+      mockFetch.mockResponse(
+        'POST', 'https://api.grove.city/v1/account/social-links',
+        { error: 'Invalid platform' },
+        { status: 400 }
+      );
+
+      const result = await GroveAPI.addSocialLink('invalid', 'url', 'test-jwt');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Invalid platform');
+    });
+  });
+
+  describe('removeSocialLink', () => {
+    it('should remove social link on success', async () => {
+      mockFetch.mockResponse('DELETE', 'https://api.grove.city/v1/account/social-links/x', {});
+
+      const result = await GroveAPI.removeSocialLink('x', 'test-jwt');
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should return error on 404', async () => {
+      mockFetch.mockResponse(
+        'DELETE', 'https://api.grove.city/v1/account/social-links/x',
+        { error: 'Not found' },
+        { status: 404 }
+      );
+
+      const result = await GroveAPI.removeSocialLink('x', 'test-jwt');
+
+      expect(result.success).toBe(false);
+      expect(result.status).toBe(404);
+    });
+
+    it('should URL-encode platform name', async () => {
+      mockFetch.mockResponse('DELETE', 'https://api.grove.city/v1/account/social-links/my%20platform', {});
+
+      const result = await GroveAPI.removeSocialLink('my platform', 'test-jwt');
+
+      expect(result.success).toBe(true);
+    });
+  });
 });
