@@ -715,7 +715,6 @@ Both the extension and app call these Grove API endpoints. When the API response
 **`wallet_balances[].wallet_type` values:**
 - `server` — Grove-controlled tipping wallet
 - `eoa_embedded` — CDP-managed embedded EOA (earning wallet)
-- `eoa_self_custodial` — User's self-custodial wallet
 - `external_linked` — Externally linked wallet
 
 ### Key App Files (for cross-reference)
