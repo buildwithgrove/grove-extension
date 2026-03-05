@@ -332,9 +332,10 @@ class XAuth {
   }
 
   /**
-   * Post a reply to a tweet
-   * @param {string} tweetId - The ID of the tweet to reply to
-   * @param {string} text - The reply text
+   * Post a quote tweet referencing another tweet
+   * Uses quote_tweet_id instead of reply (programmatic replies blocked by X API since Feb 2026)
+   * @param {string} tweetId - The ID of the tweet to quote
+   * @param {string} text - The quote tweet text
    * @returns {Promise<Object>} - The created tweet data
    */
   static async postReply(tweetId, text) {
@@ -345,9 +346,7 @@ class XAuth {
       },
       body: JSON.stringify({
         text: text,
-        reply: {
-          in_reply_to_tweet_id: tweetId,
-        },
+        quote_tweet_id: tweetId,
       }),
     });
 
