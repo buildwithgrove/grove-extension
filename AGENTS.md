@@ -716,6 +716,7 @@ Both the extension and app call these Grove API endpoints. When the API response
 - `server` — Grove-controlled tipping wallet
 - `eoa_embedded` — CDP-managed embedded EOA (earning wallet)
 - `external_linked` — Externally linked wallet
+- `smart_account` — ERC-4337 Smart Account wrapping the EOA (onramp funds arrive here)
 
 ### Key App Files (for cross-reference)
 

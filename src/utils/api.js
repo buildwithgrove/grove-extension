@@ -713,10 +713,7 @@ class GroveAPI {
     const apiUrl = `${baseURL}/v1/referrals/earnings?${params}`;
 
     try {
-      // TODO_TECHDEBT: Replace bare fetch() with GroveAPI._fetch() for content script compatibility
-      //   Why: bare fetch() will fail with CORS errors when called from content script context
-      //   How: Replace with `await GroveAPI._fetch(apiUrl, { method: 'GET', headers: { ... } })`
-      const response = await fetch(apiUrl, {
+      const response = await GroveAPI._fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${groveApiJwt}`,
