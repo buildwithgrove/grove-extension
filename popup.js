@@ -83,9 +83,9 @@ const prevKeysContainer = document.getElementById('prevKeysContainer');
 const prevKeysList = document.getElementById('prevKeysList');
 const closePrevKeysBtn = document.getElementById('closePrevKeysBtn');
 
-// Earn Tab - Address Display (unified - shows ENS/basename or 0x address)
-const earnAddressText = document.getElementById('earnAddressText');
-const copyEarnAddressBtn = document.getElementById('copyEarnAddressBtn');
+// Earn Tab
+const earnLoggedOut = document.getElementById('earnLoggedOut');
+const earnLoggedIn = document.getElementById('earnLoggedIn');
 
 // Account Info Section (shows for all logged-in users)
 const accountInfoSection = document.getElementById('accountInfoSection');
@@ -294,7 +294,6 @@ async function init() {
   // Clear stale ENS cache on init - will be re-resolved fresh
   await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
 
-  await loadEarnAddress();
   loadExtensionVersion();
   checkForUpdates();
   setupEventListeners();
@@ -367,6 +366,8 @@ function handleVisibilityChange() {
     loadHistory();
   } else if (tabId === 'tab-leaderboard') {
     refreshLeaderboard();
+  } else if (tabId === 'tab-earn') {
+    loadEarnTab();
   }
 }
 
@@ -702,33 +703,43 @@ function setupEventListeners() {
     btn.addEventListener('click', () => showToast('Coming Soon'));
   });
 
-  // Earn Tab - Copy Address Button (copies ENS name if available, otherwise 0x address)
-  if (copyEarnAddressBtn) {
-    copyEarnAddressBtn.addEventListener('click', copyEarnAddress);
+  // Earn Tab - Sign In button
+  const earnSignInBtn = document.getElementById('earnSignInBtn');
+  if (earnSignInBtn) {
+    earnSignInBtn.addEventListener('click', () => {
+      document.querySelector('[data-target="tab-home"]').click();
+    });
   }
 
-  // Earn Tab - Platform accordion toggles
-  document.querySelectorAll('.platform-accordion-toggle').forEach(toggle => {
-    toggle.addEventListener('click', () => {
-      const isOpen = toggle.getAttribute('aria-expanded') === 'true';
-      // Close all
-      document.querySelectorAll('.platform-accordion-toggle').forEach(t => {
-        t.setAttribute('aria-expanded', 'false');
-        const body = t.nextElementSibling;
-        if (body && body.classList.contains('platform-accordion-body')) {
-          body.classList.remove('open');
-        }
-      });
-      // Open clicked if it was closed
-      if (!isOpen) {
-        toggle.setAttribute('aria-expanded', 'true');
-        const body = toggle.nextElementSibling;
-        if (body && body.classList.contains('platform-accordion-body')) {
-          body.classList.add('open');
-        }
-      }
+  // Earn Tab - Username claim
+  const earnUsernameClaimBtn = document.getElementById('earnUsernameClaimBtn');
+  if (earnUsernameClaimBtn) {
+    earnUsernameClaimBtn.addEventListener('click', handleEarnClaimUsername);
+  }
+  const earnUsernameInput = document.getElementById('earnUsernameInput');
+  if (earnUsernameInput) {
+    earnUsernameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleEarnClaimUsername();
     });
-  });
+  }
+
+  // Earn Tab - Social link platform select
+  const earnSocialPlatformSelect = document.getElementById('earnSocialPlatformSelect');
+  if (earnSocialPlatformSelect) {
+    earnSocialPlatformSelect.addEventListener('change', handleEarnPlatformChange);
+  }
+
+  // Earn Tab - Social link add button
+  const earnSocialAddBtn = document.getElementById('earnSocialAddBtn');
+  if (earnSocialAddBtn) {
+    earnSocialAddBtn.addEventListener('click', handleEarnAddSocialLink);
+  }
+  const earnSocialHandleInput = document.getElementById('earnSocialHandleInput');
+  if (earnSocialHandleInput) {
+    earnSocialHandleInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleEarnAddSocialLink();
+    });
+  }
 
   // Account - Copy Tipping Wallet Button
   if (copyTippingWalletBtn) {
@@ -873,9 +884,9 @@ async function handleNavigation(e) {
     loadHistory();
   }
 
-  // Load earn stats and hide badge when navigating to earn tab
+  // Load earn tab data when navigating to earn tab
   if (targetId === 'tab-earn') {
-    loadEarnStats();
+    loadEarnTab();
     const earnBadge = document.querySelector('.nav-badge-dot');
     if (earnBadge) {
       earnBadge.classList.add('hidden');
@@ -1276,7 +1287,7 @@ async function disconnectSlot(slotId) {
       STORAGE_KEYS.CDP_IDENTITY_VALUE,
     ]);
     await updateAuthState(null);
-    await updateEarnAddressDisplay(null);
+
     updateEnsNameDisplay(null);
     await updateUsernameCard(null);
     await updateAccountInfoDisplay();
@@ -1373,7 +1384,6 @@ async function clearAllKeys() {
     STORAGE_KEYS.CDP_IDENTITY_VALUE,
   ]);
   await updateAuthState(null);
-  updateEarnAddressDisplay(null);
   updateEnsNameDisplay(null);
   await updateAccountInfoDisplay();
 
@@ -1652,7 +1662,7 @@ async function fetchBalance() {
         await updateAuthState(null);
         await loadJwtSlots();
         await prevKeysUI.updateCount();
-        await updateEarnAddressDisplay(null);
+    
         updateEnsNameDisplay(null);
         balanceAmount.textContent = FormatUtils.DEFAULT_BALANCE_DISPLAY;
 
@@ -1693,11 +1703,6 @@ async function fetchBalance() {
       }
       await chrome.storage.local.set(addressUpdates);
 
-      // Show truncated earning address in Earn tab
-      const truncated = `${earnAddress.slice(0, 6)}...${earnAddress.slice(-4)}`;
-      console.log('[Grove Extension] Displaying truncated earn address:', truncated);
-      await updateEarnAddressDisplay(truncated, false);
-
       // If earning address changed, clear cached ENS name and re-resolve
       if (previousEarnAddress !== earnAddress) {
         await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
@@ -1706,7 +1711,7 @@ async function fetchBalance() {
     } else {
       // No earning address in response - clear cached data and show setup card
       await chrome.storage.local.remove([STORAGE_KEYS.EARNING_ADDRESS, STORAGE_KEYS.TIPPING_ADDRESS, STORAGE_KEYS.SMART_ACCOUNT_ADDRESS, STORAGE_KEYS.EXTERNAL_LINKED_WALLETS, STORAGE_KEYS.ENS_NAME]);
-      await updateEarnAddressDisplay(null);
+  
       updateEnsNameDisplay(null);
     }
 
@@ -1754,43 +1759,6 @@ async function fetchBalance() {
 }
 
 /**
- * Earn Tab - Unified Address Display
- * Shows ENS name or base name if available, otherwise shows 0x address
- * For email/SMS-only users without an address, shows the setup card instead
- */
-async function updateEarnAddressDisplay(displayValue, hasEnsName = false) {
-  const ensLinksSection = document.getElementById('ensLinksSection');
-  const earnAddressContent = document.getElementById('earnAddressContent');
-  const earnSetupContent = document.getElementById('earnSetupContent');
-
-  if (displayValue) {
-    // User has an address - show the address content
-    if (earnAddressContent) earnAddressContent.classList.remove('hidden');
-    if (earnSetupContent) earnSetupContent.classList.add('hidden');
-
-    if (earnAddressText) {
-      earnAddressText.textContent = displayValue;
-      earnAddressText.classList.remove('placeholder');
-    }
-    if (copyEarnAddressBtn) {
-      copyEarnAddressBtn.disabled = false;
-    }
-    // Hide "Get an ENS name" links when user has one
-    if (ensLinksSection) {
-      if (hasEnsName) {
-        ensLinksSection.classList.add('hidden');
-      } else {
-        ensLinksSection.classList.remove('hidden');
-      }
-    }
-  } else {
-    // No address - show setup content (same for logged out or email/SMS users without address)
-    if (earnAddressContent) earnAddressContent.classList.add('hidden');
-    if (earnSetupContent) earnSetupContent.classList.remove('hidden');
-  }
-}
-
-/**
  * Migrate old wallet storage keys to new terminology (one-time).
  * CLIENT_ADDRESS → EARNING_ADDRESS
  * EMBEDDED_WALLET_ADDRESS → EARNING_ADDRESS (fallback)
@@ -1806,7 +1774,6 @@ async function migrateWalletStorageKeys() {
   if (old['GROVE_CLIENT_ADDRESS']) {
     updates[STORAGE_KEYS.EARNING_ADDRESS] = old['GROVE_CLIENT_ADDRESS'];
   } else if (old['GROVE_EMBEDDED_WALLET_ADDRESS']) {
-    // Fallback to embedded wallet address if earn address is missing
     updates[STORAGE_KEYS.EARNING_ADDRESS] = old['GROVE_EMBEDDED_WALLET_ADDRESS'];
   }
 
@@ -1816,7 +1783,6 @@ async function migrateWalletStorageKeys() {
   if (Object.keys(updates).length) {
     await chrome.storage.local.set(updates);
   }
-  // Always clean up old keys regardless of whether migration happened
   await chrome.storage.local.remove([
     'GROVE_CLIENT_ADDRESS',
     'GROVE_EMBEDDED_WALLET_ADDRESS',
@@ -1835,48 +1801,101 @@ async function getEarnAddress() {
   return result[STORAGE_KEYS.EARNING_ADDRESS] || null;
 }
 
-async function loadEarnAddress() {
-  const address = await getEarnAddress();
+// ─── Earn Tab ───────────────────────────────────────────────────────────────
 
-  // Always show truncated address first, let loadAndResolveEnsName update to ENS after fresh resolution
-  if (address) {
-    const truncated = `${address.slice(0, 6)}...${address.slice(-4)}`;
-    await updateEarnAddressDisplay(truncated, false);
-  } else {
-    await updateEarnAddressDisplay(null, false);
-  }
-}
+const SOCIAL_PLACEHOLDERS = {
+  x: '@username',
+  youtube: '@handle',
+  github: 'username',
+  soundcloud: 'username',
+  substack: 'name or name.substack.com',
+  instagram: 'username',
+  linkedin: 'username',
+  medium: '@username',
+  reddit: 'username',
+  tiktok: '@username',
+  discord: 'username',
+  telegram: 'username',
+  website: 'example.com',
+};
 
-async function copyEarnAddress() {
-  const address = await getEarnAddress();
-  const ensResult = await chrome.storage.local.get([STORAGE_KEYS.ENS_NAME]);
-  const ensName = ensResult[STORAGE_KEYS.ENS_NAME];
+/**
+ * Normalize a bare handle/username into a full URL for the API
+ */
+function normalizeSocialUrl(platform, input) {
+  const trimmed = input.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+  const handle = trimmed.replace(/^@/, '');
+  if (!handle) return trimmed;
 
-  // Copy ENS name if available, otherwise copy 0x address
-  const valueToCopy = ensName || address;
-  const toastMessage = ensName ? 'Address copied!' : 'Address copied!';
-
-  if (valueToCopy) {
-    try {
-      await navigator.clipboard.writeText(valueToCopy);
-      showToast(toastMessage);
-
-      // Visual feedback
-      if (copyEarnAddressBtn) {
-        copyEarnAddressBtn.classList.add('copied');
-        setTimeout(() => {
-          copyEarnAddressBtn.classList.remove('copied');
-        }, 2000);
-      }
-    } catch (err) {
-      console.error('[Grove Extension] Copy failed:', err);
-      showToast('Failed to copy');
-    }
+  switch (platform) {
+    case 'x': return `https://x.com/${handle}`;
+    case 'github': return `https://github.com/${handle}`;
+    case 'youtube': return `https://youtube.com/@${handle}`;
+    case 'substack': return handle.includes('.') ? `https://${handle}` : `https://${handle}.substack.com`;
+    case 'instagram': return `https://instagram.com/${handle}`;
+    case 'linkedin': return handle.startsWith('in/') ? `https://linkedin.com/${handle}` : `https://linkedin.com/in/${handle}`;
+    case 'medium': return `https://medium.com/@${handle}`;
+    case 'reddit': return handle.startsWith('u/') ? `https://reddit.com/${handle}` : `https://reddit.com/u/${handle}`;
+    case 'soundcloud': return `https://soundcloud.com/${handle}`;
+    case 'tiktok': return `https://tiktok.com/@${handle}`;
+    case 'telegram': return `https://t.me/${handle}`;
+    case 'discord': return handle; // No URL normalization for Discord
+    case 'website': return handle.includes('.') ? `https://${handle}` : handle;
+    default: return trimmed;
   }
 }
 
 /**
- * Load earnings summary stats for the Earn tab
+ * Extract a display label from a social link URL
+ */
+function socialDisplayLabel(platform, url) {
+  try {
+    const u = new URL(url);
+    if (platform === 'website') return u.hostname;
+    const path = u.pathname.replace(/^\//, '').replace(/\/$/, '');
+    if (path) {
+      return path.replace(/^[@]/, '').replace(/^(in|u)\//, '');
+    }
+  } catch (_) {}
+  return url.replace(/^@/, '').replace(/^https?:\/\//, '');
+}
+
+const PLATFORM_LABELS = {
+  x: 'X', youtube: 'YouTube', github: 'GitHub', soundcloud: 'SoundCloud',
+  substack: 'Substack', instagram: 'Instagram', linkedin: 'LinkedIn',
+  medium: 'Medium', reddit: 'Reddit', tiktok: 'TikTok', discord: 'Discord',
+  telegram: 'Telegram', website: 'Website',
+};
+
+// In-memory cache of loaded social links
+let earnSocialLinksCache = [];
+
+/**
+ * Load the entire Earn tab — decides logged-out vs logged-in state
+ */
+async function loadEarnTab() {
+  const jwt = await getActiveJWT();
+
+  if (!jwt) {
+    if (earnLoggedOut) earnLoggedOut.classList.remove('hidden');
+    if (earnLoggedIn) earnLoggedIn.classList.add('hidden');
+    return;
+  }
+
+  if (earnLoggedOut) earnLoggedOut.classList.add('hidden');
+  if (earnLoggedIn) earnLoggedIn.classList.remove('hidden');
+
+  // Load all earn data in parallel
+  await Promise.all([
+    loadEarnStats(),
+    loadEarnUsernameStep(),
+    loadEarnSocialLinks(),
+  ]);
+}
+
+/**
+ * Load earnings summary stats
  */
 async function loadEarnStats() {
   const jwt = await getActiveJWT();
@@ -1896,6 +1915,309 @@ async function loadEarnStats() {
     }
   } catch (err) {
     console.error('[Grove Extension] Earn stats load failed:', err);
+  }
+}
+
+/**
+ * Load username step state from storage
+ */
+async function loadEarnUsernameStep() {
+  const result = await chrome.storage.local.get([STORAGE_KEYS.HANDLE]);
+  const handle = result[STORAGE_KEYS.HANDLE];
+  updateEarnUsernameUI(handle);
+}
+
+/**
+ * Update the earn username step UI
+ */
+function updateEarnUsernameUI(handle) {
+  const form = document.getElementById('earnUsernameForm');
+  const claimed = document.getElementById('earnUsernameClaimed');
+  const value = document.getElementById('earnUsernameValue');
+  const checkIcon = document.getElementById('earnUsernameCheck');
+
+  if (handle) {
+    if (form) form.classList.add('hidden');
+    if (claimed) claimed.classList.remove('hidden');
+    if (value) value.textContent = `@${handle}`;
+    if (checkIcon) checkIcon.classList.add('completed');
+    updateEarnProfileLink(handle);
+  } else {
+    if (form) form.classList.remove('hidden');
+    if (claimed) claimed.classList.add('hidden');
+    if (checkIcon) checkIcon.classList.remove('completed');
+    updateEarnProfileLink(null);
+  }
+}
+
+/**
+ * Update the earn tab profile link
+ */
+async function updateEarnProfileLink(handle) {
+  const link = document.getElementById('earnProfileLink');
+  if (!link) return;
+
+  if (handle) {
+    const result = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT, STORAGE_KEYS.ENVIRONMENT]);
+    const envId = GroveEnv.resolveActiveEnvId(
+      result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV,
+      result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT
+    );
+    const appUrl = GroveEnv.get(envId).appUrl;
+    link.href = `${appUrl}/${encodeURIComponent(handle)}`;
+    link.classList.remove('hidden');
+  } else {
+    link.classList.add('hidden');
+  }
+}
+
+/**
+ * Handle username claim from earn tab
+ */
+async function handleEarnClaimUsername() {
+  const input = document.getElementById('earnUsernameInput');
+  const btn = document.getElementById('earnUsernameClaimBtn');
+  const errorEl = document.getElementById('earnUsernameError');
+  const handle = input.value.trim().toLowerCase();
+
+  if (errorEl) errorEl.classList.add('hidden');
+
+  const validationError = validateHandle(handle);
+  if (validationError) {
+    if (errorEl) { errorEl.textContent = validationError; errorEl.classList.remove('hidden'); }
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Claiming...';
+
+  try {
+    const jwt = await getActiveJWT();
+    if (!jwt) {
+      if (errorEl) { errorEl.textContent = 'Not signed in.'; errorEl.classList.remove('hidden'); }
+      return;
+    }
+
+    const response = await GroveAPI.claimHandle(handle, jwt);
+
+    if (!response.success) {
+      const msg = response.status === 409 ? 'Already taken.' :
+                  response.status === 400 ? (response.error || 'Invalid username.') :
+                  (response.error || 'Failed to claim.');
+      if (errorEl) { errorEl.textContent = msg; errorEl.classList.remove('hidden'); }
+      return;
+    }
+
+    await chrome.storage.local.set({ [STORAGE_KEYS.HANDLE]: handle });
+    updateEarnUsernameUI(handle);
+    await updateUsernameCard(handle);
+    loadUsernameView();
+    showToast(`Claimed @${handle}`);
+  } catch (error) {
+    console.error('[Grove Extension] Earn claim username error:', error);
+    if (errorEl) { errorEl.textContent = 'Something went wrong.'; errorEl.classList.remove('hidden'); }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Claim';
+  }
+}
+
+/**
+ * Handle platform select change in earn social form
+ */
+function handleEarnPlatformChange() {
+  const select = document.getElementById('earnSocialPlatformSelect');
+  const input = document.getElementById('earnSocialHandleInput');
+  const addBtn = document.getElementById('earnSocialAddBtn');
+  const platform = select.value;
+
+  if (platform) {
+    input.disabled = false;
+    input.placeholder = SOCIAL_PLACEHOLDERS[platform] || 'Enter handle or URL';
+    addBtn.disabled = false;
+    input.focus();
+  } else {
+    input.disabled = true;
+    input.placeholder = 'Choose a platform...';
+    addBtn.disabled = true;
+  }
+  input.value = '';
+}
+
+/**
+ * Load social links from API and render
+ */
+async function loadEarnSocialLinks() {
+  const jwt = await getActiveJWT();
+  if (!jwt) return;
+
+  try {
+    const result = await GroveAPI.getSocialLinks(jwt);
+    if (result.success) {
+      earnSocialLinksCache = Array.isArray(result.data) ? result.data : [];
+    } else {
+      earnSocialLinksCache = [];
+    }
+  } catch (err) {
+    console.error('[Grove Extension] Load social links failed:', err);
+    earnSocialLinksCache = [];
+  }
+
+  renderEarnSocialLinks();
+  updateEarnSocialCheckmark();
+  updateEarnPlatformOptions();
+}
+
+/**
+ * Render the social links chips
+ */
+function renderEarnSocialLinks() {
+  const container = document.getElementById('earnSocialLinks');
+  if (!container) return;
+
+  if (earnSocialLinksCache.length === 0) {
+    container.classList.add('hidden');
+    container.innerHTML = '';
+    return;
+  }
+
+  container.classList.remove('hidden');
+  const sorted = [...earnSocialLinksCache].sort((a, b) => a.platform.localeCompare(b.platform));
+  container.innerHTML = sorted.map(link => {
+    const label = PLATFORM_LABELS[link.platform] || link.platform;
+    const display = socialDisplayLabel(link.platform, link.url);
+    return `<span class="earn-social-chip">
+      <span>${label}: ${display}</span>
+      <button class="earn-social-chip-remove" data-platform="${link.platform}" title="Remove">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </span>`;
+  }).join('');
+
+  // Attach remove handlers
+  container.querySelectorAll('.earn-social-chip-remove').forEach(btn => {
+    btn.addEventListener('click', () => handleEarnRemoveSocialLink(btn.dataset.platform));
+  });
+}
+
+/**
+ * Update the social step checkmark based on whether any links exist
+ */
+function updateEarnSocialCheckmark() {
+  const checkIcon = document.getElementById('earnSocialCheck');
+  if (!checkIcon) return;
+
+  if (earnSocialLinksCache.length > 0) {
+    checkIcon.classList.add('completed');
+  } else {
+    checkIcon.classList.remove('completed');
+  }
+}
+
+/**
+ * Hide already-linked platforms from the dropdown
+ */
+function updateEarnPlatformOptions() {
+  const select = document.getElementById('earnSocialPlatformSelect');
+  if (!select) return;
+
+  const linkedPlatforms = new Set(earnSocialLinksCache.map(l => l.platform));
+
+  Array.from(select.options).forEach(opt => {
+    if (opt.value) {
+      opt.hidden = linkedPlatforms.has(opt.value);
+    }
+  });
+
+  // Reset select if current value is now linked
+  if (linkedPlatforms.has(select.value)) {
+    select.value = '';
+    handleEarnPlatformChange();
+  }
+}
+
+/**
+ * Handle adding a social link
+ */
+async function handleEarnAddSocialLink() {
+  const select = document.getElementById('earnSocialPlatformSelect');
+  const input = document.getElementById('earnSocialHandleInput');
+  const addBtn = document.getElementById('earnSocialAddBtn');
+  const errorEl = document.getElementById('earnSocialError');
+  const platform = select.value;
+  const handle = input.value.trim();
+
+  if (errorEl) errorEl.classList.add('hidden');
+
+  if (!platform || !handle) {
+    if (errorEl) { errorEl.textContent = 'Select a platform and enter your handle.'; errorEl.classList.remove('hidden'); }
+    return;
+  }
+
+  addBtn.disabled = true;
+  addBtn.textContent = '...';
+
+  try {
+    const jwt = await getActiveJWT();
+    if (!jwt) {
+      if (errorEl) { errorEl.textContent = 'Not signed in.'; errorEl.classList.remove('hidden'); }
+      return;
+    }
+
+    const url = normalizeSocialUrl(platform, handle);
+    const result = await GroveAPI.addSocialLink(platform, url, jwt);
+
+    if (!result.success) {
+      if (errorEl) { errorEl.textContent = result.error || 'Failed to add.'; errorEl.classList.remove('hidden'); }
+      return;
+    }
+
+    // Add to cache and re-render
+    earnSocialLinksCache.push(result.data);
+    renderEarnSocialLinks();
+    updateEarnSocialCheckmark();
+    updateEarnPlatformOptions();
+
+    // Reset form
+    select.value = '';
+    input.value = '';
+    input.disabled = true;
+    input.placeholder = 'Choose a platform...';
+    showToast(`${PLATFORM_LABELS[platform] || platform} linked`);
+  } catch (error) {
+    console.error('[Grove Extension] Add social link error:', error);
+    if (errorEl) { errorEl.textContent = 'Something went wrong.'; errorEl.classList.remove('hidden'); }
+  } finally {
+    addBtn.disabled = false;
+    addBtn.textContent = 'Add';
+  }
+}
+
+/**
+ * Handle removing a social link
+ */
+async function handleEarnRemoveSocialLink(platform) {
+  try {
+    const jwt = await getActiveJWT();
+    if (!jwt) return;
+
+    const result = await GroveAPI.removeSocialLink(platform, jwt);
+    if (!result.success) {
+      showToast(result.error || 'Failed to remove.');
+      return;
+    }
+
+    earnSocialLinksCache = earnSocialLinksCache.filter(l => l.platform !== platform);
+    renderEarnSocialLinks();
+    updateEarnSocialCheckmark();
+    updateEarnPlatformOptions();
+    showToast(`${PLATFORM_LABELS[platform] || platform} removed`);
+  } catch (error) {
+    console.error('[Grove Extension] Remove social link error:', error);
+    showToast('Failed to remove.');
   }
 }
 
@@ -2023,18 +2345,8 @@ async function resolveEnsName(address) {
  * This is called after ENS resolution completes
  */
 async function updateEnsNameDisplay(ensName) {
-  // Update earn display with ENS name if provided, otherwise show truncated address
-  if (ensName) {
-    await updateEarnAddressDisplay(ensName, true);
-  } else {
-    // Fall back to truncated address
-    const result = await chrome.storage.local.get([STORAGE_KEYS.EARNING_ADDRESS]);
-    const address = result[STORAGE_KEYS.EARNING_ADDRESS];
-    if (address) {
-      const truncated = `${address.slice(0, 6)}...${address.slice(-4)}`;
-      await updateEarnAddressDisplay(truncated, false);
-    }
-  }
+  // ENS name is stored in storage for use across the extension
+  // No earn tab address display to update anymore
 }
 
 /**
@@ -2057,7 +2369,6 @@ async function loadAndResolveEnsName() {
     console.log('[Grove Extension] ENS resolution result:', ensName, 'for address:', address);
     if (ensName) {
       await chrome.storage.local.set({ [STORAGE_KEYS.ENS_NAME]: ensName });
-      await updateEarnAddressDisplay(ensName, true);
     } else {
       // No ENS found - clear cache and keep showing truncated address
       await chrome.storage.local.remove([STORAGE_KEYS.ENS_NAME]);
@@ -2151,7 +2462,6 @@ async function handleDevModeToggle(e) {
     // Switch to testnet JWT context
     const testnetJwt = await KeyManager.getJWT('testnet');
     await updateAuthState(testnetJwt);
-    await updateEarnAddressDisplay(null); // Clear address until balance is fetched
     updateEnsNameDisplay(null);
 
     // Update slot UI to show testnet as active
@@ -2191,7 +2501,6 @@ async function handleDevModeToggle(e) {
     // Switch to production JWT context
     const prodJwt = await KeyManager.getJWT('production');
     await updateAuthState(prodJwt);
-    await updateEarnAddressDisplay(null); // Clear address until balance is fetched
     updateEnsNameDisplay(null);
 
     // Update slot UI to show mainnet as active

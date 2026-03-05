@@ -612,40 +612,140 @@
     <div class="page" id="tab-earn">
       <h2 class="page-title">Earn Tips</h2>
 
-      <!-- Earnings Summary -->
-      <div class="section-card earn-stats-card" id="earnStatsCard">
-        <div class="earn-stats-row">
-          <div class="earn-stat">
-            <span class="earn-stat-value" id="earnTotalUsd">$0.00</span>
-            <span class="earn-stat-label">Earned</span>
-          </div>
-          <div class="earn-stat-divider"></div>
-          <div class="earn-stat">
-            <span class="earn-stat-value" id="earnTipCount">0</span>
-            <span class="earn-stat-label">Tips</span>
-          </div>
-          <div class="earn-stat-divider"></div>
-          <div class="earn-stat">
-            <span class="earn-stat-value" id="earnTipperCount">0</span>
-            <span class="earn-stat-label">Tippers</span>
-          </div>
+      <!-- Logged Out State -->
+      <div class="earn-logged-out hidden" id="earnLoggedOut">
+        <div class="earn-logged-out-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
         </div>
+        <h3 class="earn-logged-out-title">Earn for your content</h3>
+        <p class="earn-logged-out-desc">Set up your profile so anyone with the Grove extension can tip you anywhere on the web.</p>
+        <button class="earn-sign-in-btn" id="earnSignInBtn">
+          Sign In to Get Started
+        </button>
       </div>
 
-      <div class="section-card earn-card">
+      <!-- Logged In State -->
+      <div class="earn-logged-in hidden" id="earnLoggedIn">
 
-        <!-- Create your profile -->
-        <div class="earn-section">
-          <p class="earn-section-desc">Create your profile on Grove and anyone with the extension can tip you anywhere on the web.</p>
-          <a href="https://grove.city/profile" target="_blank" class="platform-guide-link" style="margin-top: 8px;">
-            Create Profile
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <line x1="10" y1="14" x2="21" y2="3"></line>
-            </svg>
-          </a>
+        <!-- Earnings Summary -->
+        <div class="section-card earn-stats-card" id="earnStatsCard">
+          <div class="earn-stats-row">
+            <div class="earn-stat">
+              <span class="earn-stat-value" id="earnTotalUsd">$0.00</span>
+              <span class="earn-stat-label">Earned</span>
+            </div>
+            <div class="earn-stat-divider"></div>
+            <div class="earn-stat">
+              <span class="earn-stat-value" id="earnTipCount">0</span>
+              <span class="earn-stat-label">Tips</span>
+            </div>
+            <div class="earn-stat-divider"></div>
+            <div class="earn-stat">
+              <span class="earn-stat-value" id="earnTipperCount">0</span>
+              <span class="earn-stat-label">Tippers</span>
+            </div>
+          </div>
         </div>
+
+        <!-- Setup Checklist -->
+        <div class="section-card earn-card">
+
+          <!-- Step 1: Claim Username -->
+          <div class="earn-checklist-item" id="earnUsernameStep">
+            <div class="earn-checklist-icon" id="earnUsernameCheck">
+              <span class="earn-step-number">1</span>
+              <svg class="earn-check-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <div class="earn-checklist-content">
+              <div class="earn-checklist-title">Claim your username</div>
+              <!-- Unclaimed: show input -->
+              <div class="earn-username-form" id="earnUsernameForm">
+                <div class="earn-username-input-row">
+                  <span class="earn-username-prefix">@</span>
+                  <input type="text" class="earn-username-input" id="earnUsernameInput" placeholder="username" maxlength="15" autocomplete="off" spellcheck="false" />
+                  <button class="earn-username-claim-btn" id="earnUsernameClaimBtn">Claim</button>
+                </div>
+                <p class="earn-username-hint">4-15 chars. Lowercase, numbers, underscores.</p>
+                <p class="earn-username-error hidden" id="earnUsernameError"></p>
+              </div>
+              <!-- Claimed: show handle -->
+              <div class="earn-username-claimed hidden" id="earnUsernameClaimed">
+                <span class="earn-username-value" id="earnUsernameValue"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="earn-checklist-divider"></div>
+
+          <!-- Step 2: Add Social Links -->
+          <div class="earn-checklist-item" id="earnSocialStep">
+            <div class="earn-checklist-icon" id="earnSocialCheck">
+              <span class="earn-step-number">2</span>
+              <svg class="earn-check-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <div class="earn-checklist-content">
+              <div class="earn-checklist-title">Connect your accounts</div>
+              <p class="earn-checklist-desc">Add your social profiles so people can tip you.</p>
+            </div>
+          </div>
+
+          <!-- Social links & form (full width, outside the icon+content flex) -->
+          <div class="earn-social-section">
+            <div class="earn-social-form" id="earnSocialForm">
+              <div class="earn-social-input-row">
+                <select class="earn-social-select" id="earnSocialPlatformSelect">
+                  <option value="">Platform</option>
+                  <option value="x">X (Twitter)</option>
+                  <option value="youtube">YouTube</option>
+                  <option value="github">GitHub</option>
+                  <option value="soundcloud">SoundCloud</option>
+                  <option value="substack">Substack</option>
+                  <option value="instagram">Instagram</option>
+                  <option value="linkedin">LinkedIn</option>
+                  <option value="medium">Medium</option>
+                  <option value="reddit">Reddit</option>
+                  <option value="tiktok">TikTok</option>
+                  <option value="discord">Discord</option>
+                  <option value="telegram">Telegram</option>
+                  <option value="website">Website</option>
+                </select>
+                <input type="text" class="earn-social-input" id="earnSocialHandleInput" placeholder="Choose a platform..." disabled />
+                <button class="earn-social-add-btn" id="earnSocialAddBtn" disabled>Add</button>
+              </div>
+              <p class="earn-social-error hidden" id="earnSocialError"></p>
+            </div>
+            <div class="earn-social-links hidden" id="earnSocialLinks"></div>
+          </div>
+        </div>
+
+        <!-- Profile Link -->
+        <a class="section-card section-card-btn settings-card-bottom earn-profile-link hidden" id="earnProfileLink" href="#" target="_blank">
+          <div class="card-row">
+            <div class="tipping-row-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <span class="settings-card-title">View Profile</span>
+            <div class="card-chevron">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </div>
+          </div>
+        </a>
 
       </div>
     </div>
