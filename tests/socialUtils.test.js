@@ -41,7 +41,7 @@ beforeEach(() => {
       case 'soundcloud': return `https://soundcloud.com/${handle}`;
       case 'tiktok': return `https://tiktok.com/@${handle}`;
       case 'telegram': return `https://t.me/${handle}`;
-      case 'discord': return handle.startsWith('http') ? handle : `https://discord.com/users/${handle}`;
+      case 'discord': return handle; // No URL normalization for Discord
       case 'website': return handle.includes('.') ? `https://${handle}` : handle;
       default: return trimmed;
     }
@@ -149,8 +149,8 @@ describe('normalizeSocialUrl', () => {
       expect(normalizeSocialUrl('telegram', 'user')).toBe('https://t.me/user');
     });
 
-    it('should normalize Discord handle to profile URL', () => {
-      expect(normalizeSocialUrl('discord', 'myname')).toBe('https://discord.com/users/myname');
+    it('should return Discord handle as-is (no normalization)', () => {
+      expect(normalizeSocialUrl('discord', 'myname')).toBe('myname');
     });
 
     it('should pass through Discord URL starting with http', () => {
