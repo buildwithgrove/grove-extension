@@ -1779,8 +1779,8 @@ async function fetchBalance() {
     }
 
     // Store addresses from API response
-    // earning_address = user's earning wallet
-    // tipping_address = Grove-managed tipping wallet
+    // earning_address = user's smart account wallet
+    // tipping_address = Grove-managed tipping wallet (server)
     const earnAddress = response.data.earning_address;
 
     if (earnAddress) {
@@ -1802,7 +1802,6 @@ async function fetchBalance() {
         addressUpdates[STORAGE_KEYS.TIPPING_ADDRESS] =
           response.data.tipping_address;
       }
-      // TODO_IDEA: smart_account_address is for ERC-4337 gas sponsorship — not user-facing yet
       if (response.data.smart_account_address) {
         addressUpdates[STORAGE_KEYS.SMART_ACCOUNT_ADDRESS] =
           response.data.smart_account_address;
@@ -1884,9 +1883,9 @@ async function fetchBalance() {
 
 /**
  * Migrate old wallet storage keys to new terminology (one-time).
- * CLIENT_ADDRESS → EARNING_ADDRESS
- * EMBEDDED_WALLET_ADDRESS → EARNING_ADDRESS (fallback)
- * ONCHAIN_ADDRESS → TIPPING_ADDRESS
+ * CLIENT_ADDRESS → EARNING_ADDRESS (Smart Account)
+ * EMBEDDED_WALLET_ADDRESS → EARNING_ADDRESS (legacy EOA fallback)
+ * ONCHAIN_ADDRESS → TIPPING_ADDRESS (Server)
  */
 async function migrateWalletStorageKeys() {
   // Skip if already migrated
