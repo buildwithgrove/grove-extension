@@ -112,8 +112,8 @@ GROVE_COLORS = {
 
 | Environment  | API URL                          | App URL                          | Default Chain  | Dev Mode |
 | ------------ | -------------------------------- | -------------------------------- | -------------- | -------- |
-| `production` | `https://api.grove.city`         | `https://app.grove.city`         | `base`         | No       |
-| `testnet`    | `https://api.testnet.grove.city` | `https://app.testnet.grove.city` | `base-sepolia` | Yes      |
+| `production` | `https://api.grove.city`         | `https://grove.city`             | `base`         | No       |
+| `testnet`    | `https://api.testnet.grove.city` | `https://testnet.grove.city`     | `base-sepolia` | Yes      |
 | `localhost`  | `http://localhost:8000`          | `http://localhost:3000`          | `base`         | Yes      |
 
 **Localhost uses mainnet chains (`base`), not testnet chains.** Localhost = production chain, local API.
@@ -597,14 +597,14 @@ URLs the extension opens in the app. Defined statically in `popup.html` (fallbac
 | Wallet Sign-In | `{appUrl}/extension` | `popup.html:979`, `popup.js` via `GroveEnv.extensionUrl()` |
 | Create Giveaway | `{appUrl}/dashboard?tab=giveaways` | `popup.html:559`, `popup.js:2331` |
 | General Settings | `{appUrl}` | `popup.html:1064` |
-| Referral Link | `https://app.grove.city/?ref={code}` | `popup.js:3997` (hardcoded to production — intentional) |
+| Referral Link | `https://grove.city/?ref={code}` | `popup.js:4535` (hardcoded to production — intentional) |
 
 **App URL values** (from `src/config/environments.js`):
 
 | Environment | `appUrl` |
 |-------------|----------|
-| production | `https://app.grove.city` |
-| testnet | `https://app.testnet.grove.city` |
+| production | `https://grove.city` |
+| testnet | `https://testnet.grove.city` |
 | localhost | `http://localhost:3000` |
 
 ### chrome.runtime Message Passing
@@ -631,8 +631,8 @@ Origins allowed to message the extension:
 "externally_connectable": {
   "matches": [
     "http://localhost:*/*",
-    "https://app.grove.city/*",
-    "https://app.testnet.grove.city/*"
+    "https://grove.city/*",
+    "https://testnet.grove.city/*"
   ]
 }
 ```
@@ -704,9 +704,9 @@ Both the extension and app call these Grove API endpoints. When the API response
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `earning_address` | `str` | User's earning wallet (embedded EOA) |
+| `earning_address` | `str` | User's earning wallet (Smart Account) |
 | `tipping_address` | `str` | Server wallet (Grove-controlled, used for tips) |
-| `smart_account_address` | `str \| null` | ERC-4337 Smart Account (for gas sponsorship, not user-facing yet) |
+| `smart_account_address` | `str \| null` | ERC-4337 Smart Account (matches earning_address) |
 | `external_linked_wallets` | `list[str]` | Linked profile wallet addresses (non-earning) |
 | `handle` | `str \| null` | User's claimed handle |
 | `referral_code` | `str` | User's referral code |
@@ -714,9 +714,10 @@ Both the extension and app call these Grove API endpoints. When the API response
 
 **`wallet_balances[].wallet_type` values:**
 - `server` — Grove-controlled tipping wallet
-- `eoa_embedded` — CDP-managed embedded EOA (earning wallet)
+- `eoa_embedded` — CDP-managed embedded EOA (owner key only, non-earning)
 - `eoa_self_custodial` — User's self-custodial wallet
 - `external_linked` — Externally linked wallet
+- `smart_account` — ERC-4337 Smart Account (earning wallet)
 
 ### Key App Files (for cross-reference)
 

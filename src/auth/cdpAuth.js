@@ -8,7 +8,7 @@
  * 1. User authenticates via CDP SDK (Email/SMS/Social)
  * 2. CDP returns an access token (+ creates an embedded wallet we ignore)
  * 3. We exchange the CDP token for a Grove JWT
- * 4. Grove creates a Server Wallet for the user (the hijack)
+ * 4. Grove creates a Server Wallet and a Smart Account (earning wallet) for the user (the hijack)
  *
  * Reference: https://docs.cdp.coinbase.com/embedded-wallets/authentication-methods
  */
@@ -159,6 +159,7 @@ export async function verifyOTP(flowId, otp, method) {
  * @property {string} identity_type - 'email' | 'sms' | 'cdp_sub'
  * @property {string} identity_value - The normalized identity value
  * @property {string|null} earning_address - User's earning wallet address
+ * @property {string|null} smart_account_address - User's smart account wallet address
  * @property {string|null} tipping_address - Grove-managed tipping wallet address
  * @property {boolean} is_new_account - True if account was just created
  */

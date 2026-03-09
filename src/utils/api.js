@@ -713,7 +713,7 @@ class GroveAPI {
     const apiUrl = `${baseURL}/v1/referrals/earnings?${params}`;
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await GroveAPI._fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${groveApiJwt}`,

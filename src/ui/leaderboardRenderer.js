@@ -102,7 +102,7 @@ const LeaderboardRenderer = {
    */
   buildPlatformLink(url, isTwitter) {
     if (isTwitter && url) {
-      return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="View on X">${this.icons.xPlatform}</a>`;
+      return `<a href="${FormatUtils.escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="View on X">${this.icons.xPlatform}</a>`;
     }
     return '<span class="history-platform-link history-platform-link-empty"></span>';
   },
@@ -175,7 +175,7 @@ const LeaderboardRenderer = {
       return '<span class="history-platform-link history-platform-link-empty"></span>';
     }
 
-    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="history-platform-link platform-icon ${config.cssClass}" title="${config.title}">${config.icon}</a>`;
+    return `<a href="${FormatUtils.escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="history-platform-link platform-icon ${config.cssClass}" title="${FormatUtils.escapeHtml(config.title)}">${config.icon}</a>`;
   },
 
   /**
@@ -263,7 +263,7 @@ const LeaderboardRenderer = {
     // Get display name for the tipper
     const display = this.getDisplayName(entry, false);
     const labelHtml = display.url
-      ? `<a href="${display.url}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.escapeHtml(display.displayName)}</a>`
+      ? `<a href="${FormatUtils.escapeHtml(display.url)}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.escapeHtml(display.displayName)}</a>`
       : FormatUtils.escapeHtml(display.displayName);
 
     // Platform icon for the tipper
@@ -276,11 +276,11 @@ const LeaderboardRenderer = {
       const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
       const linkUrl = postUrl || profileUrl;
       const linkText = postUrl ? `@${FormatUtils.escapeHtml(ctx.recipient_username)}'s post` : `@${FormatUtils.escapeHtml(ctx.recipient_username)}`;
-      descriptionHtml = `${tipLabel}: <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${linkText}</a>`;
+      descriptionHtml = `${tipLabel}: <a href="${FormatUtils.escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${linkText}</a>`;
     } else if (parsed.profileHandle) {
       const linkUrl = parsed.postUrl || parsed.profileUrl;
-      const linkText = parsed.postUrl ? `${parsed.profileHandle}'s post` : parsed.profileHandle;
-      descriptionHtml = `${tipLabel}: <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${linkText}</a>`;
+      const linkText = parsed.postUrl ? `${FormatUtils.escapeHtml(parsed.profileHandle)}'s post` : FormatUtils.escapeHtml(parsed.profileHandle);
+      descriptionHtml = `${tipLabel}: <a href="${FormatUtils.escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${linkText}</a>`;
     } else {
       descriptionHtml = `${entry.tipCount.toLocaleString()} tips sent`;
     }
@@ -315,7 +315,7 @@ const LeaderboardRenderer = {
     // Get display name for the earner
     const display = this.getDisplayName(entry, true);
     const labelHtml = display.url
-      ? `<a href="${display.url}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.escapeHtml(display.displayName)}</a>`
+      ? `<a href="${FormatUtils.escapeHtml(display.url)}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.escapeHtml(display.displayName)}</a>`
       : FormatUtils.escapeHtml(display.displayName);
 
     const descriptionHtml = `${entry.tipCount.toLocaleString()} tips received`;
@@ -392,7 +392,7 @@ const LeaderboardRenderer = {
     }
 
     const labelHtml = displayUrl
-      ? `<a href="${displayUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.escapeHtml(displayName)}</a>`
+      ? `<a href="${FormatUtils.escapeHtml(displayUrl)}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.escapeHtml(displayName)}</a>`
       : FormatUtils.escapeHtml(displayName);
 
     const platformLinkHtml = this.getPlatformIcon(displayPlatform, displayUrl);
@@ -479,7 +479,7 @@ const LeaderboardRenderer = {
     const config = iconMap[platform];
     if (!config || !url) return '';
 
-    return `<a href="${url}" target="_blank" rel="noopener noreferrer" title="${config.title}">${config.icon}</a>`;
+    return `<a href="${FormatUtils.escapeHtml(url)}" target="_blank" rel="noopener noreferrer" title="${config.title}">${config.icon}</a>`;
   },
 
   /**
@@ -522,7 +522,7 @@ const LeaderboardRenderer = {
       const display = this.getDisplayName(entry, false);
       const rankClass = this.getRankClass(i);
       const nameHtml = display.url
-        ? `<a href="${display.url}" target="_blank" rel="noopener noreferrer">${FormatUtils.escapeHtml(display.displayName)}</a>`
+        ? `<a href="${FormatUtils.escapeHtml(display.url)}" target="_blank" rel="noopener noreferrer">${FormatUtils.escapeHtml(display.displayName)}</a>`
         : FormatUtils.escapeHtml(display.displayName);
       const content = this.getContentPlatform(entry);
       const platformCell = this.buildPlatformIconCell(content.platform, content.url);
@@ -551,7 +551,7 @@ const LeaderboardRenderer = {
       const display = this.getDisplayName(entry, true);
       const rankClass = this.getRankClass(i);
       const nameHtml = display.url
-        ? `<a href="${display.url}" target="_blank" rel="noopener noreferrer">${FormatUtils.escapeHtml(display.displayName)}</a>`
+        ? `<a href="${FormatUtils.escapeHtml(display.url)}" target="_blank" rel="noopener noreferrer">${FormatUtils.escapeHtml(display.displayName)}</a>`
         : FormatUtils.escapeHtml(display.displayName);
       const content = this.getContentPlatform(entry);
       const platformCell = this.buildPlatformIconCell(content.platform, content.url);
@@ -611,7 +611,7 @@ const LeaderboardRenderer = {
       }
 
       const nameHtml = displayUrl
-        ? `<a href="${displayUrl}" target="_blank" rel="noopener noreferrer">${FormatUtils.escapeHtml(displayName)}</a>`
+        ? `<a href="${FormatUtils.escapeHtml(displayUrl)}" target="_blank" rel="noopener noreferrer">${FormatUtils.escapeHtml(displayName)}</a>`
         : FormatUtils.escapeHtml(displayName);
       const content = this.getContentPlatform(entry);
       const platformCell = this.buildPlatformIconCell(content.platform, content.url);

@@ -232,7 +232,6 @@
         getCachedAddress: getCachedAddress,
         extractUsernameFromUrl: extractUsernameFromUrl,
         addXSenderInfo: typeof addXSenderInfo === 'function' ? addXSenderInfo : null,
-        buildAutoReplyMessage: typeof buildAutoReplyMessage === 'function' ? buildAutoReplyMessage : null,
         getDefaultAutoReplyMessage: () => DEFAULT_AUTO_REPLY_MESSAGE
       },
       typeof GROVE_COLORS !== 'undefined' ? GROVE_COLORS : null
