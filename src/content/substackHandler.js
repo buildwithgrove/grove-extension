@@ -33,16 +33,16 @@ const SubstackHandler = {
    */
   async initialize(adapter) {
     if (!adapter) {
-      console.log('[Grove Substack] No adapter provided');
+      groveLog.log('[Substack] No adapter provided');
       return null;
     }
 
     this.adapter = adapter;
-    console.log('[Grove Substack] Initializing hover card observer...');
+    groveLog.log('[Substack] Initializing hover card observer...');
 
     // Check if we're on a supported page (post or profile)
     if (!adapter.detectTippablePage()) {
-      console.log('[Grove Substack] Not a supported page, skipping');
+      groveLog.log('[Substack] Not a supported page, skipping');
       return null;
     }
 
@@ -59,13 +59,13 @@ const SubstackHandler = {
     if (!this.adapter) return;
 
     this.adapter.startHoverCardObserver((hoverCard, bioData) => {
-      console.log('[Grove Substack] Hover card detected with bio:', bioData?.bio?.substring(0, 100));
+      groveLog.log('[Substack] Hover card detected with bio:', bioData?.bio?.substring(0, 100));
 
       if (!bioData?.bio || !this.callbacks.hasAddresses || !this.callbacks.resolveAddress) return;
       if (!this.callbacks.hasAddresses(bioData.bio)) return;
 
       const addressResult = this.callbacks.resolveAddress(bioData.bio);
-      console.log('[Grove Substack] Resolved address from hover card:', addressResult);
+      groveLog.log('[Substack] Resolved address from hover card:', addressResult);
 
       if (!addressResult?.address) return;
 
@@ -161,16 +161,16 @@ const SubstackHandler = {
       return;
     }
 
-    console.log('[Grove Substack] Injecting tip button into hover card');
+    groveLog.log('[Substack] Injecting tip button into hover card');
 
     const placement = this.adapter.getHoverCardButtonPlacement(hoverCard);
     if (!placement) {
-      console.log('[Grove Substack] Could not find hover card button placement');
+      groveLog.log('[Substack] Could not find hover card button placement');
       return;
     }
 
     if (!this.callbacks.createTipButton) {
-      console.log('[Grove Substack] No createTipButton callback provided');
+      groveLog.log('[Substack] No createTipButton callback provided');
       return;
     }
 
@@ -203,7 +203,7 @@ const SubstackHandler = {
 
     this.applyHoverCardButtonStyle(tipButton);
     placement.appendChild(tipButton.button);
-    console.log('[Grove Substack] Hover card tip button injected');
+    groveLog.log('[Substack] Hover card tip button injected');
   },
 
   /**

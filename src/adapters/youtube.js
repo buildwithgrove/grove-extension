@@ -62,7 +62,7 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
     const postAuthor = document.querySelector('ytd-post-renderer #author-text')
       || document.querySelector('ytd-backstage-post-renderer #author-text');
     if (postAuthor?.textContent?.trim()) {
-      console.log('[Grove Extension] YouTube displayName from ytd-post-renderer #author-text:', postAuthor.textContent.trim());
+      groveLog.log('YouTube displayName from ytd-post-renderer #author-text:', postAuthor.textContent.trim());
       return postAuthor.textContent.trim();
     }
 
@@ -72,7 +72,7 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
       || document.querySelector('yt-formatted-string.ytd-channel-name')
       || document.querySelector('#channel-header-container #text');
     if (channelName?.textContent?.trim()) {
-      console.log('[Grove Extension] YouTube displayName from header:', channelName.textContent.trim());
+      groveLog.log('YouTube displayName from header:', channelName.textContent.trim());
       return channelName.textContent.trim();
     }
 
@@ -80,18 +80,18 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
     const ownerName = document.querySelector('#owner #channel-name #text a')
       || document.querySelector('ytd-video-owner-renderer #channel-name a');
     if (ownerName?.textContent?.trim()) {
-      console.log('[Grove Extension] YouTube displayName from owner section:', ownerName.textContent.trim());
+      groveLog.log('YouTube displayName from owner section:', ownerName.textContent.trim());
       return ownerName.textContent.trim();
     }
 
     // Fallback: meta tag
     const metaTitle = document.querySelector('meta[property="og:title"]');
     if (metaTitle) {
-      console.log('[Grove Extension] YouTube displayName from meta og:title:', metaTitle.getAttribute('content'));
+      groveLog.log('YouTube displayName from meta og:title:', metaTitle.getAttribute('content'));
       return metaTitle.getAttribute('content');
     }
 
-    console.log('[Grove Extension] YouTube displayName: none found');
+    groveLog.log('YouTube displayName: none found');
     return null;
   }
 
@@ -168,7 +168,7 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
     }
 
     const result = parts.join(' ');
-    console.log('[Grove Extension] YouTube extractBio result:', {
+    groveLog.log('YouTube extractBio result:', {
       path,
       displayName,
       partsCount: parts.length,
@@ -190,7 +190,7 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
       const toolbar = document.querySelector('ytd-post-renderer #toolbar')
         || document.querySelector('#toolbar.ytd-post-renderer')
         || document.querySelector('ytd-backstage-post-renderer #toolbar');
-      console.log('[Grove Extension] YouTube getButtonPlacement community:', {
+      groveLog.log('YouTube getButtonPlacement community:', {
         toolbar: !!toolbar,
         path
       });
@@ -206,7 +206,7 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
         || document.querySelector('#subscribe-button:not(.skeleton-bg-color)')
         || document.querySelector('ytd-subscribe-button-renderer:not(.skeleton-bg-color)');
       
-      console.log('[Grove Extension] YouTube getButtonPlacement channel:', {
+      groveLog.log('YouTube getButtonPlacement channel:', {
         'ytd-page-header-renderer #actions': !!document.querySelector('ytd-page-header-renderer #actions'),
         'ytd-flexible-actions-view-model': !!document.querySelector('ytd-flexible-actions-view-model'),
         'ytd-tabbed-page-header-renderer': !!document.querySelector('ytd-tabbed-page-header-renderer'),
@@ -234,7 +234,7 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
       if (ownerSubscribe) return ownerSubscribe;
     }
 
-    console.log('[Grove Extension] YouTube getButtonPlacement: no placement found for path:', path);
+    groveLog.log('YouTube getButtonPlacement: no placement found for path:', path);
     return null;
   }
 
@@ -270,7 +270,7 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
       if (toolbar) {
         buttonElement.classList.add('grove-youtube-community-action');
         toolbar.insertBefore(buttonElement, toolbar.firstElementChild);
-        console.log('[Grove Extension] YouTube injectTipButton: inserted into community toolbar');
+        groveLog.log('YouTube injectTipButton: inserted into community toolbar');
         return true;
       }
     }
@@ -284,7 +284,7 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
       if (actionsRow) {
         buttonElement.classList.add('grove-youtube-video-action');
         actionsRow.insertBefore(buttonElement, actionsRow.firstElementChild);
-        console.log('[Grove Extension] YouTube injectTipButton: inserted into actions row');
+        groveLog.log('YouTube injectTipButton: inserted into actions row');
         return true;
       }
     }
@@ -316,10 +316,10 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
           : (subscribeComp.closest('.ytFlexibleActionsViewModelAction') || subscribeComp);
         
         target.insertAdjacentElement('afterend', elementToInject);
-        console.log('[Grove Extension] YouTube injectTipButton: inserted after subscribe component in flexible actions');
+        groveLog.log('YouTube injectTipButton: inserted after subscribe component in flexible actions');
       } else {
         flexibleActions.appendChild(elementToInject);
-        console.log('[Grove Extension] YouTube injectTipButton: appended to flexible actions');
+        groveLog.log('YouTube injectTipButton: appended to flexible actions');
       }
       
       // Ensure the container is using flex to prevent wrapping/vertical stacking
@@ -349,13 +349,13 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
         buttonsContainer.style.setProperty('flex-wrap', 'nowrap', 'important');
         
         subscribeBtn.insertAdjacentElement('afterend', buttonElement);
-        console.log('[Grove Extension] YouTube injectTipButton: inserted after subscribe button in container');
+        groveLog.log('YouTube injectTipButton: inserted after subscribe button in container');
         return true;
       }
       
       // Fallback: if no subscribe button, just append to container
       buttonsContainer.appendChild(buttonElement);
-      console.log('[Grove Extension] YouTube injectTipButton: appended to buttons container');
+      groveLog.log('YouTube injectTipButton: appended to buttons container');
       return true;
     }
 
@@ -378,11 +378,11 @@ window.YouTubeAdapter = class YouTubeAdapter extends window.BaseAdapter {
       }
 
       subscribeBtnFallback.insertAdjacentElement('afterend', buttonElement);
-      console.log('[Grove Extension] YouTube injectTipButton: inserted after subscribe button (fallback)');
+      groveLog.log('YouTube injectTipButton: inserted after subscribe button (fallback)');
       return true;
     }
 
-    console.log('[Grove Extension] YouTube injectTipButton: no target found');
+    groveLog.log('YouTube injectTipButton: no target found');
     return false;
   }
 

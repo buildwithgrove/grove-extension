@@ -6,7 +6,7 @@
  * - Full pages (profiles, posts): Use API /resolve for consistent resolution
  * - Inline content (feeds, hover cards): Use client-side DOM parsing (handled elsewhere)
  */
-console.log('[Grove Extension] profilePageHandler.js loaded');
+groveLog.log('profilePageHandler.js loaded');
 
 const ProfilePageHandler = {
   // Callbacks for interacting with parent context
@@ -46,7 +46,7 @@ const ProfilePageHandler = {
    */
   async initialize(adapter) {
     if (!adapter) {
-      console.log('[Grove Extension] ProfilePageHandler: No adapter provided');
+      groveLog.log('ProfilePageHandler: No adapter provided');
       return null;
     }
 
@@ -55,7 +55,7 @@ const ProfilePageHandler = {
       if (typeof adapter.waitForProfileLoad === 'function') {
         const loaded = await adapter.waitForProfileLoad();
         if (!loaded) {
-          console.warn('[Grove Extension] ProfilePageHandler: page did not load within timeout');
+          groveLog.warn('ProfilePageHandler: page did not load within timeout');
           return null;
         }
       }
@@ -69,7 +69,7 @@ const ProfilePageHandler = {
       // Toggle via: `make dev_force_inject_on` / `make dev_force_inject_off`
       // Safe: committed default is false; requires source-level change to enable
       if (typeof GROVE_DEV_FLAGS !== 'undefined' && GROVE_DEV_FLAGS.forceInject) {
-        console.log('[Grove Extension] [DEV] Force-injecting tip button (GROVE_DEV_FLAGS.forceInject=true)');
+        groveLog.log('[DEV] Force-injecting tip button (GROVE_DEV_FLAGS.forceInject=true)');
         this.resolvedAddress = { address: 'dev-force-inject.eth', type: 'dev' };
         return this.injectButton(adapter);
       }
@@ -79,22 +79,22 @@ const ProfilePageHandler = {
       //   Once the backend fully supports profile and tweet URL resolution,
       //   the DOM fallback below can be removed or made truly exceptional.
       const destination = this.buildDestinationUrl();
-      console.log('[Grove Extension] [Resolve] Calling API for full page:', {
+      groveLog.log('[Resolve] Calling API for full page:', {
         platform: adapter.getPlatformName?.() || 'unknown',
         destination
       });
 
       // Check if GroveAPI is available
       if (typeof GroveAPI === 'undefined' || typeof GroveAPI.resolveDestination !== 'function') {
-        console.log('[Grove Extension] GroveAPI.resolveDestination not available, falling back to DOM parsing');
+        groveLog.log('GroveAPI.resolveDestination not available, falling back to DOM parsing');
         return this.initializeWithDomParsing(adapter);
       }
 
       const result = await GroveAPI.resolveDestination(destination);
-      console.log('[Grove Extension] [Resolve] API parsed result:', result);
+      groveLog.log('[Resolve] API parsed result:', result);
 
       if (!result.tippable || !result.addresses || result.addresses.length === 0) {
-        console.log('[Grove Extension] [Resolve] API returned non-tippable result; falling back to DOM parsing:', {
+        groveLog.log('[Resolve] API returned non-tippable result; falling back to DOM parsing:', {
           error: result.error || 'No addresses found',
           addressesCount: result.addresses?.length || 0
         });
@@ -110,13 +110,13 @@ const ProfilePageHandler = {
       // If the returned value is not a valid address/ENS by client-side parser rules,
       // treat API result as non-authoritative and fall back to DOM parsing.
       if (!resolvedApiAddress || !this.callbacks.resolveAddress) {
-        console.warn('[Grove Extension] [Resolve] API returned unusable address; falling back to DOM parsing:', primaryAddress);
+        groveLog.warn('[Resolve] API returned unusable address; falling back to DOM parsing:', primaryAddress);
         return this.initializeWithDomParsing(adapter);
       }
 
       const validation = this.callbacks.resolveAddress(resolvedApiAddress);
       if (!validation?.address) {
-        console.warn('[Grove Extension] [Resolve] API returned invalid address; falling back to DOM parsing:', primaryAddress);
+        groveLog.warn('[Resolve] API returned invalid address; falling back to DOM parsing:', primaryAddress);
         return this.initializeWithDomParsing(adapter);
       }
 
@@ -127,15 +127,15 @@ const ProfilePageHandler = {
         chain: primaryAddress.chain
       };
 
-      console.log(`[Grove Extension] ✅ Address resolved via API: ${this.resolvedAddress.address} (type: ${this.resolvedAddress.type})`);
+      groveLog.log(`Address resolved via API: ${this.resolvedAddress.address} (type: ${this.resolvedAddress.type})`);
 
       // Cache for inline content (tweets, hover cards)
       const username = this.callbacks.extractUsernameFromUrl?.(window.location.href);
       if (username && this.callbacks.setCachedAddress) {
         this.callbacks.setCachedAddress(username, this.resolvedAddress);
-        console.log(`[Grove Extension] [Cache] Stored resolved address for @${username}`);
+        groveLog.log(`[Cache] Stored resolved address for @${username}`);
       } else {
-        console.log('[Grove Extension] [Cache] Skipping cache write: no cache key extracted from URL', window.location.href);
+        groveLog.log('[Cache] Skipping cache write: no cache key extracted from URL', window.location.href);
       }
 
       // Inject button
@@ -155,38 +155,38 @@ const ProfilePageHandler = {
    * @returns {Promise<Object|null>} - The resolved address or null
    */
   async initializeWithDomParsing(adapter) {
-    console.log('[Grove Extension] [Resolve] Entering DOM fallback path');
+    groveLog.log('[Resolve] Entering DOM fallback path');
 
     // Extract bio to check for addresses
     const bio = adapter.extractBio();
 
     if (!bio) {
-      console.log('[Grove Extension] [Resolve] DOM fallback: no bio extracted; not showing button');
+      groveLog.log('[Resolve] DOM fallback: no bio extracted; not showing button');
       return null;
     }
 
-    console.log('[Grove Extension] [Resolve] DOM fallback: bio extracted');
+    groveLog.log('[Resolve] DOM fallback: bio extracted');
 
     // Check if bio contains tippable address
     if (!this.callbacks.hasAddresses || !this.callbacks.hasAddresses(bio)) {
-      console.log('[Grove Extension] [Resolve] DOM fallback: bio has no tippable address; not showing button');
+      groveLog.log('[Resolve] DOM fallback: bio has no tippable address; not showing button');
       return null;
     }
 
     // Extract address (ENS names are resolved by the backend)
     if (!this.callbacks.resolveAddress) {
-      console.log('[Grove Extension] [Resolve] DOM fallback: resolveAddress callback missing');
+      groveLog.log('[Resolve] DOM fallback: resolveAddress callback missing');
       return null;
     }
 
     const result = this.callbacks.resolveAddress(bio);
     if (!result || !result.address) {
-      console.log('[Grove Extension] [Resolve] DOM fallback: could not extract address; not showing button');
+      groveLog.log('[Resolve] DOM fallback: could not extract address; not showing button');
       return null;
     }
 
     this.resolvedAddress = result;
-    console.log(`[Grove Extension] ✅ Address detected via DOM: ${result.address} (type: ${result.type})`);
+    groveLog.log(`Address detected via DOM: ${result.address} (type: ${result.type})`);
 
     // Cache the address by username for tweet tip buttons
     if (adapter.getPlatformName() === 'twitter') {
@@ -195,7 +195,7 @@ const ProfilePageHandler = {
         : null;
       if (username && this.callbacks.setCachedAddress) {
         this.callbacks.setCachedAddress(username, result);
-        console.log(`[Grove Extension] Cached address for @${username}`);
+        groveLog.log(`Cached address for @${username}`);
       }
     }
 
@@ -212,12 +212,12 @@ const ProfilePageHandler = {
     // Get button placement location
     const placement = adapter.getButtonPlacement();
     if (!placement) {
-      console.log('[Grove Extension] Could not find button placement location');
+      groveLog.log('Could not find button placement location');
       return null;
     }
 
     const platformName = adapter.getPlatformName();
-    console.log('[Grove Extension] [Inject] Found placement for', platformName, {
+    groveLog.log('[Inject] Found placement for', platformName, {
       tag: placement.tagName,
       id: placement.id,
       className: placement.className,
@@ -246,7 +246,7 @@ const ProfilePageHandler = {
     if (typeof adapter.injectTipButton === 'function') {
       // Adapter handles its own placement (YouTube, etc.)
       const injected = adapter.injectTipButton(button);
-      console.log('[Grove Extension] [Inject] adapter.injectTipButton() returned:', injected, {
+      groveLog.log('[Inject] adapter.injectTipButton() returned:', injected, {
         buttonInDOM: document.contains(button),
         buttonDimensions: `${button.offsetWidth}x${button.offsetHeight}`
       });

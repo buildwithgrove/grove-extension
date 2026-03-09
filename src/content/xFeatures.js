@@ -81,7 +81,7 @@ async function performXActionsAfterTip(options) {
 
   // Check if XAuth is available
   if (typeof XAuth === "undefined") {
-    console.log("[Grove X Features] XAuth not available");
+    groveLog.log("[X Features] XAuth not available");
     return result;
   }
 
@@ -94,14 +94,14 @@ async function performXActionsAfterTip(options) {
     // Extract tweet ID
     const tweetId = XAuth.extractTweetId(tweetUrl);
     if (!tweetId) {
-      console.log("[Grove X Features] Could not extract tweet ID from URL");
+      groveLog.log("[X Features] Could not extract tweet ID from URL");
       return result;
     }
 
     // Check if logged in to X
     const isLoggedIn = await XAuth.isLoggedIn();
     if (!isLoggedIn) {
-      console.log("[Grove X Features] Not logged in to X");
+      groveLog.log("[X Features] Not logged in to X");
       return result;
     }
 
@@ -109,7 +109,7 @@ async function performXActionsAfterTip(options) {
     if (likeEnabled) {
       try {
         await XAuth.likeTweet(tweetId);
-        console.log("[Grove X Features] Tweet liked successfully");
+        groveLog.log("[X Features] Tweet liked successfully");
         result.didLike = true;
       } catch (likeError) {
         // Don't fail if like fails (might already be liked or rate limited)
@@ -135,7 +135,7 @@ async function performXActionsAfterTip(options) {
 
       try {
         await XAuth.postReply(tweetId, replyText);
-        console.log("[Grove X Features] Auto-reply posted successfully");
+        groveLog.log("[X Features] Auto-reply posted successfully");
         result.didReply = true;
       } catch (replyError) {
         console.error("[Grove X Features] Reply failed:", replyError);

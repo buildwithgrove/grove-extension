@@ -4,7 +4,7 @@
  * Note: Only used for showing button - backend handles actual extraction
  */
 
-console.log('[Grove Extension] Loading address.js... window.AddressMatchers =', typeof window.AddressMatchers);
+groveLog.log('Loading address.js... window.AddressMatchers =', typeof window.AddressMatchers);
 
 class AddressParser {
   // ENS name pattern: supports subdomains, ending in .eth
@@ -117,4 +117,4 @@ if (typeof window !== 'undefined') {
   window.AddressParser = AddressParser;
 }
 
-console.log('[Grove Extension] address.js loaded. window.AddressParser =', typeof window.AddressParser);
+groveLog.log('address.js loaded. window.AddressParser =', typeof window.AddressParser);

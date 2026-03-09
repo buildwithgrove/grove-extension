@@ -1,5 +1,6 @@
 // Import shared modules
 importScripts("src/config/environments.js");
+importScripts("src/config/logger.js");
 importScripts("src/config/chains.js");
 importScripts("src/config/storageKeys.js");
 importScripts("src/utils/updateChecker.js");
@@ -291,7 +292,7 @@ chrome.runtime.onMessageExternal.addListener(
  */
 async function checkForUpdatesBackground() {
   if (typeof UpdateChecker === "undefined") {
-    console.warn("[Grove Background] UpdateChecker not available");
+    groveLog.warn("[Background] UpdateChecker not available");
     return;
   }
 
@@ -302,7 +303,7 @@ async function checkForUpdatesBackground() {
       // Show badge to indicate update available (red for urgency)
       await chrome.action.setBadgeText({ text: "1" });
       await chrome.action.setBadgeBackgroundColor({ color: "#ef4444" });
-      console.log(`[Grove Background] Update available: v${result.version}`);
+      groveLog.log(`[Background] Update available: v${result.version}`);
     } else {
       // Clear badge if no update
       await chrome.action.setBadgeText({ text: "" });
