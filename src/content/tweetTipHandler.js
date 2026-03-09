@@ -1,7 +1,7 @@
 /**
  * Tweet Tip Handler Module
  * Handles tip button injection into tweets and the full tip flow
- * (loading state, API call, success/error states, XAuth features)
+ * (loading state, API call, success/error states, delegates to xFeatures.js)
  */
 
 const TweetTipHandler = {
@@ -29,7 +29,6 @@ const TweetTipHandler = {
     getCachedAddress: null,
     extractUsernameFromUrl: null,
     addXSenderInfo: null,
-    buildAutoReplyMessage: null,
     getDefaultAutoReplyMessage: null,
   },
 
@@ -436,21 +435,13 @@ const TweetTipHandler = {
         : true;
 
       // Configure display based on whether this is the first tip
-      const displayOptions = hasTipped
-        ? {
-            title: "Confirm Tip",
-            showConfirmCheckbox: true,
-            recipientUsername,
-            autoReplyMessage,
-            isDarkMode,
-          }
-        : {
-            title: "Your First Tip!",
-            showConfirmCheckbox: true,
-            recipientUsername,
-            autoReplyMessage,
-            isDarkMode,
-          };
+      const displayOptions = {
+        title: hasTipped ? "Confirm Tip" : "Your First Tip!",
+        showConfirmCheckbox: true,
+        recipientUsername,
+        autoReplyMessage,
+        isDarkMode,
+      };
 
       this.tipModal.show(
         buttonWrapper.button,
@@ -673,117 +664,29 @@ const TweetTipHandler = {
     if (response.success) {
       buttonWrapper.setSuccess();
 
-      // Like and/or reply if X features are enabled
+      // Like and/or reply if X features are enabled (delegates to xFeatures.js)
       if (
         (likeOnTipEnabled || autoReplyEnabled) &&
-        typeof XAuth !== "undefined"
+        typeof performXActionsAfterTip === "function"
       ) {
-        try {
-          const tweetId = XAuth.extractTweetId(tweetUrl);
-          if (tweetId) {
-            const isLoggedIn = await XAuth.isLoggedIn();
-            if (isLoggedIn) {
-              let didLike = false;
-              let didReply = false;
-              let likeFailed = false;
-              let replyFailed = false;
+        const xResult = await performXActionsAfterTip({
+          tweetUrl,
+          txHash: response.data?.tx_hash || "",
+          likeEnabled: likeOnTipEnabled,
+          replyEnabled: autoReplyEnabled,
+          replyTemplate: autoReplyMessage,
+          username,
+          chainName,
+          explorerBaseUrl,
+          referralLink,
+          amount: tipAmount,
+        });
 
-              // Like the tweet if enabled
-              if (likeOnTipEnabled) {
-                try {
-                  await XAuth.likeTweet(tweetId);
-                  console.log(
-                    "[Grove TweetTipHandler] Tweet liked successfully",
-                  );
-                  didLike = true;
-                } catch (likeError) {
-                  console.error(
-                    "[Grove TweetTipHandler] Like failed:",
-                    likeError,
-                  );
-                  likeFailed = true;
-                }
-              }
-
-              // Post auto-reply if enabled
-              if (autoReplyEnabled) {
-                const txHash = response.data?.tx_hash || "";
-                const txLink = `${explorerBaseUrl}${txHash}`;
-
-                // Build reply text from template
-                let replyText = "";
-                if (this.callbacks.buildAutoReplyMessage) {
-                  replyText = this.callbacks.buildAutoReplyMessage(
-                    autoReplyMessage,
-                    {
-                      username: username,
-                      amount: tipAmount,
-                      chain: chainName,
-                      tx_link: txLink,
-                      tweet_url: tweetUrl,
-                      grove_link: "grove.city",
-                      referral_link: referralLink,
-                    },
-                  );
-                }
-
-                if (replyText) {
-                  try {
-                    await XAuth.postReply(tweetId, replyText);
-                    console.log(
-                      "[Grove TweetTipHandler] Auto-reply posted successfully",
-                    );
-                    didReply = true;
-                  } catch (replyError) {
-                    console.error(
-                      "[Grove TweetTipHandler] Reply failed:",
-                      replyError,
-                    );
-                    replyFailed = true;
-                  }
-                }
-              }
-
-              // Show feedback message based on what happened
-              setTimeout(() => {
-                if (this.callbacks.showInlineTipError) {
-                  if (didLike || didReply) {
-                    let message = "";
-                    if (didLike && didReply) {
-                      message = "Liked & replied! Refresh to view.";
-                    } else if (didLike) {
-                      message = "Post liked! Refresh to view.";
-                    } else if (didReply) {
-                      message = "Reply sent! Refresh to view.";
-                    }
-                    this.callbacks.showInlineTipError(buttonWrapper.button, {
-                      message,
-                      variant: "success",
-                    });
-                  } else if (likeFailed || replyFailed) {
-                    let message = "";
-                    if (likeFailed && replyFailed) {
-                      message = "Like & reply failed (rate limited?)";
-                    } else if (likeFailed) {
-                      message = "Like failed (rate limited?)";
-                    } else if (replyFailed) {
-                      message = "Reply failed (rate limited?)";
-                    }
-                    this.callbacks.showInlineTipError(buttonWrapper.button, {
-                      message,
-                      variant: "warning",
-                    });
-                  }
-                }
-              }, 100);
-            } else {
-              console.log(
-                "[Grove TweetTipHandler] X features skipped - not logged in to X",
-              );
-            }
-          }
-        } catch (error) {
-          console.error("[Grove TweetTipHandler] X features failed:", error);
+        const feedback = getXActionFeedback(xResult);
+        if (feedback && this.callbacks.showInlineTipError) {
+          setTimeout(() => {
+            this.callbacks.showInlineTipError(buttonWrapper.button, feedback);
+          }, 100);
         }
       }
     } else {

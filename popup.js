@@ -1964,65 +1964,7 @@ const SOCIAL_PLACEHOLDERS = {
 /**
  * Normalize a bare handle/username into a full URL for the API
  */
-function normalizeSocialUrl(platform, input) {
-  const trimmed = input.trim();
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://"))
-    return trimmed;
-  const handle = trimmed.replace(/^@/, "");
-  if (!handle) return trimmed;
-
-  switch (platform) {
-    case "x":
-      return `https://x.com/${handle}`;
-    case "github":
-      return `https://github.com/${handle}`;
-    case "youtube":
-      return `https://youtube.com/@${handle}`;
-    case "substack":
-      return handle.includes(".")
-        ? `https://${handle}`
-        : `https://${handle}.substack.com`;
-    case "instagram":
-      return `https://instagram.com/${handle}`;
-    case "linkedin":
-      return handle.startsWith("in/")
-        ? `https://linkedin.com/${handle}`
-        : `https://linkedin.com/in/${handle}`;
-    case "medium":
-      return `https://medium.com/@${handle}`;
-    case "reddit":
-      return handle.startsWith("u/")
-        ? `https://reddit.com/${handle}`
-        : `https://reddit.com/u/${handle}`;
-    case "soundcloud":
-      return `https://soundcloud.com/${handle}`;
-    case "tiktok":
-      return `https://tiktok.com/@${handle}`;
-    case "telegram":
-      return `https://t.me/${handle}`;
-    case "discord":
-      return handle; // No URL normalization for Discord
-    case "website":
-      return handle.includes(".") ? `https://${handle}` : handle;
-    default:
-      return trimmed;
-  }
-}
-
-/**
- * Extract a display label from a social link URL
- */
-function socialDisplayLabel(platform, url) {
-  try {
-    const u = new URL(url);
-    if (platform === "website") return u.hostname;
-    const path = u.pathname.replace(/^\//, "").replace(/\/$/, "");
-    if (path) {
-      return path.replace(/^[@]/, "").replace(/^(in|u)\//, "");
-    }
-  } catch (_) {}
-  return url.replace(/^@/, "").replace(/^https?:\/\//, "");
-}
+// normalizeSocialUrl and socialDisplayLabel are loaded from src/utils/socialUtils.js
 
 const PLATFORM_LABELS = {
   x: "X",

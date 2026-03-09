@@ -6,3 +6,4 @@ node_modules/
 test-results/
 dist/
 PR_DESCRIPTION.md
+DO_NOT_COMMIT_GROVE_EXTENSION_REVIEW_RESULTS.md
