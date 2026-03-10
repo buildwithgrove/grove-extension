@@ -411,7 +411,7 @@ function loadExtensionVersion() {
  */
 async function checkForUpdates() {
   if (typeof UpdateChecker === "undefined") {
-    console.warn("[Grove] UpdateChecker not loaded");
+    groveLog.warn("UpdateChecker not loaded");
     return;
   }
 
@@ -821,7 +821,7 @@ function setupEventListeners() {
       changes[STORAGE_KEYS.JWT_PRODUCTION] ||
       changes[STORAGE_KEYS.JWT_TESTNET]
     ) {
-      console.log("[Grove Extension] JWT changed in storage, refreshing...");
+      groveLog.log("JWT changed in storage, refreshing...");
       const jwt = await getActiveJWT();
       await updateAuthState(jwt);
       await fetchBalance();
@@ -863,7 +863,7 @@ function setupEventListeners() {
     }
 
     if (changes[STORAGE_KEYS.CHAIN]) {
-      console.log("[Grove Extension] Chain changed in storage, updating UI...");
+      groveLog.log("Chain changed in storage, updating UI...");
       const newChain = changes[STORAGE_KEYS.CHAIN].newValue;
       updateChainUI(newChain);
       updateTopUpLink(newChain);
@@ -1784,7 +1784,7 @@ async function fetchBalance() {
     const earnAddress = response.data.earning_address;
 
     if (earnAddress) {
-      console.log("[Grove Extension] fetchBalance got addresses:", {
+      groveLog.log("fetchBalance got addresses:", {
         earning: response.data.earning_address,
         tipping: response.data.tipping_address,
         earn: earnAddress,
@@ -2499,7 +2499,7 @@ async function resolveEnsName(address) {
             !p.identity.endsWith(".base.eth")),
       );
       if (ensProfile?.identity) {
-        console.log("[Grove Extension] Resolved ENS:", ensProfile.identity);
+        groveLog.log("Resolved ENS:", ensProfile.identity);
         return ensProfile.identity;
       }
 
@@ -2518,7 +2518,7 @@ async function resolveEnsName(address) {
       }
     }
   } catch (e) {
-    console.log("[Grove Extension] ENS lookup failed:", e.message);
+    groveLog.log("ENS lookup failed:", e.message);
   }
 
   return null;
@@ -2537,7 +2537,7 @@ async function loadAndResolveEnsName() {
   );
 
   if (!address) {
-    console.log("[Grove Extension] No address to resolve");
+    groveLog.log("No address to resolve");
     return;
   }
 

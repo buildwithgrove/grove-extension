@@ -40,7 +40,7 @@ const BioFetcher = {
   rotateToken() {
     if (this.currentTokenIndex < this.BEARER_TOKENS.length - 1) {
       this.currentTokenIndex++;
-      console.log(`[Grove BioFetcher] Rotating to fallback bearer token (index: ${this.currentTokenIndex})`);
+      groveLog.log(`[BioFetcher] Rotating to fallback bearer token (index: ${this.currentTokenIndex})`);
       return true;
     }
     return false;
@@ -84,21 +84,21 @@ const BioFetcher = {
   queueFetch(username) {
     // Check if already cached via callback
     if (this.callbacks.isUserCached && this.callbacks.isUserCached(username)) {
-      console.log(`[Grove BioFetcher] @${username} already cached`);
+      groveLog.log(`[BioFetcher] @${username} already cached`);
       return false;
     }
 
     if (this.inProgress.has(username)) {
-      console.log(`[Grove BioFetcher] @${username} already in progress`);
+      groveLog.log(`[BioFetcher] @${username} already in progress`);
       return false;
     }
 
     if (this.queue.has(username)) {
-      console.log(`[Grove BioFetcher] @${username} already in queue`);
+      groveLog.log(`[BioFetcher] @${username} already in queue`);
       return false;
     }
 
-    console.log(`[Grove BioFetcher] Adding @${username} to queue (queue size: ${this.queue.size})`);
+    groveLog.log(`[BioFetcher] Adding @${username} to queue (queue size: ${this.queue.size})`);
     this.queue.add(username);
     this.scheduleNextFetch();
     return true;
@@ -129,11 +129,11 @@ const BioFetcher = {
    * @returns {Promise<{displayName: string|null, bio: string|null, error?: string}>}
    */
   async fetchUserBio(username) {
-    console.log(`[Grove BioFetcher] Fetching bio for @${username}...`);
+    groveLog.log(`[BioFetcher] Fetching bio for @${username}...`);
 
     const csrfToken = this.getTwitterCsrfToken();
     if (!csrfToken) {
-      console.log(`[Grove BioFetcher] No CSRF token found for @${username}`);
+      groveLog.log(`[BioFetcher] No CSRF token found for @${username}`);
       return { displayName: null, bio: null, error: 'No CSRF token found' };
     }
 
@@ -174,11 +174,11 @@ const BioFetcher = {
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => '');
-        console.log(`[Grove BioFetcher] API response for @${username}: ${response.status} - ${errorText.substring(0, 200)}`);
+        groveLog.log(`[BioFetcher] API response for @${username}: ${response.status} - ${errorText.substring(0, 200)}`);
 
         // On auth failure, try rotating to fallback token
         if ((response.status === 401 || response.status === 403) && this.rotateToken()) {
-          console.log(`[Grove BioFetcher] Retrying @${username} with fallback token`);
+          groveLog.log(`[BioFetcher] Retrying @${username} with fallback token`);
           return this.fetchUserBio(username); // Retry with new token
         }
 
@@ -194,7 +194,7 @@ const BioFetcher = {
       }
 
       const legacy = user.legacy || {};
-      console.log(`[Grove BioFetcher] Got bio for @${username}: "${legacy.description?.substring(0, 100)}..."`);
+      groveLog.log(`[BioFetcher] Got bio for @${username}: "${legacy.description?.substring(0, 100)}..."`);
       return {
         displayName: legacy.name || null,
         bio: legacy.description || null
@@ -232,7 +232,7 @@ const BioFetcher = {
 
       // Double-check we haven't exceeded the limit (defensive against race conditions)
       if (this.activeCount >= this.MAX_CONCURRENT) {
-        console.log('[Grove BioFetcher] Concurrency limit reached, deferring remaining fetches');
+        groveLog.log('[BioFetcher] Concurrency limit reached, deferring remaining fetches');
         break;
       }
 
@@ -270,7 +270,7 @@ const BioFetcher = {
         }
       } else {
         // Fetch failed
-        console.log(`[Grove BioFetcher] Fetch failed for @${username}: ${response?.error || 'unknown error'}`);
+        groveLog.log(`[BioFetcher] Fetch failed for @${username}: ${response?.error || 'unknown error'}`);
         if (this.callbacks.onFetchError) {
           this.callbacks.onFetchError(username, response?.error || 'unknown error');
         }

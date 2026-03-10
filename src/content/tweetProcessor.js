@@ -70,7 +70,7 @@ const TweetProcessor = {
       this.observer.disconnect();
     }
 
-    console.log("[Grove TweetProcessor] Setting up tweet observer");
+    groveLog.log("[TweetProcessor] Setting up tweet observer");
 
     // Process existing tweets first
     this.processExistingTweets();
@@ -116,7 +116,7 @@ const TweetProcessor = {
     if (!adapter || adapter.getPlatformName() !== 'twitter') return;
 
     const tweets = adapter.findTweets();
-    console.log(`[Grove TweetProcessor] Found ${tweets.length} existing tweets`);
+    groveLog.log(`[TweetProcessor] Found ${tweets.length} existing tweets`);
     tweets.forEach((tweet) => this.processTweet(tweet));
   },
 
@@ -142,7 +142,7 @@ const TweetProcessor = {
           if (this.callbacks.setCachedAddress) {
             this.callbacks.setCachedAddress(username, addressResult);
           }
-          console.log(`[Grove TweetProcessor] Tweet: Found address for @${username}: ${addressResult.address}`);
+          groveLog.log(`[TweetProcessor] Tweet: Found address for @${username}: ${addressResult.address}`);
           return true;
         }
       }
@@ -190,13 +190,13 @@ const TweetProcessor = {
           const tweetUrl = adapter.getTweetUrl(tweetElement);
           const dateElement = adapter.getTweetDateElement(tweetElement);
           if (tweetUrl && dateElement) {
-            console.log(`[Grove TweetProcessor] Queueing bio fetch for @${authorInfo.username}`);
+            groveLog.log(`[TweetProcessor] Queueing bio fetch for @${authorInfo.username}`);
             this.queueBioFetch(authorInfo.username, tweetElement, tweetUrl, dateElement, false);
           } else {
-            console.log(`[Grove TweetProcessor] Cannot queue @${authorInfo.username}: missing tweetUrl=${!!tweetUrl} dateElement=${!!dateElement}`);
+            groveLog.log(`[TweetProcessor] Cannot queue @${authorInfo.username}: missing tweetUrl=${!!tweetUrl} dateElement=${!!dateElement}`);
           }
         } else {
-          console.log(`[Grove TweetProcessor] Skipping @${authorInfo.username}: cached=${cached}`);
+          groveLog.log(`[TweetProcessor] Skipping @${authorInfo.username}: cached=${cached}`);
         }
       }
     }

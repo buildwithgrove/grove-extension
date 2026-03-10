@@ -119,7 +119,7 @@ class XAuth {
     }
 
     const tokens = await response.json();
-    console.log('[Grove X Auth] Refresh successful, scopes:', tokens.scope, 'token length:', tokens.access_token?.length);
+    groveLog.log('[X Auth] Refresh successful, scopes:', tokens.scope, 'token length:', tokens.access_token?.length);
 
     // Update stored tokens
     const userResult = await chrome.storage.local.get([this.STORAGE_KEYS.USER_INFO]);
@@ -188,7 +188,7 @@ class XAuth {
       } catch (_) { /* ignore */ }
 
       // Token rejected server-side — try refreshing once
-      console.log('[Grove X Auth] Got 401, attempting token refresh...');
+      groveLog.log('[X Auth] Got 401, attempting token refresh...');
       try {
         accessToken = await this.refreshAccessToken();
       } catch (refreshError) {
@@ -216,7 +216,7 @@ class XAuth {
    * Get user info from Twitter API
    */
   static async getUserInfo(accessToken) {
-    console.log('[Grove X Auth] Fetching user info...');
+    groveLog.log('[X Auth] Fetching user info...');
 
     const response = await XAuth._fetch('https://api.twitter.com/2/users/me', {
       headers: {
@@ -231,7 +231,7 @@ class XAuth {
     }
 
     const data = await response.json();
-    console.log('[Grove X Auth] User info received:', data.data?.username);
+    groveLog.log('[X Auth] User info received:', data.data?.username);
     return data.data;
   }
 
@@ -281,7 +281,7 @@ class XAuth {
       if (!response.ok) {
         // Only clear token if we know it's invalid (401/403)
         if (response.status === 401 || response.status === 403) {
-          console.log('[Grove X Auth] Token invalid, clearing...');
+          groveLog.log('[X Auth] Token invalid, clearing...');
           await this.logout();
         }
         return false;

@@ -371,8 +371,8 @@ const TweetTipHandler = {
             [STORAGE_KEYS.CONFIRM_TIP]: true,
             [STORAGE_KEYS.CONFIRM_TIP_V2]: true,
           });
-          console.log(
-            "[Grove TweetTipHandler] Migrated to V2: confirm before tipping set to true",
+          groveLog.log(
+            "[TweetTipHandler] Migrated to V2: confirm before tipping set to true",
           );
         } else {
           confirmBeforeTipping = result[STORAGE_KEYS.CONFIRM_TIP] !== false;
@@ -488,7 +488,7 @@ const TweetTipHandler = {
           this.sendTip(amount, buttonWrapper, tweetUrl, xActions);
         },
         () => {
-          console.log("[Grove TweetTipHandler] Tip cancelled");
+          groveLog.log("[TweetTipHandler] Tip cancelled");
         },
         xOptions,
         displayOptions,
@@ -574,7 +574,7 @@ const TweetTipHandler = {
       if (referralCode) {
         referralLink = `https://grove.city/?ref=${encodeURIComponent(referralCode)}`;
       }
-      console.log("[Grove TweetTipHandler] Storage loaded:", {
+      groveLog.log("[TweetTipHandler] Storage loaded:", {
         hasJwt: !!jwt,
         autoReply: autoReplyEnabled,
         likeOnTip: likeOnTipEnabled,
@@ -623,8 +623,8 @@ const TweetTipHandler = {
       const cached = this.callbacks.getCachedAddress(username);
       if (cached && cached.address) {
         tipDestination = cached.address;
-        console.log(
-          `[Grove TweetTipHandler] Tipping to ${cached.type} address: ${tipDestination} (from @${username})`,
+        groveLog.log(
+          `[TweetTipHandler] Tipping to ${cached.type} address: ${tipDestination} (from @${username})`,
         );
       }
     }

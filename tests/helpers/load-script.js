@@ -14,10 +14,19 @@ export function loadBrowserScript(relativePath, existingContext = null) {
   const fullPath = resolve(__dirname, '../../', relativePath);
   const code = readFileSync(fullPath, 'utf-8');
 
+  // No-op logger for test context (mirrors src/config/logger.js)
+  const groveLogStub = {
+    _enabled: false,
+    enable() { this._enabled = true; },
+    log() {},
+    warn() {},
+  };
+
   // Create or use existing browser-like context
   const context = existingContext || {
     window: {},
     console,
+    groveLog: groveLogStub,
     // Add other globals that might be needed
     setTimeout,
     clearTimeout,
@@ -29,6 +38,11 @@ export function loadBrowserScript(relativePath, existingContext = null) {
   
   if (!context.window) {
     context.window = context;
+  }
+
+  // Ensure groveLog is always available (scripts depend on it)
+  if (!context.groveLog) {
+    context.groveLog = groveLogStub;
   }
 
   // Ensure context is contextified

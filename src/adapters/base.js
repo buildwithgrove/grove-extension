@@ -3,7 +3,7 @@
  * Abstract interface for social platform adapters
  */
 
-console.log('[Grove Extension] Loading base.js...');
+groveLog.log('Loading base.js...');
 
 // Assign directly to window to ensure global availability
 window.BaseAdapter = class BaseAdapter {
@@ -110,4 +110,4 @@ window.BaseAdapter = class BaseAdapter {
   }
 };
 
-console.log('[Grove Extension] base.js loaded. window.BaseAdapter =', typeof window.BaseAdapter);
+groveLog.log('base.js loaded. window.BaseAdapter =', typeof window.BaseAdapter);

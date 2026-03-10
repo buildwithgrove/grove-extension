@@ -5,7 +5,7 @@
  * Requires: src/adapters/base.js (BaseAdapter)
  */
 
-console.log('[Grove Extension] Loading soundcloud.js... window.BaseAdapter =', typeof window.BaseAdapter);
+groveLog.log('Loading soundcloud.js... window.BaseAdapter =', typeof window.BaseAdapter);
 
 // Assign directly to window to ensure global availability
 window.SoundCloudAdapter = class SoundCloudAdapter extends window.BaseAdapter {
@@ -58,11 +58,11 @@ window.SoundCloudAdapter = class SoundCloudAdapter extends window.BaseAdapter {
     // Combine display name and bio for address detection
     const result = [displayName, bio].filter(Boolean).join(' ');
 
-    console.log('[Grove Extension] SoundCloud extractBio result:', result);
+    groveLog.log('SoundCloud extractBio result:', result);
 
     if (!result) {
       // TODO: Remove this legacy fallback once tests no longer rely on it.
-      console.warn('[Grove Extension] SoundCloud extractBio empty; returning space placeholder.');
+      groveLog.warn('SoundCloud extractBio empty; returning space placeholder.');
       return ' ';
     }
 
@@ -218,4 +218,4 @@ window.SoundCloudAdapter = class SoundCloudAdapter extends window.BaseAdapter {
   }
 };
 
-console.log('[Grove Extension] soundcloud.js loaded. window.SoundCloudAdapter =', typeof window.SoundCloudAdapter);
+groveLog.log('soundcloud.js loaded. window.SoundCloudAdapter =', typeof window.SoundCloudAdapter);
