@@ -25,6 +25,15 @@ import {
   detectAuthMethod,
 } from '../src/auth/cdpAuth.js';
 
+// Provide groveLog global for cdpAuth.js (ES module, not loaded via loadBrowserScript)
+globalThis.groveLog = {
+  _enabled: false,
+  enable() { this._enabled = true; },
+  log() {},
+  warn() {},
+  error() {},
+};
+
 let mockFetch;
 
 beforeEach(() => {

@@ -1,8 +1,9 @@
 /**
  * Grove Extension Logger
- * Only logs in dev mode (testnet/localhost environments).
+ * Only logs in local development mode (groveEnvironment === 'local').
  * Reads environment from chrome.storage.local on load and
- * enables itself automatically for non-production environments.
+ * enables itself automatically for local development.
+ * Errors always log regardless of environment.
  */
 var groveLog = {
   _enabled: false,
@@ -17,6 +18,10 @@ var groveLog = {
 
   warn(...args) {
     if (this._enabled) console.warn('[Grove]', ...args);
+  },
+
+  error(...args) {
+    console.error('[Grove]', ...args);
   },
 };
 

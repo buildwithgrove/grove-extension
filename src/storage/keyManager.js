@@ -114,7 +114,7 @@ class KeyManager {
     // Remove legacy key
     await chrome.storage.local.remove([LEGACY_JWT_KEY]);
 
-    console.log('[KeyManager] Migrated legacy JWT to multi-slot architecture');
+    groveLog.log('[KeyManager] Migrated legacy JWT to multi-slot architecture');
     return true;
   }
 

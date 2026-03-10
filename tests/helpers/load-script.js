@@ -20,6 +20,7 @@ export function loadBrowserScript(relativePath, existingContext = null) {
     enable() { this._enabled = true; },
     log() {},
     warn() {},
+    error() {},
   };
 
   // Create or use existing browser-like context
