@@ -453,9 +453,8 @@
           }
         }
 
-        // API returned non-tippable — no need to try local fallback
-        groveLog.log("API resolve returned non-tippable for this site");
-        return;
+        // API returned non-tippable — still try local metadata fallback
+        groveLog.log("API resolve returned non-tippable, trying metadata file fallback");
       } catch (error) {
         // API unreachable — fall through to local metadata probing
         groveLog.log("API resolve failed, falling back to metadata file probing");

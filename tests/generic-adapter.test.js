@@ -285,3 +285,148 @@ describe('Generic website API resolve fallback (#124)', () => {
     expect(result.reason).toBe('no_api');
   });
 });
+
+describe('Generic website API-first resolution order', () => {
+  /**
+   * Simulates the NEW initializeGenericWebsite() flow from content.js:
+   *   Stage 1: API resolve first
+   *   Stage 2: Metadata file fallback (if API fails or returns non-tippable)
+   */
+  async function simulateApiFirstInit(adapter, mockGroveAPI) {
+    // Stage 1: Try API resolve first
+    if (mockGroveAPI && typeof mockGroveAPI.resolveDestination === 'function') {
+      try {
+        const result = await mockGroveAPI.resolveDestination(context.window.location.origin);
+
+        if (result.tippable && result.addresses && result.addresses.length > 0) {
+          const primaryAddress = result.addresses[0];
+          if (primaryAddress?.address) {
+            const validation = context.AddressParser.resolveAddress(primaryAddress.address);
+            if (validation?.address) {
+              return {
+                resolved: true,
+                source: 'api',
+                address: {
+                  address: validation.address,
+                  type: primaryAddress.source || validation.type || 'grove_profile',
+                  token: primaryAddress.token,
+                  chain: primaryAddress.chain,
+                },
+              };
+            }
+          }
+        }
+
+        // API returned non-tippable — fall through to metadata (NOT early return)
+      } catch (_error) {
+        // API unreachable — fall through to metadata
+      }
+    }
+
+    // Stage 2: Fallback — probe metadata files
+    try {
+      const metadata = await adapter.fetchMetadata();
+      if (metadata.found) {
+        return { resolved: true, source: 'metadata', address: metadata.address };
+      }
+    } catch (_error) {
+      // metadata probe failed
+    }
+
+    return { resolved: false, reason: 'no_address_found' };
+  }
+
+  beforeEach(() => {
+    createContext('https://personalsite.com');
+  });
+
+  afterEach(() => {
+    if (mockFetch) mockFetch.reset();
+  });
+
+  it('should resolve via API when API returns tippable (no metadata probe needed)', async () => {
+    mockFetch.setDefault({}, { status: 404 });
+
+    const adapter = new context.GenericAdapter();
+    const mockAPI = {
+      resolveDestination: vi.fn().mockResolvedValue({
+        tippable: true,
+        addresses: [{ address: 'creator.eth', source: 'grove_profile', token: 'USDC', chain: 'base' }],
+      }),
+    };
+
+    const result = await simulateApiFirstInit(adapter, mockAPI);
+
+    expect(result.resolved).toBe(true);
+    expect(result.source).toBe('api');
+    expect(result.address.address).toBe('creator.eth');
+    expect(mockAPI.resolveDestination).toHaveBeenCalledWith('https://personalsite.com');
+  });
+
+  it('should fall back to metadata when API returns non-tippable', async () => {
+    const content = 'Tip me at 0x1234567890123456789012345678901234567890';
+    mockFetch.mockResponse('GET', 'https://personalsite.com/llms.txt', content);
+
+    const adapter = new context.GenericAdapter();
+    const mockAPI = {
+      resolveDestination: vi.fn().mockResolvedValue({
+        tippable: false,
+        addresses: [],
+        error: 'No destination found',
+      }),
+    };
+
+    const result = await simulateApiFirstInit(adapter, mockAPI);
+
+    expect(result.resolved).toBe(true);
+    expect(result.source).toBe('metadata');
+    expect(result.address.address).toBe('0x1234567890123456789012345678901234567890');
+    expect(mockAPI.resolveDestination).toHaveBeenCalled();
+  });
+
+  it('should fall back to metadata when API throws error', async () => {
+    const content = 'Tip me at 0xabcdef1234567890123456789012345678901234';
+    mockFetch.mockResponse('GET', 'https://personalsite.com/llms.txt', content);
+
+    const adapter = new context.GenericAdapter();
+    const mockAPI = {
+      resolveDestination: vi.fn().mockRejectedValue(new Error('Network error')),
+    };
+
+    const result = await simulateApiFirstInit(adapter, mockAPI);
+
+    expect(result.resolved).toBe(true);
+    expect(result.source).toBe('metadata');
+    expect(result.address.address).toBe('0xabcdef1234567890123456789012345678901234');
+  });
+
+  it('should fall back to metadata when GroveAPI is undefined', async () => {
+    const content = 'Tip: 0x1111111111111111111111111111111111111111';
+    mockFetch.mockResponse('GET', 'https://personalsite.com/llms.txt', content);
+
+    const adapter = new context.GenericAdapter();
+
+    const result = await simulateApiFirstInit(adapter, undefined);
+
+    expect(result.resolved).toBe(true);
+    expect(result.source).toBe('metadata');
+    expect(result.address.address).toBe('0x1111111111111111111111111111111111111111');
+  });
+
+  it('should return not resolved when both API and metadata fail', async () => {
+    mockFetch.setDefault({}, { status: 404 });
+
+    const adapter = new context.GenericAdapter();
+    const mockAPI = {
+      resolveDestination: vi.fn().mockResolvedValue({
+        tippable: false,
+        addresses: [],
+      }),
+    };
+
+    const result = await simulateApiFirstInit(adapter, mockAPI);
+
+    expect(result.resolved).toBe(false);
+    expect(result.reason).toBe('no_address_found');
+  });
+});
