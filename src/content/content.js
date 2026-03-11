@@ -398,7 +398,7 @@
       return;
     }
 
-    // For generic websites, check for metadata files
+    // For generic websites, resolve via API (falls back to metadata file probing)
     if (currentAdapter.getPlatformName() === "generic") {
       await initializeGenericWebsite();
       return;
@@ -425,61 +425,52 @@
   }
 
   /**
-   * Initialize tip button for generic websites
-   * Fetches llms.txt/ai.txt and shows floating button if address found.
-   * Falls back to API resolution for sites claimed on Grove profiles.
+   * Initialize tip button for generic websites.
+   * Tries API resolution first (single request, handles llms.txt server-side),
+   * then falls back to direct metadata file probing if the API is unreachable.
    */
   async function initializeGenericWebsite() {
+    // Stage 1: Try API resolve first (handles llms.txt, profiles, etc. server-side)
+    if (typeof GroveAPI !== 'undefined' && typeof GroveAPI.resolveDestination === 'function') {
+      try {
+        const result = await GroveAPI.resolveDestination(window.location.origin);
+
+        if (result.tippable && result.addresses && result.addresses.length > 0) {
+          const primaryAddress = result.addresses[0];
+          if (primaryAddress?.address) {
+            const validation = AddressParser.resolveAddress(primaryAddress.address);
+            if (validation?.address) {
+              resolvedAddress = {
+                address: validation.address,
+                type: primaryAddress.source || validation.type || 'grove_profile',
+                token: primaryAddress.token,
+                chain: primaryAddress.chain
+              };
+              groveLog.log(`Address resolved via API: ${resolvedAddress.address} (source: ${resolvedAddress.type})`);
+              injectGenericFloatingButton();
+              return;
+            }
+          }
+        }
+
+        // API returned non-tippable — no need to try local fallback
+        groveLog.log("API resolve returned non-tippable for this site");
+        return;
+      } catch (error) {
+        // API unreachable — fall through to local metadata probing
+        groveLog.log("API resolve failed, falling back to metadata file probing");
+      }
+    }
+
+    // Stage 2: Fallback — probe metadata files directly (llms.txt, ai.txt, etc.)
     try {
-      // Fetch metadata files
       const metadata = await currentAdapter.fetchMetadata();
 
       if (metadata.found) {
         groveLog.log(`Found address in ${metadata.source}: ${metadata.address.original || metadata.address.address}`);
         resolvedAddress = metadata.address;
         injectGenericFloatingButton();
-        return;
       }
-
-      // No metadata files — try API resolution as fallback
-      // This enables tip buttons on personal sites claimed via Grove profiles
-      groveLog.log("No metadata files found, trying API resolve fallback");
-
-      if (typeof GroveAPI === 'undefined' || typeof GroveAPI.resolveDestination !== 'function') {
-        groveLog.log("GroveAPI.resolveDestination not available");
-        return;
-      }
-
-      const result = await GroveAPI.resolveDestination(window.location.origin);
-
-      if (!result.tippable || !result.addresses || result.addresses.length === 0) {
-        groveLog.log("API resolve returned non-tippable for this site");
-        return;
-      }
-
-      // Validate the address client-side (same pattern as ProfilePageHandler)
-      const primaryAddress = result.addresses[0];
-      if (!primaryAddress?.address) {
-        groveLog.log("API resolve returned empty address");
-        return;
-      }
-
-      const validation = AddressParser.resolveAddress(primaryAddress.address);
-      if (!validation?.address) {
-        groveLog.log("API resolve returned address that failed client-side validation:", primaryAddress.address);
-        return;
-      }
-
-      resolvedAddress = {
-        address: validation.address,
-        type: primaryAddress.source || validation.type || 'grove_profile',
-        token: primaryAddress.token,
-        chain: primaryAddress.chain
-      };
-
-      groveLog.log(`Address resolved via API fallback: ${resolvedAddress.address} (source: ${resolvedAddress.type})`);
-      injectGenericFloatingButton();
-
     } catch (error) {
       console.error("[Grove Extension] Generic website initialization failed:", error);
     }
