@@ -500,7 +500,7 @@ class TipModal {
       margin: 6px 0 0 0;
       line-height: 1.4;
     `;
-    messageHelper.textContent = 'Available: {username}, {amount}, {chain}, {tx_link}, {tweet_url}, {referral_link}';
+    messageHelper.textContent = 'Available: {username}, {amount}, {chain}, {tx_link}, {post_url}, {referral_link}';
 
     messageSection.appendChild(messageLabel);
     messageSection.appendChild(messageTextarea);

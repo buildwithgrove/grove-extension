@@ -594,7 +594,7 @@ const TweetTipHandler = {
                     amount: tipAmount,
                     chain: chainName,
                     tx_link: txLink,
-                    tweet_url: tweetUrl,
+                    post_url: tweetUrl,
                     grove_link: 'grove.city',
                     referral_link: referralLink
                   });
