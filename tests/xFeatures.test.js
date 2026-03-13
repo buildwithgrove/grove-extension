@@ -37,7 +37,7 @@ beforeEach(() => {
 
 describe("buildAutoReplyMessage", () => {
   const template =
-    "Hey @{username}, I enjoyed your post {tweet_url} so I tipped you ~{amount} on {chain}!\nTx: {tx_link}\nJoin: {grove_link} | {referral_link}";
+    "Hey @{username}, I enjoyed your post {post_url} so I tipped you ~{amount} on {chain}!\nTx: {tx_link}\nJoin: {grove_link} | {referral_link}";
 
   it("should replace all placeholders", () => {
     const result = buildAutoReplyMessage(template, {
@@ -45,7 +45,7 @@ describe("buildAutoReplyMessage", () => {
       amount: 1.5,
       chain: "Base",
       tx_link: "https://basescan.org/tx/0x123",
-      tweet_url: "https://x.com/alice/status/123",
+      post_url: "https://x.com/alice/status/123",
       grove_link: "grove.city",
       referral_link: "grove.city/?ref=abc",
     });
@@ -59,23 +59,23 @@ describe("buildAutoReplyMessage", () => {
     expect(result).toContain("grove.city/?ref=abc");
   });
 
-  it("should strip {tweet_url} placeholder when tweet_url is empty", () => {
+  it("should strip {post_url} placeholder when post_url is empty", () => {
     const result = buildAutoReplyMessage(template, {
       username: "bob",
       amount: 0.25,
       chain: "Base",
       tx_link: "https://basescan.org/tx/0x456",
-      tweet_url: "",
+      post_url: "",
       grove_link: "grove.city",
       referral_link: "grove.city",
     });
 
-    expect(result).not.toContain("{tweet_url}");
+    expect(result).not.toContain("{post_url}");
     expect(result).toContain("@bob");
     expect(result).toContain("$0.25");
   });
 
-  it("should strip {tweet_url} placeholder when tweet_url is undefined", () => {
+  it("should strip {post_url} placeholder when post_url is undefined", () => {
     const result = buildAutoReplyMessage(template, {
       username: "carol",
       amount: 5,
@@ -85,7 +85,7 @@ describe("buildAutoReplyMessage", () => {
       referral_link: "grove.city",
     });
 
-    expect(result).not.toContain("{tweet_url}");
+    expect(result).not.toContain("{post_url}");
   });
 
   it("should format amount as $X.XX", () => {

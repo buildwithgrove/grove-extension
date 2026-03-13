@@ -33,10 +33,10 @@ function buildAutoReplyMessage(template, data) {
   if (data.referral_link) {
     message = message.replace(/{referral_link}/g, data.referral_link);
   }
-  if (data.tweet_url) {
-    message = message.replace(/{tweet_url}/g, data.tweet_url);
+  if (data.post_url) {
+    message = message.replace(/{post_url}/g, data.post_url);
   } else {
-    message = message.replace(/\s*\{tweet_url\}/g, "");
+    message = message.replace(/\s*\{post_url\}/g, "");
   }
   return message;
 }
@@ -128,7 +128,7 @@ async function performXActionsAfterTip(options) {
         amount: amount,
         chain: chainName,
         tx_link: txLink,
-        tweet_url: tweetUrl,
+        post_url: tweetUrl,
         grove_link: "grove.city",
         referral_link: referralLink || "grove.city",
       });

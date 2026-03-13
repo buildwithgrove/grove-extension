@@ -595,7 +595,7 @@ const TweetTipHandler = {
         buttonWrapper.setError();
         if (this.callbacks.showInlineTipError) {
           this.callbacks.showInlineTipError(buttonWrapper.button, {
-            message: "Missing tipping key in the extension settings.",
+            message: "Missing Grove Key in the extension settings.",
             variant: "error",
           });
         }

@@ -6,9 +6,9 @@
 
 /**
  * Default auto-reply message template for tips
- * Placeholders: {username}, {amount}, {chain}, {tx_link}, {tweet_url}, {referral_link}
+ * Placeholders: {username}, {amount}, {chain}, {tx_link}, {post_url}, {referral_link}
  */
-var DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I enjoyed your post {tweet_url} so I tipped you ~{amount} on {chain} via @BuildWithGrove!
+var DEFAULT_AUTO_REPLY_MESSAGE = `Hey @{username}, I enjoyed your post {post_url} so I tipped you ~{amount} on {chain} via @BuildWithGrove!
 
 Tx: {tx_link}
 

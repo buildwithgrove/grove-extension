@@ -718,7 +718,7 @@
         if (button) {
           button.setError();
           showInlineTipError(button.button, {
-            message: 'Missing tipping key in the extension settings.',
+            message: 'Missing Grove Key in the extension settings.',
             variant: 'error'
           });
         }
@@ -829,7 +829,7 @@
                   amount: tipAmount,
                   chain: chainName,
                   tx_link: txLink,
-                  tweet_url: '',
+                  post_url: '',
                   grove_link: 'grove.city',
                   referral_link: referralLink
                 });
