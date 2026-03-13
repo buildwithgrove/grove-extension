@@ -753,15 +753,15 @@ function setupEventListeners() {
     copyTippingWalletBtn.addEventListener('click', copyTippingWallet);
   }
 
-  // Tipping Keys - Copy Key Buttons
+  // Grove Keys - Copy Key Buttons
   if (copyProductionKeyBtn) {
-    copyProductionKeyBtn.addEventListener('click', () => copyTippingKey('production', copyProductionKeyBtn));
+    copyProductionKeyBtn.addEventListener('click', () => copyGroveKey('production', copyProductionKeyBtn));
   }
   if (copyTestnetKeyBtn) {
-    copyTestnetKeyBtn.addEventListener('click', () => copyTippingKey('testnet', copyTestnetKeyBtn));
+    copyTestnetKeyBtn.addEventListener('click', () => copyGroveKey('testnet', copyTestnetKeyBtn));
   }
   if (copyLocalhostKeyBtn) {
-    copyLocalhostKeyBtn.addEventListener('click', () => copyTippingKey('localhost', copyLocalhostKeyBtn));
+    copyLocalhostKeyBtn.addEventListener('click', () => copyGroveKey('localhost', copyLocalhostKeyBtn));
   }
 
   // Account - Disconnect Button
@@ -2291,11 +2291,11 @@ async function copyTippingWallet() {
 }
 
 /**
- * Copy a tipping key to clipboard
+ * Copy a Grove Key to clipboard
  * @param {string} slotId - The slot ID ('production', 'testnet', or 'localhost')
  * @param {HTMLElement} btn - The copy button element for visual feedback
  */
-async function copyTippingKey(slotId, btn) {
+async function copyGroveKey(slotId, btn) {
   const jwt = await KeyManager.getJWT(slotId);
 
   if (jwt) {
