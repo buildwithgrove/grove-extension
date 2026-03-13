@@ -637,7 +637,7 @@ class TipButton {
     // For SoundCloud, always insert at start (before Station button)
     // Also handle explicit position: 'start' option
     if (this.platform === 'soundcloud' || options.position === 'start') {
-      console.log('[Grove Extension] Inserting button at START for platform:', this.platform);
+      groveLog.log('Inserting button at START for platform:', this.platform);
       // Insert at the beginning (use firstElementChild to skip text nodes)
       const firstElement = targetElement.firstElementChild;
       if (firstElement) {

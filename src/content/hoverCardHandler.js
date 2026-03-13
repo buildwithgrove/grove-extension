@@ -130,7 +130,7 @@ const HoverCardHandler = {
       const result = checkForAddress(displayName);
       if (result && result.address) {
         if (setCachedAddress) setCachedAddress(username, result);
-        console.log(`[Grove HoverCard] Found address in display name for @${username}: ${result.address}`);
+        groveLog.log(`[HoverCard] Found address in display name for @${username}: ${result.address}`);
         return true;
       }
     }
@@ -143,7 +143,7 @@ const HoverCardHandler = {
       const result = checkForAddress(bio);
       if (result && result.address) {
         if (setCachedAddress) setCachedAddress(username, result);
-        console.log(`[Grove HoverCard] Found address in bio for @${username}: ${result.address}`);
+        groveLog.log(`[HoverCard] Found address in bio for @${username}: ${result.address}`);
         return true;
       }
     }

@@ -2,7 +2,7 @@
  * Address matching helpers and lists.
  */
 
-console.log('[Grove Extension] Loading addressMatchers.js...');
+groveLog.log('Loading addressMatchers.js...');
 
 // Supported address suffixes for ENS-style naming services.
 // Currently only .eth (ENS) and .base.eth (Base Names) are supported.
@@ -112,4 +112,4 @@ if (typeof window !== 'undefined') {
   window.AddressMatchers = AddressMatchers;
 }
 
-console.log('[Grove Extension] addressMatchers.js loaded. window.AddressMatchers =', typeof window.AddressMatchers);
+groveLog.log('addressMatchers.js loaded. window.AddressMatchers =', typeof window.AddressMatchers);

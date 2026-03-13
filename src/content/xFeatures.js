@@ -16,7 +16,10 @@ function buildAutoReplyMessage(template, data) {
     message = message.replace(/{username}/g, data.username);
   }
   if (data.amount != null) {
-    message = message.replace(/{amount}/g, '$' + Number(data.amount).toFixed(2));
+    message = message.replace(
+      /{amount}/g,
+      "$" + Number(data.amount).toFixed(2),
+    );
   }
   if (data.chain) {
     message = message.replace(/{chain}/g, data.chain);
@@ -32,6 +35,8 @@ function buildAutoReplyMessage(template, data) {
   }
   if (data.post_url) {
     message = message.replace(/{post_url}/g, data.post_url);
+  } else {
+    message = message.replace(/\s*\{post_url\}/g, "");
   }
   return message;
 }
@@ -62,21 +67,21 @@ async function performXActionsAfterTip(options) {
     username,
     chainName,
     explorerBaseUrl,
-    explorerSuffix = '',
-    referralLink = '',
-    amount
+    explorerSuffix = "",
+    referralLink = "",
+    amount,
   } = options;
 
   const result = {
     didLike: false,
     didReply: false,
     likeFailed: false,
-    replyFailed: false
+    replyFailed: false,
   };
 
   // Check if XAuth is available
-  if (typeof XAuth === 'undefined') {
-    console.log('[Grove X Features] XAuth not available');
+  if (typeof XAuth === "undefined") {
+    groveLog.log("[X Features] XAuth not available");
     return result;
   }
 
@@ -89,14 +94,14 @@ async function performXActionsAfterTip(options) {
     // Extract tweet ID
     const tweetId = XAuth.extractTweetId(tweetUrl);
     if (!tweetId) {
-      console.log('[Grove X Features] Could not extract tweet ID from URL');
+      groveLog.log("[X Features] Could not extract tweet ID from URL");
       return result;
     }
 
     // Check if logged in to X
     const isLoggedIn = await XAuth.isLoggedIn();
     if (!isLoggedIn) {
-      console.log('[Grove X Features] Not logged in to X');
+      groveLog.log("[X Features] Not logged in to X");
       return result;
     }
 
@@ -104,11 +109,11 @@ async function performXActionsAfterTip(options) {
     if (likeEnabled) {
       try {
         await XAuth.likeTweet(tweetId);
-        console.log('[Grove X Features] Tweet liked successfully');
+        groveLog.log("[X Features] Tweet liked successfully");
         result.didLike = true;
       } catch (likeError) {
         // Don't fail if like fails (might already be liked or rate limited)
-        console.error('[Grove X Features] Like failed:', likeError);
+        console.error("[Grove X Features] Like failed:", likeError);
         result.likeFailed = true;
       }
     }
@@ -124,21 +129,21 @@ async function performXActionsAfterTip(options) {
         chain: chainName,
         tx_link: txLink,
         post_url: tweetUrl,
-        grove_link: 'grove.city',
-        referral_link: referralLink || 'grove.city'
+        grove_link: "grove.city",
+        referral_link: referralLink || "grove.city",
       });
 
       try {
         await XAuth.postReply(tweetId, replyText);
-        console.log('[Grove X Features] Auto-reply posted successfully');
+        groveLog.log("[X Features] Auto-reply posted successfully");
         result.didReply = true;
       } catch (replyError) {
-        console.error('[Grove X Features] Reply failed:', replyError);
+        console.error("[Grove X Features] Reply failed:", replyError);
         result.replyFailed = true;
       }
     }
   } catch (error) {
-    console.error('[Grove X Features] Error performing X actions:', error);
+    console.error("[Grove X Features] Error performing X actions:", error);
   }
 
   return result;
@@ -155,20 +160,23 @@ function getXActionFeedback(result) {
   if (didLike || didReply) {
     // At least one action succeeded
     if (didLike && didReply) {
-      return { message: 'Liked & replied! Refresh to view.', variant: 'success' };
+      return {
+        message: "Liked & replied! Refresh to view.",
+        variant: "success",
+      };
     } else if (didLike) {
-      return { message: 'Post liked! Refresh to view.', variant: 'success' };
+      return { message: "Post liked! Refresh to view.", variant: "success" };
     } else if (didReply) {
-      return { message: 'Reply posted! Refresh to view.', variant: 'success' };
+      return { message: "Reply sent! Refresh to view.", variant: "success" };
     }
   } else if (likeFailed || replyFailed) {
     // All attempted actions failed
     if (likeFailed && replyFailed) {
-      return { message: 'Tip sent! Like/reply failed.', variant: 'warning' };
+      return { message: "Tip sent! Like/reply failed.", variant: "warning" };
     } else if (likeFailed) {
-      return { message: 'Tip sent! Like failed.', variant: 'warning' };
+      return { message: "Tip sent! Like failed.", variant: "warning" };
     } else if (replyFailed) {
-      return { message: 'Tip sent! Reply failed.', variant: 'warning' };
+      return { message: "Tip sent! Reply failed.", variant: "warning" };
     }
   }
 
@@ -181,14 +189,18 @@ function getXActionFeedback(result) {
  * @returns {Promise<void>}
  */
 async function addXSenderInfo(context) {
-  if (typeof XAuth === 'undefined') {
+  if (typeof XAuth === "undefined") {
     return;
   }
 
   try {
     const senderInfo = await XAuth.getStoredUserInfo();
     // Only use if we have a real username (not the fallback 'Connected')
-    if (senderInfo && senderInfo.username && senderInfo.username !== 'Connected') {
+    if (
+      senderInfo &&
+      senderInfo.username &&
+      senderInfo.username !== "Connected"
+    ) {
       context.sender_username = senderInfo.username;
       context.sender_profile_url = `https://x.com/${senderInfo.username}`;
     }
@@ -198,7 +210,7 @@ async function addXSenderInfo(context) {
 }
 
 // Export to window for browser context
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   window.buildAutoReplyMessage = buildAutoReplyMessage;
   window.performXActionsAfterTip = performXActionsAfterTip;
   window.getXActionFeedback = getXActionFeedback;

@@ -114,7 +114,7 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
     }
 
     const result = parts.join(' ');
-    console.log('[Grove Substack] extractBio result:', result);
+    groveLog.log('[Substack] extractBio result:', result);
 
     return result || null;
   }
@@ -147,7 +147,7 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
       if (scriptBio) return scriptBio;
 
     } catch (err) {
-      console.log('[Grove Substack] Error extracting bio from preloads:', err);
+      groveLog.log('[Substack] Error extracting bio from preloads:', err);
     }
     return null;
   }
@@ -203,7 +203,7 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
           const bio = this.extractBioFromParsedPreloads(preloads);
           if (bio) return bio;
         } catch (parseErr) {
-          console.log('[Grove Substack] Failed to parse _preloads JSON from script:', parseErr.message);
+          groveLog.log('[Substack] Failed to parse _preloads JSON from script:', parseErr.message);
         }
       }
 
@@ -540,7 +540,7 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
       return; // Already observing
     }
 
-    console.log('[Grove Substack] Starting hover card observer');
+    groveLog.log('[Substack] Starting hover card observer');
 
     this.hoverCardObserver = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
@@ -575,7 +575,7 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
     if (this.processedHoverCards.has(hoverCard)) return;
     this.processedHoverCards.add(hoverCard);
 
-    console.log('[Grove Substack] Found hover card with content:', (hoverCard.textContent || '').substring(0, 150));
+    groveLog.log('[Substack] Found hover card with content:', (hoverCard.textContent || '').substring(0, 150));
 
     const bioData = this.extractBioFromHoverCard(hoverCard);
     if (bioData) {
@@ -599,7 +599,7 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
         node.getAttribute?.('data-state') === 'open';
 
     if (isPopupLike) {
-      console.log('[Grove Substack] Potential hover card:', {
+      groveLog.log('[Substack] Potential hover card:', {
         tag: node.tagName,
         classes: classes.substring(0, 100),
         role: role,
@@ -656,7 +656,7 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
     const hasHandle = text.includes('@') || hoverCard.querySelector('a[href*="/@"]');
 
     if (!hasHandle) {
-      console.log('[Grove Substack] Hover card has no handle, skipping');
+      groveLog.log('[Substack] Hover card has no handle, skipping');
       return false;
     }
     return true;
@@ -682,7 +682,7 @@ window.SubstackAdapter = class SubstackAdapter extends window.BaseAdapter {
       // Find bio text - look for text that might contain addresses
       const bioText = this.findBioTextInHoverCard(hoverCard, allText);
 
-      console.log('[Grove Substack] Extracted hover card bio:', bioText.substring(0, 100));
+      groveLog.log('[Substack] Extracted hover card bio:', bioText.substring(0, 100));
 
       return {
         name: null,

@@ -156,7 +156,7 @@
           if (addressResult.address) {
             // Cache the positive result
             setCachedAddress(username, addressResult);
-            console.log(`[Grove Extension] Bio fetch: Found address for @${username}: ${addressResult.address}`);
+            groveLog.log(`Bio fetch: Found address for @${username}: ${addressResult.address}`);
 
             // Inject buttons for all pending tweets from this user
             if (typeof TweetProcessor !== 'undefined') {
@@ -178,7 +178,7 @@
         }
       },
       onFetchError: (username, error) => {
-        console.log(`[Grove Extension] Bio fetch failed for @${username}: ${error}`);
+        groveLog.log(`Bio fetch failed for @${username}: ${error}`);
         // Don't cache on error - allow retry later
         if (typeof TweetProcessor !== 'undefined') {
           TweetProcessor.clearPendingButtons(username);
@@ -232,7 +232,6 @@
         getCachedAddress: getCachedAddress,
         extractUsernameFromUrl: extractUsernameFromUrl,
         addXSenderInfo: typeof addXSenderInfo === 'function' ? addXSenderInfo : null,
-        buildAutoReplyMessage: typeof buildAutoReplyMessage === 'function' ? buildAutoReplyMessage : null,
         getDefaultAutoReplyMessage: () => DEFAULT_AUTO_REPLY_MESSAGE
       },
       typeof GROVE_COLORS !== 'undefined' ? GROVE_COLORS : null
@@ -282,7 +281,7 @@
     } else {
       // TipErrorHandler should always be available via manifest.json,
       // but log if it's missing for debugging
-      console.warn('[Grove Extension] TipErrorHandler not available, error bubble skipped');
+      groveLog.warn('TipErrorHandler not available, error bubble skipped');
     }
   }
 
@@ -298,7 +297,7 @@
       return;
     }
 
-    console.log(`[Grove Extension] Platform detected: ${currentAdapter.getPlatformName()}`);
+    groveLog.log(`Platform detected: ${currentAdapter.getPlatformName()}`);
 
     // For Twitter/X, handle tweet tip buttons on all pages
     if (currentAdapter.getPlatformName() === "twitter") {
@@ -362,7 +361,7 @@
     if (currentAdapter.getPlatformName() === "substack") {
       const isSubstackTippablePage = currentAdapter.detectTippablePage();
       const hasProfilePageHandler = typeof ProfilePageHandler !== 'undefined';
-      console.log('[Grove Substack] Full-page init precheck:', {
+      groveLog.log('[Substack] Full-page init precheck:', {
         isSubstackTippablePage,
         hasProfilePageHandler
       });
@@ -376,10 +375,10 @@
             currentButton = ProfilePageHandler.getButton();
           }
         } else {
-          console.warn('[Grove Substack] ProfilePageHandler is undefined; skipping full-page API/DOM resolution');
+          groveLog.warn('[Substack] ProfilePageHandler is undefined; skipping full-page API/DOM resolution');
         }
       } else {
-        console.log('[Grove Substack] Page did not match detectTippablePage(); skipping full-page resolution');
+        groveLog.log('[Substack] Page did not match detectTippablePage(); skipping full-page resolution');
       }
 
       // Hover card buttons: Substack-specific
@@ -399,7 +398,7 @@
       return;
     }
 
-    // For generic websites, check for metadata files
+    // For generic websites, resolve via API (falls back to metadata file probing)
     if (currentAdapter.getPlatformName() === "generic") {
       await initializeGenericWebsite();
       return;
@@ -426,61 +425,51 @@
   }
 
   /**
-   * Initialize tip button for generic websites
-   * Fetches llms.txt/ai.txt and shows floating button if address found.
-   * Falls back to API resolution for sites claimed on Grove profiles.
+   * Initialize tip button for generic websites.
+   * Tries API resolution first (single request, handles llms.txt server-side),
+   * then falls back to direct metadata file probing if the API is unreachable.
    */
   async function initializeGenericWebsite() {
+    // Stage 1: Try API resolve first (handles llms.txt, profiles, etc. server-side)
+    if (typeof GroveAPI !== 'undefined' && typeof GroveAPI.resolveDestination === 'function') {
+      try {
+        const result = await GroveAPI.resolveDestination(window.location.origin);
+
+        if (result.tippable && result.addresses && result.addresses.length > 0) {
+          const primaryAddress = result.addresses[0];
+          if (primaryAddress?.address) {
+            const validation = AddressParser.resolveAddress(primaryAddress.address);
+            if (validation?.address) {
+              resolvedAddress = {
+                address: validation.address,
+                type: primaryAddress.source || validation.type || 'grove_profile',
+                token: primaryAddress.token,
+                chain: primaryAddress.chain
+              };
+              groveLog.log(`Address resolved via API: ${resolvedAddress.address} (source: ${resolvedAddress.type})`);
+              injectGenericFloatingButton();
+              return;
+            }
+          }
+        }
+
+        // API returned non-tippable — still try local metadata fallback
+        groveLog.log("API resolve returned non-tippable, trying metadata file fallback");
+      } catch (error) {
+        // API unreachable — fall through to local metadata probing
+        groveLog.log("API resolve failed, falling back to metadata file probing");
+      }
+    }
+
+    // Stage 2: Fallback — probe metadata files directly (llms.txt, ai.txt, etc.)
     try {
-      // Fetch metadata files
       const metadata = await currentAdapter.fetchMetadata();
 
       if (metadata.found) {
-        console.log(`[Grove Extension] Found address in ${metadata.source}: ${metadata.address.original || metadata.address.address}`);
+        groveLog.log(`Found address in ${metadata.source}: ${metadata.address.original || metadata.address.address}`);
         resolvedAddress = metadata.address;
         injectGenericFloatingButton();
-        return;
       }
-
-      // No metadata files — try API resolution as fallback
-      // This enables tip buttons on personal sites claimed via Grove profiles
-      console.log("[Grove Extension] No metadata files found, trying API resolve fallback");
-
-      if (typeof GroveAPI === 'undefined' || typeof GroveAPI.resolveDestination !== 'function') {
-        console.log("[Grove Extension] GroveAPI.resolveDestination not available");
-        return;
-      }
-
-      const result = await GroveAPI.resolveDestination(window.location.origin);
-
-      if (!result.tippable || !result.addresses || result.addresses.length === 0) {
-        console.log("[Grove Extension] API resolve returned non-tippable for this site");
-        return;
-      }
-
-      // Validate the address client-side (same pattern as ProfilePageHandler)
-      const primaryAddress = result.addresses[0];
-      if (!primaryAddress?.address) {
-        console.log("[Grove Extension] API resolve returned empty address");
-        return;
-      }
-
-      const validation = AddressParser.resolveAddress(primaryAddress.address);
-      if (!validation?.address) {
-        console.log("[Grove Extension] API resolve returned address that failed client-side validation:", primaryAddress.address);
-        return;
-      }
-
-      resolvedAddress = {
-        address: validation.address,
-        type: primaryAddress.source || validation.type || 'grove_profile',
-        token: primaryAddress.token,
-        chain: primaryAddress.chain
-      };
-
-      console.log(`[Grove Extension] ✅ Address resolved via API fallback: ${resolvedAddress.address} (source: ${resolvedAddress.type})`);
-      injectGenericFloatingButton();
-
     } catch (error) {
       console.error("[Grove Extension] Generic website initialization failed:", error);
     }
@@ -493,7 +482,7 @@
     currentButton = new TipButton(handleTipClick, 'generic');
     currentButton.create();
     currentButton.injectFloating();
-    console.log("[Grove Extension] Floating tip button injected");
+    groveLog.log("Floating tip button injected");
   }
 
   /**
@@ -507,25 +496,25 @@
    */
   function detectPlatform() {
     const hostname = window.location.hostname;
-    console.log(`[Grove Extension] detectPlatform() called, hostname: ${hostname}`);
+    groveLog.log(`detectPlatform() called, hostname: ${hostname}`);
 
     if (hostname.includes("twitter.com") || hostname.includes("x.com")) {
-      console.log('[Grove Extension] Detected Twitter/X');
+      groveLog.log('Detected Twitter/X');
       return new window.TwitterAdapter();
     }
 
     if (hostname.includes("soundcloud.com")) {
-      console.log('[Grove Extension] Detected SoundCloud');
+      groveLog.log('Detected SoundCloud');
       return new window.SoundCloudAdapter();
     }
 
     if (hostname.includes("youtube.com")) {
-      console.log('[Grove Extension] Detected YouTube');
+      groveLog.log('Detected YouTube');
       return new window.YouTubeAdapter();
     }
 
     if (hostname.includes("substack.com")) {
-      console.log('[Grove Extension] Detected Substack');
+      groveLog.log('Detected Substack');
       if (typeof window.SubstackAdapter === 'undefined') {
         console.error('[Grove Extension] SubstackAdapter not loaded!');
         return null;
@@ -694,7 +683,7 @@
           sendTip(amount, button, customMessage, tipOverrides);
         },
         () => {
-          console.log("[Grove Extension] Tip cancelled");
+          groveLog.log("Tip cancelled");
         },
         xOptions,
         displayOptions
@@ -751,9 +740,9 @@
     let tipDestination = tipOverrides?.resolvedAddress?.address || window.location.href;
     if (!tipOverrides?.resolvedAddress?.address && resolvedAddress && resolvedAddress.address) {
       tipDestination = resolvedAddress.address; // e.g., "vitalik.eth" or "0x..."
-      console.log(`[Grove Extension] Tipping to ${resolvedAddress.type} address: ${tipDestination}`);
+      groveLog.log(`Tipping to ${resolvedAddress.type} address: ${tipDestination}`);
     } else if (tipOverrides?.resolvedAddress?.address) {
-      console.log(`[Grove Extension] Tipping to ${tipOverrides.resolvedAddress.type} address (override): ${tipDestination}`);
+      groveLog.log(`Tipping to ${tipOverrides.resolvedAddress.type} address (override): ${tipDestination}`);
     }
 
     // Build context metadata for the tip
@@ -847,7 +836,7 @@
 
               try {
                 await XAuth.postTweet(tweetText);
-                console.log("[Grove Extension] Profile tip tweet posted successfully");
+                groveLog.log("Profile tip tweet posted successfully");
                 // Show success feedback
                 setTimeout(() => {
                   showInlineTipError(button.button, { message: 'Tweet sent!', variant: 'success' });
@@ -859,7 +848,7 @@
                 }, 100);
               }
             } else {
-              console.log("[Grove Extension] Skipping profile tweet - not logged in or no username");
+              groveLog.log("Skipping profile tweet - not logged in or no username");
             }
           }
         } catch (error) {
@@ -893,7 +882,7 @@
       soundCloudTrackObserver.disconnect();
     }
 
-    console.log("[Grove Extension] Setting up SoundCloud track observer");
+    groveLog.log("Setting up SoundCloud track observer");
 
     // Process existing tracks first
     processExistingSoundCloudTracks();
@@ -930,7 +919,7 @@
     if (!currentAdapter || currentAdapter.getPlatformName() !== 'soundcloud') return;
 
     const likeButtons = currentAdapter.getAllTrackLikeButtons();
-    console.log(`[Grove Extension] Found ${likeButtons.length} existing SoundCloud track like buttons`);
+    groveLog.log(`Found ${likeButtons.length} existing SoundCloud track like buttons`);
     likeButtons.forEach(processSoundCloudTrackLikeButton);
   }
 
@@ -972,7 +961,7 @@
 
     // Insert before the like button in DOM (order CSS will handle visual positioning)
     buttonGroup.insertBefore(tipButton, likeButton);
-    console.log('[Grove Extension] Inserted tip button with float/spacing + order: -999 !important');
+    groveLog.log('Inserted tip button with float/spacing + order: -999 !important');
   }
 
   // ============= End SoundCloud Track Handling =============

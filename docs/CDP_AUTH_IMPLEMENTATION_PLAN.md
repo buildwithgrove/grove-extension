@@ -196,7 +196,7 @@ export function startOAuthFlow(provider, projectId) {
 
   <div class="divider">or</div>
 
-  <a href="https://app.grove.city" target="_blank" class="auth-link">
+  <a href="https://grove.city" target="_blank" class="auth-link">
     Sign in with Wallet →
   </a>
 </div>
@@ -456,8 +456,8 @@ Add required permissions and externally_connectable for OAuth:
   "externally_connectable": {
     "matches": [
       "http://localhost:*/*",
-      "https://app.grove.city/*",
-      "https://app.testnet.grove.city/*",
+      "https://grove.city/*",
+      "https://testnet.grove.city/*",
       "https://login.coinbase.com/*"
     ]
   }

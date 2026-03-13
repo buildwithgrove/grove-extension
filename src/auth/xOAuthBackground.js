@@ -114,7 +114,7 @@ async function handleXLogin() {
 
           // Exchange code for tokens
           const tokens = await exchangeCodeForTokens(code, codeVerifier);
-          console.log('[Grove X Auth] Token response:', {
+          groveLog.log('[X Auth] Token response:', {
             hasAccessToken: !!tokens.access_token,
             tokenType: tokens.token_type,
             scope: tokens.scope,
@@ -126,7 +126,7 @@ async function handleXLogin() {
           try {
             userInfo = await getXUserInfo(tokens.access_token);
           } catch (userInfoError) {
-            console.warn('[Grove X Auth] Could not fetch user info (this is OK for free tier):', userInfoError.message);
+            groveLog.warn('[X Auth] Could not fetch user info (this is OK for free tier):', userInfoError.message);
           }
 
           // Store tokens and user info
@@ -148,7 +148,7 @@ async function handleXLogin() {
  * @returns {Promise<Object>}
  */
 async function exchangeCodeForTokens(code, codeVerifier) {
-  console.log('[Grove X Auth] Exchanging code for tokens...');
+  groveLog.log('[X Auth] Exchanging code for tokens...');
   const tokenUrl = 'https://api.twitter.com/2/oauth2/token';
 
   const params = new URLSearchParams();
@@ -174,7 +174,7 @@ async function exchangeCodeForTokens(code, codeVerifier) {
   }
 
   const tokens = await response.json();
-  console.log('[Grove X Auth] Token exchange successful, scopes:', tokens.scope);
+  groveLog.log('[X Auth] Token exchange successful, scopes:', tokens.scope);
   return tokens;
 }
 
@@ -184,7 +184,7 @@ async function exchangeCodeForTokens(code, codeVerifier) {
  * @returns {Promise<Object>}
  */
 async function getXUserInfo(accessToken) {
-  console.log('[Grove X Auth] Fetching user info...');
+  groveLog.log('[X Auth] Fetching user info...');
 
   const response = await fetch('https://api.twitter.com/2/users/me', {
     headers: {
@@ -200,7 +200,7 @@ async function getXUserInfo(accessToken) {
   }
 
   const data = await response.json();
-  console.log('[Grove X Auth] User info received:', data.data?.username);
+  groveLog.log('[X Auth] User info received:', data.data?.username);
   return data.data;
 }
 

@@ -1,7 +1,7 @@
 /**
  * Tweet Tip Handler Module
  * Handles tip button injection into tweets and the full tip flow
- * (loading state, API call, success/error states, XAuth features)
+ * (loading state, API call, success/error states, delegates to xFeatures.js)
  */
 
 const TweetTipHandler = {
@@ -10,12 +10,12 @@ const TweetTipHandler = {
 
   // Colors (set from GROVE_COLORS)
   colors: {
-    primary: '#389f58',
-    primaryHover: '#2f8549',
-    shadow: 'rgba(56, 159, 88, 0.3)',
-    shadowHover: 'rgba(56, 159, 88, 0.5)',
-    error: '#ef4444',
-    errorShadow: 'rgba(239, 68, 68, 0.55)'
+    primary: "#389f58",
+    primaryHover: "#2f8549",
+    shadow: "rgba(56, 159, 88, 0.3)",
+    shadowHover: "rgba(56, 159, 88, 0.5)",
+    error: "#ef4444",
+    errorShadow: "rgba(239, 68, 68, 0.55)",
   },
 
   // Callbacks set by content.js
@@ -29,8 +29,7 @@ const TweetTipHandler = {
     getCachedAddress: null,
     extractUsernameFromUrl: null,
     addXSenderInfo: null,
-    buildAutoReplyMessage: null,
-    getDefaultAutoReplyMessage: null
+    getDefaultAutoReplyMessage: null,
   },
 
   /**
@@ -63,24 +62,26 @@ const TweetTipHandler = {
    * @param {boolean} isQuotedTweet - Whether this is a button for a quoted tweet (smaller styling)
    */
   injectButton(tweetElement, dateElement, tweetUrl, isQuotedTweet = false) {
-    const isDarkMode = this.callbacks.detectDarkMode ? this.callbacks.detectDarkMode() : false;
-    const bgColor = isDarkMode ? '#1a1a1a' : '#ffffff';
-    const bgHoverColor = isDarkMode ? '#252525' : '#f0f0f0';
-    const textColor = isDarkMode ? '#ffffff' : '#1a1a1a';
+    const isDarkMode = this.callbacks.detectDarkMode
+      ? this.callbacks.detectDarkMode()
+      : false;
+    const bgColor = isDarkMode ? "#1a1a1a" : "#ffffff";
+    const bgHoverColor = isDarkMode ? "#252525" : "#f0f0f0";
+    const textColor = isDarkMode ? "#ffffff" : "#1a1a1a";
 
     // Adjust sizing for quoted tweets (smaller to fit the compact layout)
     // Maintain ~50% padding-to-height ratio for consistent pill proportions
-    const buttonHeight = isQuotedTweet ? '24px' : '28px';
-    const buttonPadding = isQuotedTweet ? '0 12px' : '0 14px';
-    const fontSize = isQuotedTweet ? '11px' : '13px';
-    const emojiFontSize = isQuotedTweet ? '12px' : '14px';
+    const buttonHeight = isQuotedTweet ? "24px" : "28px";
+    const buttonPadding = isQuotedTweet ? "0 12px" : "0 14px";
+    const fontSize = isQuotedTweet ? "11px" : "13px";
+    const emojiFontSize = isQuotedTweet ? "12px" : "14px";
 
     // Create the full tip button (matching profile button style)
-    const button = document.createElement('button');
-    button.className = 'grove-tweet-tip-button';
-    if (isQuotedTweet) button.classList.add('grove-quoted-tweet-tip-button');
-    button.setAttribute('aria-label', 'Send a tip');
-    button.setAttribute('type', 'button');
+    const button = document.createElement("button");
+    button.className = "grove-tweet-tip-button";
+    if (isQuotedTweet) button.classList.add("grove-quoted-tweet-tip-button");
+    button.setAttribute("aria-label", "Send a tip");
+    button.setAttribute("type", "button");
 
     button.style.cssText = `
       background: ${bgColor} !important;
@@ -107,8 +108,8 @@ const TweetTipHandler = {
     `;
 
     // Create text span
-    const textSpan = document.createElement('span');
-    textSpan.textContent = 'Tip';
+    const textSpan = document.createElement("span");
+    textSpan.textContent = "Tip";
     textSpan.style.cssText = `
       color: ${textColor} !important;
       font-weight: 600 !important;
@@ -120,8 +121,8 @@ const TweetTipHandler = {
     `;
 
     // Create emoji span
-    const emojiSpan = document.createElement('span');
-    emojiSpan.textContent = '\u{1F33F}';
+    const emojiSpan = document.createElement("span");
+    emojiSpan.textContent = "\u{1F33F}";
     emojiSpan.style.cssText = `
       font-size: ${emojiFontSize} !important;
       margin-left: 4px !important;
@@ -130,7 +131,7 @@ const TweetTipHandler = {
     `;
 
     // Create animated sheen overlay
-    const sheenOverlay = document.createElement('div');
+    const sheenOverlay = document.createElement("div");
     sheenOverlay.style.cssText = `
       position: absolute !important;
       top: 0 !important;
@@ -154,23 +155,29 @@ const TweetTipHandler = {
 
     // Hover effects
     const self = this;
-    button.addEventListener('mouseenter', () => {
+    button.addEventListener("mouseenter", () => {
       button.style.background = `${bgHoverColor} !important`;
-      button.style.transform = 'translateY(-1px)';
+      button.style.transform = "translateY(-1px)";
       button.style.boxShadow = `0 4px 12px ${self.colors.shadowHover} !important`;
     });
 
-    button.addEventListener('mouseleave', () => {
+    button.addEventListener("mouseleave", () => {
       button.style.background = `${bgColor} !important`;
-      button.style.transform = 'translateY(0)';
+      button.style.transform = "translateY(0)";
       button.style.boxShadow = `0 2px 8px ${self.colors.shadow} !important`;
     });
 
     // Create button wrapper with state methods
-    const buttonWrapper = this.createButtonWrapper(button, textSpan, emojiSpan, sheenOverlay, defaultSheenBackground);
+    const buttonWrapper = this.createButtonWrapper(
+      button,
+      textSpan,
+      emojiSpan,
+      sheenOverlay,
+      defaultSheenBackground,
+    );
 
     // Click handler
-    button.addEventListener('click', async (e) => {
+    button.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       await this.handleTipClick(buttonWrapper, tweetUrl);
@@ -191,7 +198,13 @@ const TweetTipHandler = {
    * @param {string} defaultSheenBackground - Default sheen background style
    * @returns {Object} Button wrapper with state methods
    */
-  createButtonWrapper(button, textSpan, emojiSpan, sheenOverlay, defaultSheenBackground) {
+  createButtonWrapper(
+    button,
+    textSpan,
+    emojiSpan,
+    sheenOverlay,
+    defaultSheenBackground,
+  ) {
     const self = this;
 
     return {
@@ -203,25 +216,29 @@ const TweetTipHandler = {
           self.callbacks.ensureEllipsisStyles();
         }
         button.disabled = true;
-        button.style.pointerEvents = 'none';
+        button.style.pointerEvents = "none";
         // Update button text to show sending state
-        const formattedAmount = self.callbacks.formatTipAmount ? self.callbacks.formatTipAmount(amount) : amount;
-        const sendingText = formattedAmount ? `Sending $${formattedAmount}` : 'Sending';
+        const formattedAmount = self.callbacks.formatTipAmount
+          ? self.callbacks.formatTipAmount(amount)
+          : amount;
+        const sendingText = formattedAmount
+          ? `Sending $${formattedAmount}`
+          : "Sending";
         textSpan.textContent = sendingText;
-        textSpan.classList.add('grove-ellipsis');
+        textSpan.classList.add("grove-ellipsis");
         // Color cycling animation
         const colors = [
-          { border: '#389f58', shadow: '0 0 12px #389f58' },
-          { border: '#4fb76d', shadow: '0 0 12px #4fb76d' },
-          { border: '#f0ad4e', shadow: '0 0 12px #f0ad4e' },
-          { border: '#4fb76d', shadow: '0 0 12px #4fb76d' },
+          { border: "#389f58", shadow: "0 0 12px #389f58" },
+          { border: "#4fb76d", shadow: "0 0 12px #4fb76d" },
+          { border: "#f0ad4e", shadow: "0 0 12px #f0ad4e" },
+          { border: "#4fb76d", shadow: "0 0 12px #4fb76d" },
         ];
         let colorIndex = 0;
         button._loadingInterval = setInterval(() => {
           colorIndex++;
           const color = colors[colorIndex % colors.length];
-          button.style.setProperty('border-color', color.border, 'important');
-          button.style.setProperty('box-shadow', color.shadow, 'important');
+          button.style.setProperty("border-color", color.border, "important");
+          button.style.setProperty("box-shadow", color.shadow, "important");
         }, 150);
       },
       setSuccess: () => {
@@ -229,17 +246,25 @@ const TweetTipHandler = {
           clearInterval(button._loadingInterval);
         }
         button.disabled = false;
-        button.style.pointerEvents = '';
-        button.style.setProperty('border', `2px solid ${self.colors.primary}`, 'important');
-        button.style.setProperty('box-shadow', `0 2px 8px ${self.colors.shadow}`, 'important');
+        button.style.pointerEvents = "";
+        button.style.setProperty(
+          "border",
+          `2px solid ${self.colors.primary}`,
+          "important",
+        );
+        button.style.setProperty(
+          "box-shadow",
+          `0 2px 8px ${self.colors.shadow}`,
+          "important",
+        );
         sheenOverlay.style.background = defaultSheenBackground;
-        textSpan.classList.remove('grove-ellipsis');
-        textSpan.textContent = 'Sent! \u2713';
-        button.classList.add('animate__animated', 'animate__bounceIn');
+        textSpan.classList.remove("grove-ellipsis");
+        textSpan.textContent = "Sent! \u2713";
+        button.classList.add("animate__animated", "animate__bounceIn");
         setTimeout(() => {
-          textSpan.textContent = 'Tip';
+          textSpan.textContent = "Tip";
           textSpan.appendChild(emojiSpan);
-          button.classList.remove('animate__animated', 'animate__bounceIn');
+          button.classList.remove("animate__animated", "animate__bounceIn");
         }, 2000);
       },
       setError: () => {
@@ -247,22 +272,39 @@ const TweetTipHandler = {
           clearInterval(button._loadingInterval);
         }
         button.disabled = false;
-        button.style.pointerEvents = '';
-        button.style.setProperty('border', `2px solid ${self.colors.error}`, 'important');
-        button.style.setProperty('box-shadow', `0 0 12px ${self.colors.errorShadow}`, 'important');
-        sheenOverlay.style.background = 'linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.35), transparent)';
-        textSpan.classList.remove('grove-ellipsis');
-        textSpan.textContent = 'Failed \u2717';
-        button.classList.add('animate__animated', 'animate__shakeX');
+        button.style.pointerEvents = "";
+        button.style.setProperty(
+          "border",
+          `2px solid ${self.colors.error}`,
+          "important",
+        );
+        button.style.setProperty(
+          "box-shadow",
+          `0 0 12px ${self.colors.errorShadow}`,
+          "important",
+        );
+        sheenOverlay.style.background =
+          "linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.35), transparent)";
+        textSpan.classList.remove("grove-ellipsis");
+        textSpan.textContent = "Failed \u2717";
+        button.classList.add("animate__animated", "animate__shakeX");
         setTimeout(() => {
-          textSpan.textContent = 'Tip';
+          textSpan.textContent = "Tip";
           textSpan.appendChild(emojiSpan);
-          button.classList.remove('animate__animated', 'animate__shakeX');
-          button.style.setProperty('border', `2px solid ${self.colors.primary}`, 'important');
-          button.style.setProperty('box-shadow', `0 2px 8px ${self.colors.shadow}`, 'important');
+          button.classList.remove("animate__animated", "animate__shakeX");
+          button.style.setProperty(
+            "border",
+            `2px solid ${self.colors.primary}`,
+            "important",
+          );
+          button.style.setProperty(
+            "box-shadow",
+            `0 2px 8px ${self.colors.shadow}`,
+            "important",
+          );
           sheenOverlay.style.background = defaultSheenBackground;
         }, 2000);
-      }
+      },
     };
   },
 
@@ -273,13 +315,16 @@ const TweetTipHandler = {
    */
   async handleTipClick(buttonWrapper, tweetUrl) {
     // Check if extension context is valid
-    if (this.callbacks.isExtensionContextValid && !this.callbacks.isExtensionContextValid()) {
+    if (
+      this.callbacks.isExtensionContextValid &&
+      !this.callbacks.isExtensionContextValid()
+    ) {
       console.error("[Grove TweetTipHandler] Extension context invalidated");
       buttonWrapper.setError();
       if (this.callbacks.showInlineTipError) {
         this.callbacks.showInlineTipError(buttonWrapper.button, {
-          message: 'Extension was reloaded. Please refresh the page.',
-          variant: 'error'
+          message: "Extension was reloaded. Please refresh the page.",
+          variant: "error",
         });
       }
       return;
@@ -293,39 +338,48 @@ const TweetTipHandler = {
     let autoReply = true;
     let isXConnected = false;
 
-    let autoReplyMessage = this.callbacks.getDefaultAutoReplyMessage ? this.callbacks.getDefaultAutoReplyMessage() : '';
+    let autoReplyMessage = this.callbacks.getDefaultAutoReplyMessage
+      ? this.callbacks.getDefaultAutoReplyMessage()
+      : "";
 
     try {
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      if (
+        typeof chrome !== "undefined" &&
+        chrome.storage &&
+        chrome.storage.local
+      ) {
         const result = await chrome.storage.local.get([
-          'GROVE_TIP_AMOUNT',
-          'GROVE_CONFIRM_TIP',
-          'GROVE_CONFIRM_TIP_V2',
-          'GROVE_HAS_TIPPED',
-          'GROVE_LIKE_ON_TIP',
-          'GROVE_AUTO_REPLY',
-          'GROVE_AUTO_REPLY_MESSAGE'
+          STORAGE_KEYS.TIP_AMOUNT,
+          STORAGE_KEYS.CONFIRM_TIP,
+          STORAGE_KEYS.CONFIRM_TIP_V2,
+          STORAGE_KEYS.HAS_TIPPED,
+          STORAGE_KEYS.LIKE_ON_TIP,
+          STORAGE_KEYS.AUTO_REPLY,
+          STORAGE_KEYS.AUTO_REPLY_MESSAGE,
         ]);
-        autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || autoReplyMessage;
-        tipAmount = result.GROVE_TIP_AMOUNT || 0.02;
-        hasTipped = result.GROVE_HAS_TIPPED || false;
-        likeOnTip = result.GROVE_LIKE_ON_TIP !== false;
-        autoReply = result.GROVE_AUTO_REPLY !== false;
+        autoReplyMessage =
+          result[STORAGE_KEYS.AUTO_REPLY_MESSAGE] || autoReplyMessage;
+        tipAmount = result[STORAGE_KEYS.TIP_AMOUNT] || 0.02;
+        hasTipped = result[STORAGE_KEYS.HAS_TIPPED] || false;
+        likeOnTip = result[STORAGE_KEYS.LIKE_ON_TIP] !== false;
+        autoReply = result[STORAGE_KEYS.AUTO_REPLY] !== false;
 
         // Migration logic: if V2 flag not set, reset confirm to true (new default)
-        if (!result.GROVE_CONFIRM_TIP_V2) {
+        if (!result[STORAGE_KEYS.CONFIRM_TIP_V2]) {
           confirmBeforeTipping = true;
           await chrome.storage.local.set({
-            'GROVE_CONFIRM_TIP': true,
-            'GROVE_CONFIRM_TIP_V2': true
+            [STORAGE_KEYS.CONFIRM_TIP]: true,
+            [STORAGE_KEYS.CONFIRM_TIP_V2]: true,
           });
-          console.log("[Grove TweetTipHandler] Migrated to V2: confirm before tipping set to true");
+          groveLog.log(
+            "[TweetTipHandler] Migrated to V2: confirm before tipping set to true",
+          );
         } else {
-          confirmBeforeTipping = result.GROVE_CONFIRM_TIP !== false;
+          confirmBeforeTipping = result[STORAGE_KEYS.CONFIRM_TIP] !== false;
         }
 
         // Check X connection status
-        if (typeof XAuth !== 'undefined') {
+        if (typeof XAuth !== "undefined") {
           isXConnected = await XAuth.isLoggedIn();
         }
       }
@@ -334,26 +388,28 @@ const TweetTipHandler = {
       buttonWrapper.setError();
       if (this.callbacks.showInlineTipError) {
         this.callbacks.showInlineTipError(buttonWrapper.button, {
-          message: 'Extension was reloaded. Please refresh the page.',
-          variant: 'error'
+          message: "Extension was reloaded. Please refresh the page.",
+          variant: "error",
         });
       }
       return;
     }
 
     // Build X options for modals
-    const xOptions = isXConnected ? {
-      isConnected: true,
-      likeOnTip: likeOnTip,
-      autoReply: autoReply
-    } : null;
+    const xOptions = isXConnected
+      ? {
+          isConnected: true,
+          likeOnTip: likeOnTip,
+          autoReply: autoReply,
+        }
+      : null;
 
     // If confirmation disabled, send tip directly
     if (!confirmBeforeTipping) {
       // Mark as having tipped if this is the first tip
       if (!hasTipped) {
         try {
-          await chrome.storage.local.set({ 'GROVE_HAS_TIPPED': true });
+          await chrome.storage.local.set({ [STORAGE_KEYS.HAS_TIPPED]: true });
         } catch (e) {
           console.error("[Grove TweetTipHandler] Failed to mark first tip:", e);
         }
@@ -363,7 +419,7 @@ const TweetTipHandler = {
     }
 
     // Show confirmation modal
-    if (!this.tipModal && typeof TipModal !== 'undefined') {
+    if (!this.tipModal && typeof TipModal !== "undefined") {
       this.tipModal = new TipModal();
     }
 
@@ -374,48 +430,68 @@ const TweetTipHandler = {
         : null;
 
       // Detect dark mode for modal theming
-      const isDarkMode = this.callbacks.detectDarkMode ? this.callbacks.detectDarkMode() : true;
+      const isDarkMode = this.callbacks.detectDarkMode
+        ? this.callbacks.detectDarkMode()
+        : true;
 
       // Configure display based on whether this is the first tip
-      const displayOptions = hasTipped
-        ? { title: 'Confirm Tip', showConfirmCheckbox: true, recipientUsername, autoReplyMessage, isDarkMode }
-        : { title: 'Your First Tip!', showConfirmCheckbox: true, recipientUsername, autoReplyMessage, isDarkMode };
+      const displayOptions = {
+        title: hasTipped ? "Confirm Tip" : "Your First Tip!",
+        showConfirmCheckbox: true,
+        recipientUsername,
+        autoReplyMessage,
+        isDarkMode,
+      };
 
       this.tipModal.show(
         buttonWrapper.button,
         tipAmount,
         confirmBeforeTipping,
-        async ({ amount, confirmBeforeTipping: newConfirmSetting, likeOnTip: newLikeOnTip, autoReply: newAutoReply, customMessage }) => {
+        async ({
+          amount,
+          confirmBeforeTipping: newConfirmSetting,
+          likeOnTip: newLikeOnTip,
+          autoReply: newAutoReply,
+          customMessage,
+        }) => {
           // Save preferences
           try {
             const saveData = {
-              'GROVE_TIP_AMOUNT': amount,
-              'GROVE_CONFIRM_TIP': newConfirmSetting,
-              'GROVE_HAS_TIPPED': true
+              [STORAGE_KEYS.TIP_AMOUNT]: amount,
+              [STORAGE_KEYS.CONFIRM_TIP]: newConfirmSetting,
+              [STORAGE_KEYS.HAS_TIPPED]: true,
             };
             // Save X preferences if they were set (X is connected)
             if (newLikeOnTip !== null) {
-              saveData['GROVE_LIKE_ON_TIP'] = newLikeOnTip;
+              saveData[STORAGE_KEYS.LIKE_ON_TIP] = newLikeOnTip;
             }
             if (newAutoReply !== null) {
-              saveData['GROVE_AUTO_REPLY'] = newAutoReply;
+              saveData[STORAGE_KEYS.AUTO_REPLY] = newAutoReply;
             }
             await chrome.storage.local.set(saveData);
           } catch (e) {
-            console.error("[Grove TweetTipHandler] Failed to save tip preferences:", e);
+            console.error(
+              "[Grove TweetTipHandler] Failed to save tip preferences:",
+              e,
+            );
           }
           // Build xActions if X options were provided
-          const xActions = (newLikeOnTip !== null || newAutoReply !== null)
-            ? { likeOnTip: newLikeOnTip, autoReply: newAutoReply, customMessage }
-            : null;
+          const xActions =
+            newLikeOnTip !== null || newAutoReply !== null
+              ? {
+                  likeOnTip: newLikeOnTip,
+                  autoReply: newAutoReply,
+                  customMessage,
+                }
+              : null;
           // Send the tip
           this.sendTip(amount, buttonWrapper, tweetUrl, xActions);
         },
         () => {
-          console.log("[Grove TweetTipHandler] Tip cancelled");
+          groveLog.log("[TweetTipHandler] Tip cancelled");
         },
         xOptions,
-        displayOptions
+        displayOptions,
       );
     } else {
       // Fallback: send tip directly if modal not available
@@ -434,35 +510,48 @@ const TweetTipHandler = {
     buttonWrapper.setLoading(tipAmount);
 
     // Check if extension context is valid before making API calls
-    if (this.callbacks.isExtensionContextValid && !this.callbacks.isExtensionContextValid()) {
+    if (
+      this.callbacks.isExtensionContextValid &&
+      !this.callbacks.isExtensionContextValid()
+    ) {
       console.error("[Grove TweetTipHandler] Extension context invalidated");
       buttonWrapper.setError();
       if (this.callbacks.showInlineTipError) {
         this.callbacks.showInlineTipError(buttonWrapper.button, {
-          message: 'Extension was reloaded. Please refresh the page.',
-          variant: 'error'
+          message: "Extension was reloaded. Please refresh the page.",
+          variant: "error",
         });
       }
       return;
     }
 
     // Get JWT and settings from storage
-    let jwt = '';
+    let jwt = "";
     let autoReplyEnabled = true;
-    let autoReplyMessage = this.callbacks.getDefaultAutoReplyMessage ? this.callbacks.getDefaultAutoReplyMessage() : '';
+    let autoReplyMessage = this.callbacks.getDefaultAutoReplyMessage
+      ? this.callbacks.getDefaultAutoReplyMessage()
+      : "";
     let likeOnTipEnabled = true;
-    let chainName = 'Base Sepolia';
-    let explorerBaseUrl = 'https://sepolia.basescan.org/tx/';
-    let referralLink = 'grove.city';
+    let chainName = "Base Sepolia";
+    let explorerBaseUrl = "https://sepolia.basescan.org/tx/";
+    let referralLink = "grove.city";
 
     try {
       // Get JWT using callback
       if (this.callbacks.getActiveJWT) {
-        jwt = await this.callbacks.getActiveJWT() || '';
+        jwt = (await this.callbacks.getActiveJWT()) || "";
       }
 
       // Get other settings from storage
-      const result = await chrome.storage.local.get(['GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'GROVE_REFERRAL_CODE', 'GROVE_LIKE_ON_TIP', 'groveChain', 'groveEndpoint', 'groveEnvironment']);
+      const result = await chrome.storage.local.get([
+        STORAGE_KEYS.AUTO_REPLY,
+        STORAGE_KEYS.AUTO_REPLY_MESSAGE,
+        STORAGE_KEYS.REFERRAL_CODE,
+        STORAGE_KEYS.LIKE_ON_TIP,
+        STORAGE_KEYS.CHAIN,
+        STORAGE_KEYS.ENDPOINT,
+        STORAGE_KEYS.ENVIRONMENT,
+      ]);
 
       // Use xActions from modal if provided, otherwise read from storage
       if (xActions) {
@@ -472,22 +561,30 @@ const TweetTipHandler = {
         if (xActions.customMessage) {
           autoReplyMessage = xActions.customMessage;
         } else {
-          autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || autoReplyMessage;
+          autoReplyMessage =
+            result[STORAGE_KEYS.AUTO_REPLY_MESSAGE] || autoReplyMessage;
         }
       } else {
-        autoReplyEnabled = result.GROVE_AUTO_REPLY !== false;
-        likeOnTipEnabled = result.GROVE_LIKE_ON_TIP !== false;
-        autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || autoReplyMessage;
+        autoReplyEnabled = result[STORAGE_KEYS.AUTO_REPLY] !== false;
+        likeOnTipEnabled = result[STORAGE_KEYS.LIKE_ON_TIP] !== false;
+        autoReplyMessage =
+          result[STORAGE_KEYS.AUTO_REPLY_MESSAGE] || autoReplyMessage;
       }
-      const referralCode = result.GROVE_REFERRAL_CODE;
+      const referralCode = result[STORAGE_KEYS.REFERRAL_CODE];
       if (referralCode) {
         referralLink = `https://grove.city/?ref=${encodeURIComponent(referralCode)}`;
       }
-      console.log('[Grove TweetTipHandler] Storage loaded:', { hasJwt: !!jwt, autoReply: autoReplyEnabled, likeOnTip: likeOnTipEnabled, chain: result.groveChain, fromModal: !!xActions });
+      groveLog.log("[TweetTipHandler] Storage loaded:", {
+        hasJwt: !!jwt,
+        autoReply: autoReplyEnabled,
+        likeOnTip: likeOnTipEnabled,
+        chain: result[STORAGE_KEYS.CHAIN],
+        fromModal: !!xActions,
+      });
 
       // Get friendly chain name and explorer URL from centralized config
       // Use testnet explorer URL when on localhost or testnet endpoints
-      const rawChain = result.groveChain || 'base';
+      const rawChain = result[STORAGE_KEYS.CHAIN] || "base";
       const explorerChain = getExplorerChain(rawChain, result);
       const config = getChainConfig(explorerChain);
       chainName = config.name;
@@ -498,8 +595,8 @@ const TweetTipHandler = {
         buttonWrapper.setError();
         if (this.callbacks.showInlineTipError) {
           this.callbacks.showInlineTipError(buttonWrapper.button, {
-            message: 'Missing Grove Key in the extension settings.',
-            variant: 'error'
+            message: "Missing Grove Key in the extension settings.",
+            variant: "error",
           });
         }
         return;
@@ -509,8 +606,9 @@ const TweetTipHandler = {
       buttonWrapper.setError();
       if (this.callbacks.showInlineTipError) {
         this.callbacks.showInlineTipError(buttonWrapper.button, {
-          message: error.message || 'Could not read settings. Refresh and try again.',
-          variant: 'error'
+          message:
+            error.message || "Could not read settings. Refresh and try again.",
+          variant: "error",
         });
       }
       return;
@@ -518,19 +616,23 @@ const TweetTipHandler = {
 
     // Determine tip destination: use cached address if available (from bio fetch)
     let tipDestination = tweetUrl;
-    const username = this.callbacks.extractUsernameFromUrl ? this.callbacks.extractUsernameFromUrl(tweetUrl) : null;
+    const username = this.callbacks.extractUsernameFromUrl
+      ? this.callbacks.extractUsernameFromUrl(tweetUrl)
+      : null;
     if (username && this.callbacks.getCachedAddress) {
       const cached = this.callbacks.getCachedAddress(username);
       if (cached && cached.address) {
         tipDestination = cached.address;
-        console.log(`[Grove TweetTipHandler] Tipping to ${cached.type} address: ${tipDestination} (from @${username})`);
+        groveLog.log(
+          `[TweetTipHandler] Tipping to ${cached.type} address: ${tipDestination} (from @${username})`,
+        );
       }
     }
 
     // Build context metadata for the tip
     const context = {
       source_post_url: tweetUrl,
-      sender_platform: 'x'
+      sender_platform: "x",
     };
     if (username) {
       context.recipient_username = username;
@@ -543,10 +645,15 @@ const TweetTipHandler = {
     }
 
     // Send tip via API with context
-    const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt, context);
+    const response = await GroveAPI.sendTip(
+      tipDestination,
+      tipAmount,
+      jwt,
+      context,
+    );
 
     let parsedError = null;
-    if (!response.success && typeof TipErrorHandler !== 'undefined') {
+    if (!response.success && typeof TipErrorHandler !== "undefined") {
       try {
         parsedError = TipErrorHandler.parse(response);
       } catch (e) {
@@ -557,106 +664,50 @@ const TweetTipHandler = {
     if (response.success) {
       buttonWrapper.setSuccess();
 
-      // Like and/or reply if X features are enabled
-      if ((likeOnTipEnabled || autoReplyEnabled) && typeof XAuth !== 'undefined') {
-        try {
-          const tweetId = XAuth.extractTweetId(tweetUrl);
-          if (tweetId) {
-            const isLoggedIn = await XAuth.isLoggedIn();
-            if (isLoggedIn) {
-              let didLike = false;
-              let didReply = false;
-              let likeFailed = false;
-              let replyFailed = false;
+      // Like and/or reply if X features are enabled (delegates to xFeatures.js)
+      if (
+        (likeOnTipEnabled || autoReplyEnabled) &&
+        typeof performXActionsAfterTip === "function"
+      ) {
+        const xResult = await performXActionsAfterTip({
+          tweetUrl,
+          txHash: response.data?.tx_hash || "",
+          likeEnabled: likeOnTipEnabled,
+          replyEnabled: autoReplyEnabled,
+          replyTemplate: autoReplyMessage,
+          username,
+          chainName,
+          explorerBaseUrl,
+          referralLink,
+          amount: tipAmount,
+        });
 
-              // Like the tweet if enabled
-              if (likeOnTipEnabled) {
-                try {
-                  await XAuth.likeTweet(tweetId);
-                  console.log("[Grove TweetTipHandler] Tweet liked successfully");
-                  didLike = true;
-                } catch (likeError) {
-                  console.error("[Grove TweetTipHandler] Like failed:", likeError);
-                  likeFailed = true;
-                }
-              }
-
-              // Post auto-reply if enabled
-              if (autoReplyEnabled) {
-                const txHash = response.data?.tx_hash || '';
-                const txLink = `${explorerBaseUrl}${txHash}`;
-
-                // Build reply text from template
-                let replyText = '';
-                if (this.callbacks.buildAutoReplyMessage) {
-                  replyText = this.callbacks.buildAutoReplyMessage(autoReplyMessage, {
-                    username: username,
-                    amount: tipAmount,
-                    chain: chainName,
-                    tx_link: txLink,
-                    post_url: tweetUrl,
-                    grove_link: 'grove.city',
-                    referral_link: referralLink
-                  });
-                }
-
-                if (replyText) {
-                  try {
-                    await XAuth.postReply(tweetId, replyText);
-                    console.log("[Grove TweetTipHandler] Auto-reply posted successfully");
-                    didReply = true;
-                  } catch (replyError) {
-                    console.error("[Grove TweetTipHandler] Reply failed:", replyError);
-                    replyFailed = true;
-                  }
-                }
-              }
-
-              // Show feedback message based on what happened
-              setTimeout(() => {
-                if (this.callbacks.showInlineTipError) {
-                  if (didLike || didReply) {
-                    let message = '';
-                    if (didLike && didReply) {
-                      message = 'Liked & replied! Refresh to view.';
-                    } else if (didLike) {
-                      message = 'Post liked! Refresh to view.';
-                    } else if (didReply) {
-                      message = 'Reply sent! Refresh to view.';
-                    }
-                    this.callbacks.showInlineTipError(buttonWrapper.button, { message, variant: 'success' });
-                  } else if (likeFailed || replyFailed) {
-                    let message = '';
-                    if (likeFailed && replyFailed) {
-                      message = 'Like & reply failed (rate limited?)';
-                    } else if (likeFailed) {
-                      message = 'Like failed (rate limited?)';
-                    } else if (replyFailed) {
-                      message = 'Reply failed (rate limited?)';
-                    }
-                    this.callbacks.showInlineTipError(buttonWrapper.button, { message, variant: 'warning' });
-                  }
-                }
-              }, 100);
-            } else {
-              console.log("[Grove TweetTipHandler] X features skipped - not logged in to X");
-            }
-          }
-        } catch (error) {
-          console.error("[Grove TweetTipHandler] X features failed:", error);
+        const feedback = getXActionFeedback(xResult);
+        if (feedback && this.callbacks.showInlineTipError) {
+          setTimeout(() => {
+            this.callbacks.showInlineTipError(buttonWrapper.button, feedback);
+          }, 100);
         }
       }
     } else {
-      console.error("[Grove TweetTipHandler] Tweet tip failed:", response.error, response.data);
+      console.error(
+        "[Grove TweetTipHandler] Tweet tip failed:",
+        response.error,
+        response.data,
+      );
       buttonWrapper.setError();
       if (this.callbacks.showInlineTipError) {
-        const errorMessage = parsedError?.userMessage || parsedError?.message || response.error || 'Tip failed. Please try again.';
+        const errorMessage =
+          parsedError?.userMessage ||
+          parsedError?.message ||
+          response.error ||
+          "Tip failed. Please try again.";
         this.callbacks.showInlineTipError(buttonWrapper.button, errorMessage);
       }
     }
-  }
+  },
 };
 
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   window.TweetTipHandler = TweetTipHandler;
 }

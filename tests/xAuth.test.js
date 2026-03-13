@@ -276,6 +276,28 @@ describe('XAuth', () => {
       expect(result.data.id).toBe('new-tweet-123');
     });
 
+    it('should post as standalone tweet without in_reply_to_tweet_id', async () => {
+      // Capture the request body to verify it does NOT include reply threading
+      let capturedBody = null;
+      context.fetch = vi.fn(async (url, options) => {
+        capturedBody = JSON.parse(options.body);
+        return {
+          ok: true,
+          status: 201,
+          json: () => Promise.resolve({ data: { id: 'tweet-789' } }),
+          text: () => Promise.resolve(JSON.stringify({ data: { id: 'tweet-789' } })),
+        };
+      });
+
+      await XAuth.postReply('original-tweet-id', 'Hey @user, thanks!');
+
+      expect(capturedBody).toBeDefined();
+      expect(capturedBody.text).toBe('Hey @user, thanks!');
+      // The key behavioral change: tweetId is NOT used for threading
+      expect(capturedBody.reply).toBeUndefined();
+      expect(capturedBody.in_reply_to_tweet_id).toBeUndefined();
+    });
+
     it('should throw when not logged in', async () => {
       mockChrome.storage.local._setData({});
 

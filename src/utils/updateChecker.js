@@ -123,7 +123,7 @@ const UpdateChecker = (() => {
       });
 
       if (!response.ok) {
-        console.warn('[Grove Update] Failed to fetch releases:', response.status);
+        groveLog.warn('[Update] Failed to fetch releases:', response.status);
         return null;
       }
 

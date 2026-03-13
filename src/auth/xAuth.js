@@ -119,7 +119,7 @@ class XAuth {
     }
 
     const tokens = await response.json();
-    console.log('[Grove X Auth] Refresh successful, scopes:', tokens.scope, 'token length:', tokens.access_token?.length);
+    groveLog.log('[X Auth] Refresh successful, scopes:', tokens.scope, 'token length:', tokens.access_token?.length);
 
     // Update stored tokens
     const userResult = await chrome.storage.local.get([this.STORAGE_KEYS.USER_INFO]);
@@ -188,7 +188,7 @@ class XAuth {
       } catch (_) { /* ignore */ }
 
       // Token rejected server-side — try refreshing once
-      console.log('[Grove X Auth] Got 401, attempting token refresh...');
+      groveLog.log('[X Auth] Got 401, attempting token refresh...');
       try {
         accessToken = await this.refreshAccessToken();
       } catch (refreshError) {
@@ -216,7 +216,7 @@ class XAuth {
    * Get user info from Twitter API
    */
   static async getUserInfo(accessToken) {
-    console.log('[Grove X Auth] Fetching user info...');
+    groveLog.log('[X Auth] Fetching user info...');
 
     const response = await XAuth._fetch('https://api.twitter.com/2/users/me', {
       headers: {
@@ -231,7 +231,7 @@ class XAuth {
     }
 
     const data = await response.json();
-    console.log('[Grove X Auth] User info received:', data.data?.username);
+    groveLog.log('[X Auth] User info received:', data.data?.username);
     return data.data;
   }
 
@@ -281,7 +281,7 @@ class XAuth {
       if (!response.ok) {
         // Only clear token if we know it's invalid (401/403)
         if (response.status === 401 || response.status === 403) {
-          console.log('[Grove X Auth] Token invalid, clearing...');
+          groveLog.log('[X Auth] Token invalid, clearing...');
           await this.logout();
         }
         return false;
@@ -332,14 +332,15 @@ class XAuth {
   }
 
   /**
-   * Post a tweet about a tip (standalone tweet with @mention)
-   * Programmatic replies and quote tweets blocked by X API since Feb 2026,
-   * so we post a standalone tweet instead.
-   * @param {string} tweetId - Unused (kept for API compatibility)
+   * Post a tweet about a tip (standalone tweet with @mention).
+   * NOTE: tweetId is intentionally ignored. X API blocked programmatic replies
+   * since Feb 2026. We now post standalone tweets with @mentions instead.
+   * Parameter kept in signature for call-site compatibility.
+   * @param {string} _tweetId - Unused (kept for API compatibility)
    * @param {string} text - The tweet text (should include @mention of tippee)
    * @returns {Promise<Object>} - The created tweet data
    */
-  static async postReply(tweetId, text) {
+  static async postReply(_tweetId, text) {
     const response = await this._authenticatedFetch('https://api.twitter.com/2/tweets', {
       method: 'POST',
       headers: {

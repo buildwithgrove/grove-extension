@@ -8,7 +8,7 @@
  * 1. User authenticates via CDP SDK (Email/SMS/Social)
  * 2. CDP returns an access token (+ creates an embedded wallet we ignore)
  * 3. We exchange the CDP token for a Grove JWT
- * 4. Grove creates a Server Wallet for the user (the hijack)
+ * 4. Grove creates a Server Wallet and a Smart Account (earning wallet) for the user (the hijack)
  *
  * Reference: https://docs.cdp.coinbase.com/embedded-wallets/authentication-methods
  */
@@ -47,7 +47,7 @@ export async function initializeCDP() {
   });
 
   isInitialized = true;
-  console.log('[CDPAuth] SDK initialized');
+  groveLog.log('[CDPAuth] SDK initialized');
 }
 
 /**
@@ -58,10 +58,10 @@ export async function signOutCDP() {
   try {
     await initializeCDP();
     await signOut();
-    console.log('[CDPAuth] Signed out successfully');
+    groveLog.log('[CDPAuth] Signed out successfully');
   } catch (error) {
     // Ignore errors - user might not be signed in
-    console.log('[CDPAuth] Sign out (may not have been signed in):', error.message);
+    groveLog.log('[CDPAuth] Sign out (may not have been signed in):', error.message);
   }
 }
 
@@ -76,7 +76,7 @@ export async function startEmailAuth(email) {
   // Clear any existing session first
   await signOutCDP();
 
-  console.log('[CDPAuth] Starting email auth for:', email);
+  groveLog.log('[CDPAuth] Starting email auth for:', email);
   const result = await signInWithEmail({ email });
 
   return {
@@ -105,7 +105,7 @@ export async function startSmsAuth(phoneNumber) {
     normalizedPhone = '+' + normalizedPhone;
   }
 
-  console.log('[CDPAuth] Starting SMS auth for:', normalizedPhone);
+  groveLog.log('[CDPAuth] Starting SMS auth for:', normalizedPhone);
   const result = await signInWithSms({ phoneNumber: normalizedPhone });
 
   return {
@@ -126,7 +126,7 @@ export async function verifyOTP(flowId, otp, method) {
   // Ensure SDK is initialized (needed after popup close/reopen)
   await initializeCDP();
 
-  console.log('[CDPAuth] Verifying OTP for method:', method);
+  groveLog.log('[CDPAuth] Verifying OTP for method:', method);
 
   // Verify the OTP
   if (method === 'email') {
@@ -142,7 +142,7 @@ export async function verifyOTP(flowId, otp, method) {
     throw new Error('Failed to get access token after OTP verification');
   }
 
-  console.log('[CDPAuth] OTP verified, got access token');
+  groveLog.log('[CDPAuth] OTP verified, got access token');
   return token;
 }
 
@@ -159,11 +159,12 @@ export async function verifyOTP(flowId, otp, method) {
  * @property {string} identity_type - 'email' | 'sms' | 'cdp_sub'
  * @property {string} identity_value - The normalized identity value
  * @property {string|null} earning_address - User's earning wallet address
+ * @property {string|null} smart_account_address - User's smart account wallet address
  * @property {string|null} tipping_address - Grove-managed tipping wallet address
  * @property {boolean} is_new_account - True if account was just created
  */
 export async function exchangeForGroveJWT(cdpToken, endpoint, network = null) {
-  console.log('[CDPAuth] Exchanging CDP token for Grove JWT');
+  groveLog.log('[CDPAuth] Exchanging CDP token for Grove JWT');
 
   const body = { token: cdpToken };
   if (network) {
@@ -188,7 +189,7 @@ export async function exchangeForGroveJWT(cdpToken, endpoint, network = null) {
   }
 
   const result = await response.json();
-  console.log('[CDPAuth] Token exchanged successfully, is_new_account:', result.is_new_account);
+  groveLog.log('[CDPAuth] Token exchanged successfully, is_new_account:', result.is_new_account);
 
   return result;
 }

@@ -109,7 +109,7 @@ class GroveAPI {
       const envId = GroveEnv.resolveActiveEnvId(result.groveEnvironment, result.groveEndpoint);
       return GroveEnv.get(envId).apiUrl;
     } catch (error) {
-      console.log("[Grove Extension] Endpoint load failed, using production");
+      groveLog.log("Endpoint load failed, using production");
       return GROVE_ENVIRONMENTS.production.apiUrl;
     }
   }
@@ -123,7 +123,7 @@ class GroveAPI {
       const result = await chrome.storage.local.get(['groveChain']);
       return result.groveChain || 'base';
     } catch (error) {
-      console.log("[Grove Extension] Chain ID load failed, using base");
+      groveLog.log("Chain ID load failed, using base");
       return 'base';
     }
   }
@@ -713,7 +713,7 @@ class GroveAPI {
     const apiUrl = `${baseURL}/v1/referrals/earnings?${params}`;
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await GroveAPI._fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${groveApiJwt}`,
@@ -782,7 +782,7 @@ class GroveAPI {
       try {
         data = await response.json();
       } catch (parseError) {
-        console.warn('[Grove Extension] Tip response parse failed:', parseError);
+        groveLog.warn('Tip response parse failed:', parseError);
       }
 
       if (!response.ok) {
@@ -935,7 +935,7 @@ class GroveAPI {
     const tipDomain = this.buildTipDomainFromURL(destination);
     const apiUrl = `${baseURL}/v1/tip/resolve?destination=${encodeURIComponent(tipDomain)}`;
 
-    console.log('[Grove API] resolveDestination request:', {
+    groveLog.log('[API] resolveDestination request:', {
       baseURL,
       apiUrl,
       destination,
@@ -961,7 +961,7 @@ class GroveAPI {
         data = {};
       }
 
-      console.log('[Grove API] resolveDestination response:', {
+      groveLog.log('[API] resolveDestination response:', {
         status: response.status,
         ok: response.ok
       });
