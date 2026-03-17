@@ -469,7 +469,7 @@ Use CSS classes instead of inline styles. Define platform-specific classes in `s
 
 ### Guided Workflow
 
-Run `/grove_add_social_graph` for a step-by-step guided workflow covering platform discovery, DOM research, implementation, and ecosystem integration.
+Run `/grove-add-platform` for a step-by-step guided workflow covering platform discovery, DOM research, implementation, and ecosystem integration.
 
 ### Integration Checklist
 
@@ -495,7 +495,7 @@ Run `/grove_add_social_graph` for a step-by-step guided workflow covering platfo
 - [ ] Add platform to README.md Address Resolution Matrix
 - [ ] Add E2E tests in `tests/e2e/smoke.spec.js` (positive + negative)
 - [ ] Add `test_e2e_<platform>` target in `makefiles/test.mk`
-- [ ] Add platform to `.claude/commands/grove_extension_review.md` (test tables + manual checklist)
+- [ ] Add platform to `.claude/skills/grove-extension-review/SKILL.md` (test tables + manual checklist)
 
 ## Pull Request Hygiene
 

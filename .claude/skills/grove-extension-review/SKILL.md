@@ -1,8 +1,13 @@
+---
+name: grove-extension-review
+description: Comprehensive review protocol for the Grove extension. Covers PR checklist, test verification, manual smoke tests, and ecosystem sync.
+---
+
 # Grove Extension Review <!-- omit in toc -->
 
 <!--
-  Local slash command: /grove_extension_review
-  Usage: Run `/grove_extension_review` to invoke this command
+  Local slash command: /grove-extension-review
+  Usage: Run `/grove-extension-review` to invoke this command
 -->
 
 Your goal is to review code changes in this branch before merging.
