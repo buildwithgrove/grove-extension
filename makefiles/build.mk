@@ -9,7 +9,7 @@ build_cdp: ## Build CDP auth bundle (required before loading extension)
 		printf "$(CYAN)$(INFO) Installing dependencies...$(RESET)\n"; \
 		$(NPM) install; \
 	fi
-	$(Q)$(NPM) run build:cdp
+	$(Q)$(NPM) run build:cdp --silent
 	$(call print_success,CDP auth bundle built: dist/cdp-auth-bundle.js)
 
 # Extension metadata
@@ -57,7 +57,6 @@ _build_extension_zip: build_cdp dev_clean $(BUILD_DIR)
 	printf "$(GREEN)%s$(RESET)\n" "║  🌳 Building Grove Extension v$$VERSION_FULL            ║"; \
 	printf "$(GREEN)%s$(RESET)\n" "╚════════════════════════════════════════════════════════╝"; \
 	printf "\n"; \
-	printf "$(CYAN)ℹ️  Preparing files for packaging...$(RESET)\n"; \
 	mkdir -p $(BUILD_DIR)/staging; \
 	cp -r $(INCLUDE_FILES) $(BUILD_DIR)/staging/; \
 	sed '/"key":/d' $(BUILD_DIR)/staging/manifest.json > $(BUILD_DIR)/staging/manifest.json.tmp && mv $(BUILD_DIR)/staging/manifest.json.tmp $(BUILD_DIR)/staging/manifest.json; \
@@ -116,7 +115,7 @@ _prompt_version_bump:
 	else \
 		git add manifest.json && \
 		git commit -m "chore: bump version to $$NEW_VERSION" && \
-		git push && \
+		git push 2>&1 | tail -1 && \
 		printf "$(GREEN)$(CHECK) Changes committed and pushed!$(RESET)\n"; \
 	fi
 	@printf "\n"
@@ -125,9 +124,10 @@ _prompt_version_bump:
 build_release: _prompt_version_bump _build_extension_zip _create_tag_and_release ## Build release zip for Chrome Web Store
 	@printf "$(YELLOW)$(BOLD)Next steps:$(RESET)\n"
 	@printf "  1. Go to $(CYAN)$(CHROME_STORE_CONSOLE)$(RESET)\n"
-	@printf "  2. Ensure you are logged in with the group publisher.\n"
-	@NEW_ZIP=$$(ls -t $(BUILD_DIR)/grove-extension-v*.zip 2>/dev/null | head -1); \
-	printf "  3. Upload $(CYAN)$$NEW_ZIP$(RESET)\n"
+	@printf "  2. Log in as the group publisher\n"
+	@printf "  3. Open $(CYAN)$(BUILD_DIR)/$(RESET)\n"
+	@NEW_ZIP=$$(ls -t $(BUILD_DIR)/grove-extension-v*-beta.zip 2>/dev/null | head -1 | xargs basename); \
+	printf "  4. Upload $(CYAN)$$NEW_ZIP$(RESET)\n"
 	@printf "\n"
 
 # Internal target to create git tag and GitHub release
@@ -142,11 +142,10 @@ _create_tag_and_release:
 	else \
 		printf "$(CYAN)ℹ️  Creating git tag $$RELEASE_TAG...$(RESET)\n"; \
 		git tag -a $$RELEASE_TAG -m "Release $$RELEASE_VERSION" && \
-		git push origin $$RELEASE_TAG && \
+		git push origin $$RELEASE_TAG 2>&1 | tail -1 && \
 		printf "$(GREEN)$(CHECK) Tag $$RELEASE_TAG created and pushed$(RESET)\n"; \
 	fi; \
 	printf "\n"; \
-	printf "$(CYAN)ℹ️  Preparing release zip with public key...$(RESET)\n"; \
 	mkdir -p $(BUILD_DIR)/repack; \
 	cp -r $(INCLUDE_FILES) $(BUILD_DIR)/repack/; \
 	sed 's|"version": "[^"]*"|"version": "'$$RELEASE_VERSION'"|; s|"manifest_version": 3,|"manifest_version": 3,\n  "key": "$(EXTENSION_PUBLIC_KEY)",|' $(BUILD_DIR)/repack/manifest.json > $(BUILD_DIR)/repack/manifest.json.tmp && mv $(BUILD_DIR)/repack/manifest.json.tmp $(BUILD_DIR)/repack/manifest.json; \
