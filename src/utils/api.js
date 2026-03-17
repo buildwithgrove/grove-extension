@@ -933,6 +933,18 @@ class GroveAPI {
   static async resolveDestination(destination) {
     const baseURL = await this.getBaseURL();
     const tipDomain = this.buildTipDomainFromURL(destination);
+
+    // Check ResolveCache before making a network request.
+    // This avoids redundant /v1/tip/resolve calls when users revisit pages,
+    // navigate SPAs, or open the same site in multiple tabs.
+    if (typeof ResolveCache !== 'undefined') {
+      const cached = await ResolveCache.get(tipDomain);
+      if (cached) {
+        groveLog.log('[API] resolveDestination CACHE HIT:', { tipDomain, tippable: cached.tippable });
+        return cached;
+      }
+    }
+
     const apiUrl = `${baseURL}/v1/tip/resolve?destination=${encodeURIComponent(tipDomain)}`;
 
     groveLog.log('[API] resolveDestination request:', {
@@ -967,22 +979,35 @@ class GroveAPI {
       });
 
       if (!response.ok) {
-        return {
+        const result = {
           tippable: false,
           addresses: [],
           error: data.message || data.detail || `API request failed with status ${response.status}`
         };
+        // Cache non-tippable result so we don't re-ping for the same destination
+        if (typeof ResolveCache !== 'undefined') {
+          await ResolveCache.set(tipDomain, result);
+        }
+        return result;
       }
 
       // API returns { tippable: boolean, addresses: [...], source?: string, destination_kind?: string }
-      return {
+      const result = {
         tippable: data.tippable || false,
         addresses: data.addresses || [],
         source: data.source || data.destination_kind || null,
         error: null
       };
+
+      // Cache the result (positive or negative) to avoid redundant API calls
+      if (typeof ResolveCache !== 'undefined') {
+        await ResolveCache.set(tipDomain, result);
+      }
+
+      return result;
     } catch (error) {
       console.error('[Grove API] resolveDestination failed:', error);
+      // Don't cache network errors — they're transient and should be retried
       return {
         tippable: false,
         addresses: [],
