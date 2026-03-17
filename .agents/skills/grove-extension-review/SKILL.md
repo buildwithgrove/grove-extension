@@ -1,6 +1,8 @@
 ---
 name: grove-extension-review
-description: Comprehensive review protocol for the Grove extension. Covers PR checklist, test verification, manual smoke tests, and ecosystem sync.
+description: >-
+  Comprehensive review protocol for the Grove extension. Covers PR checklist,
+  test verification, manual smoke tests, and ecosystem sync.
 ---
 
 # Grove Extension Review <!-- omit in toc -->

@@ -2,9 +2,7 @@
 build/
 *.zip
 node_modules/
-# Gemini temp files (but track skills symlinks)
-.gemini/tmp/
-!.gemini/skills/
+
 
 # Evals are local-only
 .agents/skills/**/evals/

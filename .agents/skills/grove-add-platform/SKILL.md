@@ -1,6 +1,9 @@
 ---
 name: grove-add-platform
-description: Guided workflow for adding a new social platform to the Grove extension. Use when adding support for YouTube, SoundCloud, or other social sites. Covers research, implementation, and ecosystem integration.
+description: >-
+  Guided workflow for adding a new social platform to the Grove extension. Use
+  when adding support for YouTube, SoundCloud, or other social sites. Covers
+  research, implementation, and ecosystem integration.
 ---
 
 # Add New Social Graph <!-- omit in toc -->
