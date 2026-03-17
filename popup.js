@@ -2639,6 +2639,8 @@ async function handleDevModeToggle(e) {
       [STORAGE_KEYS.CHAIN]: testnetChain,
       [STORAGE_KEYS.LAST_BALANCES]: {}, // Clear cached balances
     });
+    // Clear resolve cache — results from the previous environment are not valid
+    await chrome.storage.local.remove("GROVE_RESOLVE_CACHE");
     await loadEndpoint();
     setTestModeBannerText("testnet");
     updateChainUI(testnetChain);
@@ -2677,6 +2679,8 @@ async function handleDevModeToggle(e) {
       [STORAGE_KEYS.CHAIN]: prodChain,
       [STORAGE_KEYS.LAST_BALANCES]: {}, // Clear cached balances
     });
+    // Clear resolve cache — results from the previous environment are not valid
+    await chrome.storage.local.remove("GROVE_RESOLVE_CACHE");
     await loadEndpoint();
     setTestModeBannerText("production");
     updateChainUI(prodChain);
