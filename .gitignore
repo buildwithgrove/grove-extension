@@ -2,7 +2,12 @@
 build/
 *.zip
 node_modules/
-.gemini/
+# Gemini temp files (but track skills symlinks)
+.gemini/tmp/
+!.gemini/skills/
+
+# Evals are local-only
+.agents/skills/**/evals/
 test-results/
 dist/
 PR_DESCRIPTION.md

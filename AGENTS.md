@@ -495,7 +495,7 @@ Run `/grove-add-platform` for a step-by-step guided workflow covering platform d
 - [ ] Add platform to README.md Address Resolution Matrix
 - [ ] Add E2E tests in `tests/e2e/smoke.spec.js` (positive + negative)
 - [ ] Add `test_e2e_<platform>` target in `makefiles/test.mk`
-- [ ] Add platform to `.claude/skills/grove-extension-review/SKILL.md` (test tables + manual checklist)
+- [ ] Add platform to `.agents/skills/grove-extension-review/SKILL.md` (test tables + manual checklist)
 
 ## Pull Request Hygiene
 

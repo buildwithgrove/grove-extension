@@ -57,14 +57,22 @@ class ResolveCache {
   // Hydrated from chrome.storage.local on first access.
   static memCache = new Map();
   static hydrated = false;
+  static hydratePromise = null;
 
   /**
    * Load the persistent cache into memory (once per content-script lifetime).
    * Safe to call multiple times — only the first call actually reads storage.
+   * Uses a stored promise to prevent duplicate storage reads on concurrent calls.
    */
   static async hydrate() {
     if (this.hydrated) return;
+    if (!this.hydratePromise) {
+      this.hydratePromise = this._doHydrate();
+    }
+    return this.hydratePromise;
+  }
 
+  static async _doHydrate() {
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         const result = await chrome.storage.local.get(this.STORAGE_KEY);
@@ -203,6 +211,7 @@ class ResolveCache {
   static reset() {
     this.memCache.clear();
     this.hydrated = false;
+    this.hydratePromise = null;
   }
 }
 
