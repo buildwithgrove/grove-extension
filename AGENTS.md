@@ -386,6 +386,7 @@ The bio fetch feature solves this by:
 - `src/adapters/youtube.js` - YouTube channel/video DOM extraction
 - `src/parsers/address.js` - Address detection (0x, ENS patterns)
 - `src/utils/addressCache.js` - Address caching with TTL
+- `src/utils/resolveCache.js` - Persistent resolve result cache (chrome.storage.local + in-memory)
 - `src/utils/api.js` - Grove API client (resolveDestination, etc.)
 - `tests/bio-fetch.test.js` - Tests for bio fetch logic
 
