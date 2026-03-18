@@ -983,7 +983,7 @@ class GroveAPI {
           tippable: false,
           addresses: [],
           cache_hint: data.cache_hint || null,
-        error: data.message || data.detail || `API request failed with status ${response.status}`
+          error: data.message || data.detail || `API request failed with status ${response.status}`
         };
         // Cache non-tippable result so we don't re-ping for the same destination
         if (typeof ResolveCache !== 'undefined') {

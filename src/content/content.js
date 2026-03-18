@@ -453,8 +453,10 @@
           }
         }
 
-        // API returned non-tippable — still try local metadata fallback
-        groveLog.log("API resolve returned non-tippable, trying metadata file fallback");
+        // API returned non-tippable — no need to probe metadata files locally,
+        // the API already checks llms.txt server-side.
+        groveLog.log("API resolve returned non-tippable, skipping local metadata fallback");
+        return;
       } catch (error) {
         // API unreachable — fall through to local metadata probing
         groveLog.log("API resolve failed, falling back to metadata file probing");
@@ -462,6 +464,7 @@
     }
 
     // Stage 2: Fallback — probe metadata files directly (llms.txt, ai.txt, etc.)
+    // Only reached when GroveAPI is unavailable or the API call threw an error.
     try {
       const metadata = await currentAdapter.fetchMetadata();
 
