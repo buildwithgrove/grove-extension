@@ -29,9 +29,13 @@
  *   hammering the API on repeat visits to the same creator's profile.
  *
  * RESOLVE_NEGATIVE_TTL (10 min)
- *   How long a "tippable: false" result stays cached.
- *   Shorter than positive because a creator may register at any time and
- *   we want to discover them reasonably quickly.
+ *   How long a "tippable: false" result stays cached when no cache_hint
+ *   is provided (backward compat with older API versions).
+ *
+ * RESOLVE_TEMPORARY_TTL (2 min)
+ *   How long a transient failure (timeout, fetch error) stays cached.
+ *   Short enough to retry quickly, long enough to avoid hammering.
+ *   Used when the API returns cache_hint="temporary".
  *
  * RESOLVE_MAX_ENTRIES (500)
  *   Upper bound on cached destinations. Prevents unbounded growth in
@@ -44,12 +48,14 @@
  */
 const RESOLVE_POSITIVE_TTL = 30 * 60 * 1000; // 30 minutes
 const RESOLVE_NEGATIVE_TTL = 10 * 60 * 1000; // 10 minutes
+const RESOLVE_TEMPORARY_TTL = 2 * 60 * 1000; // 2 minutes
 const RESOLVE_MAX_ENTRIES = 500;
 const RESOLVE_STORAGE_KEY = 'GROVE_RESOLVE_CACHE';
 
 class ResolveCache {
   static POSITIVE_TTL = RESOLVE_POSITIVE_TTL;
   static NEGATIVE_TTL = RESOLVE_NEGATIVE_TTL;
+  static TEMPORARY_TTL = RESOLVE_TEMPORARY_TTL;
   static MAX_ENTRIES = RESOLVE_MAX_ENTRIES;
   static STORAGE_KEY = RESOLVE_STORAGE_KEY;
 
@@ -58,6 +64,18 @@ class ResolveCache {
   static memCache = new Map();
   static hydrated = false;
   static hydratePromise = null;
+
+  /**
+   * Determine the TTL for a cache entry based on tippable status and cache_hint.
+   * @param {Object} entry - Cache entry with { tippable, cacheHint }
+   * @returns {number} TTL in milliseconds
+   */
+  static getTTL(entry) {
+    if (entry.tippable) return this.POSITIVE_TTL;
+    if (entry.cacheHint === 'temporary') return this.TEMPORARY_TTL;
+    if (entry.cacheHint === 'definitive') return this.POSITIVE_TTL;
+    return this.NEGATIVE_TTL; // backward compat: no hint from older API
+  }
 
   /**
    * Load the persistent cache into memory (once per content-script lifetime).
@@ -80,7 +98,7 @@ class ResolveCache {
         if (stored && typeof stored === 'object') {
           const now = Date.now();
           for (const [key, entry] of Object.entries(stored)) {
-            const ttl = entry.tippable ? this.POSITIVE_TTL : this.NEGATIVE_TTL;
+            const ttl = this.getTTL(entry);
             if (now - entry.timestamp < ttl) {
               this.memCache.set(key, entry);
             }
@@ -108,7 +126,7 @@ class ResolveCache {
     const entry = this.memCache.get(destination);
     if (!entry) return null;
 
-    const ttl = entry.tippable ? this.POSITIVE_TTL : this.NEGATIVE_TTL;
+    const ttl = this.getTTL(entry);
     if (Date.now() - entry.timestamp > ttl) {
       this.memCache.delete(destination);
       // Lazy eviction — don't bother persisting the deletion now.
@@ -133,6 +151,7 @@ class ResolveCache {
 
     const entry = {
       tippable: !!result.tippable,
+      cacheHint: result.cache_hint || null,
       result,
       timestamp: Date.now(),
     };
@@ -155,7 +174,7 @@ class ResolveCache {
 
     // Pass 1: remove expired
     for (const [key, entry] of this.memCache) {
-      const ttl = entry.tippable ? this.POSITIVE_TTL : this.NEGATIVE_TTL;
+      const ttl = this.getTTL(entry);
       if (now - entry.timestamp > ttl) {
         this.memCache.delete(key);
       }
@@ -220,6 +239,7 @@ if (typeof window !== 'undefined') {
   window.ResolveCache = ResolveCache;
   window.RESOLVE_POSITIVE_TTL = RESOLVE_POSITIVE_TTL;
   window.RESOLVE_NEGATIVE_TTL = RESOLVE_NEGATIVE_TTL;
+  window.RESOLVE_TEMPORARY_TTL = RESOLVE_TEMPORARY_TTL;
   window.RESOLVE_MAX_ENTRIES = RESOLVE_MAX_ENTRIES;
   window.RESOLVE_STORAGE_KEY = RESOLVE_STORAGE_KEY;
 }

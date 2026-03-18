@@ -982,7 +982,8 @@ class GroveAPI {
         const result = {
           tippable: false,
           addresses: [],
-          error: data.message || data.detail || `API request failed with status ${response.status}`
+          cache_hint: data.cache_hint || null,
+        error: data.message || data.detail || `API request failed with status ${response.status}`
         };
         // Cache non-tippable result so we don't re-ping for the same destination
         if (typeof ResolveCache !== 'undefined') {
@@ -991,11 +992,12 @@ class GroveAPI {
         return result;
       }
 
-      // API returns { tippable: boolean, addresses: [...], source?: string, destination_kind?: string }
+      // API returns { tippable: boolean, addresses: [...], source?: string, destination_kind?: string, cache_hint?: string }
       const result = {
         tippable: data.tippable || false,
         addresses: data.addresses || [],
         source: data.source || data.destination_kind || null,
+        cache_hint: data.cache_hint || null,
         error: null
       };
 

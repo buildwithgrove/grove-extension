@@ -243,6 +243,112 @@ describe('ResolveCache', () => {
     });
   });
 
+  describe('cache_hint TTL selection', () => {
+    const definitiveResult = {
+      tippable: false,
+      addresses: [],
+      cache_hint: 'definitive',
+      error: 'No tip address found',
+    };
+
+    const temporaryResult = {
+      tippable: false,
+      addresses: [],
+      cache_hint: 'temporary',
+      error: 'Failed to fetch adapter',
+    };
+
+    it('getTTL should return POSITIVE_TTL for tippable entries', () => {
+      const entry = { tippable: true, cacheHint: null };
+      expect(ResolveCache.getTTL(entry)).toBe(ResolveCache.POSITIVE_TTL);
+    });
+
+    it('getTTL should return POSITIVE_TTL for definitive non-tippable entries', () => {
+      const entry = { tippable: false, cacheHint: 'definitive' };
+      expect(ResolveCache.getTTL(entry)).toBe(ResolveCache.POSITIVE_TTL);
+    });
+
+    it('getTTL should return TEMPORARY_TTL for temporary non-tippable entries', () => {
+      const entry = { tippable: false, cacheHint: 'temporary' };
+      expect(ResolveCache.getTTL(entry)).toBe(ResolveCache.TEMPORARY_TTL);
+    });
+
+    it('getTTL should return NEGATIVE_TTL when no cache hint (backward compat)', () => {
+      const entry = { tippable: false, cacheHint: null };
+      expect(ResolveCache.getTTL(entry)).toBe(ResolveCache.NEGATIVE_TTL);
+    });
+
+    it('TEMPORARY_TTL should be shorter than NEGATIVE_TTL', () => {
+      expect(ResolveCache.TEMPORARY_TTL).toBeLessThan(ResolveCache.NEGATIVE_TTL);
+    });
+
+    it('should store cacheHint from result.cache_hint', async () => {
+      await ResolveCache.set('mail.google.com', temporaryResult);
+      const entry = ResolveCache.memCache.get('mail.google.com');
+      expect(entry.cacheHint).toBe('temporary');
+    });
+
+    it('should expire temporary results after TEMPORARY_TTL', async () => {
+      await ResolveCache.set('mail.google.com', temporaryResult);
+
+      const entry = ResolveCache.memCache.get('mail.google.com');
+      entry.timestamp = Date.now() - ResolveCache.TEMPORARY_TTL - 1000;
+
+      const cached = await ResolveCache.get('mail.google.com');
+      expect(cached).toBeNull();
+    });
+
+    it('should keep definitive results for POSITIVE_TTL duration', async () => {
+      await ResolveCache.set('reddit.com/u/someone', definitiveResult);
+
+      const entry = ResolveCache.memCache.get('reddit.com/u/someone');
+      // Still within POSITIVE_TTL
+      entry.timestamp = Date.now() - ResolveCache.POSITIVE_TTL + 5000;
+
+      const cached = await ResolveCache.get('reddit.com/u/someone');
+      expect(cached).toEqual(definitiveResult);
+    });
+
+    it('should expire definitive results after POSITIVE_TTL', async () => {
+      await ResolveCache.set('reddit.com/u/someone', definitiveResult);
+
+      const entry = ResolveCache.memCache.get('reddit.com/u/someone');
+      entry.timestamp = Date.now() - ResolveCache.POSITIVE_TTL - 1000;
+
+      const cached = await ResolveCache.get('reddit.com/u/someone');
+      expect(cached).toBeNull();
+    });
+
+    it('should respect cache_hint during hydration', async () => {
+      const storedEntries = {
+        'temp-dest': {
+          tippable: false,
+          cacheHint: 'temporary',
+          result: temporaryResult,
+          timestamp: Date.now() - ResolveCache.TEMPORARY_TTL - 1000,
+        },
+        'definitive-dest': {
+          tippable: false,
+          cacheHint: 'definitive',
+          result: definitiveResult,
+          timestamp: Date.now() - ResolveCache.TEMPORARY_TTL - 1000,
+        },
+      };
+      mockChrome.storage.local._setData({
+        [ResolveCache.STORAGE_KEY]: storedEntries,
+      });
+
+      ResolveCache.reset();
+      // Trigger hydration
+      await ResolveCache.get('anything');
+
+      // Temporary entry should be expired (past TEMPORARY_TTL)
+      expect(ResolveCache.memCache.has('temp-dest')).toBe(false);
+      // Definitive entry should still be valid (within POSITIVE_TTL)
+      expect(ResolveCache.memCache.has('definitive-dest')).toBe(true);
+    });
+  });
+
   describe('graceful degradation', () => {
     it('should work when chrome.storage is unavailable', async () => {
       // Simulate no chrome.storage
