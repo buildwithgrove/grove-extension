@@ -760,30 +760,6 @@ function setupEventListeners() {
     });
   }
 
-  // Earn Tab - Social link platform select
-  const earnSocialPlatformSelect = document.getElementById(
-    "earnSocialPlatformSelect",
-  );
-  if (earnSocialPlatformSelect) {
-    earnSocialPlatformSelect.addEventListener(
-      "change",
-      handleEarnPlatformChange,
-    );
-  }
-
-  // Earn Tab - Social link add button
-  const earnSocialAddBtn = document.getElementById("earnSocialAddBtn");
-  if (earnSocialAddBtn) {
-    earnSocialAddBtn.addEventListener("click", handleEarnAddSocialLink);
-  }
-  const earnSocialHandleInput = document.getElementById(
-    "earnSocialHandleInput",
-  );
-  if (earnSocialHandleInput) {
-    earnSocialHandleInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") handleEarnAddSocialLink();
-    });
-  }
 
   // Account - Copy Tipping Wallet Button
   if (copyTippingWalletBtn) {
@@ -2000,11 +1976,14 @@ async function loadEarnTab() {
   if (earnLoggedOut) earnLoggedOut.classList.add("hidden");
   if (earnLoggedIn) earnLoggedIn.classList.remove("hidden");
 
-  // Load all earn data in parallel
+  // Set connect accounts link URL
+  updateEarnConnectAccountsLink();
+
+  // Load earn data in parallel
   await Promise.all([
     loadEarnStats(),
     loadEarnUsernameStep(),
-    loadEarnSocialLinks(),
+    loadEarnSocialCheckFromAPI(),
   ]);
 }
 
@@ -2096,6 +2075,53 @@ async function updateEarnProfileLink(handle) {
     link.classList.remove("hidden");
   } else {
     link.classList.add("hidden");
+  }
+}
+
+/**
+ * Set the connect accounts link to the web app profile settings page
+ */
+async function updateEarnConnectAccountsLink() {
+  const link = document.getElementById("earnConnectAccountsLink");
+  if (!link) return;
+
+  const result = await chrome.storage.local.get([
+    STORAGE_KEYS.ENDPOINT,
+    STORAGE_KEYS.ENVIRONMENT,
+  ]);
+  const envId = GroveEnv.resolveActiveEnvId(
+    result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV,
+    result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT,
+  );
+  const appUrl = GroveEnv.get(envId).appUrl;
+  link.href = `${appUrl}/dashboard/settings?tab=profile`;
+}
+
+/**
+ * Check if user has social links and update the checkmark + label (read-only, no form)
+ */
+async function loadEarnSocialCheckFromAPI() {
+  const jwt = await getActiveJWT();
+  if (!jwt) return;
+
+  try {
+    const result = await GroveAPI.getSocialLinks(jwt);
+    const links = result.success && Array.isArray(result.data) ? result.data : [];
+    const checkIcon = document.getElementById("earnSocialCheck");
+    const title = document.getElementById("earnConnectAccountsTitle");
+    const desc = document.getElementById("earnConnectAccountsDesc");
+
+    if (links.length > 0) {
+      if (checkIcon) checkIcon.classList.add("completed");
+      if (title) title.textContent = "Connect additional accounts";
+      if (desc) desc.textContent = "Manage your social profiles on our web app so people can tip you.";
+    } else {
+      if (checkIcon) checkIcon.classList.remove("completed");
+      if (title) title.textContent = "Connect your accounts";
+      if (desc) desc.textContent = "Add your social profiles on our web app so people can tip you.";
+    }
+  } catch (err) {
+    console.error("[Grove Extension] Social links check failed:", err);
   }
 }
 

@@ -2310,6 +2310,35 @@ button.quick-access-item:hover .quick-access-icon {
   margin: 0 14px;
 }
 
+.earn-connect-accounts-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.earn-connect-accounts-link:hover .earn-checklist-title {
+  color: var(--color-primary);
+}
+
+.earn-connect-accounts-link .earn-checklist-desc {
+  margin-bottom: 0;
+}
+
+.earn-connect-accounts-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.earn-connect-external-icon {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+}
+
+.earn-connect-accounts-link:hover .earn-connect-external-icon {
+  color: var(--color-primary);
+}
+
 /* Username Form (Earn tab) */
 .earn-username-form {
   margin-top: 4px;
