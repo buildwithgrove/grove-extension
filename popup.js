@@ -760,31 +760,6 @@ function setupEventListeners() {
     });
   }
 
-  // Earn Tab - Social link platform select
-  const earnSocialPlatformSelect = document.getElementById(
-    "earnSocialPlatformSelect",
-  );
-  if (earnSocialPlatformSelect) {
-    earnSocialPlatformSelect.addEventListener(
-      "change",
-      handleEarnPlatformChange,
-    );
-  }
-
-  // Earn Tab - Social link add button
-  const earnSocialAddBtn = document.getElementById("earnSocialAddBtn");
-  if (earnSocialAddBtn) {
-    earnSocialAddBtn.addEventListener("click", handleEarnAddSocialLink);
-  }
-  const earnSocialHandleInput = document.getElementById(
-    "earnSocialHandleInput",
-  );
-  if (earnSocialHandleInput) {
-    earnSocialHandleInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") handleEarnAddSocialLink();
-    });
-  }
-
   // Account - Copy Tipping Wallet Button
   if (copyTippingWalletBtn) {
     copyTippingWalletBtn.addEventListener("click", copyTippingWallet);
@@ -1940,51 +1915,6 @@ async function getEarnAddress() {
 
 // ─── Earn Tab ───────────────────────────────────────────────────────────────
 
-// NOTE: When adding a new platform, update ALL of:
-//   1. SOCIAL_PLACEHOLDERS (below)
-//   2. PLATFORM_LABELS (below)
-//   3. normalizeSocialUrl() switch statement (below)
-//   4. The <select> options in popup.html (#earnSocialPlatformSelect)
-const SOCIAL_PLACEHOLDERS = {
-  x: "@username",
-  youtube: "@handle",
-  github: "username",
-  soundcloud: "username",
-  substack: "name or name.substack.com",
-  instagram: "username",
-  linkedin: "username",
-  medium: "@username",
-  reddit: "username",
-  tiktok: "@username",
-  discord: "username",
-  telegram: "username",
-  website: "example.com",
-};
-
-/**
- * Normalize a bare handle/username into a full URL for the API
- */
-// normalizeSocialUrl and socialDisplayLabel are loaded from src/utils/socialUtils.js
-
-const PLATFORM_LABELS = {
-  x: "X",
-  youtube: "YouTube",
-  github: "GitHub",
-  soundcloud: "SoundCloud",
-  substack: "Substack",
-  instagram: "Instagram",
-  linkedin: "LinkedIn",
-  medium: "Medium",
-  reddit: "Reddit",
-  tiktok: "TikTok",
-  discord: "Discord",
-  telegram: "Telegram",
-  website: "Website",
-};
-
-// In-memory cache of loaded social links
-let earnSocialLinksCache = [];
-
 /**
  * Load the entire Earn tab — decides logged-out vs logged-in state
  */
@@ -2000,11 +1930,14 @@ async function loadEarnTab() {
   if (earnLoggedOut) earnLoggedOut.classList.add("hidden");
   if (earnLoggedIn) earnLoggedIn.classList.remove("hidden");
 
-  // Load all earn data in parallel
+  // Set connect accounts link URL
+  updateEarnConnectAccountsLink();
+
+  // Load earn data in parallel
   await Promise.all([
     loadEarnStats(),
     loadEarnUsernameStep(),
-    loadEarnSocialLinks(),
+    loadEarnSocialCheckFromAPI(),
   ]);
 }
 
@@ -2100,6 +2033,53 @@ async function updateEarnProfileLink(handle) {
 }
 
 /**
+ * Set the connect accounts link to the web app profile settings page
+ */
+async function updateEarnConnectAccountsLink() {
+  const link = document.getElementById("earnConnectAccountsLink");
+  if (!link) return;
+
+  const result = await chrome.storage.local.get([
+    STORAGE_KEYS.ENDPOINT,
+    STORAGE_KEYS.ENVIRONMENT,
+  ]);
+  const envId = GroveEnv.resolveActiveEnvId(
+    result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV,
+    result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT,
+  );
+  const appUrl = GroveEnv.get(envId).appUrl;
+  link.href = `${appUrl}/dashboard/settings?tab=profile`;
+}
+
+/**
+ * Check if user has social links and update the checkmark + label (read-only, no form)
+ */
+async function loadEarnSocialCheckFromAPI() {
+  const jwt = await getActiveJWT();
+  if (!jwt) return;
+
+  try {
+    const result = await GroveAPI.getSocialLinks(jwt);
+    const links = result.success && Array.isArray(result.data) ? result.data : [];
+    const checkIcon = document.getElementById("earnSocialCheck");
+    const title = document.getElementById("earnConnectAccountsTitle");
+    const desc = document.getElementById("earnConnectAccountsDesc");
+
+    if (links.length > 0) {
+      if (checkIcon) checkIcon.classList.add("completed");
+      if (title) title.textContent = "Connect additional accounts";
+      if (desc) desc.textContent = "Manage your social profiles on our web app so people can tip you.";
+    } else {
+      if (checkIcon) checkIcon.classList.remove("completed");
+      if (title) title.textContent = "Connect your accounts";
+      if (desc) desc.textContent = "Add your social profiles on our web app so people can tip you.";
+    }
+  } catch (err) {
+    console.error("[Grove Extension] Social links check failed:", err);
+  }
+}
+
+/**
  * Core claim-handle logic shared by earn tab and settings tab.
  * Returns { success: true } or { success: false, error: string }.
  */
@@ -2167,231 +2147,6 @@ async function handleEarnClaimUsername() {
   } finally {
     btn.disabled = false;
     btn.textContent = "Claim";
-  }
-}
-
-/**
- * Handle platform select change in earn social form
- */
-function handleEarnPlatformChange() {
-  const select = document.getElementById("earnSocialPlatformSelect");
-  const input = document.getElementById("earnSocialHandleInput");
-  const addBtn = document.getElementById("earnSocialAddBtn");
-  const platform = select.value;
-
-  if (platform) {
-    input.disabled = false;
-    input.placeholder = SOCIAL_PLACEHOLDERS[platform] || "Enter handle or URL";
-    addBtn.disabled = false;
-    input.focus();
-  } else {
-    input.disabled = true;
-    input.placeholder = "Choose a platform...";
-    addBtn.disabled = true;
-  }
-  input.value = "";
-}
-
-/**
- * Load social links from API and render
- */
-async function loadEarnSocialLinks() {
-  const jwt = await getActiveJWT();
-  if (!jwt) return;
-
-  try {
-    const result = await GroveAPI.getSocialLinks(jwt);
-    if (result.success) {
-      earnSocialLinksCache = Array.isArray(result.data) ? result.data : [];
-    } else {
-      earnSocialLinksCache = [];
-    }
-  } catch (err) {
-    console.error("[Grove Extension] Load social links failed:", err);
-    earnSocialLinksCache = [];
-  }
-
-  renderEarnSocialLinks();
-  updateEarnSocialCheckmark();
-  updateEarnPlatformOptions();
-}
-
-/**
- * Render the social links chips
- */
-function renderEarnSocialLinks() {
-  const container = document.getElementById("earnSocialLinks");
-  if (!container) return;
-
-  if (earnSocialLinksCache.length === 0) {
-    container.classList.add("hidden");
-    container.innerHTML = "";
-    return;
-  }
-
-  container.classList.remove("hidden");
-  const sorted = [...earnSocialLinksCache].sort((a, b) =>
-    a.platform.localeCompare(b.platform),
-  );
-  container.innerHTML = sorted
-    .map((link) => {
-      const label = PLATFORM_LABELS[link.platform] || link.platform;
-      const display = socialDisplayLabel(link.platform, link.url);
-      return `<span class="earn-social-chip">
-      <span>${label}: ${display}</span>
-      <button class="earn-social-chip-remove" data-platform="${link.platform}" title="Remove">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </span>`;
-    })
-    .join("");
-
-  // Attach remove handlers
-  container.querySelectorAll(".earn-social-chip-remove").forEach((btn) => {
-    btn.addEventListener("click", () =>
-      handleEarnRemoveSocialLink(btn.dataset.platform),
-    );
-  });
-}
-
-/**
- * Update the social step checkmark based on whether any links exist
- */
-function updateEarnSocialCheckmark() {
-  const checkIcon = document.getElementById("earnSocialCheck");
-  if (!checkIcon) return;
-
-  if (earnSocialLinksCache.length > 0) {
-    checkIcon.classList.add("completed");
-  } else {
-    checkIcon.classList.remove("completed");
-  }
-}
-
-/**
- * Hide already-linked platforms from the dropdown
- */
-function updateEarnPlatformOptions() {
-  const select = document.getElementById("earnSocialPlatformSelect");
-  if (!select) return;
-
-  const linkedPlatforms = new Set(earnSocialLinksCache.map((l) => l.platform));
-
-  Array.from(select.options).forEach((opt) => {
-    if (opt.value) {
-      opt.hidden = linkedPlatforms.has(opt.value);
-    }
-  });
-
-  // Reset select if current value is now linked
-  if (linkedPlatforms.has(select.value)) {
-    select.value = "";
-    handleEarnPlatformChange();
-  }
-}
-
-/**
- * Handle adding a social link
- */
-async function handleEarnAddSocialLink() {
-  const select = document.getElementById("earnSocialPlatformSelect");
-  const input = document.getElementById("earnSocialHandleInput");
-  const addBtn = document.getElementById("earnSocialAddBtn");
-  const errorEl = document.getElementById("earnSocialError");
-  const platform = select.value;
-  const handle = input.value.trim();
-
-  if (errorEl) errorEl.classList.add("hidden");
-
-  if (!platform || !handle) {
-    if (errorEl) {
-      errorEl.textContent = "Select a platform and enter your handle.";
-      errorEl.classList.remove("hidden");
-    }
-    return;
-  }
-
-  addBtn.disabled = true;
-  addBtn.textContent = "...";
-
-  try {
-    const jwt = await getActiveJWT();
-    if (!jwt) {
-      if (errorEl) {
-        errorEl.textContent = "Not signed in.";
-        errorEl.classList.remove("hidden");
-      }
-      return;
-    }
-
-    const url = normalizeSocialUrl(platform, handle);
-    const result = await GroveAPI.addSocialLink(platform, url, jwt);
-
-    if (!result.success) {
-      if (errorEl) {
-        errorEl.textContent = result.error || "Failed to add.";
-        errorEl.classList.remove("hidden");
-      }
-      return;
-    }
-
-    // Add to cache and re-render
-    if (result.data && result.data.platform) {
-      earnSocialLinksCache.push(result.data);
-    } else {
-      // Unexpected shape — re-fetch from API for authoritative data
-      await loadEarnSocialLinks();
-      return;
-    }
-    renderEarnSocialLinks();
-    updateEarnSocialCheckmark();
-    updateEarnPlatformOptions();
-
-    // Reset form
-    select.value = "";
-    input.value = "";
-    input.disabled = true;
-    input.placeholder = "Choose a platform...";
-    showToast(`${PLATFORM_LABELS[platform] || platform} linked`);
-  } catch (error) {
-    console.error("[Grove Extension] Add social link error:", error);
-    if (errorEl) {
-      errorEl.textContent = "Something went wrong.";
-      errorEl.classList.remove("hidden");
-    }
-  } finally {
-    addBtn.disabled = false;
-    addBtn.textContent = "Add";
-  }
-}
-
-/**
- * Handle removing a social link
- */
-async function handleEarnRemoveSocialLink(platform) {
-  try {
-    const jwt = await getActiveJWT();
-    if (!jwt) return;
-
-    const result = await GroveAPI.removeSocialLink(platform, jwt);
-    if (!result.success) {
-      showToast(result.error || "Failed to remove.");
-      return;
-    }
-
-    earnSocialLinksCache = earnSocialLinksCache.filter(
-      (l) => l.platform !== platform,
-    );
-    renderEarnSocialLinks();
-    updateEarnSocialCheckmark();
-    updateEarnPlatformOptions();
-    showToast(`${PLATFORM_LABELS[platform] || platform} removed`);
-  } catch (error) {
-    console.error("[Grove Extension] Remove social link error:", error);
-    showToast("Failed to remove.");
   }
 }
 
