@@ -149,7 +149,7 @@ _create_tag_and_release:
 	mkdir -p $(BUILD_DIR)/repack; \
 	cp -r $(INCLUDE_FILES) $(BUILD_DIR)/repack/; \
 	sed 's|"version": "[^"]*"|"version": "'$$RELEASE_VERSION'"|; s|"manifest_version": 3,|"manifest_version": 3,\n  "key": "$(EXTENSION_PUBLIC_KEY)",|' $(BUILD_DIR)/repack/manifest.json > $(BUILD_DIR)/repack/manifest.json.tmp && mv $(BUILD_DIR)/repack/manifest.json.tmp $(BUILD_DIR)/repack/manifest.json; \
-	cd $(BUILD_DIR)/repack && zip -rq ../grove-extension-v$$RELEASE_VERSION-beta.zip .; \
+	(cd $(BUILD_DIR)/repack && zip -rq ../grove-extension-v$$RELEASE_VERSION-beta.zip .); \
 	rm -rf $(BUILD_DIR)/repack; \
 	cp $(BUILD_DIR)/grove-extension-v$$RELEASE_VERSION-beta.zip $(RELEASE_ASSET); \
 	printf "\n"; \
