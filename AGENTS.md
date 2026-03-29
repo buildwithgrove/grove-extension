@@ -594,7 +594,7 @@ URLs the extension opens in the app. Defined statically in `popup.html` (fallbac
 
 | Feature | URL Pattern | Files |
 |---------|-------------|-------|
-| Top Up | `{appUrl}/wallets?action=topup` | `popup.html:225`, `popup.js` via `GroveEnv.topUpUrl()` |
+| Top Up | `{appUrl}/balances?action=topup` | `popup.html:226`, `popup.js` via `GroveEnv.topUpUrl()` |
 | Wallet Sign-In | `{appUrl}/extension` | `popup.html:979`, `popup.js` via `GroveEnv.extensionUrl()` |
 | Create Giveaway | `{appUrl}/dashboard?tab=giveaways` | `popup.html:559`, `popup.js:2331` |
 | General Settings | `{appUrl}` | `popup.html:1064` |
@@ -728,6 +728,6 @@ Both the extension and app call these Grove API endpoints. When the API response
 | `src/lib/config.ts` | `getExtensionEnvironment()` — env mapping |
 | `src/components/SecretKeyCard.tsx` | All `chrome.runtime` message sends |
 | `src/app/extension/page.tsx` | `/extension` route, inline `SET_JWT` |
-| `src/app/wallets/page.tsx` | `/wallets?action=topup` handler |
+| `src/app/balances/page.tsx` | `/balances?action=topup` handler |
 | `src/app/dashboard/page.tsx` | `?tab=` routing for all dashboard tabs |
 | `src/modules/api/groveApiClient.ts` | App-side API client (canonical field names) |
