@@ -68,7 +68,7 @@ var GroveEnv = {
    */
   topUpUrl(envId) {
     const env = GROVE_ENVIRONMENTS[envId] || GROVE_ENVIRONMENTS.production;
-    return `${env.appUrl}/wallets?action=topup`;
+    return `${env.appUrl}/balances?action=topup`;
   },
 
   /**

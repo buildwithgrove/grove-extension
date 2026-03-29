@@ -90,13 +90,13 @@ describe('GroveEnv.resolveActiveEnvId', () => {
 
 describe('GroveEnv.topUpUrl', () => {
   it('should derive top-up URL from appUrl for each env', () => {
-    expect(GroveEnv.topUpUrl('production')).toBe('https://grove.city/wallets?action=topup');
-    expect(GroveEnv.topUpUrl('testnet')).toBe('https://testnet.grove.city/wallets?action=topup');
-    expect(GroveEnv.topUpUrl('localhost')).toBe('http://localhost:3000/wallets?action=topup');
+    expect(GroveEnv.topUpUrl('production')).toBe('https://grove.city/balances?action=topup');
+    expect(GroveEnv.topUpUrl('testnet')).toBe('https://testnet.grove.city/balances?action=topup');
+    expect(GroveEnv.topUpUrl('localhost')).toBe('http://localhost:3000/balances?action=topup');
   });
 
   it('should fall back to production for unknown env', () => {
-    expect(GroveEnv.topUpUrl('unknown')).toBe('https://grove.city/wallets?action=topup');
+    expect(GroveEnv.topUpUrl('unknown')).toBe('https://grove.city/balances?action=topup');
   });
 });
 
