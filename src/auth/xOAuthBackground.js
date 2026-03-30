@@ -18,6 +18,21 @@ const X_AUTH_CONFIG = {
 };
 
 /**
+ * Get the Grove API base URL from stored environment config.
+ * Works in the service worker context (no GroveAPI dependency).
+ * @returns {Promise<string>}
+ */
+async function _getApiBaseURL() {
+  const result = await chrome.storage.local.get(['groveEnvironment', 'groveEndpoint']);
+  const envId = GroveEnv.resolveActiveEnvId(
+    result.groveEnvironment || 'prod',
+    result.groveEndpoint || 'production'
+  );
+  const env = GroveEnv.get(envId);
+  return env ? env.apiUrl : 'https://api.grove.city';
+}
+
+/**
  * Generate a random code verifier for PKCE
  * @returns {string}
  */
@@ -150,7 +165,7 @@ async function handleXLogin() {
  */
 async function exchangeCodeForTokens(code, codeVerifier) {
   groveLog.log('[X Auth] Exchanging code for tokens via Grove API...');
-  const baseURL = await GroveAPI.getBaseURL();
+  const baseURL = await _getApiBaseURL();
   const tokenUrl = `${baseURL}/v1/auth/x/token`;
 
   const response = await fetch(tokenUrl, {
