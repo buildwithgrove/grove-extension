@@ -4,7 +4,7 @@
  */
 
 const X_AUTH_CONFIG = {
-  CLIENT_ID: 'UHQwQXlCRFZHY1F1VmZ3RmVXU0Y6MTpjaQ',
+  CLIENT_ID: 'TmE4VU9GQm5KaW1NSzZtYURKc2o6MTpjaQ',
   get REDIRECT_URI() {
     return `https://${chrome.runtime.id}.chromiumapp.org/callback`;
   },
@@ -16,6 +16,21 @@ const X_AUTH_CONFIG = {
     TOKEN_EXPIRY: 'GROVE_X_TOKEN_EXPIRY',
   }
 };
+
+/**
+ * Get the Grove API base URL from stored environment config.
+ * Works in the service worker context (no GroveAPI dependency).
+ * @returns {Promise<string>}
+ */
+async function _getApiBaseURL() {
+  const result = await chrome.storage.local.get(['groveEnvironment', 'groveEndpoint']);
+  const envId = GroveEnv.resolveActiveEnvId(
+    result.groveEnvironment || 'prod',
+    result.groveEndpoint || 'production'
+  );
+  const env = GroveEnv.get(envId);
+  return env ? env.apiUrl : 'https://api.grove.city';
+}
 
 /**
  * Generate a random code verifier for PKCE
@@ -142,29 +157,29 @@ async function handleXLogin() {
 }
 
 /**
- * Exchange authorization code for access/refresh tokens
+ * Exchange authorization code for access/refresh tokens.
+ * Proxied through the Grove API so the client secret stays server-side.
  * @param {string} code - Authorization code
  * @param {string} codeVerifier - PKCE code verifier
  * @returns {Promise<Object>}
  */
 async function exchangeCodeForTokens(code, codeVerifier) {
-  groveLog.log('[X Auth] Exchanging code for tokens...');
-  const tokenUrl = 'https://api.twitter.com/2/oauth2/token';
-
-  const params = new URLSearchParams();
-  params.set('grant_type', 'authorization_code');
-  params.set('code', code);
-  params.set('redirect_uri', X_AUTH_CONFIG.REDIRECT_URI);
-  params.set('client_id', X_AUTH_CONFIG.CLIENT_ID);
-  params.set('code_verifier', codeVerifier);
+  groveLog.log('[X Auth] Exchanging code for tokens via Grove API...');
+  const baseURL = await _getApiBaseURL();
+  const tokenUrl = `${baseURL}/v1/auth/x/token`;
 
   const response = await fetch(tokenUrl, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Type': 'application/json',
     },
-    body: params.toString(),
-    credentials: 'omit',
+    body: JSON.stringify({
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: X_AUTH_CONFIG.REDIRECT_URI,
+      client_id: X_AUTH_CONFIG.CLIENT_ID,
+      code_verifier: codeVerifier,
+    }),
   });
 
   if (!response.ok) {

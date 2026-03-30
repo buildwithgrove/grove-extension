@@ -5,7 +5,7 @@
  */
 
 class XAuth {
-  static CLIENT_ID = 'UHQwQXlCRFZHY1F1VmZ3RmVXU0Y6MTpjaQ';
+  static CLIENT_ID = 'TmE4VU9GQm5KaW1NSzZtYURKc2o6MTpjaQ';
 
   /**
    * Fetch wrapper that routes through background service worker in content script context
@@ -95,19 +95,20 @@ class XAuth {
       throw new Error('No refresh token available');
     }
 
-    const tokenUrl = 'https://api.twitter.com/2/oauth2/token';
-
-    const params = new URLSearchParams();
-    params.set('grant_type', 'refresh_token');
-    params.set('refresh_token', refreshToken);
-    params.set('client_id', this.CLIENT_ID);
+    // Proxy through Grove API so client secret stays server-side
+    const baseURL = await GroveAPI.getBaseURL();
+    const tokenUrl = `${baseURL}/v1/auth/x/token`;
 
     const response = await XAuth._fetch(tokenUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: params.toString(),
+      body: JSON.stringify({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: this.CLIENT_ID,
+      }),
     });
 
     if (!response.ok) {
