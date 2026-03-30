@@ -145,32 +145,23 @@
   // is now managed by TweetProcessor module
 
   // Initialize BioFetcher with callbacks
+  // BioFetcher resolves users via Grove API /v1/tip/resolve — returns structured
+  // address data directly, no local bio parsing needed.
   if (typeof BioFetcher !== 'undefined') {
     BioFetcher.init({
       isUserCached: (username) => getCachedAddress(username) !== null,
-      onBioFetched: (username, { displayName, bio }) => {
-        const combinedText = [displayName, bio].filter(Boolean).join(' ');
+      onBioFetched: (username, { tippable, address, type }) => {
+        if (tippable && address) {
+          // Cache the resolved address
+          setCachedAddress(username, { address, type, original: address });
+          groveLog.log(`Bio fetch: @${username} is tippable: ${address} (${type})`);
 
-        if (combinedText && AddressParser.hasAddresses(combinedText)) {
-          const addressResult = AddressParser.resolveAddress(combinedText);
-          if (addressResult.address) {
-            // Cache the positive result
-            setCachedAddress(username, addressResult);
-            groveLog.log(`Bio fetch: Found address for @${username}: ${addressResult.address}`);
-
-            // Inject buttons for all pending tweets from this user
-            if (typeof TweetProcessor !== 'undefined') {
-              TweetProcessor.injectPendingButtons(username);
-            }
-          } else {
-            // No valid address found
-            setCachedAddress(username, 'no-address');
-            if (typeof TweetProcessor !== 'undefined') {
-              TweetProcessor.clearPendingButtons(username);
-            }
+          // Inject buttons for all pending tweets from this user
+          if (typeof TweetProcessor !== 'undefined') {
+            TweetProcessor.injectPendingButtons(username);
           }
         } else {
-          // No address in bio/display name
+          // Not tippable
           setCachedAddress(username, 'no-address');
           if (typeof TweetProcessor !== 'undefined') {
             TweetProcessor.clearPendingButtons(username);
