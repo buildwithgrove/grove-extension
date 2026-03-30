@@ -52,6 +52,11 @@ beforeEach(() => {
   };
   context.window = context;
 
+  // Mock GroveAPI.getBaseURL (used by refreshAccessToken for token proxy)
+  context.GroveAPI = {
+    getBaseURL: vi.fn().mockResolvedValue('https://api.grove.city'),
+  };
+
   // Load script
   loadBrowserScript('src/auth/xAuth.js', context);
 
@@ -79,7 +84,7 @@ describe('XAuth', () => {
         refresh_token: 'new-refresh-token',
         expires_in: 7200
       };
-      mockFetch.mockResponse('POST', 'https://api.twitter.com/2/oauth2/token', newTokens);
+      mockFetch.mockResponse('POST', 'https://api.grove.city/v1/auth/x/token', newTokens);
 
       const result = await XAuth.refreshAccessToken();
 
@@ -97,7 +102,7 @@ describe('XAuth', () => {
       mockChrome.storage.local._setData({
         [STORAGE_KEYS.REFRESH_TOKEN]: 'invalid-token'
       });
-      mockFetch.mockResponse('POST', 'https://api.twitter.com/2/oauth2/token',
+      mockFetch.mockResponse('POST', 'https://api.grove.city/v1/auth/x/token',
         { error: 'Invalid token' },
         { status: 401 }
       );
@@ -136,7 +141,7 @@ describe('XAuth', () => {
         [STORAGE_KEYS.REFRESH_TOKEN]: 'refresh-token'
       });
 
-      mockFetch.mockResponse('POST', 'https://api.twitter.com/2/oauth2/token', {
+      mockFetch.mockResponse('POST', 'https://api.grove.city/v1/auth/x/token', {
         access_token: 'new-token',
         refresh_token: 'new-refresh',
         expires_in: 7200
@@ -154,7 +159,7 @@ describe('XAuth', () => {
         [STORAGE_KEYS.REFRESH_TOKEN]: 'bad-refresh-token'
       });
 
-      mockFetch.mockResponse('POST', 'https://api.twitter.com/2/oauth2/token',
+      mockFetch.mockResponse('POST', 'https://api.grove.city/v1/auth/x/token',
         { error: 'Invalid' },
         { status: 401 }
       );
@@ -367,7 +372,7 @@ describe('XAuth', () => {
       let tweetCallCount = 0;
       // Override fetch in the sandbox context directly
       context.fetch = vi.fn(async (url, options) => {
-        if (url === 'https://api.twitter.com/2/oauth2/token') {
+        if (url === 'https://api.grove.city/v1/auth/x/token') {
           return {
             ok: true,
             status: 200,
