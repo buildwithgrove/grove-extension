@@ -51,6 +51,13 @@ function detectDarkMode(platform) {
     // Fall through to generic detection
   }
 
+  if (platform === 'linkedin') {
+    // LinkedIn uses artdeco-theme--dark class or data-theme attribute
+    if (document.body.classList.contains('artdeco-theme--dark')) return true;
+    if (document.documentElement.getAttribute('data-theme') === 'dark') return true;
+    // Fall through to generic detection
+  }
+
   // Check body background (most reliable for platforms that set it)
   const bodyBg = document.body.style.backgroundColor ||
                  window.getComputedStyle(document.body).backgroundColor;

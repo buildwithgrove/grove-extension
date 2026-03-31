@@ -177,6 +177,39 @@
     },
     {
       "matches": [
+        "https://www.linkedin.com/*",
+        "https://linkedin.com/*"
+      ],
+      "js": [
+        "src/config/environments.js",
+        "src/config/logger.js",
+        "src/config/storageKeys.js",
+        "src/config/devFlags.js",
+        "src/config/chains.js",
+        "src/utils/darkMode.js",
+        "src/utils/addressCache.js",
+        "src/parsers/addressMatchers.js",
+        "src/parsers/address.js",
+        "src/adapters/base.js",
+        "src/adapters/linkedin.js",
+        "src/ui/constants.js",
+        "src/ui/tipModal.js",
+        "src/ui/errorBubble.js",
+        "src/ui/button.js",
+        "src/utils/resolveCache.js",
+        "src/utils/api.js",
+        "src/utils/tipErrors.js",
+        "src/content/profilePageHandler.js",
+        "src/content/linkedinHandler.js",
+        "src/content/content.js"
+      ],
+      "css": [
+        "src/ui/styles.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
         "https://*/*",
         "http://*/*"
       ],
@@ -190,7 +223,9 @@
         "https://*.substack.com/*",
         "https://substack.com/*",
         "https://www.youtube.com/*",
-        "https://youtube.com/*"
+        "https://youtube.com/*",
+        "https://www.linkedin.com/*",
+        "https://linkedin.com/*"
       ],
       "js": [
         "src/config/environments.js",

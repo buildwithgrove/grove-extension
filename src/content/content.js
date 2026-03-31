@@ -348,6 +348,33 @@
       return;
     }
 
+    // For LinkedIn, use ProfilePageHandler for profile/post pages, LinkedInHandler for feed posts
+    if (currentAdapter.getPlatformName() === "linkedin") {
+      // Profile and individual post pages: resolve via API first (fallback to DOM parsing)
+      if (currentAdapter.detectTippablePage()) {
+        if (typeof ProfilePageHandler !== 'undefined') {
+          const result = await ProfilePageHandler.initialize(currentAdapter);
+          if (result) {
+            resolvedAddress = result;
+            currentButton = ProfilePageHandler.getButton();
+          }
+        }
+      }
+
+      // Feed post buttons: LinkedIn-specific handler
+      if (typeof LinkedInHandler !== 'undefined') {
+        LinkedInHandler.init({
+          onTipClick: handleTipClick,
+          createTipButton: (onClick, platform) => new TipButton(onClick, platform),
+        });
+
+        LinkedInHandler.initialize(currentAdapter).catch((err) => {
+          console.error('[Grove LinkedIn] Feed handler init failed:', err);
+        });
+      }
+      return;
+    }
+
     // For Substack, use ProfilePageHandler for full pages (API-first), and SubstackHandler for hover cards
     if (currentAdapter.getPlatformName() === "substack") {
       const isSubstackTippablePage = currentAdapter.detectTippablePage();
@@ -505,6 +532,17 @@
     if (hostname.includes("youtube.com")) {
       groveLog.log('Detected YouTube');
       return new window.YouTubeAdapter();
+    }
+
+    if (hostname.includes("linkedin.com")) {
+      if (typeof window.LinkedInAdapter === 'undefined') {
+        // LinkedInAdapter loads from its own manifest entry — if we're here
+        // from the generic catch-all entry, just skip. The LinkedIn entry's
+        // content.js will handle initialization.
+        return null;
+      }
+      groveLog.log('Detected LinkedIn');
+      return new window.LinkedInAdapter();
     }
 
     if (hostname.includes("substack.com")) {
@@ -1031,6 +1069,9 @@
     }
     if (typeof TweetProcessor !== 'undefined') {
       TweetProcessor.reset();
+    }
+    if (typeof LinkedInHandler !== 'undefined') {
+      LinkedInHandler.reset();
     }
     if (typeof SubstackHandler !== 'undefined') {
       SubstackHandler.reset();

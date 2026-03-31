@@ -29,6 +29,11 @@ test_unit_youtube: ## Run YouTube adapter unit tests
 	$(call print_info_section,Running YouTube unit tests)
 	$(Q)npx vitest run tests/youtube-adapter.test.js
 
+.PHONY: test_unit_linkedin
+test_unit_linkedin: ## Run LinkedIn adapter unit tests
+	$(call print_info_section,Running LinkedIn unit tests)
+	$(Q)npx vitest run tests/linkedin-adapter.test.js
+
 .PHONY: test_watch
 test_watch: ## Run tests in watch mode
 	$(call print_info_section,Running tests in watch mode)
@@ -65,3 +70,8 @@ test_e2e_soundcloud: ## Run SoundCloud E2E tests
 test_e2e_youtube: ## Run YouTube E2E tests
 	$(call print_info_section,Running YouTube E2E tests)
 	$(Q)npx playwright test --grep "youtube"
+
+.PHONY: test_e2e_linkedin
+test_e2e_linkedin: ## Run LinkedIn E2E tests
+	$(call print_info_section,Running LinkedIn E2E tests)
+	$(Q)npx playwright test --grep "linkedin"
