@@ -2048,7 +2048,7 @@ async function updateEarnConnectAccountsLink() {
     result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT,
   );
   const appUrl = GroveEnv.get(envId).appUrl;
-  link.href = `${appUrl}/dashboard/settings?tab=profile`;
+  link.href = `${appUrl}/settings?tab=profile`;
 }
 
 /**
