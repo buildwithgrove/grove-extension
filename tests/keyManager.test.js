@@ -23,6 +23,7 @@ beforeEach(() => {
 
   // Load dependencies, then the real KeyManager
   loadBrowserScript('src/config/environments.js', context);
+  loadBrowserScript('src/config/storageKeys.js', context);
   loadBrowserScript('src/storage/keyManager.js', context);
   KeyManager = context.KeyManager;
   ENV_CONFIG = context.ENV_CONFIG;
