@@ -101,7 +101,7 @@ Both build commands prompt for a version bump with options: **Major**, **Minor**
 ### Chrome Web Store
 
 ```bash
-make build_release
+make build-release
 ```
 
 1. Prompt to bump version and optionally commit/push
@@ -111,7 +111,7 @@ make build_release
 ### Beta (GitHub Release)
 
 ```bash
-make build_beta
+make build-beta
 ```
 
 1. Prompt to bump version and optionally commit/push

@@ -2,8 +2,8 @@
 ### Extension Build    ###
 ##########################
 
-.PHONY: build_cdp
-build_cdp: ## Build CDP auth bundle (required before loading extension)
+.PHONY: build-cdp
+build-cdp: ## Build CDP auth bundle (required before loading extension)
 	$(call print_info_section,Building CDP Auth Bundle)
 	@if [ ! -d "node_modules" ]; then \
 		printf "$(CYAN)$(INFO) Installing dependencies...$(RESET)\n"; \
@@ -46,8 +46,8 @@ EXCLUDE_PATTERNS := \
 	$(BUILD_DIR)
 
 # Internal target for building the zip (no instructions shown)
-.PHONY: _build_extension_zip
-_build_extension_zip: build_cdp dev_clean $(BUILD_DIR)
+.PHONY: _build-extension-zip
+_build-extension-zip: build-cdp dev-clean $(BUILD_DIR)
 	@VERSION=$$(grep '"version"' manifest.json | sed 's/.*: "\([^"]*\)".*/\1/'); \
 	GIT_SHA=$$(git rev-parse --short HEAD); \
 	VERSION_FULL="$$VERSION-$$GIT_SHA"; \
@@ -69,8 +69,8 @@ _build_extension_zip: build_cdp dev_clean $(BUILD_DIR)
 	printf "\n"
 
 # Prompt to bump version with menu of options
-.PHONY: _prompt_version_bump
-_prompt_version_bump:
+.PHONY: _prompt-version-bump
+_prompt-version-bump:
 	@CURRENT_VERSION=$$(grep '"version"' manifest.json | sed 's/.*: "\([^"]*\)".*/\1/'); \
 	MAJOR=$$(echo $$CURRENT_VERSION | cut -d. -f1); \
 	MINOR=$$(echo $$CURRENT_VERSION | cut -d. -f2); \
@@ -101,7 +101,7 @@ _prompt_version_bump:
 		2) NEW_VERSION="$$V_MINOR" ;; \
 		3) NEW_VERSION="$$V_PATCH" ;; \
 		4) NEW_VERSION="$$V_BUILD" ;; \
-		s|S) printf "$(DIM)Skipping version bump$(RESET)\n"; exit 0 ;; \
+		s|S) printf "$(YELLOW)Skipping version bump$(RESET)\n"; exit 0 ;; \
 		*) printf "$(RED)Invalid choice$(RESET)\n"; exit 1 ;; \
 	esac; \
 	printf "$(GREEN)New version:$(RESET) $$NEW_VERSION\n"; \
@@ -111,7 +111,7 @@ _prompt_version_bump:
 	printf "$(YELLOW)Commit and push version bump? [Y/n] $(RESET)"; \
 	read commit_ans; \
 	if [ "$${commit_ans:-Y}" = "n" ] || [ "$${commit_ans:-Y}" = "N" ]; then \
-		printf "$(DIM)Skipping commit$(RESET)\n"; \
+		printf "$(YELLOW)Skipping commit$(RESET)\n"; \
 	else \
 		git add manifest.json && \
 		git commit -m "chore: bump version to $$NEW_VERSION" && \
@@ -120,8 +120,8 @@ _prompt_version_bump:
 	fi
 	@printf "\n"
 
-.PHONY: build_release
-build_release: _prompt_version_bump _build_extension_zip _create_tag_and_release ## Build release zip for Chrome Web Store
+.PHONY: build-release
+build-release: _prompt-version-bump _build-extension-zip _create-tag-and-release ## Build release zip for Chrome Web Store
 	@printf "$(YELLOW)$(BOLD)Next steps:$(RESET)\n"
 	@printf "  1. Go to $(CYAN)$(CHROME_STORE_CONSOLE)$(RESET)\n"
 	@printf "  2. Log in as the group publisher\n"
@@ -131,8 +131,8 @@ build_release: _prompt_version_bump _build_extension_zip _create_tag_and_release
 	@printf "\n"
 
 # Internal target to create git tag and GitHub release
-.PHONY: _create_tag_and_release
-_create_tag_and_release:
+.PHONY: _create-tag-and-release
+_create-tag-and-release:
 	@RELEASE_VERSION=$$(grep '"version"' manifest.json | sed 's/.*: "\([^"]*\)".*/\1/'); \
 	RELEASE_TAG="$$RELEASE_VERSION"; \
 	printf "$(CYAN)ℹ️  Creating git tag and GitHub release for $$RELEASE_VERSION...$(RESET)\n"; \
@@ -206,18 +206,18 @@ define RELEASE_NOTES
 endef
 export RELEASE_NOTES
 
-.PHONY: build_beta
-build_beta: ## Build and upload beta zip to GitHub releases
+.PHONY: build-beta
+build-beta: ## Build and upload beta zip to GitHub releases
 	@if ! command -v gh &> /dev/null; then \
 		printf "$(RED)$(CROSS) GitHub CLI (gh) not installed. Run: brew install gh$(RESET)\n"; \
 		exit 1; \
 	fi
-	@$(MAKE) _prompt_version_bump
-	@$(MAKE) _grove_release_internal
+	@$(MAKE) _prompt-version-bump
+	@$(MAKE) _grove-release-internal
 
-.PHONY: _grove_release_internal
-_grove_release_internal: _build_extension_zip
-	@# Use the current version from manifest.json (already bumped by _prompt_version_bump)
+.PHONY: _grove-release-internal
+_grove-release-internal: _build-extension-zip
+	@# Use the current version from manifest.json (already bumped by _prompt-version-bump)
 	@RELEASE_VERSION=$$(grep '"version"' manifest.json | sed 's/.*: "\([^"]*\)".*/\1/'); \
 	printf "$(CYAN)ℹ️  Creating release for $$RELEASE_VERSION...$(RESET)\n"; \
 	RELEASE_TAG="$$RELEASE_VERSION"; \

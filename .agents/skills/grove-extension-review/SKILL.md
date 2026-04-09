@@ -79,27 +79,27 @@ Run all test suites and verify they pass:
 **Unit Tests (Vitest):**
 
 ```bash
-make test_unit
+make test-unit
 ```
 
 **E2E Tests (Playwright):**
 
 ```bash
-make test_e2e
+make test-e2e
 ```
 
 **Platform-specific tests** (run if changes touch that platform):
 
-| Command                    | When to Run                          |
-| -------------------------- | ------------------------------------ |
-| `make test_unit_substack`  | Changes to `src/adapters/substack.js` or `src/content/substackHandler.js` |
-| `make test_unit_twitter`   | Changes to `src/adapters/twitter.js` or Twitter-related content scripts   |
-| `make test_unit_soundcloud`| Changes to `src/adapters/soundcloud.js` or SoundCloud-related logic       |
-| `make test_unit_youtube`   | Changes to `src/adapters/youtube.js` or YouTube-related content scripts   |
-| `make test_e2e_substack`   | Changes to Substack adapter, handler, or selectors                        |
-| `make test_e2e_twitter`    | Changes to Twitter adapter, handler, or selectors                         |
-| `make test_e2e_soundcloud` | Changes to SoundCloud adapter or selectors                                |
-| `make test_e2e_youtube`    | Changes to YouTube adapter or selectors                                   |
+| Command                     | When to Run                          |
+| --------------------------- | ------------------------------------ |
+| `make test-unit-substack`   | Changes to `src/adapters/substack.js` or `src/content/substackHandler.js` |
+| `make test-unit-twitter`    | Changes to `src/adapters/twitter.js` or Twitter-related content scripts   |
+| `make test-unit-soundcloud` | Changes to `src/adapters/soundcloud.js` or SoundCloud-related logic       |
+| `make test-unit-youtube`    | Changes to `src/adapters/youtube.js` or YouTube-related content scripts   |
+| `make test-e2e-substack`    | Changes to Substack adapter, handler, or selectors                        |
+| `make test-e2e-twitter`     | Changes to Twitter adapter, handler, or selectors                         |
+| `make test-e2e-soundcloud`  | Changes to SoundCloud adapter or selectors                                |
+| `make test-e2e-youtube`     | Changes to YouTube adapter or selectors                                   |
 
 ### Phase 3: Code Review
 
@@ -153,8 +153,8 @@ Apply relevant architecture checklists based on changed file types (see below).
 - [ ] `extractBio()` only returns the page author's bio (not other authors on the page)
 - [ ] `getButtonPlacement()` returns valid DOM elements for button injection
 - [ ] `waitForProfileLoad()` waits for the correct elements based on page type
-- [ ] Unit tests cover the changed behavior (`make test_unit_<platform>`)
-- [ ] E2E tests verify selectors against live sites (`make test_e2e_<platform>`)
+- [ ] Unit tests cover the changed behavior (`make test-unit-<platform>`)
+- [ ] E2E tests verify selectors against live sites (`make test-e2e-<platform>`)
 
 ### Common Gotchas
 

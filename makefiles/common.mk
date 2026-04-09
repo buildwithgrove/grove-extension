@@ -48,6 +48,6 @@ define require-%
 	fi
 endef
 
-.PHONY: prompt_confirm
-prompt_confirm: ## Prompt before continuing
+.PHONY: prompt-confirm
+prompt-confirm: ## Prompt before continuing
 	@printf "$(YELLOW)Continue? [y/N] $(RESET)"; read ans; [ $${ans:-N} = y ]

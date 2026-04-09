@@ -7,9 +7,10 @@
 # Patterns for classified help categories
 HELP_PATTERNS := \
 	'^help:' \
-	'^build_.*:' \
-	'^dev_.*:' \
-	'^test_.*:'
+	'^build-.*:' \
+	'^dev-.*:' \
+	'^test-.*:' \
+	'^env-.*:'
 
 .PHONY: help
 help: ## Show all available targets with descriptions
@@ -20,14 +21,17 @@ help: ## Show all available targets with descriptions
 	@printf "$(BOLD)=== 📋 Information & Discovery ===$(RESET)\n"
 	@grep -h -E '^(help|help-unclassified):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-42s$(RESET) %s\n", $$1, $$2}'
 	@printf "\n"
+	@printf "$(BOLD)=== 🌍 Environment ===$(RESET)\n"
+	@grep -h -E '^env-.*:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-42s$(RESET) %s\n", $$1, $$2}' | sort -u
+	@printf "\n"
 	@printf "$(BOLD)=== 🏗️  Build & Package ===$(RESET)\n"
-	@grep -h -E '^build_.*:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-42s$(RESET) %s\n", $$1, $$2}' | sort -u
+	@grep -h -E '^build-.*:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-42s$(RESET) %s\n", $$1, $$2}' | sort -u
 	@printf "\n"
 	@printf "$(BOLD)=== 🔧 Development ===$(RESET)\n"
-	@grep -h -E '^dev_.*:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-42s$(RESET) %s\n", $$1, $$2}' | sort -u | awk '/force_inject/{held[++n]=$$0; next} {print} END{for(i=1;i<=n;i++) print held[i]}'
+	@grep -h -E '^dev-.*:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-42s$(RESET) %s\n", $$1, $$2}' | sort -u | awk '/force-inject/{held[++n]=$$0; next} {print} END{for(i=1;i<=n;i++) print held[i]}'
 	@printf "\n"
 	@printf "$(BOLD)=== 🧪 Testing ===$(RESET)\n"
-	@grep -h -E '^test_.*:.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-42s$(RESET) %s\n", $$1, $$2}' | sort -u
+	@grep -h -E '^test-(unit|e2e|coverage):.*?## .*$$' $(MAKEFILE_LIST) ./makefiles/*.mk 2>/dev/null | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-42s$(RESET) %s\n", $$1, $$2}' | sort -u
 	@printf "\n"
 
 .PHONY: help-unclassified
@@ -56,6 +60,7 @@ include ./makefiles/common.mk
 include ./makefiles/build.mk
 include ./makefiles/dev.mk
 include ./makefiles/test.mk
+include ./makefiles/env.mk
 
 ############################
 ### Legacy Target Aliases ##
@@ -64,10 +69,10 @@ include ./makefiles/test.mk
 # Maintain backwards compatibility with existing targets
 
 .PHONY: zip_extension
-zip_extension: build_release ## (Legacy) Create extension zip
+zip_extension: build-release ## (Legacy) Create extension zip
 
 .PHONY: clean
-clean: dev_clean ## (Legacy) Clean build artifacts
+clean: dev-clean ## (Legacy) Clean build artifacts
 
 ###############################
 ###  Global Error Handling  ###

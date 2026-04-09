@@ -253,8 +253,8 @@ Add row to the Address Resolution Matrix table.
 
 ### 4D. Review command (`.claude/commands/grove_extension_review.md`)
 
-- Add `make test_unit_[platform]` to platform-specific test triggers table
-- Add `make test_unit_[platform]` and `make test_e2e_[platform]` to test status table
+- Add `make test-unit-[platform]` to platform-specific test triggers table
+- Add `make test-unit-[platform]` and `make test-e2e-[platform]` to test status table
 - Add manual testing checklist section
 
 ### 4E. E2E tests (`tests/e2e/smoke.spec.js`)
@@ -267,15 +267,15 @@ Add at minimum:
 
 Add targets:
 ```makefile
-.PHONY: test_e2e_[platform]
-test_e2e_[platform]: ## Run [Platform] E2E tests
+.PHONY: test-e2e-[platform]
+test-e2e-[platform]: ## Run [Platform] E2E tests
 	$(call print_info_section,Running [Platform] E2E tests)
-	$(Q)npx playwright test --grep "[platform]"
+	$(Q)$(NPM) exec playwright -- test --grep "[platform]"
 ```
 
 ### 4G. AGENTS.md
 
-- Add `make test_e2e_[platform]` to the E2E testing table in the Testing section
+- Add `make test-e2e-[platform]` to the E2E testing table in the Testing section
 - Add adapter to the reference examples list in "Adding Support for New Platforms > Adapters"
 
 ## Phase 5: Verification
@@ -284,17 +284,17 @@ Run these checks in order:
 
 1. **Unit tests (all):**
    ```bash
-   make test_unit
+   make test-unit
    ```
 
 2. **Platform-specific unit tests:**
    ```bash
-   make test_unit_[platform]
+   make test-unit-[platform]
    ```
 
 3. **Platform-specific E2E tests:**
    ```bash
-   make test_e2e_[platform]
+   make test-e2e-[platform]
    ```
 
 4. **Manual smoke test:**

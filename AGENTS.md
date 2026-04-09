@@ -494,7 +494,7 @@ Run `/grove-add-platform` for a step-by-step guided workflow covering platform d
 - [ ] Add platform dark mode detection in `src/utils/darkMode.js` (if non-generic)
 - [ ] Add platform to README.md Address Resolution Matrix
 - [ ] Add E2E tests in `tests/e2e/smoke.spec.js` (positive + negative)
-- [ ] Add `test_e2e_<platform>` target in `makefiles/test.mk`
+- [ ] Add `test-e2e-<platform>` target in `makefiles/test.mk`
 - [ ] Add platform to `.agents/skills/grove-extension-review/SKILL.md` (test tables + manual checklist)
 
 ## Pull Request Hygiene
@@ -510,29 +510,29 @@ Tests are located in the `tests/` directory and use Vitest.
 **All unit tests (Vitest):**
 
 ```bash
-make test_unit
+make test-unit
 ```
 
 **All E2E tests (Playwright):**
 
 ```bash
-make test_e2e
+make test-e2e
 ```
 
 **Platform-specific:**
 
 | Command                     | Description                     |
 | --------------------------- | ------------------------------- |
-| `make test_unit_substack`   | Substack adapter unit tests     |
-| `make test_unit_twitter`    | Twitter adapter unit tests      |
-| `make test_unit_soundcloud` | SoundCloud adapter unit tests   |
-| `make test_unit_youtube`    | YouTube adapter unit tests      |
-| `make test_e2e_substack`    | Substack E2E tests              |
-| `make test_e2e_twitter`     | Twitter/X E2E tests             |
-| `make test_e2e_soundcloud`  | SoundCloud E2E tests            |
-| `make test_e2e_youtube`     | YouTube E2E tests               |
-| `make test_watch`           | Run tests in watch mode         |
-| `make test_coverage`        | Run tests with coverage         |
+| `make test-unit-substack`   | Substack adapter unit tests     |
+| `make test-unit-twitter`    | Twitter adapter unit tests      |
+| `make test-unit-soundcloud` | SoundCloud adapter unit tests   |
+| `make test-unit-youtube`    | YouTube adapter unit tests      |
+| `make test-e2e-substack`    | Substack E2E tests              |
+| `make test-e2e-twitter`     | Twitter/X E2E tests             |
+| `make test-e2e-soundcloud`  | SoundCloud E2E tests            |
+| `make test-e2e-youtube`     | YouTube E2E tests               |
+| `make test-watch`           | Run tests in watch mode         |
+| `make test-coverage`        | Run tests with coverage         |
 
 ### Testing Requirements
 
