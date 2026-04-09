@@ -596,7 +596,8 @@ URLs the extension opens in the app. Defined statically in `popup.html` (fallbac
 |---------|-------------|-------|
 | Top Up | `{appUrl}/balances?action=topup` | `popup.html:226`, `popup.js` via `GroveEnv.topUpUrl()` |
 | Wallet Sign-In | `{appUrl}/extension` | `popup.html:979`, `popup.js` via `GroveEnv.extensionUrl()` |
-| Create Giveaway | `{appUrl}/dashboard?tab=giveaways` | `popup.html:559`, `popup.js:2331` |
+| Create Giveaway | `{appUrl}/giveaways` | `popup.html:548`, `popup.js:2652` |
+| Profile Settings | `{appUrl}/settings?tab=customize` | `popup.js:2051` |
 | General Settings | `{appUrl}` | `popup.html:1064` |
 | Referral Link | `https://grove.city/?ref={code}` | `popup.js:4535` (hardcoded to production — intentional) |
 
