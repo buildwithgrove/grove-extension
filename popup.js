@@ -1336,6 +1336,9 @@ async function disconnectSlot(slotId) {
 
   // If we removed the active slot, clear auth state and account info
   if (slotId === activeSlot) {
+    // Set logged-out flag so the web app can't re-inject JWT
+    await chrome.storage.local.set({ [STORAGE_KEYS.LOGGED_OUT]: true });
+
     await chrome.storage.local.remove([
       STORAGE_KEYS.EARNING_ADDRESS,
       STORAGE_KEYS.TIPPING_ADDRESS,

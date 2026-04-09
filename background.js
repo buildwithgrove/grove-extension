@@ -85,6 +85,15 @@ chrome.runtime.onMessageExternal.addListener(
     console.log("Received external message from:", sender.origin);
 
     if (message.type === "SET_JWT") {
+      // Block re-authentication if user explicitly logged out
+      const { [STORAGE_KEYS.LOGGED_OUT]: loggedOut } =
+        await chrome.storage.local.get(STORAGE_KEYS.LOGGED_OUT);
+      if (loggedOut) {
+        console.log("[Grove] Ignoring SET_JWT — user is logged out");
+        sendResponse({ success: false, reason: "logged_out" });
+        return true;
+      }
+
       // Determine which slot to store the JWT in based on environment
       // Accept both 'local' and 'localhost' for local development
       const env =

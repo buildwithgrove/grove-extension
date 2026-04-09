@@ -57,6 +57,8 @@ class KeyManager {
   static async setJWT(slotId, jwt) {
     const config = ENV_CONFIG[slotId];
     if (!config) return;
+    // Clear logged-out flag — user is explicitly logging in
+    await chrome.storage.local.remove([STORAGE_KEYS.LOGGED_OUT]);
     await chrome.storage.local.set({ [config.storageKey]: jwt });
   }
 
