@@ -44,6 +44,10 @@
   - [Test File Naming](#test-file-naming)
   - [E2E Limitations](#e2e-limitations)
   - [Browser Script Testing](#browser-script-testing)
+- [Claude Helpers](#claude-helpers)
+  - [`/grove-extension-review` — Pre-merge Code Review](#grove-extension-review--pre-merge-code-review)
+  - [`/grove-add-platform` — Add New Platform Support](#grove-add-platform--add-new-platform-support)
+  - [Subagent Types](#subagent-types)
 
 ## Color Palette
 
@@ -732,3 +736,37 @@ Both the extension and app call these Grove API endpoints. When the API response
 | `src/app/balances/page.tsx` | `/balances?action=topup` handler |
 | `src/app/dashboard/page.tsx` | `?tab=` routing for all dashboard tabs |
 | `src/modules/api/groveApiClient.ts` | App-side API client (canonical field names) |
+
+## Claude Helpers
+
+Slash commands available in this project via `.claude/skills/` and `.agents/skills/`.
+
+### `/grove-extension-review` — Pre-merge Code Review
+
+4-phase branch review that runs before merging to `testnet`:
+
+1. **Context Gathering** — git diff, changed file stats by category
+2. **Test Validation** — unit tests (`make test_unit`), E2E tests (`make test_e2e`), platform-specific tests
+3. **Code Review** — applies architecture checklists (address resolution, caching, adapters, common gotchas)
+4. **Reporting** — structured report → `DO_NOT_COMMIT_GROVE_EXTENSION_REVIEW_RESULTS.md`
+
+After Phase 4, presents numbered action items. Say **"DO ALL THE THINGS"** to fix everything, or pick specific numbers.
+
+### `/grove-add-platform` — Add New Platform Support
+
+Guided workflow for adding a new social platform to the extension. Covers platform discovery, DOM research, adapter implementation, handler creation, and ecosystem integration (leaderboard icons, history renderer, E2E tests).
+
+### Subagent Types
+
+When spawning subagents for Team Thinking, use **fully qualified** agent type names (format: `plugin:agent`). Short names will fail.
+
+| Role | Subagent Type | Skills to Invoke |
+| ------------- | ----------------------------- | ------------------------------------------ |
+| UI Designer | `ui-designer:ui-designer` | `/frontend-design`, `/ui-ux-pro-max` |
+| UX Designer | `ui-designer:ui-designer` | `/frontend-design` |
+| Platform Engineer | `feature-dev:code-explorer` | `/grove-add-platform` |
+| Security Engineer | `feature-dev:code-reviewer` | — |
+| Web3 Engineer | `feature-dev:code-explorer` | — |
+| Code Reviewer | `superpowers:code-reviewer` | `/grove-extension-review` |
+| Code Explorer | `feature-dev:code-explorer` | — |
+| Code Architect | `feature-dev:code-architect` | — |
