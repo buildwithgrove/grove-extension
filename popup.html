@@ -431,7 +431,7 @@
       <!-- Header with Title -->
       <div class="leaderboard-header">
         <h2 class="page-title">Front Page</h2>
-        <a href="https://grove.city/leaderboard" target="_blank" rel="noopener noreferrer" class="giveaway-create-btn" id="leaderboardAppLink">
+        <a href="https://grove.city/leaderboard" target="_blank" rel="noopener noreferrer" class="page-action-btn" id="leaderboardAppLink">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
             <polyline points="15 3 21 3 21 9"></polyline>
@@ -503,74 +503,6 @@
         <div id="top-list" class="feed-list"></div>
       </div>
 
-    </div>
-
-    <!-- Giveaways Page -->
-    <div class="page" id="tab-giveaways">
-      <div class="giveaway-header">
-        <h2 class="page-title">Giveaways</h2>
-        <a href="https://grove.city/giveaways" target="_blank" rel="noopener noreferrer" class="giveaway-create-btn" id="createGiveawayLink">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          <span>Create</span>
-        </a>
-      </div>
-
-      <!-- Filter Pills -->
-      <div class="history-filter" id="giveaway-filter">
-        <button class="filter-btn active" data-giveaway-filter="hot">Popular</button>
-        <button class="filter-btn" data-giveaway-filter="ending">Ending Soon</button>
-        <button class="filter-btn" data-giveaway-filter="new">New</button>
-      </div>
-
-      <!-- Loading State -->
-      <div class="giveaway-loading" id="giveaway-loading">
-        <div class="leaderboard-spinner"></div>
-      </div>
-
-      <!-- Error State -->
-      <div class="giveaway-error hidden" id="giveaway-error">
-        <div class="empty-icon">!</div>
-        <p id="giveaway-error-message">Unable to load giveaways</p>
-        <button class="btn-secondary btn-sm" id="giveaway-retry-btn">Try Again</button>
-      </div>
-
-      <!-- Empty State -->
-      <div class="giveaway-empty hidden" id="giveaway-empty">
-        <div class="empty-icon">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 12v10H4V12"></path>
-            <path d="M2 7h20v5H2z"></path>
-            <path d="M12 22V7"></path>
-            <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
-            <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
-          </svg>
-        </div>
-        <p>Check back soon.</p>
-        <p class="giveaway-empty-sub">Creators launch giveaways all the time.</p>
-      </div>
-
-      <!-- Giveaway Cards List -->
-      <div class="giveaway-list" id="giveaway-list"></div>
-
-
-      <!-- Giveaway Detail Overlay -->
-      <div class="giveaway-detail-overlay hidden" id="giveaway-detail-overlay">
-        <div class="giveaway-detail-panel">
-          <button class="giveaway-detail-back" id="giveaway-detail-back">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-            <span>Back</span>
-          </button>
-          <div class="giveaway-detail-loading hidden" id="giveaway-detail-loading">
-            <div class="leaderboard-spinner"></div>
-          </div>
-          <div class="giveaway-detail-content" id="giveaway-detail-content"></div>
-        </div>
-      </div>
     </div>
 
     <!-- Earn Tips Page -->
@@ -1373,18 +1305,7 @@
       </svg>
       <span class="nav-label">Feed</span>
     </button>
-    <button class="nav-item" data-target="tab-giveaways">
-      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 12v10H4V12"></path>
-        <path d="M2 7h20v5H2z"></path>
-        <path d="M12 22V7"></path>
-        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
-        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
-      </svg>
-      <span class="nav-label">Giveaways</span>
-    </button>
-    <button class="nav-item nav-item-with-badge" data-target="tab-earn">
+<button class="nav-item nav-item-with-badge" data-target="tab-earn">
       <div class="nav-icon-wrapper">
         <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1516,8 +1437,7 @@
   <script src="src/utils/formatUtils.js"></script>
   <script src="src/utils/socialUtils.js"></script>
   <script src="src/ui/leaderboardRenderer.js"></script>
-  <script src="src/ui/giveawaysRenderer.js"></script>
-  <script src="src/ui/historyRenderer.js"></script>
+<script src="src/ui/historyRenderer.js"></script>
   <script src="popup.js"></script>
 </body>
 
