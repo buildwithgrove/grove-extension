@@ -3579,26 +3579,44 @@ button.quick-access-item:hover .quick-access-icon {
 
 /* Live on Grove Stats Banner */
 .grove-stats-banner {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: linear-gradient(135deg, rgba(56, 159, 88, 0.1) 0%, var(--color-surface) 60%);
+  border: 1px solid rgba(56, 159, 88, 0.35);
   border-radius: var(--radius-md);
-  padding: 12px 14px;
+  padding: 12px 14px 14px;
   margin-bottom: 12px;
 }
 
 .grove-stats-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-primary);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin-bottom: 10px;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.grove-stats-eyebrow::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  flex-shrink: 0;
+  animation: grove-live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes grove-live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.75); }
 }
 
 .grove-stats-row {
   display: flex;
   align-items: center;
-  gap: 0;
 }
 
 .grove-stat {
@@ -3606,36 +3624,29 @@ button.quick-access-item:hover .quick-access-icon {
   text-align: center;
 }
 
-.grove-stat:first-child {
-  text-align: left;
-}
-
-.grove-stat:last-child {
-  text-align: right;
-}
-
 .grove-stat-value {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--color-text-primary);
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  margin-bottom: 2px;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 4px;
 }
 
 .grove-stat-label {
-  font-size: 10px;
+  font-size: 9px;
+  font-weight: 500;
   color: var(--color-text-tertiary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
 }
 
 .grove-stats-divider {
   width: 1px;
-  height: 32px;
-  background: var(--color-border);
+  height: 30px;
+  background: rgba(56, 159, 88, 0.2);
   flex-shrink: 0;
-  margin: 0 12px;
+  margin: 0 8px;
 }
 
 /* ---- Leaderboard Table Layout ---- */
