@@ -664,6 +664,125 @@ const LeaderboardRenderer = {
   }
 };
 
+  // ─── Front Page Feed ──────────────────────────────────────────────────────
+
+  /**
+   * Format a relative time string from an ISO timestamp
+   * @param {string|null} iso
+   * @returns {string}
+   */
+  timeAgo(iso) {
+    if (!iso) return '';
+    const diff = Date.now() - new Date(iso).getTime();
+    const s = Math.floor(diff / 1000);
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}m`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h`;
+    return `${Math.floor(h / 24)}d`;
+  },
+
+  /**
+   * Build a platform icon badge (reuses existing icon set)
+   * @param {string|null} platform
+   * @returns {string}
+   */
+  feedPlatformBadge(platform) {
+    if (!platform || platform === 'x') return '';
+    const icon = this.icons[platform] || this.icons.globe;
+    const label = platform.charAt(0).toUpperCase() + platform.slice(1);
+    return `<span class="feed-platform-badge">${icon}<span>${label}</span></span>`;
+  },
+
+  /**
+   * Render a single Front Page feed card
+   * @param {Object} item - Feed item from /v1/feed/items
+   * @param {string} appUrl - Base app URL for profile links
+   * @returns {string} HTML
+   */
+  renderFeedCard(item, appUrl = 'https://grove.city') {
+    const handle = item.creator_handle;
+    const avatarUrl = item.creator_avatar_url;
+    const title = item.content?.title || item.content?.description || null;
+    const amount = parseFloat(item.total_amount_usd || '0');
+    const tipCount = item.tip_count || 0;
+    const ago = this.timeAgo(item.last_tipped_at || item.content?.published_at);
+    const platform = item.platform;
+
+    // Avatar: image or initial fallback
+    const initial = handle ? handle.charAt(0).toUpperCase() : '?';
+    const avatarHtml = avatarUrl
+      ? `<img src="${FormatUtils.escapeHtml(avatarUrl)}" alt="" class="feed-card-avatar" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      + `<span class="feed-card-avatar feed-card-avatar-fallback" style="display:none">${FormatUtils.escapeHtml(initial)}</span>`
+      : `<span class="feed-card-avatar feed-card-avatar-fallback">${FormatUtils.escapeHtml(initial)}</span>`;
+
+    const handleHtml = handle
+      ? `<a href="${FormatUtils.escapeHtml(appUrl + '/' + encodeURIComponent(handle))}" target="_blank" rel="noopener noreferrer" class="feed-card-handle">@${FormatUtils.escapeHtml(handle)}</a>`
+      : '';
+
+    const platformBadge = this.feedPlatformBadge(platform);
+    const agoHtml = ago ? `<span class="feed-card-time">${FormatUtils.escapeHtml(ago)}</span>` : '';
+
+    const titleHtml = title
+      ? `<div class="feed-card-title">${FormatUtils.escapeHtml(title)}</div>`
+      : '';
+
+    const amountFmt = amount >= 1000 ? `$${(amount / 1000).toFixed(1)}K` : `$${amount.toFixed(2)}`;
+    const tipsLabel = tipCount === 1 ? '1 tip' : `${tipCount} tips`;
+
+    const contentUrl = item.url || (handle ? `${appUrl}/${encodeURIComponent(handle)}` : null);
+    const cardLink = contentUrl ? `href="${FormatUtils.escapeHtml(contentUrl)}" target="_blank" rel="noopener noreferrer"` : '';
+
+    return `<a class="feed-card" ${cardLink}>
+      <div class="feed-card-meta">
+        <div class="feed-card-avatar-wrap">${avatarHtml}</div>
+        <div class="feed-card-meta-text">
+          ${handleHtml}
+          ${platformBadge}
+          ${agoHtml}
+        </div>
+      </div>
+      ${titleHtml}
+      <div class="feed-card-stats">
+        <span class="feed-card-amount">${FormatUtils.escapeHtml(amountFmt)}</span>
+        <span class="feed-card-tip-count">${FormatUtils.escapeHtml(tipsLabel)}</span>
+      </div>
+    </a>`;
+  },
+
+  /**
+   * Render a full feed list
+   * @param {Array} items
+   * @param {string} appUrl
+   * @returns {string} HTML
+   */
+  renderFeedList(items, appUrl = 'https://grove.city') {
+    if (!items || items.length === 0) return '';
+    return items.map(item => this.renderFeedCard(item, appUrl)).join('');
+  },
+
+  /**
+   * Render feed skeleton placeholders
+   * @param {number} count
+   * @returns {string} HTML
+   */
+  renderFeedSkeleton(count = 5) {
+    return Array.from({ length: count }, () => `
+      <div class="feed-card feed-card-skeleton">
+        <div class="feed-card-meta">
+          <div class="feed-card-avatar-wrap"><span class="feed-card-avatar lb-shimmer">&nbsp;</span></div>
+          <div class="feed-card-meta-text">
+            <span class="lb-shimmer" style="width:90px;height:12px;border-radius:4px;display:inline-block">&nbsp;</span>
+            <span class="lb-shimmer" style="width:40px;height:10px;border-radius:4px;display:inline-block;margin-left:6px">&nbsp;</span>
+          </div>
+        </div>
+        <div class="lb-shimmer" style="width:85%;height:13px;border-radius:4px;margin:6px 0 4px">&nbsp;</div>
+        <div class="lb-shimmer" style="width:60%;height:11px;border-radius:4px">&nbsp;</div>
+      </div>`).join('');
+  }
+};
+
 // Make globally available
 if (typeof window !== 'undefined') {
   window.LeaderboardRenderer = LeaderboardRenderer;

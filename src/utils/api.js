@@ -415,6 +415,38 @@ class GroveAPI {
   }
 
   /**
+   * Fetch Front Page feed items
+   * @param {string} sort - 'live' | 'tipped' | 'published' (default: 'live')
+   * @param {string} window - '24h' | '7d' | '30d' | 'all' (default: '7d')
+   * @param {string|null} cursor - Pagination cursor
+   * @param {number} limit - Items per page (default: 20)
+   * @returns {Promise<Object>} - Feed items and pagination info
+   */
+  static async getFeedItems(sort = 'live', window = '7d', cursor = null, limit = 20) {
+    const baseURL = await this.getBaseURL();
+    const params = new URLSearchParams({ sort, window, limit: String(limit), enrich: 'true' });
+    if (cursor) params.set('cursor', cursor);
+    const apiUrl = `${baseURL}/v1/feed/items?${params}`;
+
+    try {
+      const response = await GroveAPI._fetch(apiUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+      });
+      if (!response.ok) throw new Error(`Feed API failed: ${response.status}`);
+      const data = await response.json();
+      // Filter out discovered-but-untipped items on live sort
+      const items = sort === 'live'
+        ? (data.items || []).filter(item => item.tip_count > 0)
+        : (data.items || []);
+      return { success: true, data: { items, cursor: data.cursor || null, has_more: data.has_more || false } };
+    } catch (error) {
+      console.error('[Grove Extension] Feed fetch failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
    * Fetch total funds/deposits stats
    * @returns {Promise<Object>} - Total funds data
    */

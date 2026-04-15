@@ -430,7 +430,7 @@
     <div class="page" id="tab-leaderboard">
       <!-- Header with Title -->
       <div class="leaderboard-header">
-        <h2 class="page-title">Leaderboard</h2>
+        <h2 class="page-title">Front Page</h2>
         <a href="https://grove.city/leaderboard" target="_blank" rel="noopener noreferrer" class="giveaway-create-btn" id="leaderboardAppLink">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
@@ -476,11 +476,12 @@
       <!-- Switcher (first row) -->
       <div class="leaderboard-switcher">
         <button class="switcher-btn active" data-view="live">Live</button>
+        <button class="switcher-btn" data-view="top">Top</button>
         <button class="switcher-btn" data-view="tippers">Tippers</button>
         <button class="switcher-btn" data-view="earners">Earners</button>
       </div>
 
-      <!-- Filters Row: Rankings title + period pills (hidden for Live view) -->
+      <!-- Filters Row: Rankings title + period pills (hidden for Live/Top feed views) -->
       <div class="lb-filters-row" id="lb-filters-row" style="display: none;">
         <span class="lb-section-title">Rankings</span>
         <div class="lb-period-pills" id="period-selector">
@@ -491,10 +492,10 @@
         </div>
       </div>
 
-      <!-- Live Tips View -->
+      <!-- Live Feed View -->
       <div class="leaderboard-view active" id="live-view">
         <div class="lb-view-header">
-          <span class="lb-view-title">Live Tips</span>
+          <span class="lb-view-title">Live</span>
           <span class="lb-live-dot"></span>
         </div>
         <div class="leaderboard-empty hidden" id="live-empty">
@@ -505,7 +506,25 @@
           </div>
           <p>No recent tips</p>
         </div>
-        <div id="live-list"></div>
+        <div id="live-list" class="feed-list"></div>
+      </div>
+
+      <!-- Top Feed View -->
+      <div class="leaderboard-view" id="top-view">
+        <div class="lb-view-header">
+          <span class="lb-view-title">Top Tipped</span>
+          <span class="lb-period-badge" id="top-period-badge">7d</span>
+        </div>
+        <div class="leaderboard-empty hidden" id="top-empty">
+          <div class="empty-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+          </div>
+          <p>No tipped content yet</p>
+        </div>
+        <div id="top-list" class="feed-list"></div>
       </div>
 
       <!-- Top Tippers View -->
@@ -1413,11 +1432,9 @@
     <button class="nav-item" data-target="tab-leaderboard">
       <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="12" y1="20" x2="12" y2="10"></line>
-        <line x1="18" y1="20" x2="18" y2="4"></line>
-        <line x1="6" y1="20" x2="6" y2="16"></line>
+        <path d="M4 6h16M4 12h16M4 18h7"></path>
       </svg>
-      <span class="nav-label">Leaderboard</span>
+      <span class="nav-label">Feed</span>
     </button>
     <button class="nav-item" data-target="tab-giveaways">
       <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"

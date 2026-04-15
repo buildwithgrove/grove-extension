@@ -936,8 +936,10 @@ async function handleNavigation(e) {
       loadTopTippers();
     } else if (currentLeaderboardView === "earners") {
       loadTopEarners();
-    } else if (currentLeaderboardView === "live") {
-      loadLiveTips();
+    } else if (currentLeaderboardView === "top") {
+      loadFeedItems("tipped");
+    } else {
+      loadFeedItems("live");
       startLivePolling();
     }
   } else {
@@ -2978,10 +2980,10 @@ function setupLeaderboardSwitcher() {
         leaderboardViews.forEach((v) => v.classList.remove("active"));
         document.getElementById(`${view}-view`).classList.add("active");
 
-        // Show/hide filters row
-        const isLive = view === "live";
+        // Show/hide filters row (only for tippers/earners rankings)
+        const isFeedView = view === "live" || view === "top";
         if (filtersRow) {
-          filtersRow.style.display = isLive ? "none" : "flex";
+          filtersRow.style.display = isFeedView ? "none" : "flex";
         }
 
         // Load data for the selected view
@@ -2992,8 +2994,11 @@ function setupLeaderboardSwitcher() {
           loadTopEarners();
           stopLivePolling();
         } else if (view === "live") {
-          loadLiveTips();
+          loadFeedItems("live");
           startLivePolling();
+        } else if (view === "top") {
+          loadFeedItems("tipped");
+          stopLivePolling();
         }
       });
     });
@@ -3109,18 +3114,34 @@ async function loadPoolStats() {
 /**
  * Load Live Tips
  */
-async function loadLiveTips(isRefresh = false) {
-  const empty = document.getElementById("live-empty");
-  const list = document.getElementById("live-list");
+/**
+ * Load Front Page feed items (Live or Top sort)
+ * @param {string} sort - 'live' | 'tipped'
+ * @param {boolean} isRefresh - Whether this is a background refresh
+ */
+async function loadFeedItems(sort = "live", isRefresh = false) {
+  const viewId = sort === "live" ? "live" : "top";
+  const empty = document.getElementById(`${viewId}-empty`);
+  const list = document.getElementById(`${viewId}-list`);
+  if (!list || !empty) return;
 
   if (!isRefresh) {
     empty.classList.add("hidden");
-    list.innerHTML = LeaderboardRenderer.renderSkeletonTable(true, 5);
+    list.innerHTML = LeaderboardRenderer.renderFeedSkeleton(5);
   }
 
-  const result = await GroveAPI.getRecentTips(10);
+  const appUrl = await (async () => {
+    const r = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT, STORAGE_KEYS.ENVIRONMENT]);
+    const envId = GroveEnv.resolveActiveEnvId(
+      r[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV,
+      r[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT,
+    );
+    return GroveEnv.get(envId).appUrl;
+  })();
 
-  if (!result.success || result.data.entries.length === 0) {
+  const result = await GroveAPI.getFeedItems(sort, "7d");
+
+  if (!result.success || result.data.items.length === 0) {
     if (!isRefresh) {
       list.innerHTML = "";
       empty.classList.remove("hidden");
@@ -3128,23 +3149,7 @@ async function loadLiveTips(isRefresh = false) {
     return;
   }
 
-  // Track new entries for animation
-  const newTxHashes = new Set();
-  if (isRefresh) {
-    result.data.entries.forEach((e) => {
-      if (!seenTxHashes.has(e.txHash)) {
-        newTxHashes.add(e.txHash);
-      }
-    });
-  }
-
-  // Update seen hashes
-  result.data.entries.forEach((e) => seenTxHashes.add(e.txHash));
-
-  list.innerHTML = LeaderboardRenderer.renderLiveTipsList(
-    result.data.entries,
-    newTxHashes,
-  );
+  list.innerHTML = LeaderboardRenderer.renderFeedList(result.data.items, appUrl);
 }
 
 /**
@@ -3154,9 +3159,9 @@ function startLivePolling() {
   stopLivePolling();
   livePollingInterval = setInterval(() => {
     if (currentLeaderboardView === "live") {
-      loadLiveTips(true);
+      loadFeedItems("live", true);
     }
-  }, 10000); // Poll every 10 seconds
+  }, 30000); // Poll every 30 seconds (matches app's Front Page interval)
 }
 
 /**
@@ -3175,7 +3180,9 @@ function stopLivePolling() {
 function refreshLeaderboard() {
   loadPoolStats();
   if (currentLeaderboardView === "live") {
-    loadLiveTips();
+    loadFeedItems("live");
+  } else if (currentLeaderboardView === "top") {
+    loadFeedItems("tipped");
   } else if (currentLeaderboardView === "tippers") {
     loadTopTippers();
   } else if (currentLeaderboardView === "earners") {
