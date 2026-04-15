@@ -712,9 +712,9 @@ const LeaderboardRenderer = {
     // Avatar: image or initial fallback
     const initial = handle ? handle.charAt(0).toUpperCase() : '?';
     const avatarHtml = avatarUrl
-      ? `<img src="${FormatUtils.escapeHtml(avatarUrl)}" alt="" class="feed-card-avatar" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-      + `<span class="feed-card-avatar feed-card-avatar-fallback" style="display:none">${FormatUtils.escapeHtml(initial)}</span>`
-      : `<span class="feed-card-avatar feed-card-avatar-fallback">${FormatUtils.escapeHtml(initial)}</span>`;
+      ? `<img src="${FormatUtils.escapeHtml(avatarUrl)}" alt="" class="feed-card-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      + `<span class="feed-card-avatar-fallback" style="display:none">${FormatUtils.escapeHtml(initial)}</span>`
+      : `<span class="feed-card-avatar-fallback">${FormatUtils.escapeHtml(initial)}</span>`;
 
     const handleHtml = handle
       ? `<a href="${FormatUtils.escapeHtml(appUrl + '/' + encodeURIComponent(handle))}" target="_blank" rel="noopener noreferrer" class="feed-card-handle">@${FormatUtils.escapeHtml(handle)}</a>`

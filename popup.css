@@ -3806,12 +3806,10 @@ button.quick-access-item:hover .quick-access-icon {
   justify-content: center;
   width: 36px;
   height: 36px;
-  flex-shrink: 0;
   border-radius: 50%;
   background: rgba(56, 159, 88, 0.15);
-  background: rgba(56, 159, 88, 0.15);
   color: var(--color-primary);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
 }
 
