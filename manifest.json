@@ -69,7 +69,6 @@
         "src/content/profilePageHandler.js",
         "src/content/tweetTipHandler.js",
         "src/content/tweetProcessor.js",
-        "src/content/xFeatures.js",
         "src/content/content.js"
       ],
       "css": [

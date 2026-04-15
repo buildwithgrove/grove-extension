@@ -533,7 +533,7 @@ describe('TipModal', () => {
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
-      modal.show(anchor, 0.10, false, () => {}, () => {}, null, {
+      modal.show(anchor, 0.10, false, () => {}, () => {}, {
         title: 'Confirm Tip',
       });
 
@@ -546,7 +546,7 @@ describe('TipModal', () => {
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
-      modal.show(anchor, 0.10, false, () => {}, () => {}, null, {
+      modal.show(anchor, 0.10, false, () => {}, () => {}, {
         showConfirmCheckbox: false,
       });
 

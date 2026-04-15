@@ -64,7 +64,6 @@ class TipModal {
    * @param {boolean} currentConfirmSetting - Current confirm before tipping setting
    * @param {Function} onConfirm - Callback when confirmed, receives { amount, confirmBeforeTipping }
    * @param {Function} onCancel - Callback when cancelled
-   * @param {null} _xOptions - Unused, kept for API compatibility
    * @param {Object} displayOptions - Display options
    * @param {string} displayOptions.title - Modal title (default: "Your First Tip!")
    * @param {boolean} displayOptions.showConfirmCheckbox - Whether to show the confirm checkbox (default: true)
@@ -72,7 +71,7 @@ class TipModal {
    * @param {string} displayOptions.recipientUsername - Username for profile tips (e.g., "vitalik")
    * @param {boolean} displayOptions.isDarkMode - Whether to use dark mode styling (default: true)
    */
-  show(anchorElement, defaultAmount, currentConfirmSetting, onConfirm, onCancel, _xOptions = null, displayOptions = null) {
+  show(anchorElement, defaultAmount, currentConfirmSetting, onConfirm, onCancel, displayOptions = null) {
     // Remove any existing modal
     this.hide();
 

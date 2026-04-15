@@ -437,7 +437,6 @@ const TweetTipHandler = {
         () => {
           groveLog.log("[TweetTipHandler] Tip cancelled");
         },
-        null,
         displayOptions,
       );
     } else {

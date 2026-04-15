@@ -119,12 +119,9 @@ const accountDisconnectBtn = document.getElementById("accountLogoutBtn");
 const tipButtonIntroModal = document.getElementById("tipButtonIntroModal");
 const tipIntroGotItBtn = document.getElementById("tipIntroGotItBtn");
 const tipIntroNextBtn = document.getElementById("tipIntroNextBtn");
-const tipIntroConnectBtn = document.getElementById("tipIntroConnectBtn");
 const tipIntroSkipBtn = document.getElementById("tipIntroSkipBtn");
 const tipIntroPage1 = document.getElementById("tipIntroPage1");
-const tipIntroPage2 = document.getElementById("tipIntroPage2");
 const tipIntroDots = document.querySelectorAll(".tip-intro-dot");
-let introModalMode = "intro"; // Track current modal mode
 
 // Initialize Previous Keys UI
 let prevKeysUI = null;
@@ -485,13 +482,7 @@ function setupEventListeners() {
   }
   if (tipIntroNextBtn) {
     tipIntroNextBtn.addEventListener("click", () => {
-      // In intro mode, "Got it" button closes the modal
-      // In twitter mode, this button isn't visible (we're on page 2)
-      if (introModalMode === "intro") {
-        hideTipIntroModal();
-      } else {
-        goToTipIntroPage(2);
-      }
+      hideTipIntroModal();
     });
   }
   if (tipIntroSkipBtn) {
@@ -3234,20 +3225,16 @@ async function checkAndShowEarnSetupModal(handle) {
 }
 
 /**
- * Shows only page 1 of the intro modal (You're all set!)
- * The Next button will close the modal instead of going to page 2
+ * Shows the intro modal (You're all set!)
  */
 function showIntroModalPage1Only() {
-  introModalMode = "intro";
   if (tipButtonIntroModal) {
     tipButtonIntroModal.classList.remove("hidden");
-    // Show page 1
     if (tipIntroPage1) tipIntroPage1.classList.add("active");
-    if (tipIntroPage2) tipIntroPage2.classList.remove("active");
-    // Hide the page indicator dots for intro-only mode
+    // Hide the page indicator dots (only one page)
     const dotsContainer = document.querySelector(".tip-intro-indicators");
     if (dotsContainer) dotsContainer.style.display = "none";
-    // Change Next button text to "Got it"
+    // Set button text to "Got it"
     if (tipIntroNextBtn) {
       tipIntroNextBtn.innerHTML = "<span>Got it</span>";
     }
@@ -3258,11 +3245,7 @@ async function hideTipIntroModal() {
   if (tipButtonIntroModal) {
     tipButtonIntroModal.classList.add("hidden");
   }
-  // Mark intro as seen
-  if (introModalMode === "intro") {
-    await chrome.storage.local.set({ [STORAGE_KEYS.TIP_INTRO_SEEN]: true });
-  }
-  // Reset modal state
+  await chrome.storage.local.set({ [STORAGE_KEYS.TIP_INTRO_SEEN]: true });
   resetIntroModalState();
 }
 
@@ -3271,37 +3254,13 @@ async function hideTipIntroModal() {
  */
 function resetIntroModalState() {
   if (tipIntroPage1) tipIntroPage1.classList.add("active");
-  if (tipIntroPage2) tipIntroPage2.classList.remove("active");
   // Restore dots visibility
   const dotsContainer = document.querySelector(".tip-intro-indicators");
   if (dotsContainer) dotsContainer.style.display = "";
   // Restore Next button text
   if (tipIntroNextBtn) {
-    tipIntroNextBtn.innerHTML =
-      '<span>Next</span><svg class="bounce-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
+    tipIntroNextBtn.innerHTML = "<span>Got it</span>";
   }
-  introModalMode = "intro";
-}
-
-function goToTipIntroPage(pageNum) {
-  // Update pages
-  if (tipIntroPage1 && tipIntroPage2) {
-    if (pageNum === 1) {
-      tipIntroPage1.classList.add("active");
-      tipIntroPage2.classList.remove("active");
-    } else {
-      tipIntroPage1.classList.remove("active");
-      tipIntroPage2.classList.add("active");
-    }
-  }
-  // Update dots
-  tipIntroDots.forEach((dot) => {
-    if (parseInt(dot.dataset.page) === pageNum) {
-      dot.classList.add("active");
-    } else {
-      dot.classList.remove("active");
-    }
-  });
 }
 
 /**

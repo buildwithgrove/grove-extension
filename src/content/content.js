@@ -647,7 +647,6 @@
         () => {
           groveLog.log("Tip cancelled");
         },
-        null,
         displayOptions
       );
     } else {
