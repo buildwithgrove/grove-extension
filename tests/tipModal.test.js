@@ -158,21 +158,18 @@ describe('TipModal', () => {
   });
 
   describe('confirm', () => {
-    it('should call onConfirm with amount, confirmBeforeTipping, and X actions', () => {
+    it('should call onConfirm with amount and confirmBeforeTipping', () => {
       const modal = new TipModal();
       const anchor = context.document.createElement('button');
       const confirmCb = vi.fn();
       context.document.body.appendChild(anchor);
 
       modal.show(anchor, 0.10, false, confirmCb, () => {});
-      modal.confirm(0.25, true, null, null);
+      modal.confirm(0.25, true);
 
       expect(confirmCb).toHaveBeenCalledWith({
         amount: 0.25,
         confirmBeforeTipping: true,
-        likeOnTip: null,
-        autoReply: null,
-        customMessage: null,
       });
     });
 
@@ -183,32 +180,11 @@ describe('TipModal', () => {
       context.document.body.appendChild(anchor);
 
       modal.show(anchor, 0.10, false, confirmCb, () => {});
-      modal.confirm(0.10, false, null, null);
+      modal.confirm(0.10, false);
 
       expect(confirmCb).toHaveBeenCalledWith({
         amount: 0.10,
         confirmBeforeTipping: false,
-        likeOnTip: null,
-        autoReply: null,
-        customMessage: null,
-      });
-    });
-
-    it('should include X actions in callback when provided', () => {
-      const modal = new TipModal();
-      const anchor = context.document.createElement('button');
-      const confirmCb = vi.fn();
-      context.document.body.appendChild(anchor);
-
-      modal.show(anchor, 0.10, false, confirmCb, () => {});
-      modal.confirm(0.50, true, true, false);
-
-      expect(confirmCb).toHaveBeenCalledWith({
-        amount: 0.50,
-        confirmBeforeTipping: true,
-        likeOnTip: true,
-        autoReply: false,
-        customMessage: null,
       });
     });
 
@@ -235,9 +211,6 @@ describe('TipModal', () => {
       expect(confirmCb).toHaveBeenCalledWith({
         amount: 0.01,
         confirmBeforeTipping: false,
-        likeOnTip: null,
-        autoReply: null,
-        customMessage: null,
       });
     });
 
@@ -253,9 +226,6 @@ describe('TipModal', () => {
       expect(confirmCb).toHaveBeenCalledWith({
         amount: 0.01,
         confirmBeforeTipping: true,
-        likeOnTip: null,
-        autoReply: null,
-        customMessage: null,
       });
     });
   });
@@ -403,9 +373,6 @@ describe('TipModal', () => {
       expect(confirmCb).toHaveBeenCalledWith({
         amount: 0.75,
         confirmBeforeTipping: true,
-        likeOnTip: null,
-        autoReply: null,
-        customMessage: '',
       });
     });
   });
@@ -547,78 +514,16 @@ describe('TipModal', () => {
   });
 
   describe('xOptions', () => {
-    it('should show X actions section when X is connected', () => {
+    it('should not show X actions section (X OAuth removed)', () => {
       const modal = new TipModal();
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
-      modal.show(anchor, 0.10, false, () => {}, () => {}, {
-        isConnected: true,
-        likeOnTip: true,
-        autoReply: true,
-      });
-
-      expect(modal.modal.textContent).toContain('𝕏 Actions');
-      expect(modal.modal.textContent).toContain('Like this post');
-      expect(modal.modal.textContent).toContain('Reply to this post');
-    });
-
-    it('should not show X actions section when X is not connected', () => {
-      const modal = new TipModal();
-      const anchor = context.document.createElement('button');
-      context.document.body.appendChild(anchor);
-
-      modal.show(anchor, 0.10, false, () => {}, () => {}, {
-        isConnected: false,
-        likeOnTip: true,
-        autoReply: true,
-      });
+      modal.show(anchor, 0.10, false, () => {}, () => {});
 
       expect(modal.modal.textContent).not.toContain('𝕏 Actions');
-    });
-
-    it('should not show X actions section when xOptions is null', () => {
-      const modal = new TipModal();
-      const anchor = context.document.createElement('button');
-      context.document.body.appendChild(anchor);
-
-      modal.show(anchor, 0.10, false, () => {}, () => {}, null);
-
-      expect(modal.modal.textContent).not.toContain('𝕏 Actions');
-    });
-
-    it('should check like checkbox based on likeOnTip setting', () => {
-      const modal = new TipModal();
-      const anchor = context.document.createElement('button');
-      context.document.body.appendChild(anchor);
-
-      modal.show(anchor, 0.10, false, () => {}, () => {}, {
-        isConnected: true,
-        likeOnTip: false,
-        autoReply: true,
-      });
-
-      // Find all checkboxes - first is confirm, second is like, third is reply
-      const checkboxes = context.document.querySelectorAll('input[type="checkbox"]');
-      // Like checkbox is the second one (index 1)
-      expect(checkboxes[1].checked).toBe(false);
-    });
-
-    it('should check reply checkbox based on autoReply setting', () => {
-      const modal = new TipModal();
-      const anchor = context.document.createElement('button');
-      context.document.body.appendChild(anchor);
-
-      modal.show(anchor, 0.10, false, () => {}, () => {}, {
-        isConnected: true,
-        likeOnTip: true,
-        autoReply: false,
-      });
-
-      // Find all checkboxes - first is confirm, second is like, third is reply
-      const checkboxes = context.document.querySelectorAll('input[type="checkbox"]');
-      // Reply checkbox is the third one (index 2)
-      expect(checkboxes[2].checked).toBe(false);
+      expect(modal.modal.textContent).not.toContain('Like this post');
+      expect(modal.modal.textContent).not.toContain('Reply to this post');
     });
   });
 
@@ -628,7 +533,7 @@ describe('TipModal', () => {
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
-      modal.show(anchor, 0.10, false, () => {}, () => {}, null, {
+      modal.show(anchor, 0.10, false, () => {}, () => {}, {
         title: 'Confirm Tip',
       });
 
@@ -641,7 +546,7 @@ describe('TipModal', () => {
       const anchor = context.document.createElement('button');
       context.document.body.appendChild(anchor);
 
-      modal.show(anchor, 0.10, false, () => {}, () => {}, null, {
+      modal.show(anchor, 0.10, false, () => {}, () => {}, {
         showConfirmCheckbox: false,
       });
 
@@ -658,56 +563,5 @@ describe('TipModal', () => {
       expect(modal.modal.textContent).toContain('Always confirm before tipping');
     });
 
-    it('should hide like checkbox for profile tips', () => {
-      const modal = new TipModal();
-      const anchor = context.document.createElement('button');
-      context.document.body.appendChild(anchor);
-
-      modal.show(anchor, 0.10, false, () => {}, () => {}, {
-        isConnected: true,
-        likeOnTip: true,
-        autoReply: true,
-      }, {
-        isProfileTip: true,
-      });
-
-      expect(modal.modal.textContent).not.toContain('Like this post');
-      // Reply option should still be shown
-      expect(modal.modal.textContent).toContain('Let them know');
-    });
-
-    it('should show "Let @username know" for profile tips with username', () => {
-      const modal = new TipModal();
-      const anchor = context.document.createElement('button');
-      context.document.body.appendChild(anchor);
-
-      modal.show(anchor, 0.10, false, () => {}, () => {}, {
-        isConnected: true,
-        likeOnTip: true,
-        autoReply: true,
-      }, {
-        isProfileTip: true,
-        recipientUsername: 'vitalik',
-      });
-
-      expect(modal.modal.textContent).toContain('Let @vitalik know');
-    });
-
-    it('should show "Let @username know" for tweet tips with username', () => {
-      const modal = new TipModal();
-      const anchor = context.document.createElement('button');
-      context.document.body.appendChild(anchor);
-
-      modal.show(anchor, 0.10, false, () => {}, () => {}, {
-        isConnected: true,
-        likeOnTip: true,
-        autoReply: true,
-      }, {
-        isProfileTip: false,
-        recipientUsername: 'sassal',
-      });
-
-      expect(modal.modal.textContent).toContain('Let @sassal know');
-    });
   });
 });

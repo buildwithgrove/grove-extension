@@ -221,9 +221,7 @@
         showInlineTipError: showInlineTipError,
         getActiveJWT: getActiveJWT,
         getCachedAddress: getCachedAddress,
-        extractUsernameFromUrl: extractUsernameFromUrl,
-        addXSenderInfo: typeof addXSenderInfo === 'function' ? addXSenderInfo : null,
-        getDefaultAutoReplyMessage: () => DEFAULT_AUTO_REPLY_MESSAGE
+        extractUsernameFromUrl: extractUsernameFromUrl
       },
       typeof GROVE_COLORS !== 'undefined' ? GROVE_COLORS : null
     );
@@ -553,11 +551,6 @@
     let tipAmount = 0.02; // default
     let confirmBeforeTipping = true; // default on
     let hasTipped = false; // whether user has tipped before
-    let likeOnTip = true;
-    let autoReply = true;
-    let isXConnected = false;
-
-    let autoReplyMessage = DEFAULT_AUTO_REPLY_MESSAGE;
 
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
@@ -566,15 +559,9 @@
           'GROVE_CONFIRM_TIP',
           'GROVE_CONFIRM_TIP_V2',
           'GROVE_HAS_TIPPED',
-          'GROVE_LIKE_ON_TIP',
-          'GROVE_AUTO_REPLY',
-          'GROVE_AUTO_REPLY_MESSAGE'
         ]);
-        autoReplyMessage = result.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
         tipAmount = result.GROVE_TIP_AMOUNT || 0.02;
         hasTipped = result.GROVE_HAS_TIPPED || false;
-        likeOnTip = result.GROVE_LIKE_ON_TIP !== false;
-        autoReply = result.GROVE_AUTO_REPLY !== false;
 
         // Migration logic: if V2 flag not set, reset confirm to true (new default)
         if (!result.GROVE_CONFIRM_TIP_V2) {
@@ -585,11 +572,6 @@
           });
         } else {
           confirmBeforeTipping = result.GROVE_CONFIRM_TIP !== false;
-        }
-
-        // Check X connection status
-        if (typeof XAuth !== 'undefined') {
-          isXConnected = await XAuth.isLoggedIn();
         }
       }
     } catch (error) {
@@ -630,13 +612,6 @@
       tipModal = new TipModal();
     }
 
-    // Build X options for modal
-    const xOptions = isXConnected ? {
-      isConnected: true,
-      likeOnTip: likeOnTip,
-      autoReply: autoReply
-    } : null;
-
     if (tipModal) {
       // Get username for profile tips
       const recipientUsername = tipOverrides?.recipient_username || extractUsernameFromUrl(window.location.href);
@@ -647,14 +622,14 @@
 
       // Configure display based on whether this is the first tip
       const displayOptions = hasTipped
-        ? { title: 'Confirm Tip', showConfirmCheckbox: true, isProfileTip: true, recipientUsername, autoReplyMessage, isDarkMode }
-        : { title: 'Your First Tip!', showConfirmCheckbox: true, isProfileTip: true, recipientUsername, autoReplyMessage, isDarkMode };
+        ? { title: 'Confirm Tip', showConfirmCheckbox: true, isProfileTip: true, recipientUsername, isDarkMode }
+        : { title: 'Your First Tip!', showConfirmCheckbox: true, isProfileTip: true, recipientUsername, isDarkMode };
 
       tipModal.show(
         buttonElement,
         tipAmount,
         true, // confirmBeforeTipping is always true here
-        async ({ amount, confirmBeforeTipping: newConfirmSetting, likeOnTip: newLikeOnTip, autoReply: newAutoReply, customMessage }) => {
+        async ({ amount, confirmBeforeTipping: newConfirmSetting }) => {
           // Save preferences
           try {
             const saveData = {
@@ -662,24 +637,16 @@
               'GROVE_CONFIRM_TIP': newConfirmSetting,
               'GROVE_HAS_TIPPED': true
             };
-            // Save X preferences if they were set (X is connected)
-            if (newLikeOnTip !== null) {
-              saveData['GROVE_LIKE_ON_TIP'] = newLikeOnTip;
-            }
-            if (newAutoReply !== null) {
-              saveData['GROVE_AUTO_REPLY'] = newAutoReply;
-            }
             await chrome.storage.local.set(saveData);
           } catch (e) {
             console.error("[Grove Extension] Failed to save tip preferences:", e);
           }
-          // Send the tip with custom message
-          sendTip(amount, button, customMessage, tipOverrides);
+          // Send the tip
+          sendTip(amount, button, null, tipOverrides);
         },
         () => {
           groveLog.log("Tip cancelled");
         },
-        xOptions,
         displayOptions
       );
     } else {
@@ -767,11 +734,6 @@
       context.recipient_profile_url = tipOverrides.recipient_profile_url;
     }
 
-    // Add sender info if X is authenticated (from xFeatures.js)
-    if (typeof addXSenderInfo === 'function') {
-      await addXSenderInfo(context);
-    }
-
     // Send tip via API with JWT, amount, and context
     const response = await GroveAPI.sendTip(tipDestination, tipAmount, jwt, context);
 
@@ -788,67 +750,6 @@
     if (response.success) {
       if (button) {
         button.setSuccess();
-      }
-
-      // For X profile tips, send a tweet mentioning the user
-      if (platformName === 'twitter' && typeof XAuth !== 'undefined') {
-        try {
-          // Get X feature settings
-          const xSettings = await chrome.storage.local.get(['GROVE_AUTO_REPLY', 'GROVE_AUTO_REPLY_MESSAGE', 'GROVE_REFERRAL_CODE', 'groveChain', 'groveEndpoint', 'groveEnvironment']);
-            const autoReplyEnabled = xSettings.GROVE_AUTO_REPLY !== false;
-
-            if (autoReplyEnabled) {
-              const isLoggedIn = await XAuth.isLoggedIn();
-              if (isLoggedIn && recipientUsername) {
-              // Get chain config for the message from centralized config
-              // Use testnet explorer URL when on localhost or testnet endpoints
-              const rawChain = xSettings.groveChain || 'base';
-              const explorerChain = getExplorerChain(rawChain, xSettings);
-              const config = getChainConfig(explorerChain);
-              const chainName = config.name;
-              const explorerBaseUrl = `${config.explorerUrl}/tx/`;
-
-              const txHash = response.data?.tx_hash || '';
-              const txLink = `${explorerBaseUrl}${txHash}`;
-
-              // Build tweet text from template (prefer custom message from modal)
-                const autoReplyMessage = customMessage || xSettings.GROVE_AUTO_REPLY_MESSAGE || DEFAULT_AUTO_REPLY_MESSAGE;
-                const referralCode = xSettings.GROVE_REFERRAL_CODE;
-                // TODO_CONSIDERATION: Referral links always point to production — intentional?
-                //   Why: During local/testnet dev, auto-reply tweets still link to production app
-                //   How: Use GroveEnv.get(envId).appUrl if referrals should match the active environment
-                const referralLink = referralCode ? `https://grove.city/?ref=${encodeURIComponent(referralCode)}` : 'grove.city';
-                const tweetText = buildAutoReplyMessage(autoReplyMessage, {
-                  username: recipientUsername,
-                  amount: tipAmount,
-                  chain: chainName,
-                  tx_link: txLink,
-                  post_url: '',
-                  grove_link: 'grove.city',
-                  referral_link: referralLink
-                });
-
-              try {
-                await XAuth.postTweet(tweetText);
-                groveLog.log("Profile tip tweet posted successfully");
-                // Show success feedback
-                setTimeout(() => {
-                  showInlineTipError(button.button, { message: 'Tweet sent!', variant: 'success' });
-                }, 100);
-              } catch (tweetError) {
-                console.error("[Grove Extension] Profile tip tweet failed:", tweetError);
-                setTimeout(() => {
-                  showInlineTipError(button.button, { message: 'Tweet failed (rate limited?)', variant: 'warning' });
-                }, 100);
-              }
-            } else {
-              groveLog.log("Skipping profile tweet - not logged in or no username");
-            }
-          }
-        } catch (error) {
-          // Don't fail the whole tip if X features fail
-          console.error("[Grove Extension] X features failed for profile tip:", error);
-        }
       }
     } else {
       console.error("[Grove Extension] Tip failed:", response.error, response.data);

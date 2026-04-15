@@ -4,7 +4,6 @@ importScripts("src/config/logger.js");
 importScripts("src/config/chains.js");
 importScripts("src/config/storageKeys.js");
 importScripts("src/utils/updateChecker.js");
-importScripts("src/auth/xOAuthBackground.js");
 
 // Listen for internal messages from popup/content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -24,7 +23,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const allowedPrefixes = [
       ...Object.values(GROVE_ENVIRONMENTS).map((env) => env.apiUrl),
       ...Object.values(CHAIN_CONFIG).map((chain) => chain.rpcUrl),
-      "https://api.twitter.com/",
     ];
     if (!allowedPrefixes.some((prefix) => url.startsWith(prefix))) {
       sendResponse({
@@ -62,18 +60,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           headers: {},
           body: "",
         });
-      });
-    return true; // Keep channel open for async response
-  }
-
-  // X (Twitter) OAuth Login
-  if (message.type === "X_LOGIN") {
-    handleXLogin()
-      .then((result) => {
-        sendResponse(result);
-      })
-      .catch((error) => {
-        sendResponse({ success: false, error: error.message });
       });
     return true; // Keep channel open for async response
   }
@@ -243,54 +229,9 @@ chrome.runtime.onMessageExternal.addListener(
       return true;
     }
 
-    if (message.type === "OPEN_POPUP_TO_X_SETTINGS") {
-      // Store flag to open X settings when popup opens
-      chrome.storage.local.set({ openToXSettings: true });
-
-      const chromeVersion = parseInt(
-        navigator.userAgent.match(/Chrome\/(\d+)/)?.[1] || "0",
-      );
-
-      if (chromeVersion >= 127 && chrome.action.openPopup) {
-        chrome.action
-          .openPopup()
-          .then(() => sendResponse({ success: true, opened: true }))
-          .catch(() =>
-            sendResponse({
-              success: true,
-              opened: false,
-              reason: "popup_blocked",
-            }),
-          );
-      } else {
-        sendResponse({
-          success: true,
-          opened: false,
-          reason: "unsupported_version",
-          chromeVersion,
-        });
-      }
-      return true;
-    }
-
-    if (message.type === "CHECK_OPEN_TO_X_SETTINGS") {
-      chrome.storage.local.get(["openToXSettings"], (result) => {
-        if (result.openToXSettings) {
-          chrome.storage.local.remove("openToXSettings");
-          sendResponse({ shouldOpen: true });
-        } else {
-          sendResponse({ shouldOpen: false });
-        }
-      });
-      return true;
-    }
-
     sendResponse({ error: "Unknown message type" });
   },
 );
-
-// X OAuth functions are imported from src/auth/xOAuthBackground.js
-// handleXLogin, X_AUTH_CONFIG, etc. are available globally
 
 // ============================================================================
 // Update Checker - Background Check with Badge Notification

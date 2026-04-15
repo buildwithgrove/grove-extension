@@ -119,12 +119,9 @@ const accountDisconnectBtn = document.getElementById("accountLogoutBtn");
 const tipButtonIntroModal = document.getElementById("tipButtonIntroModal");
 const tipIntroGotItBtn = document.getElementById("tipIntroGotItBtn");
 const tipIntroNextBtn = document.getElementById("tipIntroNextBtn");
-const tipIntroConnectBtn = document.getElementById("tipIntroConnectBtn");
 const tipIntroSkipBtn = document.getElementById("tipIntroSkipBtn");
 const tipIntroPage1 = document.getElementById("tipIntroPage1");
-const tipIntroPage2 = document.getElementById("tipIntroPage2");
 const tipIntroDots = document.querySelectorAll(".tip-intro-dot");
-let introModalMode = "intro"; // Track current modal mode: 'intro' shows page 1 only, 'twitter' shows page 2 only
 
 // Initialize Previous Keys UI
 let prevKeysUI = null;
@@ -148,27 +145,6 @@ async function getActiveJWT() {
   return KeyManager.getActiveJWT();
 }
 
-// DEFAULT_AUTO_REPLY_MESSAGE is loaded from src/ui/constants.js
-
-// X Login Elements (now in Settings > X)
-const likeOnTipToggle = document.getElementById("settingsLikeOnTipToggle");
-const autoReplyToggle = document.getElementById("settingsAutoReplyToggle");
-const autoReplyMessageContainer = document.getElementById(
-  "settingsAutoReplyMessageContainer",
-);
-const autoReplyMessageInput = document.getElementById(
-  "settingsAutoReplyMessageInput",
-);
-const saveAutoReplyMessageBtn = document.getElementById(
-  "settingsSaveAutoReplyMessageBtn",
-);
-const resetAutoReplyMessageBtn = document.getElementById(
-  "settingsResetAutoReplyMessageBtn",
-);
-const settingsXConnectBtn = document.getElementById("settingsXConnectBtn");
-const settingsXDisconnectBtn = document.getElementById(
-  "settingsXDisconnectBtn",
-);
 
 // CDP Auth Elements
 const cdpAuthSection = document.getElementById("cdpAuthSection");
@@ -298,10 +274,6 @@ async function init() {
   await loadJWT();
   await loadTipAmount();
   await loadConfirmTip();
-  await loadLikeOnTip();
-  await loadAutoReply();
-  await loadAutoReplyMessage();
-  await loadXLoginStatus();
   await loadEnvironment();
   await loadChain();
   await loadEndpoint();
@@ -350,22 +322,6 @@ async function init() {
 
   // Increment launch count
   await incrementLaunchCount();
-
-  // Check if we should show the Twitter connect modal (after 5 launches and 1 tip)
-  await checkAndShowTwitterModal();
-
-  // Check if we should open to X settings (from first tip modal)
-  chrome.runtime.sendMessage(
-    { type: "CHECK_OPEN_TO_X_SETTINGS" },
-    (response) => {
-      if (chrome.runtime.lastError) return; // Service worker inactive
-      if (response?.shouldOpen) {
-        // Navigate to Settings > X
-        navigateToSettings();
-        showSettingsView("x-settings");
-      }
-    },
-  );
 
   // Refresh data when popup regains focus
   document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -493,9 +449,6 @@ function setupEventListeners() {
   // Leaderboard switcher
   setupLeaderboardSwitcher();
 
-  // Giveaways tab
-  setupGiveawaysTab();
-
   // History tab
   setupHistoryTab();
 
@@ -529,21 +482,7 @@ function setupEventListeners() {
   }
   if (tipIntroNextBtn) {
     tipIntroNextBtn.addEventListener("click", () => {
-      // In intro mode, "Got it" button closes the modal
-      // In twitter mode, this button isn't visible (we're on page 2)
-      if (introModalMode === "intro") {
-        hideTipIntroModal();
-      } else {
-        goToTipIntroPage(2);
-      }
-    });
-  }
-  if (tipIntroConnectBtn) {
-    tipIntroConnectBtn.addEventListener("click", async () => {
-      // Set flag to open settings when user returns after auth
-      await chrome.storage.local.set({ openToXSettings: true });
-      await hideTipIntroModal();
-      handleXLogin();
+      hideTipIntroModal();
     });
   }
   if (tipIntroSkipBtn) {
@@ -614,16 +553,6 @@ function setupEventListeners() {
       showSettingsView("referral");
       loadReferralData();
     });
-  }
-
-  // Settings > X connect button
-  if (settingsXConnectBtn) {
-    settingsXConnectBtn.addEventListener("click", handleXLogin);
-  }
-
-  // Settings > X disconnect button
-  if (settingsXDisconnectBtn) {
-    settingsXDisconnectBtn.addEventListener("click", handleXDisconnect);
   }
 
   // Legacy manage button (kept for compatibility but hidden)
@@ -716,24 +645,6 @@ function setupEventListeners() {
   endpointOptions.forEach((option) => {
     option.addEventListener("change", handleEndpointChange);
   });
-
-  // Like on Tip Toggle
-  if (likeOnTipToggle) {
-    likeOnTipToggle.addEventListener("change", handleLikeOnTipToggle);
-  }
-
-  // Auto Reply Toggle
-  if (autoReplyToggle) {
-    autoReplyToggle.addEventListener("change", handleAutoReplyToggle);
-  }
-
-  // Auto Reply Message
-  if (saveAutoReplyMessageBtn) {
-    saveAutoReplyMessageBtn.addEventListener("click", saveAutoReplyMessage);
-  }
-  if (resetAutoReplyMessageBtn) {
-    resetAutoReplyMessageBtn.addEventListener("click", resetAutoReplyMessage);
-  }
 
   // Quick Actions (Placeholders)
   document.querySelectorAll(".action-btn").forEach((btn) => {
@@ -941,11 +852,6 @@ async function handleNavigation(e) {
   } else {
     // Stop live polling when leaving leaderboard tab
     stopLivePolling();
-  }
-
-  // Load giveaways when navigating to giveaways tab
-  if (targetId === "tab-giveaways") {
-    loadGiveaways();
   }
 
   // Reset settings view to main menu when navigating to settings tab
@@ -1545,136 +1451,6 @@ async function handleConfirmTipToggle() {
   const enabled = confirmTipToggle.checked;
   await chrome.storage.local.set({ [STORAGE_KEYS.CONFIRM_TIP]: enabled });
 }
-
-/**
- * Auto Reply Toggle
- */
-async function loadAutoReply() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.AUTO_REPLY]);
-  // Auto-reply defaults to true (only false if explicitly set to false)
-  const enabled = result[STORAGE_KEYS.AUTO_REPLY] !== false;
-  if (autoReplyToggle) {
-    autoReplyToggle.checked = enabled;
-  }
-  // Show/hide message container based on toggle state
-  if (autoReplyMessageContainer) {
-    if (enabled) {
-      autoReplyMessageContainer.classList.remove("hidden");
-    } else {
-      autoReplyMessageContainer.classList.add("hidden");
-    }
-  }
-}
-
-async function handleAutoReplyToggle() {
-  const enabled = autoReplyToggle.checked;
-
-  // Check if user is logged in to X when enabling
-  if (enabled) {
-    const isLoggedIn = await XAuth.isLoggedIn();
-    if (!isLoggedIn) {
-      autoReplyToggle.checked = false;
-      showToast("Connect X account first");
-      return;
-    }
-  }
-
-  await chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY]: enabled });
-
-  // Show/hide custom message container
-  updateAutoReplyMessageVisibility(enabled);
-
-  showToast(enabled ? "Auto-reply enabled" : "Auto-reply disabled");
-}
-
-/**
- * Like on Tip Toggle
- */
-async function loadLikeOnTip() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.LIKE_ON_TIP]);
-  // Default to true (ON by default)
-  const enabled = result[STORAGE_KEYS.LIKE_ON_TIP] !== false;
-  if (likeOnTipToggle) {
-    likeOnTipToggle.checked = enabled;
-  }
-}
-
-async function handleLikeOnTipToggle() {
-  const enabled = likeOnTipToggle.checked;
-  await chrome.storage.local.set({ [STORAGE_KEYS.LIKE_ON_TIP]: enabled });
-  showToast(enabled ? "Like on tip enabled" : "Like on tip disabled");
-}
-
-/**
- * Update visibility of auto-reply message container
- */
-function updateAutoReplyMessageVisibility(enabled) {
-  if (autoReplyMessageContainer) {
-    if (enabled) {
-      autoReplyMessageContainer.classList.remove("hidden");
-    } else {
-      autoReplyMessageContainer.classList.add("hidden");
-    }
-  }
-}
-
-/**
- * Load Auto Reply Message
- */
-async function loadAutoReplyMessage() {
-  const result = await chrome.storage.local.get([
-    STORAGE_KEYS.AUTO_REPLY_MESSAGE,
-    STORAGE_KEYS.AUTO_REPLY,
-  ]);
-  const message =
-    result[STORAGE_KEYS.AUTO_REPLY_MESSAGE] || DEFAULT_AUTO_REPLY_MESSAGE;
-  // Auto-reply defaults to true (only false if explicitly set to false)
-  const autoReplyEnabled = result[STORAGE_KEYS.AUTO_REPLY] !== false;
-
-  if (autoReplyMessageInput) {
-    autoReplyMessageInput.value = message;
-  }
-
-  // Show/hide based on auto-reply toggle state
-  updateAutoReplyMessageVisibility(autoReplyEnabled);
-}
-
-/**
- * Save Auto Reply Message
- */
-async function saveAutoReplyMessage() {
-  const message = autoReplyMessageInput?.value?.trim();
-
-  if (!message) {
-    showToast("Message cannot be empty");
-    return;
-  }
-
-  await chrome.storage.local.set({
-    [STORAGE_KEYS.AUTO_REPLY_MESSAGE]: message,
-  });
-  showToast("Auto-reply message saved");
-}
-
-/**
- * Reset Auto Reply Message to Default
- */
-async function resetAutoReplyMessage() {
-  if (autoReplyMessageInput) {
-    autoReplyMessageInput.value = DEFAULT_AUTO_REPLY_MESSAGE;
-  }
-  await chrome.storage.local.set({
-    [STORAGE_KEYS.AUTO_REPLY_MESSAGE]: DEFAULT_AUTO_REPLY_MESSAGE,
-  });
-  showToast("Message reset to default");
-}
-
-/**
- * X (Twitter) Login
- */
-
-// X OAuth functions are imported from src/auth/xOAuthPopup.js
-// loadXLoginStatus, handleXDisconnect, handleXLogin are available globally
 
 /**
  * Balance
@@ -2647,12 +2423,6 @@ async function updateAppLinks() {
     walletSignInBtn.href = appUrl + "/extension";
   }
 
-  // Update create giveaway link
-  const createGiveawayLink = document.getElementById("createGiveawayLink");
-  if (createGiveawayLink) {
-    createGiveawayLink.href = appUrl + "/giveaways";
-  }
-
   // Update leaderboard app link
   const leaderboardAppLink = document.getElementById("leaderboardAppLink");
   if (leaderboardAppLink) {
@@ -3158,356 +2928,6 @@ async function loadLeaderboardStats() {
 }
 
 /**
- * Giveaways State
- */
-let giveawaysData = [];
-let giveawayFilter = "hot";
-let selectedGiveawayId = null;
-let giveawayRefreshTimeout = null;
-
-/**
- * Setup Giveaways Tab
- */
-function setupGiveawaysTab() {
-  const retryBtn = document.getElementById("giveaway-retry-btn");
-  if (retryBtn) {
-    retryBtn.addEventListener("click", loadGiveaways);
-  }
-
-  const backBtn = document.getElementById("giveaway-detail-back");
-  if (backBtn) {
-    backBtn.addEventListener("click", closeGiveawayDetail);
-  }
-
-  // Filter pill handlers
-  const filterBtns = document.querySelectorAll("#giveaway-filter .filter-btn");
-  filterBtns.forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      const filter = e.target.dataset.giveawayFilter;
-      giveawayFilter = filter;
-      filterBtns.forEach((b) => b.classList.remove("active"));
-      e.target.classList.add("active");
-      renderFilteredGiveaways();
-    });
-  });
-
-  // Delegate click on giveaway cards
-  const list = document.getElementById("giveaway-list");
-  if (list) {
-    list.addEventListener("click", (e) => {
-      const card = e.target.closest(".giveaway-card");
-      if (card) {
-        const id = card.dataset.giveawayId;
-        if (id) openGiveawayDetail(id);
-      }
-    });
-  }
-}
-
-/**
- * Filter giveaways by category (matching app's BrowseGiveaways logic)
- * @param {string} category - 'hot', 'ending', or 'new'
- * @returns {Array} Filtered and sorted giveaway items
- */
-function filterGiveaways(category) {
-  const now = new Date();
-  const MS_48H = 48 * 60 * 60 * 1000;
-  const MS_24H = 24 * 60 * 60 * 1000;
-
-  switch (category) {
-    case "hot": {
-      // Active with start_at <= now, PLUS ended with end_at >= now - 48h
-      const filtered = giveawaysData.filter((item) => {
-        const g = item.giveaway;
-        const startAt = new Date(g.start_at);
-        const endAt = new Date(g.end_at);
-        if (g.status === "active" && startAt <= now) return true;
-        if (g.status === "ended" && endAt >= new Date(now - MS_48H))
-          return true;
-        return false;
-      });
-      filtered.sort(
-        (a, b) =>
-          (b.stats.unique_participants || 0) -
-          (a.stats.unique_participants || 0),
-      );
-      return filtered;
-    }
-    case "ending": {
-      // Active only, start_at <= now, end_at > now, end_at - now <= 24h
-      const filtered = giveawaysData.filter((item) => {
-        const g = item.giveaway;
-        if (g.status !== "active") return false;
-        const startAt = new Date(g.start_at);
-        const endAt = new Date(g.end_at);
-        return startAt <= now && endAt > now && endAt - now <= MS_24H;
-      });
-      filtered.sort(
-        (a, b) => new Date(a.giveaway.end_at) - new Date(b.giveaway.end_at),
-      );
-      return filtered;
-    }
-    case "new": {
-      // Active only, start_at within now - 48h to now + 48h
-      const filtered = giveawaysData.filter((item) => {
-        const g = item.giveaway;
-        if (g.status !== "active") return false;
-        const startAt = new Date(g.start_at);
-        return (
-          startAt >= new Date(now - MS_48H) &&
-          startAt <= new Date(now.getTime() + MS_48H)
-        );
-      });
-      filtered.sort(
-        (a, b) => new Date(a.giveaway.start_at) - new Date(b.giveaway.start_at),
-      );
-      return filtered;
-    }
-    default:
-      return giveawaysData;
-  }
-}
-
-/**
- * Render the giveaway list based on the active filter
- */
-function renderFilteredGiveaways() {
-  const empty = document.getElementById("giveaway-empty");
-  const list = document.getElementById("giveaway-list");
-
-  const filtered = filterGiveaways(giveawayFilter);
-
-  if (filtered.length === 0) {
-    list.innerHTML = "";
-    const messages = {
-      hot: "No giveaways right now",
-      ending: "No giveaways ending soon",
-      new: "No new giveaways",
-    };
-    list.innerHTML = `<p class="giveaway-filter-empty">${messages[giveawayFilter] || "No giveaways found"}</p>`;
-    empty.classList.add("hidden");
-  } else {
-    empty.classList.add("hidden");
-    list.innerHTML = GiveawaysRenderer.renderGiveawaysList(filtered);
-  }
-}
-
-/**
- * Load Giveaways list (active + recently ended)
- */
-async function loadGiveaways() {
-  const loading = document.getElementById("giveaway-loading");
-  const empty = document.getElementById("giveaway-empty");
-  const error = document.getElementById("giveaway-error");
-  const list = document.getElementById("giveaway-list");
-
-  loading.classList.remove("hidden");
-  empty.classList.add("hidden");
-  error.classList.add("hidden");
-  list.innerHTML = "";
-
-  // Fetch active and recently ended giveaways in parallel
-  const [activeResult, endedResult] = await Promise.all([
-    GroveAPI.listGiveaways({ status: "active", limit: 20 }),
-    GroveAPI.listGiveaways({ status: "ended", limit: 10 }),
-  ]);
-
-  loading.classList.add("hidden");
-
-  if (!activeResult.success && !endedResult.success) {
-    error.classList.remove("hidden");
-    return;
-  }
-
-  // Merge active and ended giveaways, dedup by ID
-  const seen = new Set();
-  const allGiveaways = [];
-  for (const result of [activeResult, endedResult]) {
-    if (result.success) {
-      for (const g of result.data.giveaways || []) {
-        if (!seen.has(g.id)) {
-          seen.add(g.id);
-          allGiveaways.push(g);
-        }
-      }
-    }
-  }
-
-  if (allGiveaways.length === 0) {
-    empty.classList.remove("hidden");
-    return;
-  }
-
-  // Render immediately with placeholder stats so cards appear without delay
-  giveawaysData = allGiveaways.map((g) => ({ giveaway: g, stats: {} }));
-  renderFilteredGiveaways();
-
-  // Load stats in the background and re-render once all are fetched
-  const statsResults = await Promise.all(
-    allGiveaways.map(async (g) => {
-      try {
-        const detail = await GroveAPI.getGiveaway(g.id);
-        if (detail.success) {
-          return { id: g.id, giveaway: detail.data.giveaway, stats: detail.data.stats };
-        }
-      } catch (err) {
-        console.error("[Grove Extension] Giveaway detail fetch error:", err);
-      }
-      return { id: g.id, giveaway: g, stats: {} };
-    }),
-  );
-
-  // Update data and re-render with real stats
-  giveawaysData = statsResults.map(({ giveaway, stats }) => ({ giveaway, stats }));
-  renderFilteredGiveaways();
-}
-
-/**
- * Open Giveaway Detail overlay
- * @param {string} giveawayId - Giveaway UUID
- */
-async function openGiveawayDetail(giveawayId) {
-  const overlay = document.getElementById("giveaway-detail-overlay");
-  const content = document.getElementById("giveaway-detail-content");
-  const detailLoading = document.getElementById("giveaway-detail-loading");
-
-  selectedGiveawayId = giveawayId;
-  overlay.classList.remove("hidden");
-  content.innerHTML = "";
-  detailLoading.classList.remove("hidden");
-
-  const result = await GroveAPI.getGiveaway(giveawayId);
-
-  detailLoading.classList.add("hidden");
-
-  if (!result.success) {
-    content.innerHTML =
-      '<p class="giveaway-detail-error">Failed to load giveaway details.</p>';
-    return;
-  }
-
-  const { giveaway, stats } = result.data;
-  content.innerHTML = GiveawaysRenderer.renderGiveawayDetail(giveaway, stats);
-  wireGiveawayEnterButton(giveaway, giveawayId, content);
-}
-
-/**
- * Wire up the Enter Giveaway button inside the detail overlay.
- * Extracted so it can be re-called after the detail view refreshes.
- */
-function wireGiveawayEnterButton(giveaway, giveawayId, content) {
-  const enterBtn = document.getElementById("giveawayEnterBtn");
-  const tipInput = document.getElementById("giveawayTipAmount");
-  const tipError = document.getElementById("giveawayTipError");
-
-  if (enterBtn && tipInput) {
-    enterBtn.addEventListener("click", async () => {
-      const jwt = await getActiveJWT();
-      if (!jwt) {
-        showTipError(tipError, "Connect your account first to enter.");
-        return;
-      }
-
-      const amount = parseFloat(tipInput.value);
-      const minTip = parseFloat(giveaway.minimum_tip_usd) || 0;
-
-      if (
-        !tipInput.value ||
-        isNaN(amount) ||
-        !isFinite(amount) ||
-        amount <= 0
-      ) {
-        showTipError(tipError, "Please enter a valid amount");
-        return;
-      }
-
-      if (amount < minTip) {
-        showTipError(tipError, `Minimum tip is $${minTip.toFixed(2)}`);
-        return;
-      }
-
-      if (amount > 10000) {
-        showTipError(tipError, "Maximum tip is $10,000");
-        return;
-      }
-
-      // Show spinner
-      enterBtn.disabled = true;
-      enterBtn.classList.add("loading");
-
-      const tipResult = await GroveAPI.sendTip(
-        giveaway.creator_address,
-        amount,
-        jwt,
-        {
-          campaign: "grove-extension-giveaway",
-          custom_metadata: JSON.stringify({ giveaway_id: giveaway.id }),
-        },
-      );
-
-      enterBtn.classList.remove("loading");
-
-      if (tipResult.success) {
-        enterBtn.classList.add("success");
-        const btnText = enterBtn.querySelector(".giveaway-enter-btn-text");
-        if (btnText) btnText.textContent = "Entered!";
-        showToast("You're in! 🌿", "success");
-        fetchBalance();
-        // Refresh detail after a delay
-        if (giveawayRefreshTimeout) clearTimeout(giveawayRefreshTimeout);
-        giveawayRefreshTimeout = setTimeout(async () => {
-          giveawayRefreshTimeout = null;
-          if (selectedGiveawayId === giveawayId) {
-            const refreshed = await GroveAPI.getGiveaway(giveawayId);
-            if (refreshed.success) {
-              content.innerHTML = GiveawaysRenderer.renderGiveawayDetail(
-                refreshed.data.giveaway,
-                refreshed.data.stats,
-              );
-              wireGiveawayEnterButton(
-                refreshed.data.giveaway,
-                giveawayId,
-                content,
-              );
-            }
-          }
-        }, 2000);
-      } else {
-        enterBtn.disabled = false;
-        showToast(tipResult.error || "Failed to enter. Try again.", "error");
-      }
-    });
-  }
-}
-
-/**
- * Close Giveaway Detail overlay
- */
-function closeGiveawayDetail() {
-  if (giveawayRefreshTimeout) {
-    clearTimeout(giveawayRefreshTimeout);
-    giveawayRefreshTimeout = null;
-  }
-  const overlay = document.getElementById("giveaway-detail-overlay");
-  overlay.classList.add("hidden");
-  selectedGiveawayId = null;
-}
-
-/**
- * Show tip error in giveaway detail
- * @param {HTMLElement} el - Error element
- * @param {string} msg - Error message
- */
-function showTipError(el, msg) {
-  if (!el) return;
-  el.textContent = msg;
-  el.classList.remove("hidden");
-  setTimeout(() => {
-    el.classList.add("hidden");
-  }, 4000);
-}
-
-/**
  * Setup History Tab
  */
 function setupHistoryTab() {
@@ -3805,40 +3225,19 @@ async function checkAndShowEarnSetupModal(handle) {
 }
 
 /**
- * Shows only page 1 of the intro modal (You're all set!)
- * The Next button will close the modal instead of going to page 2
+ * Shows the intro modal (You're all set!)
  */
 function showIntroModalPage1Only() {
-  introModalMode = "intro";
   if (tipButtonIntroModal) {
     tipButtonIntroModal.classList.remove("hidden");
-    // Show page 1
     if (tipIntroPage1) tipIntroPage1.classList.add("active");
-    if (tipIntroPage2) tipIntroPage2.classList.remove("active");
-    // Hide the page indicator dots for intro-only mode
+    // Hide the page indicator dots (only one page)
     const dotsContainer = document.querySelector(".tip-intro-indicators");
     if (dotsContainer) dotsContainer.style.display = "none";
-    // Change Next button text to "Got it"
+    // Set button text to "Got it"
     if (tipIntroNextBtn) {
       tipIntroNextBtn.innerHTML = "<span>Got it</span>";
     }
-  }
-}
-
-/**
- * Shows page 2 (Twitter connect) directly
- * Called when conditions are met: 5+ launches and 1+ tips
- */
-function showTwitterConnectModal() {
-  introModalMode = "twitter";
-  if (tipButtonIntroModal) {
-    tipButtonIntroModal.classList.remove("hidden");
-    // Show page 2 directly
-    if (tipIntroPage1) tipIntroPage1.classList.remove("active");
-    if (tipIntroPage2) tipIntroPage2.classList.add("active");
-    // Hide the page indicator dots for twitter-only mode
-    const dotsContainer = document.querySelector(".tip-intro-indicators");
-    if (dotsContainer) dotsContainer.style.display = "none";
   }
 }
 
@@ -3846,13 +3245,7 @@ async function hideTipIntroModal() {
   if (tipButtonIntroModal) {
     tipButtonIntroModal.classList.add("hidden");
   }
-  // Mark appropriate flag based on mode
-  if (introModalMode === "intro") {
-    await chrome.storage.local.set({ [STORAGE_KEYS.TIP_INTRO_SEEN]: true });
-  } else if (introModalMode === "twitter") {
-    await chrome.storage.local.set({ [STORAGE_KEYS.TWITTER_MODAL_SEEN]: true });
-  }
-  // Reset modal state
+  await chrome.storage.local.set({ [STORAGE_KEYS.TIP_INTRO_SEEN]: true });
   resetIntroModalState();
 }
 
@@ -3861,37 +3254,13 @@ async function hideTipIntroModal() {
  */
 function resetIntroModalState() {
   if (tipIntroPage1) tipIntroPage1.classList.add("active");
-  if (tipIntroPage2) tipIntroPage2.classList.remove("active");
   // Restore dots visibility
   const dotsContainer = document.querySelector(".tip-intro-indicators");
   if (dotsContainer) dotsContainer.style.display = "";
   // Restore Next button text
   if (tipIntroNextBtn) {
-    tipIntroNextBtn.innerHTML =
-      '<span>Next</span><svg class="bounce-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
+    tipIntroNextBtn.innerHTML = "<span>Got it</span>";
   }
-  introModalMode = "intro";
-}
-
-function goToTipIntroPage(pageNum) {
-  // Update pages
-  if (tipIntroPage1 && tipIntroPage2) {
-    if (pageNum === 1) {
-      tipIntroPage1.classList.add("active");
-      tipIntroPage2.classList.remove("active");
-    } else {
-      tipIntroPage1.classList.remove("active");
-      tipIntroPage2.classList.add("active");
-    }
-  }
-  // Update dots
-  tipIntroDots.forEach((dot) => {
-    if (parseInt(dot.dataset.page) === pageNum) {
-      dot.classList.add("active");
-    } else {
-      dot.classList.remove("active");
-    }
-  });
 }
 
 /**
@@ -3905,30 +3274,6 @@ async function incrementLaunchCount() {
   });
 }
 
-/**
- * Check if Twitter connect modal should be shown
- * Conditions: 3+ launches, 1+ tips, not already seen, not already connected to X
- */
-async function checkAndShowTwitterModal() {
-  const result = await chrome.storage.local.get([
-    STORAGE_KEYS.LAUNCH_COUNT,
-    STORAGE_KEYS.HAS_TIPPED,
-    STORAGE_KEYS.TWITTER_MODAL_SEEN,
-  ]);
-
-  const launchCount = result[STORAGE_KEYS.LAUNCH_COUNT] || 0;
-  const hasTipped = result[STORAGE_KEYS.HAS_TIPPED] || false;
-  const twitterModalSeen = result[STORAGE_KEYS.TWITTER_MODAL_SEEN] || false;
-
-  // Check if conditions are met
-  if (launchCount >= 5 && hasTipped && !twitterModalSeen) {
-    // Check if user is already connected to X
-    const isXConnected = await XAuth.isLoggedIn();
-    if (!isXConnected) {
-      showTwitterConnectModal();
-    }
-  }
-}
 
 // Toast notification: uses shared showToast from src/ui/toast.js
 // Loaded via popup.html script tag before popup.js

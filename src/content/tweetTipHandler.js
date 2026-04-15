@@ -1,7 +1,7 @@
 /**
  * Tweet Tip Handler Module
  * Handles tip button injection into tweets and the full tip flow
- * (loading state, API call, success/error states, delegates to xFeatures.js)
+ * (loading state, API call, success/error states)
  */
 
 const TweetTipHandler = {
@@ -28,8 +28,6 @@ const TweetTipHandler = {
     getActiveJWT: null,
     getCachedAddress: null,
     extractUsernameFromUrl: null,
-    addXSenderInfo: null,
-    getDefaultAutoReplyMessage: null,
   },
 
   /**
@@ -334,13 +332,6 @@ const TweetTipHandler = {
     let tipAmount = 0.02;
     let confirmBeforeTipping = true; // New default is true
     let hasTipped = false;
-    let likeOnTip = true;
-    let autoReply = true;
-    let isXConnected = false;
-
-    let autoReplyMessage = this.callbacks.getDefaultAutoReplyMessage
-      ? this.callbacks.getDefaultAutoReplyMessage()
-      : "";
 
     try {
       if (
@@ -353,16 +344,9 @@ const TweetTipHandler = {
           STORAGE_KEYS.CONFIRM_TIP,
           STORAGE_KEYS.CONFIRM_TIP_V2,
           STORAGE_KEYS.HAS_TIPPED,
-          STORAGE_KEYS.LIKE_ON_TIP,
-          STORAGE_KEYS.AUTO_REPLY,
-          STORAGE_KEYS.AUTO_REPLY_MESSAGE,
         ]);
-        autoReplyMessage =
-          result[STORAGE_KEYS.AUTO_REPLY_MESSAGE] || autoReplyMessage;
         tipAmount = result[STORAGE_KEYS.TIP_AMOUNT] || 0.02;
         hasTipped = result[STORAGE_KEYS.HAS_TIPPED] || false;
-        likeOnTip = result[STORAGE_KEYS.LIKE_ON_TIP] !== false;
-        autoReply = result[STORAGE_KEYS.AUTO_REPLY] !== false;
 
         // Migration logic: if V2 flag not set, reset confirm to true (new default)
         if (!result[STORAGE_KEYS.CONFIRM_TIP_V2]) {
@@ -377,11 +361,6 @@ const TweetTipHandler = {
         } else {
           confirmBeforeTipping = result[STORAGE_KEYS.CONFIRM_TIP] !== false;
         }
-
-        // Check X connection status
-        if (typeof XAuth !== "undefined") {
-          isXConnected = await XAuth.isLoggedIn();
-        }
       }
     } catch (error) {
       console.error("[Grove TweetTipHandler] Settings load failed:", error);
@@ -394,15 +373,6 @@ const TweetTipHandler = {
       }
       return;
     }
-
-    // Build X options for modals
-    const xOptions = isXConnected
-      ? {
-          isConnected: true,
-          likeOnTip: likeOnTip,
-          autoReply: autoReply,
-        }
-      : null;
 
     // If confirmation disabled, send tip directly
     if (!confirmBeforeTipping) {
@@ -439,7 +409,6 @@ const TweetTipHandler = {
         title: hasTipped ? "Confirm Tip" : "Your First Tip!",
         showConfirmCheckbox: true,
         recipientUsername,
-        autoReplyMessage,
         isDarkMode,
       };
 
@@ -447,13 +416,7 @@ const TweetTipHandler = {
         buttonWrapper.button,
         tipAmount,
         confirmBeforeTipping,
-        async ({
-          amount,
-          confirmBeforeTipping: newConfirmSetting,
-          likeOnTip: newLikeOnTip,
-          autoReply: newAutoReply,
-          customMessage,
-        }) => {
+        async ({ amount, confirmBeforeTipping: newConfirmSetting }) => {
           // Save preferences
           try {
             const saveData = {
@@ -461,13 +424,6 @@ const TweetTipHandler = {
               [STORAGE_KEYS.CONFIRM_TIP]: newConfirmSetting,
               [STORAGE_KEYS.HAS_TIPPED]: true,
             };
-            // Save X preferences if they were set (X is connected)
-            if (newLikeOnTip !== null) {
-              saveData[STORAGE_KEYS.LIKE_ON_TIP] = newLikeOnTip;
-            }
-            if (newAutoReply !== null) {
-              saveData[STORAGE_KEYS.AUTO_REPLY] = newAutoReply;
-            }
             await chrome.storage.local.set(saveData);
           } catch (e) {
             console.error(
@@ -475,22 +431,12 @@ const TweetTipHandler = {
               e,
             );
           }
-          // Build xActions if X options were provided
-          const xActions =
-            newLikeOnTip !== null || newAutoReply !== null
-              ? {
-                  likeOnTip: newLikeOnTip,
-                  autoReply: newAutoReply,
-                  customMessage,
-                }
-              : null;
           // Send the tip
-          this.sendTip(amount, buttonWrapper, tweetUrl, xActions);
+          this.sendTip(amount, buttonWrapper, tweetUrl);
         },
         () => {
           groveLog.log("[TweetTipHandler] Tip cancelled");
         },
-        xOptions,
         displayOptions,
       );
     } else {
@@ -504,9 +450,8 @@ const TweetTipHandler = {
    * @param {number} tipAmount - The amount to tip
    * @param {Object} buttonWrapper - Button wrapper with state methods
    * @param {string} tweetUrl - The tweet URL to tip
-   * @param {Object|null} xActions - X actions from modal { likeOnTip, autoReply }, or null to read from storage
    */
-  async sendTip(tipAmount, buttonWrapper, tweetUrl, xActions = null) {
+  async sendTip(tipAmount, buttonWrapper, tweetUrl) {
     buttonWrapper.setLoading(tipAmount);
 
     // Check if extension context is valid before making API calls
@@ -527,14 +472,6 @@ const TweetTipHandler = {
 
     // Get JWT and settings from storage
     let jwt = "";
-    let autoReplyEnabled = true;
-    let autoReplyMessage = this.callbacks.getDefaultAutoReplyMessage
-      ? this.callbacks.getDefaultAutoReplyMessage()
-      : "";
-    let likeOnTipEnabled = true;
-    let chainName = "Base Sepolia";
-    let explorerBaseUrl = "https://sepolia.basescan.org/tx/";
-    let referralLink = "grove.city";
 
     try {
       // Get JWT using callback
@@ -542,53 +479,9 @@ const TweetTipHandler = {
         jwt = (await this.callbacks.getActiveJWT()) || "";
       }
 
-      // Get other settings from storage
-      const result = await chrome.storage.local.get([
-        STORAGE_KEYS.AUTO_REPLY,
-        STORAGE_KEYS.AUTO_REPLY_MESSAGE,
-        STORAGE_KEYS.REFERRAL_CODE,
-        STORAGE_KEYS.LIKE_ON_TIP,
-        STORAGE_KEYS.CHAIN,
-        STORAGE_KEYS.ENDPOINT,
-        STORAGE_KEYS.ENVIRONMENT,
-      ]);
-
-      // Use xActions from modal if provided, otherwise read from storage
-      if (xActions) {
-        likeOnTipEnabled = xActions.likeOnTip !== false;
-        autoReplyEnabled = xActions.autoReply !== false;
-        // Use custom message from modal if provided
-        if (xActions.customMessage) {
-          autoReplyMessage = xActions.customMessage;
-        } else {
-          autoReplyMessage =
-            result[STORAGE_KEYS.AUTO_REPLY_MESSAGE] || autoReplyMessage;
-        }
-      } else {
-        autoReplyEnabled = result[STORAGE_KEYS.AUTO_REPLY] !== false;
-        likeOnTipEnabled = result[STORAGE_KEYS.LIKE_ON_TIP] !== false;
-        autoReplyMessage =
-          result[STORAGE_KEYS.AUTO_REPLY_MESSAGE] || autoReplyMessage;
-      }
-      const referralCode = result[STORAGE_KEYS.REFERRAL_CODE];
-      if (referralCode) {
-        referralLink = `https://grove.city/?ref=${encodeURIComponent(referralCode)}`;
-      }
       groveLog.log("[TweetTipHandler] Storage loaded:", {
         hasJwt: !!jwt,
-        autoReply: autoReplyEnabled,
-        likeOnTip: likeOnTipEnabled,
-        chain: result[STORAGE_KEYS.CHAIN],
-        fromModal: !!xActions,
       });
-
-      // Get friendly chain name and explorer URL from centralized config
-      // Use testnet explorer URL when on localhost or testnet endpoints
-      const rawChain = result[STORAGE_KEYS.CHAIN] || "base";
-      const explorerChain = getExplorerChain(rawChain, result);
-      const config = getChainConfig(explorerChain);
-      chainName = config.name;
-      explorerBaseUrl = `${config.explorerUrl}/tx/`;
 
       if (!jwt) {
         console.error("[Grove TweetTipHandler] No API key configured.");
@@ -639,11 +532,6 @@ const TweetTipHandler = {
       context.recipient_profile_url = `https://x.com/${username}`;
     }
 
-    // Add sender info if callback available
-    if (this.callbacks.addXSenderInfo) {
-      await this.callbacks.addXSenderInfo(context);
-    }
-
     // Send tip via API with context
     const response = await GroveAPI.sendTip(
       tipDestination,
@@ -663,32 +551,6 @@ const TweetTipHandler = {
 
     if (response.success) {
       buttonWrapper.setSuccess();
-
-      // Like and/or reply if X features are enabled (delegates to xFeatures.js)
-      if (
-        (likeOnTipEnabled || autoReplyEnabled) &&
-        typeof performXActionsAfterTip === "function"
-      ) {
-        const xResult = await performXActionsAfterTip({
-          tweetUrl,
-          txHash: response.data?.tx_hash || "",
-          likeEnabled: likeOnTipEnabled,
-          replyEnabled: autoReplyEnabled,
-          replyTemplate: autoReplyMessage,
-          username,
-          chainName,
-          explorerBaseUrl,
-          referralLink,
-          amount: tipAmount,
-        });
-
-        const feedback = getXActionFeedback(xResult);
-        if (feedback && this.callbacks.showInlineTipError) {
-          setTimeout(() => {
-            this.callbacks.showInlineTipError(buttonWrapper.button, feedback);
-          }, 100);
-        }
-      }
     } else {
       console.error(
         "[Grove TweetTipHandler] Tweet tip failed:",
