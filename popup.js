@@ -932,12 +932,10 @@ async function handleNavigation(e) {
   // Load leaderboard data when navigating to leaderboard
   if (targetId === "tab-leaderboard") {
     loadPoolStats();
-    if (currentLeaderboardView === "tippers") {
-      loadTopTippers();
-    } else if (currentLeaderboardView === "earners") {
-      loadTopEarners();
-    } else if (currentLeaderboardView === "live") {
-      loadLiveTips();
+    if (currentLeaderboardView === "top") {
+      loadFeedItems("tipped");
+    } else {
+      loadFeedItems("live");
       startLivePolling();
     }
   } else {
@@ -2654,6 +2652,12 @@ async function updateAppLinks() {
   if (createGiveawayLink) {
     createGiveawayLink.href = appUrl + "/giveaways";
   }
+
+  // Update leaderboard app link
+  const leaderboardAppLink = document.getElementById("leaderboardAppLink");
+  if (leaderboardAppLink) {
+    leaderboardAppLink.href = appUrl + "/leaderboard";
+  }
 }
 
 /**
@@ -2900,7 +2904,7 @@ function setupSettingsDrillDown() {
 /**
  * Leaderboard State
  */
-let currentPeriod = "day";
+let currentPeriod = "week";
 let currentLeaderboardView = "live";
 let livePollingInterval = null;
 let seenTxHashes = new Set();
@@ -2919,47 +2923,9 @@ const HISTORY_PAGE_SIZE = 10;
  * Setup Leaderboard
  */
 function setupLeaderboardSwitcher() {
-  const periodBtns = document.querySelectorAll(".lb-period-pill");
   leaderboardSwitcherBtns = document.querySelectorAll(".switcher-btn");
   leaderboardViews = document.querySelectorAll(".leaderboard-view");
 
-  // Filters row - hidden for Live view, shown for tippers/earners
-  const filtersRow = document.getElementById("lb-filters-row");
-
-  // Period badge labels map
-  const periodLabels = {
-    day: "24h",
-    week: "7d",
-    month: "30d",
-    all: "Lifetime",
-  };
-
-  // Period selector pills
-  periodBtns.forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      const period = e.target.dataset.period;
-      currentPeriod = period;
-
-      periodBtns.forEach((b) => b.classList.remove("active"));
-      e.target.classList.add("active");
-
-      // Update period badges in view headers
-      const label = periodLabels[period] || period;
-      const tippersBadge = document.getElementById("tippers-period-badge");
-      const earnersBadge = document.getElementById("earners-period-badge");
-      if (tippersBadge) tippersBadge.textContent = label;
-      if (earnersBadge) earnersBadge.textContent = label;
-
-      // Reload current leaderboard view with new period
-      if (currentLeaderboardView === "tippers") {
-        loadTopTippers();
-      } else if (currentLeaderboardView === "earners") {
-        loadTopEarners();
-      }
-    });
-  });
-
-  // View switcher
   if (leaderboardSwitcherBtns) {
     leaderboardSwitcherBtns.forEach((btn) => {
       btn.addEventListener("click", (e) => {
@@ -2972,22 +2938,12 @@ function setupLeaderboardSwitcher() {
         leaderboardViews.forEach((v) => v.classList.remove("active"));
         document.getElementById(`${view}-view`).classList.add("active");
 
-        // Show/hide filters row
-        const isLive = view === "live";
-        if (filtersRow) {
-          filtersRow.style.display = isLive ? "none" : "flex";
-        }
-
-        // Load data for the selected view
-        if (view === "tippers") {
-          loadTopTippers();
-          stopLivePolling();
-        } else if (view === "earners") {
-          loadTopEarners();
-          stopLivePolling();
-        } else if (view === "live") {
-          loadLiveTips();
+        if (view === "live") {
+          loadFeedItems("live");
           startLivePolling();
+        } else if (view === "top") {
+          loadFeedItems("tipped");
+          stopLivePolling();
         }
       });
     });
@@ -3041,59 +2997,30 @@ async function loadTopEarners() {
  */
 async function loadPoolStats() {
   try {
-    const [fundsRes, tipsRes, statsRes] = await Promise.all([
-      GroveAPI.getFundsTotal(),
+    const [tipsRes, statsRes] = await Promise.all([
       GroveAPI.getTipsTotal(),
       GroveAPI.getLeaderboardStats("all"),
     ]);
 
-    if (!fundsRes.success || !tipsRes.success) {
+    if (!tipsRes.success) {
       console.error("[Grove Extension] Failed to load pool stats");
       return;
     }
 
-    const totalFunded = fundsRes.data.totalUSD;
     const totalTipped = tipsRes.data.totalUSD;
-    const available = totalFunded - totalTipped;
     const tipCount = tipsRes.data.totalTipCount;
-    const percentage =
-      totalFunded > 0 ? Math.round((totalTipped / totalFunded) * 100) : 0;
 
-    // Update DOM - Hero card
-    const availableEl = document.getElementById("pool-available");
-    if (availableEl) {
-      availableEl.textContent = FormatUtils.formatPoolUSD(available);
-      availableEl.classList.remove("loading");
-    }
+    // Live on Grove banner
+    const paidOutEl = document.getElementById("stat-paid-out");
+    if (paidOutEl) paidOutEl.textContent = FormatUtils.formatPoolUSD(totalTipped);
 
-    const tippedEl = document.getElementById("pool-tipped");
-    if (tippedEl)
-      tippedEl.textContent = `${FormatUtils.formatPoolUSD(totalTipped)} earned`;
+    const tipsSentEl = document.getElementById("stat-tips-sent");
+    if (tipsSentEl) tipsSentEl.textContent = tipCount.toLocaleString();
 
-    const fundedEl = document.getElementById("pool-funded");
-    if (fundedEl)
-      fundedEl.textContent = `${FormatUtils.formatPoolUSD(totalFunded)} deposited`;
-
-    const barFillEl = document.getElementById("pool-bar-fill");
-    if (barFillEl) barFillEl.style.width = `${Math.min(percentage, 100)}%`;
-
-    // Update DOM - Stats cards
-    const tipCountEl = document.getElementById("pool-tip-count");
-    if (tipCountEl) tipCountEl.textContent = tipCount.toLocaleString();
-
-    // Update tippers and earners counts
     if (statsRes.success) {
-      const tippersEl = document.getElementById("stat-tippers");
-      if (tippersEl)
-        tippersEl.textContent = FormatUtils.formatStatCount(
-          statsRes.data.tippers,
-        );
-
-      const recipientsEl = document.getElementById("stat-recipients");
-      if (recipientsEl)
-        recipientsEl.textContent = FormatUtils.formatStatCount(
-          statsRes.data.recipients,
-        );
+      const creatorsEl = document.getElementById("stat-creators");
+      if (creatorsEl)
+        creatorsEl.textContent = FormatUtils.formatStatCount(statsRes.data.recipients);
     }
   } catch (error) {
     console.error("[Grove Extension] Pool stats error:", error);
@@ -3103,42 +3030,48 @@ async function loadPoolStats() {
 /**
  * Load Live Tips
  */
-async function loadLiveTips(isRefresh = false) {
-  const empty = document.getElementById("live-empty");
-  const list = document.getElementById("live-list");
+/**
+ * Load Front Page feed items (Live or Top sort)
+ * @param {string} sort - 'live' | 'tipped'
+ * @param {boolean} isRefresh - Whether this is a background refresh
+ */
+async function loadFeedItems(sort = "live", isRefresh = false) {
+  const viewId = sort === "live" ? "live" : "top";
+  const empty = document.getElementById(`${viewId}-empty`);
+  const list = document.getElementById(`${viewId}-list`);
+  if (!list || !empty) return;
 
   if (!isRefresh) {
     empty.classList.add("hidden");
-    list.innerHTML = LeaderboardRenderer.renderSkeletonTable(true, 5);
+    list.innerHTML = LeaderboardRenderer.renderFeedSkeleton(5);
   }
 
-  const result = await GroveAPI.getRecentTips(10);
+  try {
+    const url = `https://api.grove.city/v1/feed/items?sort=${sort}&window=7d&limit=20&enrich=true`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`Feed API ${resp.status}`);
+    const data = await resp.json();
+    const items = sort === "live"
+      ? (data.items || []).filter(i => i.tip_count > 0)
+      : (data.items || []);
 
-  if (!result.success || result.data.entries.length === 0) {
-    if (!isRefresh) {
-      list.innerHTML = "";
-      empty.classList.remove("hidden");
+    if (!items.length) {
+      if (!isRefresh) { list.innerHTML = ""; empty.classList.remove("hidden"); }
+      return;
     }
-    return;
+
+    const storageResult = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT, STORAGE_KEYS.ENVIRONMENT]);
+    const envId = GroveEnv.resolveActiveEnvId(
+      storageResult[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV,
+      storageResult[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT,
+    );
+    const appUrl = GroveEnv.get(envId)?.appUrl || "https://grove.city";
+
+    list.innerHTML = LeaderboardRenderer.renderFeedList(items, appUrl);
+  } catch (err) {
+    console.error("[Grove] loadFeedItems error:", err);
+    if (!isRefresh) { list.innerHTML = ""; empty.classList.remove("hidden"); }
   }
-
-  // Track new entries for animation
-  const newTxHashes = new Set();
-  if (isRefresh) {
-    result.data.entries.forEach((e) => {
-      if (!seenTxHashes.has(e.txHash)) {
-        newTxHashes.add(e.txHash);
-      }
-    });
-  }
-
-  // Update seen hashes
-  result.data.entries.forEach((e) => seenTxHashes.add(e.txHash));
-
-  list.innerHTML = LeaderboardRenderer.renderLiveTipsList(
-    result.data.entries,
-    newTxHashes,
-  );
 }
 
 /**
@@ -3148,9 +3081,9 @@ function startLivePolling() {
   stopLivePolling();
   livePollingInterval = setInterval(() => {
     if (currentLeaderboardView === "live") {
-      loadLiveTips(true);
+      loadFeedItems("live", true);
     }
-  }, 10000); // Poll every 10 seconds
+  }, 30000); // Poll every 30 seconds (matches app's Front Page interval)
 }
 
 /**
@@ -3168,12 +3101,10 @@ function stopLivePolling() {
  */
 function refreshLeaderboard() {
   loadPoolStats();
-  if (currentLeaderboardView === "live") {
-    loadLiveTips();
-  } else if (currentLeaderboardView === "tippers") {
-    loadTopTippers();
-  } else if (currentLeaderboardView === "earners") {
-    loadTopEarners();
+  if (currentLeaderboardView === "top") {
+    loadFeedItems("tipped");
+  } else {
+    loadFeedItems("live");
   }
 }
 
@@ -3377,8 +3308,8 @@ async function loadGiveaways() {
 
   // Fetch active and recently ended giveaways in parallel
   const [activeResult, endedResult] = await Promise.all([
-    GroveAPI.listGiveaways({ status: "active", limit: 100 }),
-    GroveAPI.listGiveaways({ status: "ended", limit: 50 }),
+    GroveAPI.listGiveaways({ status: "active", limit: 20 }),
+    GroveAPI.listGiveaways({ status: "ended", limit: 10 }),
   ]);
 
   loading.classList.add("hidden");
@@ -3407,22 +3338,27 @@ async function loadGiveaways() {
     return;
   }
 
-  // Fetch stats for each giveaway in parallel
-  const withStats = await Promise.all(
+  // Render immediately with placeholder stats so cards appear without delay
+  giveawaysData = allGiveaways.map((g) => ({ giveaway: g, stats: {} }));
+  renderFilteredGiveaways();
+
+  // Load stats in the background and re-render once all are fetched
+  const statsResults = await Promise.all(
     allGiveaways.map(async (g) => {
       try {
         const detail = await GroveAPI.getGiveaway(g.id);
         if (detail.success) {
-          return { giveaway: detail.data.giveaway, stats: detail.data.stats };
+          return { id: g.id, giveaway: detail.data.giveaway, stats: detail.data.stats };
         }
       } catch (err) {
         console.error("[Grove Extension] Giveaway detail fetch error:", err);
       }
-      return { giveaway: g, stats: {} };
+      return { id: g.id, giveaway: g, stats: {} };
     }),
   );
 
-  giveawaysData = withStats;
+  // Update data and re-render with real stats
+  giveawaysData = statsResults.map(({ giveaway, stats }) => ({ giveaway, stats }));
   renderFilteredGiveaways();
 }
 
@@ -3495,11 +3431,9 @@ function wireGiveawayEnterButton(giveaway, giveawayId, content) {
         return;
       }
 
-      // Disable button, show loading
+      // Show spinner
       enterBtn.disabled = true;
-      const btnText = enterBtn.querySelector(".giveaway-enter-btn-text");
-      const originalText = btnText.textContent;
-      btnText.textContent = "Sending...";
+      enterBtn.classList.add("loading");
 
       const tipResult = await GroveAPI.sendTip(
         giveaway.creator_address,
@@ -3511,9 +3445,13 @@ function wireGiveawayEnterButton(giveaway, giveawayId, content) {
         },
       );
 
+      enterBtn.classList.remove("loading");
+
       if (tipResult.success) {
-        btnText.textContent = "Entered!";
         enterBtn.classList.add("success");
+        const btnText = enterBtn.querySelector(".giveaway-enter-btn-text");
+        if (btnText) btnText.textContent = "Entered!";
+        showToast("You're in! 🌿", "success");
         fetchBalance();
         // Refresh detail after a delay
         if (giveawayRefreshTimeout) clearTimeout(giveawayRefreshTimeout);
@@ -3535,12 +3473,8 @@ function wireGiveawayEnterButton(giveaway, giveawayId, content) {
           }
         }, 2000);
       } else {
-        btnText.textContent = originalText;
         enterBtn.disabled = false;
-        showTipError(
-          tipError,
-          tipResult.error || "Failed to send tip. Try again.",
-        );
+        showToast(tipResult.error || "Failed to enter. Try again.", "error");
       }
     });
   }
