@@ -716,15 +716,20 @@ const LeaderboardRenderer = {
       + `<span class="feed-card-avatar-fallback" style="display:none">${FormatUtils.escapeHtml(initial)}</span>`
       : `<span class="feed-card-avatar-fallback">${FormatUtils.escapeHtml(initial)}</span>`;
 
+    // Use span (not <a>) to avoid nested anchors inside the outer <a class="feed-card">
     const handleHtml = handle
-      ? `<a href="${FormatUtils.escapeHtml(appUrl + '/' + encodeURIComponent(handle))}" target="_blank" rel="noopener noreferrer" class="feed-card-handle">@${FormatUtils.escapeHtml(handle)}</a>`
+      ? `<span class="feed-card-handle">@${FormatUtils.escapeHtml(handle)}</span>`
       : '';
 
     const platformBadge = this.feedPlatformBadge(platform);
     const agoHtml = ago ? `<span class="feed-card-time">${FormatUtils.escapeHtml(ago)}</span>` : '';
 
-    const titleHtml = title
-      ? `<div class="feed-card-title">${FormatUtils.escapeHtml(title)}</div>`
+    // Skip title if it duplicates the creator handle (e.g. content.title = "@mrbeast" or "mrbeast")
+    const normalizedTitle = title ? title.replace(/^@/, '').toLowerCase().trim() : null;
+    const normalizedHandle = handle ? handle.toLowerCase().trim() : null;
+    const deduplicatedTitle = (normalizedTitle && normalizedTitle !== normalizedHandle) ? title : null;
+    const titleHtml = deduplicatedTitle
+      ? `<div class="feed-card-title">${FormatUtils.escapeHtml(deduplicatedTitle)}</div>`
       : '';
 
     const amountFmt = amount >= 1000 ? `$${(amount / 1000).toFixed(1)}K` : `$${amount.toFixed(2)}`;
