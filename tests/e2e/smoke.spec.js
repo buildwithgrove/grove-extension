@@ -58,21 +58,21 @@ test.describe('Extension Smoke Tests', () => {
 
   test('Should inject on olshansky.info', async () => {
     const page = await browserContext.newPage();
-    await page.goto('https://olshansky.info/', { waitUntil: 'domcontentloaded' });
-    
-    // This is a generic site, so it should look for metadata and inject a floating button
-    // Assuming olshansky.info has the required metadata
-    
+    // Use 'load' so document_idle fires (content script runs after load), then allow extra
+    // time for the background API round-trip before asserting button presence.
+    await page.goto('https://olshansky.info/', { waitUntil: 'load' });
+
     const tipButton = page.locator('#grove-tip-button');
-    await expect(tipButton).toBeVisible({ timeout: 10000 });
+    await expect(tipButton).toBeVisible({ timeout: 25000 });
   });
 
   test('Should inject on grove.city', async () => {
     const page = await browserContext.newPage();
-    await page.goto('https://www.grove.city/', { waitUntil: 'domcontentloaded' });
-    
+    // grove.city is a heavy Next.js app — give it extra time for page load + API round-trip
+    await page.goto('https://www.grove.city/', { waitUntil: 'load' });
+
     const tipButton = page.locator('#grove-tip-button');
-    await expect(tipButton).toBeVisible({ timeout: 20000 });
+    await expect(tipButton).toBeVisible({ timeout: 35000 });
 
     // Interaction check: Click button and verify First Tip Modal appears
     await tipButton.click();
@@ -153,9 +153,9 @@ test.describe('Extension Smoke Tests', () => {
     await expect(tipButton.first()).toBeAttached({ timeout: 15000 });
   });
 
-  test('Should NOT inject on youtube.com/@MrBeast (no crypto address)', async () => {
+  test('Should NOT inject on youtube.com/@NASA (no Grove profile)', async () => {
     const page = await browserContext.newPage();
-    await page.goto('https://www.youtube.com/@MrBeast', { waitUntil: 'domcontentloaded' });
+    await page.goto('https://www.youtube.com/@NASA', { waitUntil: 'domcontentloaded' });
 
     // YouTube may show a consent wall — skip if blocked
     const consentForm = page.locator('form[action*="consent"]');
@@ -165,8 +165,8 @@ test.describe('Extension Smoke Tests', () => {
       return;
     }
 
-    // Wait for page to settle and extension to run
-    await page.waitForTimeout(5000);
+    // Wait for page to settle and extension to run (includes API round-trip)
+    await page.waitForTimeout(8000);
 
     const tipButton = page.locator('#grove-tip-button');
     await expect(tipButton).toHaveCount(0);
