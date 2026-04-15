@@ -709,9 +709,12 @@ const LeaderboardRenderer = {
     const ago = this.timeAgo(item.last_tipped_at || item.content?.published_at);
     const platform = item.platform;
 
-    // Always show initial letter — consistent across Live and Top regardless of avatar availability
+    // Show avatar image when available; fall back to initial letter circle when null
     const initial = handle ? handle.charAt(0).toUpperCase() : '?';
-    const avatarHtml = `<span class="feed-card-avatar-fallback">${FormatUtils.escapeHtml(initial)}</span>`;
+    const avatarHtml = avatarUrl
+      ? `<img src="${FormatUtils.escapeHtml(avatarUrl)}" alt="" class="feed-card-avatar" loading="eager" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      + `<span class="feed-card-avatar-fallback" style="display:none">${FormatUtils.escapeHtml(initial)}</span>`
+      : `<span class="feed-card-avatar-fallback">${FormatUtils.escapeHtml(initial)}</span>`;
 
     // Use span (not <a>) to avoid nested anchors inside the outer <a class="feed-card">
     const handleHtml = handle

@@ -3765,6 +3765,15 @@ button.quick-access-item:hover .quick-access-icon {
 }
 
 
+.feed-card-avatar {
+  display: block;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 .feed-card-avatar-fallback {
   display: flex;
   align-items: center;
