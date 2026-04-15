@@ -3337,8 +3337,8 @@ async function loadGiveaways() {
 
   // Fetch active and recently ended giveaways in parallel
   const [activeResult, endedResult] = await Promise.all([
-    GroveAPI.listGiveaways({ status: "active", limit: 100 }),
-    GroveAPI.listGiveaways({ status: "ended", limit: 50 }),
+    GroveAPI.listGiveaways({ status: "active", limit: 20 }),
+    GroveAPI.listGiveaways({ status: "ended", limit: 10 }),
   ]);
 
   loading.classList.add("hidden");
@@ -3367,22 +3367,27 @@ async function loadGiveaways() {
     return;
   }
 
-  // Fetch stats for each giveaway in parallel
-  const withStats = await Promise.all(
+  // Render immediately with placeholder stats so cards appear without delay
+  giveawaysData = allGiveaways.map((g) => ({ giveaway: g, stats: {} }));
+  renderFilteredGiveaways();
+
+  // Load stats in the background and re-render once all are fetched
+  const statsResults = await Promise.all(
     allGiveaways.map(async (g) => {
       try {
         const detail = await GroveAPI.getGiveaway(g.id);
         if (detail.success) {
-          return { giveaway: detail.data.giveaway, stats: detail.data.stats };
+          return { id: g.id, giveaway: detail.data.giveaway, stats: detail.data.stats };
         }
       } catch (err) {
         console.error("[Grove Extension] Giveaway detail fetch error:", err);
       }
-      return { giveaway: g, stats: {} };
+      return { id: g.id, giveaway: g, stats: {} };
     }),
   );
 
-  giveawaysData = withStats;
+  // Update data and re-render with real stats
+  giveawaysData = statsResults.map(({ giveaway, stats }) => ({ giveaway, stats }));
   renderFilteredGiveaways();
 }
 
