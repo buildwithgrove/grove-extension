@@ -3076,30 +3076,41 @@ async function loadFeedItems(sort = "live", isRefresh = false) {
   }
 
   try {
+    const url = `https://api.grove.city/v1/feed/items?sort=${sort}&window=7d&limit=20&enrich=true`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`Feed API ${resp.status}`);
+    const data = await resp.json();
+    const items = sort === "live"
+      ? (data.items || []).filter(i => i.tip_count > 0)
+      : (data.items || []);
+
+    if (!items.length) {
+      if (!isRefresh) { list.innerHTML = ""; empty.classList.remove("hidden"); }
+      return;
+    }
+
     const storageResult = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT, STORAGE_KEYS.ENVIRONMENT]);
     const envId = GroveEnv.resolveActiveEnvId(
       storageResult[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV,
       storageResult[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT,
     );
-    const appUrl = GroveEnv.get(envId)?.appUrl || 'https://grove.city';
+    const appUrl = GroveEnv.get(envId)?.appUrl || "https://grove.city";
 
-    const result = await GroveAPI.getFeedItems(sort, "7d");
-
-    if (!result.success || !result.data.items.length) {
-      if (!isRefresh) {
-        list.innerHTML = "";
-        empty.classList.remove("hidden");
-      }
-      return;
+    try {
+      list.innerHTML = LeaderboardRenderer.renderFeedList(items, appUrl);
+    } catch (renderErr) {
+      console.error("[Grove] renderFeedList error:", renderErr);
+      // Fallback: plain text rows so we know data arrived
+      list.innerHTML = items.slice(0, 10).map(item => {
+        const handle = item.creator_handle || 'unknown';
+        const amt = item.total_amount_usd || '0';
+        const platform = item.platform || '';
+        return `<div class="feed-card"><div class="feed-card-meta"><div class="feed-card-meta-text"><span class="feed-card-handle">@${handle}</span><span class="feed-card-time">${platform}</span></div></div><div class="feed-card-stats"><span class="feed-card-amount">$${parseFloat(amt).toFixed(2)}</span><span class="feed-card-tip-count">${item.tip_count} tip${item.tip_count !== 1 ? 's' : ''}</span></div></div>`;
+      }).join('');
     }
-
-    list.innerHTML = LeaderboardRenderer.renderFeedList(result.data.items, appUrl);
   } catch (err) {
     console.error("[Grove] loadFeedItems error:", err);
-    if (!isRefresh) {
-      list.innerHTML = "";
-      empty.classList.remove("hidden");
-    }
+    if (!isRefresh) { list.innerHTML = ""; empty.classList.remove("hidden"); }
   }
 }
 
