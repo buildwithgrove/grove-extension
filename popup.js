@@ -2654,6 +2654,12 @@ async function updateAppLinks() {
   if (createGiveawayLink) {
     createGiveawayLink.href = appUrl + "/giveaways";
   }
+
+  // Update leaderboard app link
+  const leaderboardAppLink = document.getElementById("leaderboardAppLink");
+  if (leaderboardAppLink) {
+    leaderboardAppLink.href = appUrl + "/leaderboard";
+  }
 }
 
 /**

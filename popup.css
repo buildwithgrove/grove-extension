@@ -601,11 +601,6 @@ body {
   line-height: 1;
 }
 
-.tipping-row-value .amount-value {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 .tipping-divider {
   height: 1px;
@@ -3573,8 +3568,8 @@ button.quick-access-item:hover .quick-access-icon {
 /* Leaderboard Header */
 .leaderboard-header {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 12px;
 }
 
