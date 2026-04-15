@@ -737,12 +737,14 @@ const LeaderboardRenderer = {
       <div class="feed-card-meta">
         <div class="feed-card-avatar-wrap">${avatarHtml}</div>
         <div class="feed-card-meta-text">
-          ${handleHtml}
-          ${platformBadge}
-          ${agoHtml}
+          <div class="feed-card-meta-row">
+            ${handleHtml}
+            ${platformBadge}
+            ${agoHtml}
+          </div>
+          ${titleHtml}
         </div>
       </div>
-      ${titleHtml}
       <div class="feed-card-stats">
         <span class="feed-card-amount">${FormatUtils.escapeHtml(amountFmt)}</span>
         <span class="feed-card-tip-count">${FormatUtils.escapeHtml(tipsLabel)}</span>
@@ -770,14 +772,16 @@ const LeaderboardRenderer = {
     return Array.from({ length: count }, () => `
       <div class="feed-card feed-card-skeleton">
         <div class="feed-card-meta">
-          <div class="feed-card-avatar-wrap"><span class="feed-card-avatar lb-shimmer">&nbsp;</span></div>
+          <div class="feed-card-avatar-wrap"><span class="feed-card-avatar feed-card-avatar-fallback lb-shimmer">&nbsp;</span></div>
           <div class="feed-card-meta-text">
-            <span class="lb-shimmer" style="width:90px;height:12px;border-radius:4px;display:inline-block">&nbsp;</span>
-            <span class="lb-shimmer" style="width:40px;height:10px;border-radius:4px;display:inline-block;margin-left:6px">&nbsp;</span>
+            <div class="feed-card-meta-row">
+              <span class="lb-shimmer" style="width:80px;height:12px;border-radius:4px;display:inline-block">&nbsp;</span>
+              <span class="lb-shimmer" style="width:30px;height:10px;border-radius:4px;display:inline-block;margin-left:6px">&nbsp;</span>
+            </div>
+            <div class="lb-shimmer" style="width:90%;height:12px;border-radius:4px;margin-top:5px">&nbsp;</div>
           </div>
         </div>
-        <div class="lb-shimmer" style="width:85%;height:13px;border-radius:4px;margin:6px 0 4px">&nbsp;</div>
-        <div class="lb-shimmer" style="width:60%;height:11px;border-radius:4px">&nbsp;</div>
+        <div class="lb-shimmer" style="width:60%;height:11px;border-radius:4px;margin-top:6px">&nbsp;</div>
       </div>`).join('');
   }
 };

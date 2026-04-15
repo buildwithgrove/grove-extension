@@ -3778,26 +3778,37 @@ button.quick-access-item:hover .quick-access-icon {
 
 .feed-card-meta {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
-  margin-bottom: 6px;
 }
 
 .feed-card-avatar-wrap {
   flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(56, 159, 88, 0.15);
+  overflow: hidden;
 }
 
 .feed-card-avatar {
-  width: 28px;
-  height: 28px;
+  display: block;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   object-fit: cover;
+  flex-shrink: 0;
 }
 
 .feed-card-avatar-fallback {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(56, 159, 88, 0.15);
   background: rgba(56, 159, 88, 0.15);
   color: var(--color-primary);
   font-size: 12px;
@@ -3806,14 +3817,23 @@ button.quick-access-item:hover .quick-access-icon {
 
 .feed-card-meta-text {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.feed-card-meta-row {
+  display: flex;
   align-items: center;
   gap: 5px;
-  flex-wrap: wrap;
+  width: 100%;
   min-width: 0;
 }
 
 .feed-card-handle {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--color-text-primary);
   text-decoration: none;
@@ -3828,6 +3848,7 @@ button.quick-access-item:hover .quick-access-icon {
   font-size: 11px;
   color: var(--color-text-tertiary);
   white-space: nowrap;
+  margin-left: auto;
 }
 
 .feed-platform-badge {
@@ -3844,7 +3865,7 @@ button.quick-access-item:hover .quick-access-icon {
 
 .feed-card-title {
   font-size: 12px;
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
   line-height: 1.4;
   margin-bottom: 6px;
   display: -webkit-box;
@@ -3856,7 +3877,8 @@ button.quick-access-item:hover .quick-access-icon {
 .feed-card-stats {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  margin-top: 5px;
 }
 
 .feed-card-amount {
@@ -3867,7 +3889,7 @@ button.quick-access-item:hover .quick-access-icon {
 
 .feed-card-tip-count {
   font-size: 11px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
 }
 
 /* Table */
@@ -4024,7 +4046,8 @@ button.quick-access-item:hover .quick-access-icon {
 
 /* Shimmer skeleton */
 .lb-shimmer {
-  background: linear-gradient(90deg, var(--color-surface) 25%, var(--color-surface-hover) 50%, var(--color-surface) 75%);
+  background-color: var(--color-surface);
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.04) 75%);
   background-size: 200% 100%;
   animation: lb-shimmer 1.5s infinite;
   border-radius: 4px;
