@@ -423,7 +423,8 @@ class GroveAPI {
    * @returns {Promise<Object>} - Feed items and pagination info
    */
   static async getFeedItems(sort = 'live', window = '7d', cursor = null, limit = 20) {
-    const baseURL = await this.getBaseURL();
+    // Feed is a public surface of real tipping activity — always use production
+    const baseURL = GROVE_ENVIRONMENTS.production.apiUrl;
     const params = new URLSearchParams({ sort, window, limit: String(limit), enrich: 'true' });
     if (cursor) params.set('cursor', cursor);
     const apiUrl = `${baseURL}/v1/feed/items?${params}`;
