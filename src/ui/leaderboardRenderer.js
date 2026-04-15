@@ -661,8 +661,7 @@ const LeaderboardRenderer = {
     }).join('');
 
     return `<table class="lb-table"><tbody>${rows}</tbody></table>`;
-  }
-};
+  },
 
   // ─── Front Page Feed ──────────────────────────────────────────────────────
 

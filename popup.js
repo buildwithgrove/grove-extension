@@ -3096,18 +3096,7 @@ async function loadFeedItems(sort = "live", isRefresh = false) {
     );
     const appUrl = GroveEnv.get(envId)?.appUrl || "https://grove.city";
 
-    try {
-      list.innerHTML = LeaderboardRenderer.renderFeedList(items, appUrl);
-    } catch (renderErr) {
-      console.error("[Grove] renderFeedList error:", renderErr);
-      // Fallback: plain text rows so we know data arrived
-      list.innerHTML = items.slice(0, 10).map(item => {
-        const handle = item.creator_handle || 'unknown';
-        const amt = item.total_amount_usd || '0';
-        const platform = item.platform || '';
-        return `<div class="feed-card"><div class="feed-card-meta"><div class="feed-card-meta-text"><span class="feed-card-handle">@${handle}</span><span class="feed-card-time">${platform}</span></div></div><div class="feed-card-stats"><span class="feed-card-amount">$${parseFloat(amt).toFixed(2)}</span><span class="feed-card-tip-count">${item.tip_count} tip${item.tip_count !== 1 ? 's' : ''}</span></div></div>`;
-      }).join('');
-    }
+    list.innerHTML = LeaderboardRenderer.renderFeedList(items, appUrl);
   } catch (err) {
     console.error("[Grove] loadFeedItems error:", err);
     if (!isRefresh) { list.innerHTML = ""; empty.classList.remove("hidden"); }
