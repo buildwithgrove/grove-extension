@@ -9,7 +9,6 @@
     "identity"
   ],
   "host_permissions": [
-    "https://api.twitter.com/*",
     "https://twitter.com/*",
     "https://x.com/*",
     "https://api.cdp.coinbase.com/*",
@@ -70,7 +69,6 @@
         "src/content/profilePageHandler.js",
         "src/content/tweetTipHandler.js",
         "src/content/tweetProcessor.js",
-        "src/auth/xAuth.js",
         "src/content/xFeatures.js",
         "src/content/content.js"
       ],

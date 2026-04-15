@@ -124,7 +124,7 @@ const tipIntroSkipBtn = document.getElementById("tipIntroSkipBtn");
 const tipIntroPage1 = document.getElementById("tipIntroPage1");
 const tipIntroPage2 = document.getElementById("tipIntroPage2");
 const tipIntroDots = document.querySelectorAll(".tip-intro-dot");
-let introModalMode = "intro"; // Track current modal mode: 'intro' shows page 1 only, 'twitter' shows page 2 only
+let introModalMode = "intro"; // Track current modal mode
 
 // Initialize Previous Keys UI
 let prevKeysUI = null;
@@ -148,27 +148,6 @@ async function getActiveJWT() {
   return KeyManager.getActiveJWT();
 }
 
-// DEFAULT_AUTO_REPLY_MESSAGE is loaded from src/ui/constants.js
-
-// X Login Elements (now in Settings > X)
-const likeOnTipToggle = document.getElementById("settingsLikeOnTipToggle");
-const autoReplyToggle = document.getElementById("settingsAutoReplyToggle");
-const autoReplyMessageContainer = document.getElementById(
-  "settingsAutoReplyMessageContainer",
-);
-const autoReplyMessageInput = document.getElementById(
-  "settingsAutoReplyMessageInput",
-);
-const saveAutoReplyMessageBtn = document.getElementById(
-  "settingsSaveAutoReplyMessageBtn",
-);
-const resetAutoReplyMessageBtn = document.getElementById(
-  "settingsResetAutoReplyMessageBtn",
-);
-const settingsXConnectBtn = document.getElementById("settingsXConnectBtn");
-const settingsXDisconnectBtn = document.getElementById(
-  "settingsXDisconnectBtn",
-);
 
 // CDP Auth Elements
 const cdpAuthSection = document.getElementById("cdpAuthSection");
@@ -298,10 +277,6 @@ async function init() {
   await loadJWT();
   await loadTipAmount();
   await loadConfirmTip();
-  await loadLikeOnTip();
-  await loadAutoReply();
-  await loadAutoReplyMessage();
-  await loadXLoginStatus();
   await loadEnvironment();
   await loadChain();
   await loadEndpoint();
@@ -350,22 +325,6 @@ async function init() {
 
   // Increment launch count
   await incrementLaunchCount();
-
-  // Check if we should show the Twitter connect modal (after 5 launches and 1 tip)
-  await checkAndShowTwitterModal();
-
-  // Check if we should open to X settings (from first tip modal)
-  chrome.runtime.sendMessage(
-    { type: "CHECK_OPEN_TO_X_SETTINGS" },
-    (response) => {
-      if (chrome.runtime.lastError) return; // Service worker inactive
-      if (response?.shouldOpen) {
-        // Navigate to Settings > X
-        navigateToSettings();
-        showSettingsView("x-settings");
-      }
-    },
-  );
 
   // Refresh data when popup regains focus
   document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -535,14 +494,6 @@ function setupEventListeners() {
       }
     });
   }
-  if (tipIntroConnectBtn) {
-    tipIntroConnectBtn.addEventListener("click", async () => {
-      // Set flag to open settings when user returns after auth
-      await chrome.storage.local.set({ openToXSettings: true });
-      await hideTipIntroModal();
-      handleXLogin();
-    });
-  }
   if (tipIntroSkipBtn) {
     tipIntroSkipBtn.addEventListener("click", hideTipIntroModal);
   }
@@ -611,16 +562,6 @@ function setupEventListeners() {
       showSettingsView("referral");
       loadReferralData();
     });
-  }
-
-  // Settings > X connect button
-  if (settingsXConnectBtn) {
-    settingsXConnectBtn.addEventListener("click", handleXLogin);
-  }
-
-  // Settings > X disconnect button
-  if (settingsXDisconnectBtn) {
-    settingsXDisconnectBtn.addEventListener("click", handleXDisconnect);
   }
 
   // Legacy manage button (kept for compatibility but hidden)
@@ -713,24 +654,6 @@ function setupEventListeners() {
   endpointOptions.forEach((option) => {
     option.addEventListener("change", handleEndpointChange);
   });
-
-  // Like on Tip Toggle
-  if (likeOnTipToggle) {
-    likeOnTipToggle.addEventListener("change", handleLikeOnTipToggle);
-  }
-
-  // Auto Reply Toggle
-  if (autoReplyToggle) {
-    autoReplyToggle.addEventListener("change", handleAutoReplyToggle);
-  }
-
-  // Auto Reply Message
-  if (saveAutoReplyMessageBtn) {
-    saveAutoReplyMessageBtn.addEventListener("click", saveAutoReplyMessage);
-  }
-  if (resetAutoReplyMessageBtn) {
-    resetAutoReplyMessageBtn.addEventListener("click", resetAutoReplyMessage);
-  }
 
   // Quick Actions (Placeholders)
   document.querySelectorAll(".action-btn").forEach((btn) => {
@@ -1537,136 +1460,6 @@ async function handleConfirmTipToggle() {
   const enabled = confirmTipToggle.checked;
   await chrome.storage.local.set({ [STORAGE_KEYS.CONFIRM_TIP]: enabled });
 }
-
-/**
- * Auto Reply Toggle
- */
-async function loadAutoReply() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.AUTO_REPLY]);
-  // Auto-reply defaults to true (only false if explicitly set to false)
-  const enabled = result[STORAGE_KEYS.AUTO_REPLY] !== false;
-  if (autoReplyToggle) {
-    autoReplyToggle.checked = enabled;
-  }
-  // Show/hide message container based on toggle state
-  if (autoReplyMessageContainer) {
-    if (enabled) {
-      autoReplyMessageContainer.classList.remove("hidden");
-    } else {
-      autoReplyMessageContainer.classList.add("hidden");
-    }
-  }
-}
-
-async function handleAutoReplyToggle() {
-  const enabled = autoReplyToggle.checked;
-
-  // Check if user is logged in to X when enabling
-  if (enabled) {
-    const isLoggedIn = await XAuth.isLoggedIn();
-    if (!isLoggedIn) {
-      autoReplyToggle.checked = false;
-      showToast("Connect X account first");
-      return;
-    }
-  }
-
-  await chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REPLY]: enabled });
-
-  // Show/hide custom message container
-  updateAutoReplyMessageVisibility(enabled);
-
-  showToast(enabled ? "Auto-reply enabled" : "Auto-reply disabled");
-}
-
-/**
- * Like on Tip Toggle
- */
-async function loadLikeOnTip() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.LIKE_ON_TIP]);
-  // Default to true (ON by default)
-  const enabled = result[STORAGE_KEYS.LIKE_ON_TIP] !== false;
-  if (likeOnTipToggle) {
-    likeOnTipToggle.checked = enabled;
-  }
-}
-
-async function handleLikeOnTipToggle() {
-  const enabled = likeOnTipToggle.checked;
-  await chrome.storage.local.set({ [STORAGE_KEYS.LIKE_ON_TIP]: enabled });
-  showToast(enabled ? "Like on tip enabled" : "Like on tip disabled");
-}
-
-/**
- * Update visibility of auto-reply message container
- */
-function updateAutoReplyMessageVisibility(enabled) {
-  if (autoReplyMessageContainer) {
-    if (enabled) {
-      autoReplyMessageContainer.classList.remove("hidden");
-    } else {
-      autoReplyMessageContainer.classList.add("hidden");
-    }
-  }
-}
-
-/**
- * Load Auto Reply Message
- */
-async function loadAutoReplyMessage() {
-  const result = await chrome.storage.local.get([
-    STORAGE_KEYS.AUTO_REPLY_MESSAGE,
-    STORAGE_KEYS.AUTO_REPLY,
-  ]);
-  const message =
-    result[STORAGE_KEYS.AUTO_REPLY_MESSAGE] || DEFAULT_AUTO_REPLY_MESSAGE;
-  // Auto-reply defaults to true (only false if explicitly set to false)
-  const autoReplyEnabled = result[STORAGE_KEYS.AUTO_REPLY] !== false;
-
-  if (autoReplyMessageInput) {
-    autoReplyMessageInput.value = message;
-  }
-
-  // Show/hide based on auto-reply toggle state
-  updateAutoReplyMessageVisibility(autoReplyEnabled);
-}
-
-/**
- * Save Auto Reply Message
- */
-async function saveAutoReplyMessage() {
-  const message = autoReplyMessageInput?.value?.trim();
-
-  if (!message) {
-    showToast("Message cannot be empty");
-    return;
-  }
-
-  await chrome.storage.local.set({
-    [STORAGE_KEYS.AUTO_REPLY_MESSAGE]: message,
-  });
-  showToast("Auto-reply message saved");
-}
-
-/**
- * Reset Auto Reply Message to Default
- */
-async function resetAutoReplyMessage() {
-  if (autoReplyMessageInput) {
-    autoReplyMessageInput.value = DEFAULT_AUTO_REPLY_MESSAGE;
-  }
-  await chrome.storage.local.set({
-    [STORAGE_KEYS.AUTO_REPLY_MESSAGE]: DEFAULT_AUTO_REPLY_MESSAGE,
-  });
-  showToast("Message reset to default");
-}
-
-/**
- * X (Twitter) Login
- */
-
-// X OAuth functions are imported from src/auth/xOAuthPopup.js
-// loadXLoginStatus, handleXDisconnect, handleXLogin are available globally
 
 /**
  * Balance
@@ -3461,32 +3254,13 @@ function showIntroModalPage1Only() {
   }
 }
 
-/**
- * Shows page 2 (Twitter connect) directly
- * Called when conditions are met: 5+ launches and 1+ tips
- */
-function showTwitterConnectModal() {
-  introModalMode = "twitter";
-  if (tipButtonIntroModal) {
-    tipButtonIntroModal.classList.remove("hidden");
-    // Show page 2 directly
-    if (tipIntroPage1) tipIntroPage1.classList.remove("active");
-    if (tipIntroPage2) tipIntroPage2.classList.add("active");
-    // Hide the page indicator dots for twitter-only mode
-    const dotsContainer = document.querySelector(".tip-intro-indicators");
-    if (dotsContainer) dotsContainer.style.display = "none";
-  }
-}
-
 async function hideTipIntroModal() {
   if (tipButtonIntroModal) {
     tipButtonIntroModal.classList.add("hidden");
   }
-  // Mark appropriate flag based on mode
+  // Mark intro as seen
   if (introModalMode === "intro") {
     await chrome.storage.local.set({ [STORAGE_KEYS.TIP_INTRO_SEEN]: true });
-  } else if (introModalMode === "twitter") {
-    await chrome.storage.local.set({ [STORAGE_KEYS.TWITTER_MODAL_SEEN]: true });
   }
   // Reset modal state
   resetIntroModalState();
@@ -3541,30 +3315,6 @@ async function incrementLaunchCount() {
   });
 }
 
-/**
- * Check if Twitter connect modal should be shown
- * Conditions: 3+ launches, 1+ tips, not already seen, not already connected to X
- */
-async function checkAndShowTwitterModal() {
-  const result = await chrome.storage.local.get([
-    STORAGE_KEYS.LAUNCH_COUNT,
-    STORAGE_KEYS.HAS_TIPPED,
-    STORAGE_KEYS.TWITTER_MODAL_SEEN,
-  ]);
-
-  const launchCount = result[STORAGE_KEYS.LAUNCH_COUNT] || 0;
-  const hasTipped = result[STORAGE_KEYS.HAS_TIPPED] || false;
-  const twitterModalSeen = result[STORAGE_KEYS.TWITTER_MODAL_SEEN] || false;
-
-  // Check if conditions are met
-  if (launchCount >= 5 && hasTipped && !twitterModalSeen) {
-    // Check if user is already connected to X
-    const isXConnected = await XAuth.isLoggedIn();
-    if (!isXConnected) {
-      showTwitterConnectModal();
-    }
-  }
-}
 
 // Toast notification: uses shared showToast from src/ui/toast.js
 // Loaded via popup.html script tag before popup.js

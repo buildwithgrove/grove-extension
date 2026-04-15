@@ -21,8 +21,6 @@
   <script src="src/utils/updateChecker.js"></script>
   <script src="src/storage/keyManager.js"></script>
   <script src="src/ui/prevKeysUI.js"></script>
-  <script src="src/auth/xAuth.js"></script>
-  <script src="src/auth/xOAuthPopup.js"></script>
   <script src="dist/cdp-auth-bundle.js"></script>
   <script src="src/parsers/destination.js"></script>
   <script src="src/ui/constants.js"></script>
@@ -658,24 +656,6 @@
             </div>
           </button>
 
-          <button class="settings-menu-item" data-drill="x-settings">
-            <div class="settings-menu-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-              </svg>
-            </div>
-            <div class="settings-menu-content">
-              <div class="settings-menu-name">X / Twitter</div>
-              <div class="settings-menu-desc" id="settingsXMenuDesc">Auto-like & post settings</div>
-            </div>
-            <div class="settings-menu-arrow">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          </button>
-
           <button class="settings-menu-item" data-drill="referral">
             <div class="settings-menu-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -968,95 +948,6 @@
           </svg>
           Disconnect
         </button>
-      </div>
-
-      <!-- X / Twitter Settings View -->
-      <div class="settings-view" id="settings-x-settings">
-        <div class="settings-header">
-          <button class="settings-back" data-back="main">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </button>
-          <h2 class="page-title">X / Twitter</h2>
-        </div>
-
-        <!-- Connection Status -->
-        <div class="settings-group">
-          <div class="settings-item" id="settingsXConnectionRow">
-            <div class="settings-info">
-              <div class="settings-name">Connection</div>
-              <div class="settings-desc" id="settingsXConnectionStatus">Not connected</div>
-            </div>
-            <button class="btn-primary btn-sm" id="settingsXConnectBtn">Connect</button>
-            <button class="btn-danger btn-sm hidden" id="settingsXDisconnectBtn">Disconnect</button>
-          </div>
-        </div>
-
-        <!-- X Features Description (shown when disconnected) -->
-        <div class="settings-group" id="settingsXFeaturesGroup">
-          <div class="settings-label">What you can do</div>
-          <div class="x-features-list">
-            <div class="x-feature-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-              </svg>
-              <span>Automatically like posts when you tip</span>
-            </div>
-            <div class="x-feature-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-              </svg>
-              <span>Post a custom message to let creators know</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- X Actions (shown when connected) -->
-        <div class="settings-group hidden" id="settingsXActionsGroup">
-          <div class="settings-label">Actions when you tip</div>
-
-          <div class="settings-item">
-            <div class="settings-info">
-              <div class="settings-name">Like on tip</div>
-              <div class="settings-desc">Automatically like posts you tip</div>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="settingsLikeOnTipToggle" checked>
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="settings-item">
-            <div class="settings-info">
-              <div class="settings-name">Auto-post on tip</div>
-              <div class="settings-desc">Automatically post when you tip</div>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="settingsAutoReplyToggle">
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <!-- Custom Auto-Reply Message -->
-          <div class="settings-item-column hidden" id="settingsAutoReplyMessageContainer">
-            <div class="settings-row">
-              <div class="settings-info">
-                <div class="settings-name">Custom Message</div>
-              </div>
-            </div>
-            <div class="placeholder-hint-title" style="padding: 0 16px; margin-bottom: 8px; color: var(--color-text-secondary); font-size: 12px;">This message is posted as a new post after you tip someone.</div>
-            <div style="padding: 0 16px;">
-              <textarea id="settingsAutoReplyMessageInput" class="message-textarea" rows="4" placeholder="Enter your custom auto-post message..." style="width: 100%; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px; padding: 12px; color: var(--color-text-primary); font-size: 13px; resize: vertical;"></textarea>
-              <div class="placeholder-hint-vars" style="margin-top: 8px; color: var(--color-text-secondary); font-size: 11px;"><strong>Variables:</strong> <code style="background: var(--color-bg); padding: 2px 6px; border-radius: 4px; color: var(--color-text-primary);">{username}</code> <code style="background: var(--color-bg); padding: 2px 6px; border-radius: 4px; color: var(--color-text-primary);">{amount}</code> <code style="background: var(--color-bg); padding: 2px 6px; border-radius: 4px; color: var(--color-text-primary);">{chain}</code> <code style="background: var(--color-bg); padding: 2px 6px; border-radius: 4px; color: var(--color-text-primary);">{tx_link}</code> <code style="background: var(--color-bg); padding: 2px 6px; border-radius: 4px; color: var(--color-text-primary);">{post_url}</code> <code style="background: var(--color-bg); padding: 2px 6px; border-radius: 4px; color: var(--color-text-primary);">{referral_link}</code></div>
-              <div class="form-actions" style="margin-top: 12px;">
-                <button class="btn-secondary btn-sm" id="settingsResetAutoReplyMessageBtn">Reset</button>
-                <button class="btn-primary btn-sm" id="settingsSaveAutoReplyMessageBtn">Save</button>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- Developer Settings View -->
