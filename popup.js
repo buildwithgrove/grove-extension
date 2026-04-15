@@ -932,11 +932,7 @@ async function handleNavigation(e) {
   // Load leaderboard data when navigating to leaderboard
   if (targetId === "tab-leaderboard") {
     loadPoolStats();
-    if (currentLeaderboardView === "tippers") {
-      loadTopTippers();
-    } else if (currentLeaderboardView === "earners") {
-      loadTopEarners();
-    } else if (currentLeaderboardView === "top") {
+    if (currentLeaderboardView === "top") {
       loadFeedItems("tipped");
     } else {
       loadFeedItems("live");
@@ -2908,7 +2904,7 @@ function setupSettingsDrillDown() {
 /**
  * Leaderboard State
  */
-let currentPeriod = "day";
+let currentPeriod = "week";
 let currentLeaderboardView = "live";
 let livePollingInterval = null;
 let seenTxHashes = new Set();
@@ -2927,47 +2923,9 @@ const HISTORY_PAGE_SIZE = 10;
  * Setup Leaderboard
  */
 function setupLeaderboardSwitcher() {
-  const periodBtns = document.querySelectorAll(".lb-period-pill");
   leaderboardSwitcherBtns = document.querySelectorAll(".switcher-btn");
   leaderboardViews = document.querySelectorAll(".leaderboard-view");
 
-  // Filters row - hidden for Live view, shown for tippers/earners
-  const filtersRow = document.getElementById("lb-filters-row");
-
-  // Period badge labels map
-  const periodLabels = {
-    day: "24h",
-    week: "7d",
-    month: "30d",
-    all: "Lifetime",
-  };
-
-  // Period selector pills
-  periodBtns.forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      const period = e.target.dataset.period;
-      currentPeriod = period;
-
-      periodBtns.forEach((b) => b.classList.remove("active"));
-      e.target.classList.add("active");
-
-      // Update period badges in view headers
-      const label = periodLabels[period] || period;
-      const tippersBadge = document.getElementById("tippers-period-badge");
-      const earnersBadge = document.getElementById("earners-period-badge");
-      if (tippersBadge) tippersBadge.textContent = label;
-      if (earnersBadge) earnersBadge.textContent = label;
-
-      // Reload current leaderboard view with new period
-      if (currentLeaderboardView === "tippers") {
-        loadTopTippers();
-      } else if (currentLeaderboardView === "earners") {
-        loadTopEarners();
-      }
-    });
-  });
-
-  // View switcher
   if (leaderboardSwitcherBtns) {
     leaderboardSwitcherBtns.forEach((btn) => {
       btn.addEventListener("click", (e) => {
@@ -2980,20 +2938,7 @@ function setupLeaderboardSwitcher() {
         leaderboardViews.forEach((v) => v.classList.remove("active"));
         document.getElementById(`${view}-view`).classList.add("active");
 
-        // Show/hide filters row (only for tippers/earners rankings)
-        const isFeedView = view === "live" || view === "top";
-        if (filtersRow) {
-          filtersRow.style.display = isFeedView ? "none" : "flex";
-        }
-
-        // Load data for the selected view
-        if (view === "tippers") {
-          loadTopTippers();
-          stopLivePolling();
-        } else if (view === "earners") {
-          loadTopEarners();
-          stopLivePolling();
-        } else if (view === "live") {
+        if (view === "live") {
           loadFeedItems("live");
           startLivePolling();
         } else if (view === "top") {
@@ -3130,26 +3075,32 @@ async function loadFeedItems(sort = "live", isRefresh = false) {
     list.innerHTML = LeaderboardRenderer.renderFeedSkeleton(5);
   }
 
-  const appUrl = await (async () => {
-    const r = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT, STORAGE_KEYS.ENVIRONMENT]);
+  try {
+    const storageResult = await chrome.storage.local.get([STORAGE_KEYS.ENDPOINT, STORAGE_KEYS.ENVIRONMENT]);
     const envId = GroveEnv.resolveActiveEnvId(
-      r[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV,
-      r[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT,
+      storageResult[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV,
+      storageResult[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT,
     );
-    return GroveEnv.get(envId).appUrl;
-  })();
+    const appUrl = GroveEnv.get(envId)?.appUrl || 'https://grove.city';
 
-  const result = await GroveAPI.getFeedItems(sort, "7d");
+    const result = await GroveAPI.getFeedItems(sort, "7d");
 
-  if (!result.success || result.data.items.length === 0) {
+    if (!result.success || !result.data.items.length) {
+      if (!isRefresh) {
+        list.innerHTML = "";
+        empty.classList.remove("hidden");
+      }
+      return;
+    }
+
+    list.innerHTML = LeaderboardRenderer.renderFeedList(result.data.items, appUrl);
+  } catch (err) {
+    console.error("[Grove] loadFeedItems error:", err);
     if (!isRefresh) {
       list.innerHTML = "";
       empty.classList.remove("hidden");
     }
-    return;
   }
-
-  list.innerHTML = LeaderboardRenderer.renderFeedList(result.data.items, appUrl);
 }
 
 /**
@@ -3179,14 +3130,10 @@ function stopLivePolling() {
  */
 function refreshLeaderboard() {
   loadPoolStats();
-  if (currentLeaderboardView === "live") {
-    loadFeedItems("live");
-  } else if (currentLeaderboardView === "top") {
+  if (currentLeaderboardView === "top") {
     loadFeedItems("tipped");
-  } else if (currentLeaderboardView === "tippers") {
-    loadTopTippers();
-  } else if (currentLeaderboardView === "earners") {
-    loadTopEarners();
+  } else {
+    loadFeedItems("live");
   }
 }
 

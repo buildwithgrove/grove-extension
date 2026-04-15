@@ -473,23 +473,10 @@
         </div>
       </div>
 
-      <!-- Switcher (first row) -->
+      <!-- Switcher -->
       <div class="leaderboard-switcher">
         <button class="switcher-btn active" data-view="live">Live</button>
         <button class="switcher-btn" data-view="top">Top</button>
-        <button class="switcher-btn" data-view="tippers">Tippers</button>
-        <button class="switcher-btn" data-view="earners">Earners</button>
-      </div>
-
-      <!-- Filters Row: Rankings title + period pills (hidden for Live/Top feed views) -->
-      <div class="lb-filters-row" id="lb-filters-row" style="display: none;">
-        <span class="lb-section-title">Rankings</span>
-        <div class="lb-period-pills" id="period-selector">
-          <button class="lb-period-pill active" data-period="day">24h</button>
-          <button class="lb-period-pill" data-period="week">7d</button>
-          <button class="lb-period-pill" data-period="month">30d</button>
-          <button class="lb-period-pill" data-period="all">Lifetime</button>
-        </div>
       </div>
 
       <!-- Live Feed View -->
@@ -527,45 +514,6 @@
         <div id="top-list" class="feed-list"></div>
       </div>
 
-      <!-- Top Tippers View -->
-      <div class="leaderboard-view" id="tippers-view">
-        <div class="lb-view-header">
-          <span class="lb-view-title">Top Tippers</span>
-          <span class="lb-period-badge" id="tippers-period-badge">24h</span>
-        </div>
-        <div class="leaderboard-empty hidden" id="tippers-empty">
-          <div class="empty-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-              <path d="M4 22h16"></path>
-              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
-              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
-              <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
-            </svg>
-          </div>
-          <p>No tippers yet this period</p>
-        </div>
-        <div id="tippers-list"></div>
-      </div>
-
-      <!-- Top Earners View -->
-      <div class="leaderboard-view" id="earners-view">
-        <div class="lb-view-header">
-          <span class="lb-view-title">Top Earners</span>
-          <span class="lb-period-badge" id="earners-period-badge">24h</span>
-        </div>
-        <div class="leaderboard-empty hidden" id="earners-empty">
-          <div class="empty-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="1" x2="12" y2="23"></line>
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-            </svg>
-          </div>
-          <p>No earners yet this period</p>
-        </div>
-        <div id="earners-list"></div>
-      </div>
     </div>
 
     <!-- Giveaways Page -->
