@@ -2997,59 +2997,30 @@ async function loadTopEarners() {
  */
 async function loadPoolStats() {
   try {
-    const [fundsRes, tipsRes, statsRes] = await Promise.all([
-      GroveAPI.getFundsTotal(),
+    const [tipsRes, statsRes] = await Promise.all([
       GroveAPI.getTipsTotal(),
       GroveAPI.getLeaderboardStats("all"),
     ]);
 
-    if (!fundsRes.success || !tipsRes.success) {
+    if (!tipsRes.success) {
       console.error("[Grove Extension] Failed to load pool stats");
       return;
     }
 
-    const totalFunded = fundsRes.data.totalUSD;
     const totalTipped = tipsRes.data.totalUSD;
-    const available = totalFunded - totalTipped;
     const tipCount = tipsRes.data.totalTipCount;
-    const percentage =
-      totalFunded > 0 ? Math.round((totalTipped / totalFunded) * 100) : 0;
 
-    // Update DOM - Hero card
-    const availableEl = document.getElementById("pool-available");
-    if (availableEl) {
-      availableEl.textContent = FormatUtils.formatPoolUSD(available);
-      availableEl.classList.remove("loading");
-    }
+    // Live on Grove banner
+    const paidOutEl = document.getElementById("stat-paid-out");
+    if (paidOutEl) paidOutEl.textContent = FormatUtils.formatPoolUSD(totalTipped);
 
-    const tippedEl = document.getElementById("pool-tipped");
-    if (tippedEl)
-      tippedEl.textContent = `${FormatUtils.formatPoolUSD(totalTipped)} earned`;
+    const tipsSentEl = document.getElementById("stat-tips-sent");
+    if (tipsSentEl) tipsSentEl.textContent = tipCount.toLocaleString();
 
-    const fundedEl = document.getElementById("pool-funded");
-    if (fundedEl)
-      fundedEl.textContent = `${FormatUtils.formatPoolUSD(totalFunded)} deposited`;
-
-    const barFillEl = document.getElementById("pool-bar-fill");
-    if (barFillEl) barFillEl.style.width = `${Math.min(percentage, 100)}%`;
-
-    // Update DOM - Stats cards
-    const tipCountEl = document.getElementById("pool-tip-count");
-    if (tipCountEl) tipCountEl.textContent = tipCount.toLocaleString();
-
-    // Update tippers and earners counts
     if (statsRes.success) {
-      const tippersEl = document.getElementById("stat-tippers");
-      if (tippersEl)
-        tippersEl.textContent = FormatUtils.formatStatCount(
-          statsRes.data.tippers,
-        );
-
-      const recipientsEl = document.getElementById("stat-recipients");
-      if (recipientsEl)
-        recipientsEl.textContent = FormatUtils.formatStatCount(
-          statsRes.data.recipients,
-        );
+      const creatorsEl = document.getElementById("stat-creators");
+      if (creatorsEl)
+        creatorsEl.textContent = FormatUtils.formatStatCount(statsRes.data.recipients);
     }
   } catch (error) {
     console.error("[Grove Extension] Pool stats error:", error);

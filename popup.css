@@ -3577,103 +3577,65 @@ button.quick-access-item:hover .quick-access-icon {
   margin: 0;
 }
 
-/* Stats Grid */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+/* Live on Grove Stats Banner */
+.grove-stats-banner {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
   margin-bottom: 12px;
 }
 
-.stat-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 10px 8px;
+.grove-stats-eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 10px;
+}
+
+.grove-stats-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.grove-stat {
+  flex: 1;
   text-align: center;
 }
 
-.stat-card-hero {
-  grid-column: span 3;
-  background: linear-gradient(135deg, rgba(56, 159, 88, 0.15) 0%, rgba(56, 159, 88, 0.25) 100%);
-  border-color: var(--color-primary);
+.grove-stat:first-child {
   text-align: left;
-  padding: 12px 14px;
 }
 
-.stat-card-hero .stat-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
+.grove-stat:last-child {
+  text-align: right;
 }
 
-.stat-badge {
-  font-size: 9px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(0, 0, 0, 0.2);
-  padding: 2px 8px;
-  border-radius: 10px;
-  margin-left: auto;
-}
-
-.stat-value {
-  font-size: 15px;
+.grove-stat-value {
+  font-size: 18px;
   font-weight: 700;
-  color: var(--color-primary);
-  margin-bottom: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.stat-value.loading {
-  color: var(--color-text-tertiary);
-}
-
-.stat-value-hero {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--color-primary);
+  color: var(--color-text-primary);
   letter-spacing: -0.02em;
   line-height: 1.1;
+  margin-bottom: 2px;
 }
 
-.stat-value-hero.loading {
-  color: var(--color-text-tertiary);
-}
-
-.stat-label {
+.grove-stat-label {
   font-size: 10px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.stat-bar {
-  height: 6px;
-  background: rgba(56, 159, 88, 0.2);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-top: 8px;
-}
-
-.stat-bar-fill {
-  height: 100%;
-  background: var(--color-accent);
-  border-radius: 3px;
-  transition: width 0.6s ease-out;
-  width: 0%;
-}
-
-.stat-bar-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  color: var(--color-text-secondary);
-  font-weight: 500;
-  margin-top: 6px;
+.grove-stats-divider {
+  width: 1px;
+  height: 32px;
+  background: var(--color-border);
+  flex-shrink: 0;
+  margin: 0 12px;
 }
 
 /* ---- Leaderboard Table Layout ---- */
