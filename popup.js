@@ -3508,11 +3508,9 @@ function wireGiveawayEnterButton(giveaway, giveawayId, content) {
         return;
       }
 
-      // Disable button, show loading
+      // Show spinner
       enterBtn.disabled = true;
-      const btnText = enterBtn.querySelector(".giveaway-enter-btn-text");
-      const originalText = btnText.textContent;
-      btnText.textContent = "Sending...";
+      enterBtn.classList.add("loading");
 
       const tipResult = await GroveAPI.sendTip(
         giveaway.creator_address,
@@ -3524,9 +3522,13 @@ function wireGiveawayEnterButton(giveaway, giveawayId, content) {
         },
       );
 
+      enterBtn.classList.remove("loading");
+
       if (tipResult.success) {
-        btnText.textContent = "Entered!";
         enterBtn.classList.add("success");
+        const btnText = enterBtn.querySelector(".giveaway-enter-btn-text");
+        if (btnText) btnText.textContent = "Entered!";
+        showToast("You're in! 🌿", "success");
         fetchBalance();
         // Refresh detail after a delay
         if (giveawayRefreshTimeout) clearTimeout(giveawayRefreshTimeout);
@@ -3548,12 +3550,8 @@ function wireGiveawayEnterButton(giveaway, giveawayId, content) {
           }
         }, 2000);
       } else {
-        btnText.textContent = originalText;
         enterBtn.disabled = false;
-        showTipError(
-          tipError,
-          tipResult.error || "Failed to send tip. Try again.",
-        );
+        showToast(tipResult.error || "Failed to enter. Try again.", "error");
       }
     });
   }

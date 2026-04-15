@@ -5935,6 +5935,31 @@ button.quick-access-item:hover .quick-access-icon {
   font-size: 16px;
 }
 
+.giveaway-enter-btn-spinner {
+  display: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: white;
+  flex-shrink: 0;
+}
+
+.giveaway-enter-btn.loading {
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.giveaway-enter-btn.loading .giveaway-enter-btn-text,
+.giveaway-enter-btn.loading .giveaway-enter-btn-leaf {
+  display: none;
+}
+
+.giveaway-enter-btn.loading .giveaway-enter-btn-spinner {
+  display: block;
+  animation: balance-spin 0.7s linear infinite;
+}
+
 .giveaway-tip-error {
   text-align: center;
   color: var(--color-danger);

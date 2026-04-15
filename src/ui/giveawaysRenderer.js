@@ -240,6 +240,7 @@ const GiveawaysRenderer = {
           <span class="giveaway-tip-suffix">USDC</span>
         </div>
         <button class="giveaway-enter-btn" id="giveawayEnterBtn">
+          <span class="giveaway-enter-btn-spinner"></span>
           <span class="giveaway-enter-btn-text">Enter Giveaway</span>
           <span class="giveaway-enter-btn-leaf">🌿</span>
         </button>
