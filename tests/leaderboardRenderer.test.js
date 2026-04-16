@@ -305,6 +305,25 @@ describe('LeaderboardRenderer', () => {
       const html = LeaderboardRenderer.renderLiveTipsTable(entries);
       expect(html).toContain('basescan.org/tx/0xaaa');
     });
+
+    it('should prefer recipient_grove_handle over social username', () => {
+      const groveEntries = [{
+        txHash: '0xccc',
+        destination: 'https://x.com/grace',
+        address: '0x5555555555555555',
+        network: 'base',
+        amountUSD: 3,
+        confirmedAt: new Date().toISOString(),
+        context: {
+          recipient_username: 'grace',
+          recipient_profile_url: 'https://x.com/grace',
+          recipient_grove_handle: 'grace-grove',
+        },
+      }];
+      const html = LeaderboardRenderer.renderLiveTipsTable(groveEntries);
+      expect(html).toContain('<a href="https://grove.city/grace-grove"');
+      expect(html).toContain('>@grace-grove</a>');
+    });
   });
 
   describe('renderSkeletonTable', () => {

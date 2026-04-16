@@ -251,7 +251,17 @@ const LeaderboardRenderer = {
       };
     }
 
-    // 4. Context username (recipient for earners, sender for tippers)
+    // 4. Grove handle resolved from context (sender for tippers, recipient for earners)
+    const groveHandle = isEarner ? ctx.recipient_grove_handle : ctx.sender_grove_handle;
+    if (groveHandle) {
+      return {
+        displayName: `@${groveHandle}`,
+        url: `https://grove.city/${encodeURIComponent(groveHandle)}`,
+        platform: 'grove'
+      };
+    }
+
+    // 5. Context username (recipient for earners, sender for tippers)
     const username = isEarner ? ctx.recipient_username : ctx.sender_username;
     const profileUrl = isEarner ? ctx.recipient_profile_url : ctx.sender_profile_url;
     if (username) {
@@ -306,7 +316,14 @@ const LeaderboardRenderer = {
 
     const tipLabel = entry.topTipContext ? 'Top tip' : 'Latest tip';
     let descriptionHtml;
-    if (ctx.recipient_username) {
+    if (ctx.recipient_grove_handle) {
+      const postUrl = ctx.source_post_url || parsed.postUrl;
+      const groveUrl = `https://grove.city/${encodeURIComponent(ctx.recipient_grove_handle)}`;
+      const linkUrl = postUrl || groveUrl;
+      const handleText = `@${FormatUtils.escapeHtml(ctx.recipient_grove_handle)}`;
+      const linkText = postUrl ? `${handleText}'s post` : handleText;
+      descriptionHtml = `${tipLabel}: <a href="${FormatUtils.escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${linkText}</a>`;
+    } else if (ctx.recipient_username) {
       const postUrl = ctx.source_post_url || parsed.postUrl;
       const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
       const linkUrl = postUrl || profileUrl;
@@ -407,19 +424,25 @@ const LeaderboardRenderer = {
       displayUrl = `https://app.ens.domains/${encodeURIComponent(entry.ens_name)}`;
       displayPlatform = 'ens';
     }
-    // 4. Context recipient username
+    // 4. Grove handle resolved from context
+    else if (ctx.recipient_grove_handle) {
+      displayName = `@${ctx.recipient_grove_handle}`;
+      displayUrl = `https://grove.city/${encodeURIComponent(ctx.recipient_grove_handle)}`;
+      displayPlatform = 'grove';
+    }
+    // 5. Context recipient username
     else if (ctx.recipient_username) {
       displayName = `@${ctx.recipient_username}`;
       displayUrl = ctx.recipient_profile_url || `https://x.com/${encodeURIComponent(ctx.recipient_username)}`;
       displayPlatform = 'x';
     }
-    // 5. Parsed handle
+    // 6. Parsed handle
     else if (parsed.profileHandle && parsed.profileUrl) {
       displayName = parsed.profileHandle;
       displayUrl = parsed.profileUrl;
       displayPlatform = this.detectPlatform(parsed.profileUrl);
     }
-    // 6. Address fallback
+    // 7. Address fallback
     else {
       displayName = this.formatAddressShort(entry.address);
       displayUrl = this.getAddressExplorerUrl(entry.network, entry.address);
@@ -631,6 +654,10 @@ const LeaderboardRenderer = {
         displayName = entry.ens_name;
         displayUrl = `https://app.ens.domains/${encodeURIComponent(entry.ens_name)}`;
         displayPlatform = 'ens';
+      } else if (ctx.recipient_grove_handle) {
+        displayName = `@${ctx.recipient_grove_handle}`;
+        displayUrl = `https://grove.city/${encodeURIComponent(ctx.recipient_grove_handle)}`;
+        displayPlatform = 'grove';
       } else if (ctx.recipient_username) {
         displayName = `@${ctx.recipient_username}`;
         displayUrl = ctx.recipient_profile_url || `https://x.com/${encodeURIComponent(ctx.recipient_username)}`;

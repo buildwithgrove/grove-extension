@@ -187,6 +187,69 @@ describe('HistoryRenderer', () => {
       expect(html).toContain('class="transaction-item-icon failed"');
     });
 
+    it('should prefer recipient_grove_handle over social username for tip_sent', () => {
+      const tx = {
+        type: 'tip_sent',
+        status: 'success',
+        amount_usd: '1.00',
+        amount: '1000000',
+        network: 'base',
+        tx_hash: '0xabc',
+        created_at: new Date().toISOString(),
+        destination: 'https://x.com/waydots',
+        context: {
+          recipient_username: 'waydots',
+          recipient_profile_url: 'https://x.com/waydots',
+          recipient_grove_handle: 'waydots',
+        },
+      };
+      const html = HistoryRenderer.renderHistoryEntry(tx);
+      expect(html).toContain('class="transaction-item-desc-link">@waydots</a>');
+      expect(html).toContain('href="https://grove.city/waydots"');
+    });
+
+    it('should fall back to social username when recipient_grove_handle is null', () => {
+      const tx = {
+        type: 'tip_sent',
+        status: 'success',
+        amount_usd: '1.00',
+        amount: '1000000',
+        network: 'base',
+        tx_hash: '0xabc',
+        created_at: new Date().toISOString(),
+        destination: 'https://x.com/waydots',
+        context: {
+          recipient_username: 'waydots',
+          recipient_profile_url: 'https://x.com/waydots',
+          recipient_grove_handle: null,
+        },
+      };
+      const html = HistoryRenderer.renderHistoryEntry(tx);
+      expect(html).toContain('href="https://x.com/waydots"');
+      expect(html).toContain('>@waydots<');
+    });
+
+    it('should prefer sender_grove_handle over social username for tip_received', () => {
+      const tx = {
+        type: 'tip_received',
+        status: 'success',
+        amount_usd: '2.50',
+        amount: '2500000',
+        network: 'base',
+        tx_hash: '0xdef',
+        created_at: new Date().toISOString(),
+        destination: null,
+        context: {
+          sender_username: 'alice',
+          sender_profile_url: 'https://x.com/alice',
+          sender_grove_handle: 'alice-grove',
+        },
+      };
+      const html = HistoryRenderer.renderHistoryEntry(tx);
+      expect(html).toContain('class="transaction-item-desc-link">@alice-grove</a>');
+      expect(html).toContain('href="https://grove.city/alice-grove"');
+    });
+
     it('should use Grove handle when destination is grove.city URL', () => {
       const tx = {
         type: 'tip_sent',
