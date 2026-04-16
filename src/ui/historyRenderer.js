@@ -71,36 +71,67 @@ const HistoryRenderer = {
    * @returns {string} HTML string
    */
   buildDescriptionHtml(tx, parsed, ctx) {
-    // Helper: try to parse a username out of social_graph URL as a last resort
+    // Helper: parse a handle from a URL
     const socialParsed = tx.social_graph ? parseDestination(tx.social_graph) : null;
 
+    // Helper: check if a URL is a Grove profile and return its handle
+    const groveHandleFrom = (url) => {
+      if (!url) return null;
+      const p = parseDestination(url);
+      if (p && p.profileHandle && p.profileUrl && p.profileUrl.includes('grove.city')) {
+        return { handle: p.profileHandle, url: p.profileUrl };
+      }
+      return null;
+    };
+
+    // Helper: build a link element
+    const link = (href, label) =>
+      `<a href="${FormatUtils.escapeHtml(href)}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.escapeHtml(label)}</a>`;
+
     if (tx.type === 'tip_sent') {
+      // 1. Grove handle — from context profile URL or destination
+      const groveFromCtx = groveHandleFrom(ctx.recipient_profile_url);
+      if (groveFromCtx) return link(groveFromCtx.url, groveFromCtx.handle);
+      const groveFromDest = groveHandleFrom(tx.destination);
+      if (groveFromDest) return link(groveFromDest.url, groveFromDest.handle);
+      // 2. Social username from context
       if (ctx.recipient_username) {
-        const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
-        return `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${FormatUtils.escapeHtml(ctx.recipient_username)}</a>`;
-      } else if (parsed.profileHandle && parsed.profileUrl) {
-        return `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
-      } else if (socialParsed && socialParsed.profileHandle && socialParsed.profileUrl) {
-        return `<a href="${socialParsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${socialParsed.profileHandle}</a>`;
-      } else if (parsed.postUrl) {
-        return `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.truncateDestination(tx.destination)}</a>`;
-      } else if (tx.counterparty_address) {
-        const addressUrl = LeaderboardRenderer.getAddressExplorerUrl(tx.network, tx.counterparty_address);
-        return `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.formatAddress(tx.counterparty_address)}</a>`;
+        return link(ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`, `@${ctx.recipient_username}`);
+      }
+      // 3. Handle parsed from destination URL
+      if (parsed.profileHandle && parsed.profileUrl) {
+        return link(parsed.profileUrl, parsed.profileHandle);
+      }
+      if (socialParsed && socialParsed.profileHandle && socialParsed.profileUrl) {
+        return link(socialParsed.profileUrl, socialParsed.profileHandle);
+      }
+      // 4. Link to post
+      if (parsed.postUrl) {
+        return link(parsed.postUrl, FormatUtils.truncateDestination(tx.destination));
+      }
+      // 5. Address
+      if (tx.counterparty_address) {
+        return link(LeaderboardRenderer.getAddressExplorerUrl(tx.network, tx.counterparty_address), FormatUtils.formatAddress(tx.counterparty_address));
       }
       return FormatUtils.formatNetwork(tx.network);
     } else if (tx.type === 'tip_received') {
+      // 1. Grove handle — from context profile URL
+      const groveFromCtx = groveHandleFrom(ctx.sender_profile_url);
+      if (groveFromCtx) return link(groveFromCtx.url, groveFromCtx.handle);
+      // 2. Social username from context
       if (ctx.sender_username) {
-        const profileUrl = ctx.sender_profile_url || `https://x.com/${ctx.sender_username}`;
-        return `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${FormatUtils.escapeHtml(ctx.sender_username)}</a>`;
-      } else if (parsed.profileHandle && parsed.profileUrl) {
-        // profileHandle before counterparty_address — username always beats raw address
-        return `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
-      } else if (socialParsed && socialParsed.profileHandle && socialParsed.profileUrl) {
-        return `<a href="${socialParsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${socialParsed.profileHandle}</a>`;
-      } else if (tx.counterparty_address) {
-        const addressUrl = LeaderboardRenderer.getAddressExplorerUrl(tx.network, tx.counterparty_address);
-        return `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.formatAddress(tx.counterparty_address)}</a>`;
+        return link(ctx.sender_profile_url || `https://x.com/${ctx.sender_username}`, `@${ctx.sender_username}`);
+      }
+      // 3. Handle parsed from destination/social_graph
+      if (parsed.profileHandle && parsed.profileUrl) {
+        return link(parsed.profileUrl, parsed.profileHandle);
+      }
+      if (socialParsed && socialParsed.profileHandle && socialParsed.profileUrl) {
+        return link(socialParsed.profileUrl, socialParsed.profileHandle);
+      }
+      // 4. Address
+      if (tx.counterparty_address) {
+        return link(LeaderboardRenderer.getAddressExplorerUrl(tx.network, tx.counterparty_address), FormatUtils.formatAddress(tx.counterparty_address));
       }
       return FormatUtils.formatNetwork(tx.network);
     } else {
