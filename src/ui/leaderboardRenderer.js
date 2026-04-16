@@ -733,16 +733,21 @@ const LeaderboardRenderer = {
    * Render a single Front Page feed card
    * @param {Object} item - Feed item from /v1/feed/items
    * @param {string} appUrl - Base app URL for profile links
+   * @param {number} index - Card index (used for unfurl slot IDs)
    * @returns {string} HTML
    */
-  renderFeedCard(item, appUrl = 'https://grove.city') {
+  renderFeedCard(item, appUrl = 'https://grove.city', index = 0) {
     const handle = item.creator_handle;
     const avatarUrl = item.creator_avatar_url;
-    const title = item.content?.title || item.content?.description || null;
     const amount = parseFloat(item.total_amount_usd || '0');
     const tipCount = item.tip_count || 0;
     const ago = this.timeAgo(item.last_tipped_at || item.content?.published_at);
     const platform = item.platform;
+    const itemUrl = item.url || null;
+
+    const isX = platform === 'x' || platform === 'twitter';
+    const isYouTube = platform === 'youtube';
+    const isProfile = this._isProfileUrl(itemUrl, platform);
 
     // Show avatar image when available; fall back to initial letter circle when null
     const initial = handle ? handle.charAt(0).toUpperCase() : '?';
@@ -759,21 +764,45 @@ const LeaderboardRenderer = {
     const platformBadge = this.feedPlatformBadge(platform);
     const agoHtml = ago ? `<span class="feed-card-time">${FormatUtils.escapeHtml(ago)}</span>` : '';
 
-    // Skip title if it duplicates the creator handle (e.g. content.title = "@mrbeast" or "mrbeast")
-    const normalizedTitle = title ? title.replace(/^@/, '').toLowerCase().trim() : null;
-    const normalizedHandle = handle ? handle.toLowerCase().trim() : null;
-    const deduplicatedTitle = (normalizedTitle && normalizedTitle !== normalizedHandle) ? title : null;
-    const titleHtml = deduplicatedTitle
-      ? `<div class="feed-card-title">${FormatUtils.escapeHtml(deduplicatedTitle)}</div>`
+    // Tipper attribution
+    const tipperName = item.last_tip_context?.sender_grove_handle || item.last_tip_context?.sender_username || null;
+    const tipperHtml = tipperName
+      ? `<span class="feed-card-tipper">· by ${FormatUtils.escapeHtml(tipperName)}</span>`
       : '';
+
+    // Content body: tweet text, title/desc, profile descriptor, or unfurl placeholder
+    let contentHtml = '';
+    if (isX && item.content?.description) {
+      const tweet = item.content.description.slice(0, 280);
+      const truncated = item.content.description.length > 280 ? '…' : '';
+      contentHtml = `<p class="feed-card-tweet-text">${FormatUtils.escapeHtml(tweet)}${truncated}</p>`;
+    } else if (!isX && !isProfile && item.content?.title) {
+      const cleanedTitle = this._cleanTitle(item.content.title);
+      if (cleanedTitle) {
+        contentHtml = `<div class="feed-card-title">${FormatUtils.escapeHtml(cleanedTitle)}</div>`;
+        if (item.content?.description) {
+          const desc = item.content.description.slice(0, 200);
+          const truncated = item.content.description.length > 200 ? '…' : '';
+          contentHtml += `<p class="feed-card-desc">${FormatUtils.escapeHtml(desc)}${truncated}</p>`;
+        }
+      }
+    } else if (isProfile && handle && platform) {
+      const platformName = this._getPlatformName(platform);
+      contentHtml = `<p class="feed-card-profile-desc">@${FormatUtils.escapeHtml(handle)} on ${FormatUtils.escapeHtml(platformName)}</p>`;
+    } else if (!isProfile && itemUrl && !item.content?.title && !item.content?.description) {
+      contentHtml = `<div class="feed-card-unfurl-slot" id="unfurl-${index}"></div>`;
+    }
 
     const amountFmt = amount >= 1000 ? `$${(amount / 1000).toFixed(1)}K` : `$${amount.toFixed(2)}`;
     const tipsLabel = tipCount === 1 ? '1 tip' : `${tipCount} tips`;
 
-    const contentUrl = item.url || (handle ? `${appUrl}/${encodeURIComponent(handle)}` : null);
+    const contentUrl = itemUrl || (handle ? `${appUrl}/${encodeURIComponent(handle)}` : null);
+    const unfurlAttr = (!isProfile && itemUrl && !item.content?.title && !item.content?.description)
+      ? ` data-unfurl-url="${FormatUtils.escapeHtml(itemUrl)}"`
+      : '';
     const cardLink = contentUrl ? `href="${FormatUtils.escapeHtml(contentUrl)}" target="_blank" rel="noopener noreferrer"` : '';
 
-    return `<a class="feed-card" ${cardLink}>
+    return `<a class="feed-card" ${cardLink}${unfurlAttr}>
       <div class="feed-card-meta">
         <div class="feed-card-avatar-wrap">${avatarHtml}</div>
         <div class="feed-card-meta-text">
@@ -782,12 +811,13 @@ const LeaderboardRenderer = {
             ${platformBadge}
             ${agoHtml}
           </div>
-          ${titleHtml}
+          ${contentHtml}
         </div>
       </div>
       <div class="feed-card-stats">
         <span class="feed-card-amount">${FormatUtils.escapeHtml(amountFmt)}</span>
         <span class="feed-card-tip-count">${FormatUtils.escapeHtml(tipsLabel)}</span>
+        ${tipperHtml}
       </div>
     </a>`;
   },
@@ -800,7 +830,44 @@ const LeaderboardRenderer = {
    */
   renderFeedList(items, appUrl = 'https://grove.city') {
     if (!items || items.length === 0) return '';
-    return items.map(item => this.renderFeedCard(item, appUrl)).join('');
+    return items.map((item, i) => this.renderFeedCard(item, appUrl, i)).join('');
+  },
+
+  // ─── Private Helpers ──────────────────────────────────────────────────────
+
+  _isProfileUrl(url, platform) {
+    if (!url || !platform) return false;
+    try {
+      const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
+      const p = platform.toLowerCase();
+      const segments = parsed.pathname.replace(/\/$/, '').split('/').filter(Boolean);
+      const RESERVED_X = new Set(['i','intent','search','hashtag','explore','home','settings','messages','notifications']);
+      if (p === 'x' || p === 'twitter') return segments.length === 1 && !RESERVED_X.has(segments[0].toLowerCase());
+      if (p === 'substack') return segments.length === 0;
+      if (p === 'youtube') return segments.length > 0 && (segments[0].startsWith('@') || segments[0] === 'c' || segments[0] === 'channel') && !parsed.searchParams.has('v');
+      if (p === 'github') return segments.length === 1;
+      return false;
+    } catch { return false; }
+  },
+
+  _cleanTitle(title) {
+    if (!title) return null;
+    return title
+      .replace(/\s*\|\s*LinkedIn$/i, '')
+      .replace(/\s*on X$/i, '')
+      .replace(/\s*[-–—]\s*YouTube$/i, '')
+      .trim() || null;
+  },
+
+  _getPlatformName(platform) {
+    const names = {
+      x:'X', twitter:'X', youtube:'YouTube', substack:'Substack',
+      soundcloud:'SoundCloud', github:'GitHub', tiktok:'TikTok', twitch:'Twitch',
+      telegram:'Telegram', facebook:'Facebook', discord:'Discord', instagram:'Instagram',
+      linkedin:'LinkedIn', medium:'Medium', reddit:'Reddit', bluesky:'Bluesky', grove:'Grove'
+    };
+    const p = (platform || '').toLowerCase();
+    return names[p] || (p ? p.charAt(0).toUpperCase() + p.slice(1) : 'Web');
   },
 
   /**

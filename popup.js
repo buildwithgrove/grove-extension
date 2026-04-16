@@ -2555,10 +2555,49 @@ async function loadFeedItems(sort = "live", isRefresh = false) {
     const appUrl = GroveEnv.get(envId)?.appUrl || "https://grove.city";
 
     list.innerHTML = LeaderboardRenderer.renderFeedList(items, appUrl);
+    enrichFeedItems(list, appUrl);
   } catch (err) {
     console.error("[Grove] loadFeedItems error:", err);
     if (!isRefresh) { list.innerHTML = ""; empty.classList.remove("hidden"); }
   }
+}
+
+/**
+ * Progressively enrich feed cards that need unfurling
+ * @param {HTMLElement} listEl - The list container
+ * @param {string} appUrl - Base app URL for the unfurl API
+ */
+async function enrichFeedItems(listEl, appUrl) {
+  const cards = listEl.querySelectorAll('[data-unfurl-url]');
+  if (!cards.length) return;
+
+  await Promise.allSettled([...cards].map(async (card) => {
+    const url = card.dataset.unfurlUrl;
+    const slot = card.querySelector('.feed-card-unfurl-slot');
+    if (!slot || !url) return;
+
+    try {
+      const res = await fetch(`${appUrl}/api/unfurl?url=${encodeURIComponent(url)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      let html = '';
+      if (data.title) {
+        html += `<div class="feed-card-title">${FormatUtils.escapeHtml(data.title)}</div>`;
+      }
+      if (data.description && !data.title?.toLowerCase().includes(data.description.toLowerCase().slice(0, 20))) {
+        const desc = data.description.slice(0, 200);
+        html += `<p class="feed-card-desc">${FormatUtils.escapeHtml(desc)}${data.description.length > 200 ? '…' : ''}</p>`;
+      }
+      if (html) {
+        slot.outerHTML = html;
+      } else {
+        slot.remove();
+      }
+    } catch {
+      slot.remove();
+    }
+  }));
 }
 
 /**

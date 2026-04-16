@@ -3621,6 +3621,52 @@ button.quick-access-item:hover .quick-access-icon {
   color: var(--color-text-tertiary);
 }
 
+.feed-card-tweet-text {
+  font-size: 12px;
+  color: var(--color-text-primary);
+  line-height: 1.45;
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.feed-card-desc {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  margin: 3px 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.feed-card-profile-desc {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  margin: 2px 0 0;
+}
+
+.feed-card-tipper {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.feed-card-unfurl-slot {
+  height: 14px;
+  margin-top: 4px;
+  background: var(--color-border);
+  border-radius: 4px;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+  100% { opacity: 0.4; }
+}
+
 /* Table */
 .lb-table {
   width: 100%;
