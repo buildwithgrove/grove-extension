@@ -85,10 +85,6 @@ const prevKeysContainer = document.getElementById("prevKeysContainer");
 const prevKeysList = document.getElementById("prevKeysList");
 const closePrevKeysBtn = document.getElementById("closePrevKeysBtn");
 
-// Earn Tab
-const earnLoggedOut = document.getElementById("earnLoggedOut");
-const earnLoggedIn = document.getElementById("earnLoggedIn");
-
 // Account Info Section (shows for all logged-in users)
 const accountInfoSection = document.getElementById("accountInfoSection");
 const accountIdentityRow = document.getElementById("accountIdentityRow");
@@ -118,8 +114,6 @@ const accountDisconnectBtn = document.getElementById("accountLogoutBtn");
 // Tip Intro Modal
 const tipButtonIntroModal = document.getElementById("tipButtonIntroModal");
 const tipIntroGotItBtn = document.getElementById("tipIntroGotItBtn");
-const tipIntroNextBtn = document.getElementById("tipIntroNextBtn");
-const tipIntroSkipBtn = document.getElementById("tipIntroSkipBtn");
 const tipIntroPage1 = document.getElementById("tipIntroPage1");
 const tipIntroDots = document.querySelectorAll(".tip-intro-dot");
 
@@ -146,34 +140,7 @@ async function getActiveJWT() {
 }
 
 
-// CDP Auth Elements
-const cdpAuthSection = document.getElementById("cdpAuthSection");
-const cdpEmailAuthBtn = document.getElementById("emailAuthBtn");
-const cdpPhoneAuthBtn = document.getElementById("smsAuthBtn");
-const cdpIdentityModal = document.getElementById("cdpIdentityModal");
-const cdpIdentityInput = document.getElementById("cdpIdentityInput");
-const cdpIdentityLabel = document.getElementById("cdpIdentityLabel");
-const cdpIdentityHint = document.getElementById("cdpIdentityHint");
-const cdpSendCodeBtn = document.getElementById("cdpSendCodeBtn");
-const cdpCancelIdentityBtn = document.getElementById("cdpCancelIdentityBtn");
-const cdpOtpModal = document.getElementById("cdpOtpModal");
-const cdpOtpDestination = document.getElementById("cdpOtpDestination");
-const cdpOtpInput = document.getElementById("cdpOtpInput");
-const cdpVerifyOtpBtn = document.getElementById("cdpVerifyOtpBtn");
-const cdpResendCodeBtn = document.getElementById("cdpResendCodeBtn");
-const cdpCancelOtpBtn = document.getElementById("cdpCancelOtpBtn");
-const cdpLoadingModal = document.getElementById("cdpLoadingModal");
-const cdpLoadingMessage = document.getElementById("cdpLoadingMessage");
 const walletSignInBtn = document.getElementById("walletSignInBtn");
-
-// CDP Auth State
-let cdpAuthState = {
-  method: null, // 'email' or 'sms'
-  flowId: null, // Flow ID from CDP SDK
-  destination: null, // Email or phone number
-  resendTimer: null, // Timer for resend cooldown
-  resendCountdown: 0, // Seconds until resend allowed
-};
 
 // Defaults
 const DEFAULT_TIP_AMOUNT = 0.02;
@@ -285,7 +252,6 @@ async function init() {
   loadExtensionVersion();
   checkForUpdates();
   setupEventListeners();
-  await initCDPAuth();
 
   // Ensure chain dropdown options match current endpoint on init
   const endpointInit = await GroveAPI.getBaseURL()
@@ -308,17 +274,6 @@ async function init() {
 
   // Resolve ENS name in the background (don't await to avoid blocking UI)
   loadAndResolveEnsName();
-
-  // Show earn tab badge only if user hasn't visited earn tab yet
-  const earnTabSeen = await chrome.storage.local.get([
-    STORAGE_KEYS.EARN_TAB_SEEN,
-  ]);
-  if (!earnTabSeen[STORAGE_KEYS.EARN_TAB_SEEN]) {
-    const earnBadge = document.querySelector(".nav-badge-dot");
-    if (earnBadge) {
-      earnBadge.classList.remove("hidden");
-    }
-  }
 
   // Increment launch count
   await incrementLaunchCount();
@@ -346,8 +301,6 @@ function handleVisibilityChange() {
     loadHistory();
   } else if (tabId === "tab-leaderboard") {
     refreshLeaderboard();
-  } else if (tabId === "tab-earn") {
-    loadEarnTab();
   }
 }
 
@@ -472,21 +425,11 @@ function setupEventListeners() {
   if (cancelTipEdit) cancelTipEdit.addEventListener("click", hideTipEdit);
   confirmTipToggle.addEventListener("change", handleConfirmTipToggle);
 
-  // Tip Intro Modal - Page Navigation
-  const tipIntroEarnBtn = document.getElementById('tipIntroEarnBtn');
-  if (tipIntroEarnBtn) {
-    tipIntroEarnBtn.addEventListener('click', async () => {
-      await hideTipIntroModal();
-      document.querySelector('[data-target="tab-earn"]').click();
-    });
-  }
-  if (tipIntroNextBtn) {
-    tipIntroNextBtn.addEventListener("click", () => {
+  // Tip Intro Modal - "Got it" button
+  if (tipIntroGotItBtn) {
+    tipIntroGotItBtn.addEventListener("click", () => {
       hideTipIntroModal();
     });
-  }
-  if (tipIntroSkipBtn) {
-    tipIntroSkipBtn.addEventListener("click", hideTipIntroModal);
   }
   // Page indicator dots
   tipIntroDots.forEach((dot) => {
@@ -651,26 +594,6 @@ function setupEventListeners() {
     btn.addEventListener("click", () => showToast("Coming Soon"));
   });
 
-  // Earn Tab - Sign In button
-  const earnSignInBtn = document.getElementById("earnSignInBtn");
-  if (earnSignInBtn) {
-    earnSignInBtn.addEventListener("click", () => {
-      document.querySelector('[data-target="tab-home"]').click();
-    });
-  }
-
-  // Earn Tab - Username claim
-  const earnUsernameClaimBtn = document.getElementById("earnUsernameClaimBtn");
-  if (earnUsernameClaimBtn) {
-    earnUsernameClaimBtn.addEventListener("click", handleEarnClaimUsername);
-  }
-  const earnUsernameInput = document.getElementById("earnUsernameInput");
-  if (earnUsernameInput) {
-    earnUsernameInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") handleEarnClaimUsername();
-    });
-  }
-
   // Account - Copy Tipping Wallet Button
   if (copyTippingWalletBtn) {
     copyTippingWalletBtn.addEventListener("click", copyTippingWallet);
@@ -828,16 +751,6 @@ async function handleNavigation(e) {
   // Load history when navigating to history tab
   if (targetId === "tab-history") {
     loadHistory();
-  }
-
-  // Load earn tab data when navigating to earn tab
-  if (targetId === "tab-earn") {
-    loadEarnTab();
-    const earnBadge = document.querySelector(".nav-badge-dot");
-    if (earnBadge) {
-      earnBadge.classList.add("hidden");
-    }
-    chrome.storage.local.set({ [STORAGE_KEYS.EARN_TAB_SEEN]: true });
   }
 
   // Load leaderboard data when navigating to leaderboard
@@ -1250,8 +1163,6 @@ async function disconnectSlot(slotId) {
       STORAGE_KEYS.EXTERNAL_LINKED_WALLETS,
       STORAGE_KEYS.ENS_NAME,
       STORAGE_KEYS.HANDLE,
-      STORAGE_KEYS.CDP_IDENTITY_TYPE,
-      STORAGE_KEYS.CDP_IDENTITY_VALUE,
     ]);
     await updateAuthState(null);
 
@@ -1341,15 +1252,13 @@ async function clearAllKeys() {
   // Clear archived keys
   await KeyManager.clearAll();
 
-  // Clear auth state and CDP identity info
+  // Clear auth state
   await chrome.storage.local.remove([
     STORAGE_KEYS.EARNING_ADDRESS,
     STORAGE_KEYS.TIPPING_ADDRESS,
     STORAGE_KEYS.SMART_ACCOUNT_ADDRESS,
     STORAGE_KEYS.EXTERNAL_LINKED_WALLETS,
     STORAGE_KEYS.ENS_NAME,
-    STORAGE_KEYS.CDP_IDENTITY_TYPE,
-    STORAGE_KEYS.CDP_IDENTITY_VALUE,
   ]);
   await updateAuthState(null);
   await updateAccountInfoDisplay();
@@ -1457,6 +1366,8 @@ async function handleConfirmTipToggle() {
  */
 async function fetchBalance() {
   balanceDisplay.classList.add("loading");
+  const earningsDisplayEl = document.getElementById("earningsDisplay");
+  if (earningsDisplayEl) earningsDisplayEl.classList.add("loading");
 
   // Get JWT based on current dev mode
   const jwt = await getActiveJWT();
@@ -1599,9 +1510,6 @@ async function fetchBalance() {
     }
     await updateUsernameCard(handle);
 
-    // Show earn setup modal if user hasn't set up their profile yet
-    checkAndShowEarnSetupModal(handle);
-
     // Find the server wallet (Grove-controlled tipping wallet)
     const serverWallet = response.data.wallet_balances.find(
       (w) => w.wallet_type === "server",
@@ -1626,10 +1534,30 @@ async function fetchBalance() {
         [STORAGE_KEYS.LAST_BALANCES]: cachedBalances,
       });
     }
+
+    // Display earnings balance (smart account wallet)
+    const earningsDisplay = document.getElementById("earningsDisplay");
+    const earningsAmountEl = document.getElementById("earningsAmount");
+    const earningsRow = document.getElementById("earningsRow");
+    const smartAccountWallet = response.data.wallet_balances.find(
+      (w) => w.wallet_type === "smart_account",
+    );
+    const earningsChainBalance = smartAccountWallet?.balances?.find(
+      (b) => b.network === chain && b.token_symbol === "USDC",
+    );
+    if (earningsAmountEl) {
+      earningsAmountEl.textContent = earningsChainBalance
+        ? FormatUtils.formatBalance(earningsChainBalance.balance)
+        : FormatUtils.DEFAULT_BALANCE_DISPLAY;
+    }
+    if (earningsDisplay) earningsDisplay.classList.remove("loading");
+    if (earningsRow) earningsRow.classList.remove("hidden");
   } catch (e) {
     console.error("[Grove Extension] Balance fetch failed:", e);
   } finally {
     balanceDisplay.classList.remove("loading");
+    const earningsDisplayFinal = document.getElementById("earningsDisplay");
+    if (earningsDisplayFinal) earningsDisplayFinal.classList.remove("loading");
   }
 }
 
@@ -1690,172 +1618,6 @@ async function getEarnAddress() {
   return result[STORAGE_KEYS.EARNING_ADDRESS] || null;
 }
 
-// ─── Earn Tab ───────────────────────────────────────────────────────────────
-
-/**
- * Load the entire Earn tab — decides logged-out vs logged-in state
- */
-async function loadEarnTab() {
-  const jwt = await getActiveJWT();
-
-  if (!jwt) {
-    if (earnLoggedOut) earnLoggedOut.classList.remove("hidden");
-    if (earnLoggedIn) earnLoggedIn.classList.add("hidden");
-    return;
-  }
-
-  if (earnLoggedOut) earnLoggedOut.classList.add("hidden");
-  if (earnLoggedIn) earnLoggedIn.classList.remove("hidden");
-
-  // Set connect accounts link URL
-  updateEarnConnectAccountsLink();
-
-  // Load earn data in parallel
-  await Promise.all([
-    loadEarnStats(),
-    loadEarnUsernameStep(),
-    loadEarnSocialCheckFromAPI(),
-  ]);
-}
-
-/**
- * Load earnings summary stats
- */
-async function loadEarnStats() {
-  const jwt = await getActiveJWT();
-  if (!jwt) return;
-
-  const totalEl = document.getElementById("earnTotalUsd");
-  const tipsEl = document.getElementById("earnTipCount");
-  const tippersEl = document.getElementById("earnTipperCount");
-
-  try {
-    const result = await GroveAPI.getEarningsSummary(jwt, "all");
-    if (result.success) {
-      const val = parseFloat(result.data.total_usd) || 0;
-      if (totalEl)
-        totalEl.textContent =
-          "$" +
-          val.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          });
-      if (tipsEl) tipsEl.textContent = result.data.tip_count.toLocaleString();
-      if (tippersEl)
-        tippersEl.textContent =
-          result.data.unique_tipper_count.toLocaleString();
-    }
-  } catch (err) {
-    console.error("[Grove Extension] Earn stats load failed:", err);
-    if (totalEl) totalEl.textContent = "--";
-    if (tipsEl) tipsEl.textContent = "--";
-    if (tippersEl) tippersEl.textContent = "--";
-  }
-}
-
-/**
- * Load username step state from storage
- */
-async function loadEarnUsernameStep() {
-  const result = await chrome.storage.local.get([STORAGE_KEYS.HANDLE]);
-  const handle = result[STORAGE_KEYS.HANDLE];
-  updateEarnUsernameUI(handle);
-}
-
-/**
- * Update the earn username step UI
- */
-function updateEarnUsernameUI(handle) {
-  const form = document.getElementById("earnUsernameForm");
-  const claimed = document.getElementById("earnUsernameClaimed");
-  const value = document.getElementById("earnUsernameValue");
-  const checkIcon = document.getElementById("earnUsernameCheck");
-
-  if (handle) {
-    if (form) form.classList.add("hidden");
-    if (claimed) claimed.classList.remove("hidden");
-    if (value) value.textContent = `@${handle}`;
-    if (checkIcon) checkIcon.classList.add("completed");
-    updateEarnProfileLink(handle);
-  } else {
-    if (form) form.classList.remove("hidden");
-    if (claimed) claimed.classList.add("hidden");
-    if (checkIcon) checkIcon.classList.remove("completed");
-    updateEarnProfileLink(null);
-  }
-}
-
-/**
- * Update the earn tab profile link
- */
-async function updateEarnProfileLink(handle) {
-  const link = document.getElementById("earnProfileLink");
-  if (!link) return;
-
-  if (handle) {
-    const result = await chrome.storage.local.get([
-      STORAGE_KEYS.ENDPOINT,
-      STORAGE_KEYS.ENVIRONMENT,
-    ]);
-    const envId = GroveEnv.resolveActiveEnvId(
-      result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV,
-      result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT,
-    );
-    const appUrl = GroveEnv.get(envId).appUrl;
-    link.href = `${appUrl}/${encodeURIComponent(handle)}`;
-    link.classList.remove("hidden");
-  } else {
-    link.classList.add("hidden");
-  }
-}
-
-/**
- * Set the connect accounts link to the web app profile settings page
- */
-async function updateEarnConnectAccountsLink() {
-  const link = document.getElementById("earnConnectAccountsLink");
-  if (!link) return;
-
-  const result = await chrome.storage.local.get([
-    STORAGE_KEYS.ENDPOINT,
-    STORAGE_KEYS.ENVIRONMENT,
-  ]);
-  const envId = GroveEnv.resolveActiveEnvId(
-    result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV,
-    result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT,
-  );
-  const appUrl = GroveEnv.get(envId).appUrl;
-  link.href = `${appUrl}/settings?tab=customize`;
-}
-
-/**
- * Check if user has social links and update the checkmark + label (read-only, no form)
- */
-async function loadEarnSocialCheckFromAPI() {
-  const jwt = await getActiveJWT();
-  if (!jwt) return;
-
-  try {
-    const result = await GroveAPI.getSocialLinks(jwt);
-    const links = result.success && Array.isArray(result.data) ? result.data : [];
-    const checkIcon = document.getElementById("earnSocialCheck");
-    const title = document.getElementById("earnConnectAccountsTitle");
-    const desc = document.getElementById("earnConnectAccountsDesc");
-
-    if (links.length > 0) {
-      if (checkIcon) checkIcon.classList.add("completed");
-      if (title) title.textContent = "Connect additional accounts";
-      if (desc) desc.textContent = "Manage your social profiles on our web app so people can tip you.";
-    } else {
-      if (checkIcon) checkIcon.classList.remove("completed");
-      if (title) title.textContent = "Connect your accounts";
-      if (desc) desc.textContent = "Add your social profiles on our web app so people can tip you.";
-    }
-  } catch (err) {
-    console.error("[Grove Extension] Social links check failed:", err);
-  }
-}
-
 /**
  * Core claim-handle logic shared by earn tab and settings tab.
  * Returns { success: true } or { success: false, error: string }.
@@ -1879,52 +1641,6 @@ async function claimHandleCore(handle) {
   await updateUsernameCard(handle);
   loadUsernameView();
   return { success: true };
-}
-
-/**
- * Handle username claim from earn tab
- */
-async function handleEarnClaimUsername() {
-  const input = document.getElementById("earnUsernameInput");
-  const btn = document.getElementById("earnUsernameClaimBtn");
-  const errorEl = document.getElementById("earnUsernameError");
-  const handle = input.value.trim().toLowerCase();
-
-  if (errorEl) errorEl.classList.add("hidden");
-
-  const validationError = validateHandle(handle);
-  if (validationError) {
-    if (errorEl) {
-      errorEl.textContent = validationError;
-      errorEl.classList.remove("hidden");
-    }
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = "Claiming...";
-
-  try {
-    const result = await claimHandleCore(handle);
-    if (!result.success) {
-      if (errorEl) {
-        errorEl.textContent = result.error;
-        errorEl.classList.remove("hidden");
-      }
-      return;
-    }
-    updateEarnUsernameUI(handle);
-    showToast(`Claimed @${handle}`);
-  } catch (error) {
-    console.error("[Grove Extension] Earn claim username error:", error);
-    if (errorEl) {
-      errorEl.textContent = "Something went wrong.";
-      errorEl.classList.remove("hidden");
-    }
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Claim";
-  }
 }
 
 async function copyTippingWallet() {
@@ -2742,27 +2458,6 @@ async function loadTopTippers() {
 }
 
 /**
- * Load Top Earners
- */
-async function loadTopEarners() {
-  const empty = document.getElementById("earners-empty");
-  const list = document.getElementById("earners-list");
-
-  empty.classList.add("hidden");
-  list.innerHTML = LeaderboardRenderer.renderSkeletonTable(false, 5);
-
-  const result = await GroveAPI.getTopEarners(currentPeriod, 10);
-
-  if (!result.success || result.data.entries.length === 0) {
-    list.innerHTML = "";
-    empty.classList.remove("hidden");
-    return;
-  }
-
-  list.innerHTML = LeaderboardRenderer.renderEarnersList(result.data.entries);
-}
-
-/**
  * Load Pool Stats (lifetime totals)
  */
 async function loadPoolStats() {
@@ -3203,64 +2898,14 @@ function renderHistoryList() {
 
 /**
  * Tip Button Intro Modal
- * Shows page 1 only when user first connects their account
- * Twitter connect (page 2) is shown separately after conditions are met
+ * Shows "You're all set!" when user first connects their account
  */
-
-async function checkAndShowEarnSetupModal(handle) {
-  // Only show if user has no username AND no social links
-  if (handle) return;
-
-  try {
-    const jwt = await getActiveJWT();
-    if (!jwt) return;
-    const result = await GroveAPI.getSocialLinks(jwt);
-    const links = result.success && Array.isArray(result.data) ? result.data : [];
-    if (links.length > 0) return;
-  } catch {
-    return;
-  }
-
-  showIntroModalPage1Only();
-}
-
-/**
- * Shows the intro modal (You're all set!)
- */
-function showIntroModalPage1Only() {
-  if (tipButtonIntroModal) {
-    tipButtonIntroModal.classList.remove("hidden");
-    if (tipIntroPage1) tipIntroPage1.classList.add("active");
-    // Hide the page indicator dots (only one page)
-    const dotsContainer = document.querySelector(".tip-intro-indicators");
-    if (dotsContainer) dotsContainer.style.display = "none";
-    // Set button text to "Got it"
-    if (tipIntroNextBtn) {
-      tipIntroNextBtn.innerHTML = "<span>Got it</span>";
-    }
-  }
-}
 
 async function hideTipIntroModal() {
   if (tipButtonIntroModal) {
     tipButtonIntroModal.classList.add("hidden");
   }
   await chrome.storage.local.set({ [STORAGE_KEYS.TIP_INTRO_SEEN]: true });
-  resetIntroModalState();
-}
-
-/**
- * Reset modal to default state
- */
-function resetIntroModalState() {
-  if (tipIntroPage1) tipIntroPage1.classList.add("active");
-  // Restore dots visibility
-  const dotsContainer = document.querySelector(".tip-intro-indicators");
-  if (dotsContainer) dotsContainer.style.display = "";
-  // Restore Next button text
-  if (tipIntroNextBtn) {
-    tipIntroNextBtn.innerHTML = "<span>Got it</span>";
-  }
 }
 
 /**
@@ -3304,466 +2949,6 @@ function togglePasswordVisibility() {
       path.classList.add("hidden");
     }
   });
-}
-
-// =============================================================================
-// CDP Auth Handlers
-// =============================================================================
-
-/**
- * Initialize CDP Auth event handlers
- */
-async function initCDPAuth() {
-  // Only initialize if CDP auth elements exist
-  if (!cdpEmailAuthBtn || !cdpPhoneAuthBtn) {
-    console.log(
-      "[CDPAuth] CDP auth elements not found, skipping initialization",
-    );
-    return;
-  }
-
-  // Email auth button
-  cdpEmailAuthBtn.addEventListener("click", () => {
-    showCDPIdentityModal("email");
-  });
-
-  // Phone auth button
-  cdpPhoneAuthBtn.addEventListener("click", () => {
-    showCDPIdentityModal("sms");
-  });
-
-  // Send code button
-  cdpSendCodeBtn?.addEventListener("click", handleSendCode);
-
-  // Cancel identity modal
-  cdpCancelIdentityBtn?.addEventListener("click", () => {
-    hideCDPModal(cdpIdentityModal);
-    resetCDPAuthState();
-  });
-
-  // Verify OTP button
-  cdpVerifyOtpBtn?.addEventListener("click", handleVerifyOTP);
-
-  // Resend code button
-  cdpResendCodeBtn?.addEventListener("click", handleResendCode);
-
-  // Cancel OTP modal
-  cdpCancelOtpBtn?.addEventListener("click", () => {
-    hideCDPModal(cdpOtpModal);
-    resetCDPAuthState();
-  });
-
-  // Enter key handlers
-  cdpIdentityInput?.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") handleSendCode();
-  });
-
-  cdpOtpInput?.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") handleVerifyOTP();
-  });
-
-  // Auto-format OTP input (numbers only, max 6 digits)
-  cdpOtpInput?.addEventListener("input", (e) => {
-    e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6);
-  });
-
-  // Restore any pending OTP verification state
-  const restored = await restoreCDPAuthState();
-  if (restored) {
-    console.log("[CDPAuth] Restored pending OTP verification");
-  }
-
-  console.log("[CDPAuth] Event handlers initialized");
-}
-
-/**
- * Show CDP identity modal for email or SMS
- */
-function showCDPIdentityModal(method) {
-  cdpAuthState.method = method;
-
-  if (method === "email") {
-    cdpIdentityLabel.textContent = "Enter your email address";
-    cdpIdentityInput.type = "email";
-    cdpIdentityInput.placeholder = "you@example.com";
-    cdpIdentityHint.textContent =
-      "You'll receive a verification code from Coinbase";
-  } else {
-    cdpIdentityLabel.textContent = "Enter your phone number";
-    cdpIdentityInput.type = "tel";
-    cdpIdentityInput.placeholder = "+1 (555) 123-4567";
-    cdpIdentityHint.textContent = "We'll send you a verification code";
-  }
-
-  cdpIdentityInput.value = "";
-  showCDPModal(cdpIdentityModal);
-  cdpIdentityInput.focus();
-}
-
-/**
- * Handle sending verification code
- */
-async function handleSendCode() {
-  const destination = cdpIdentityInput.value.trim();
-
-  if (!destination) {
-    showToast(
-      "Please enter your " +
-        (cdpAuthState.method === "email" ? "email" : "phone number"),
-      "error",
-    );
-    return;
-  }
-
-  // Validate email format (text@text.text)
-  if (cdpAuthState.method === "email") {
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(destination)) {
-      showToast("Please enter a valid email address", "error");
-      return;
-    }
-  }
-
-  // Validate phone number (E.164: optional + followed by 10-15 digits)
-  if (cdpAuthState.method === "sms") {
-    const digitsOnly = destination.replace(/\D/g, "");
-    if (digitsOnly.length < 10 || digitsOnly.length > 15) {
-      showToast("Please enter a valid phone number with country code", "error");
-      return;
-    }
-  }
-
-  cdpAuthState.destination = destination;
-
-  // Show loading
-  showCDPLoading("Sending verification code...");
-
-  try {
-    // Check if CDPAuth is available (loaded from bundle)
-    if (typeof window.CDPAuth === "undefined") {
-      throw new Error("CDP Auth not loaded. Please refresh the extension.");
-    }
-
-    let result;
-    if (cdpAuthState.method === "email") {
-      result = await window.CDPAuth.startEmailAuth(destination);
-    } else {
-      result = await window.CDPAuth.startSmsAuth(destination);
-    }
-
-    cdpAuthState.flowId = result.flowId;
-
-    // Persist state so it survives popup close
-    await saveCDPAuthState();
-
-    hideCDPModal(cdpLoadingModal);
-    hideCDPModal(cdpIdentityModal);
-
-    // Show OTP modal
-    cdpOtpDestination.textContent = destination;
-    cdpOtpInput.value = "";
-    showCDPModal(cdpOtpModal);
-    cdpOtpInput.focus();
-
-    // Start resend cooldown
-    startResendCooldown();
-
-    showToast("Verification code sent!", "success");
-  } catch (error) {
-    hideCDPModal(cdpLoadingModal);
-    console.error("[CDPAuth] Error sending code:", error);
-    showToast(error.message || "Failed to send verification code", "error");
-  }
-}
-
-/**
- * Handle OTP verification
- */
-async function handleVerifyOTP() {
-  const otp = cdpOtpInput.value.trim();
-
-  if (otp.length !== 6) {
-    showToast("Please enter the 6-digit code", "error");
-    return;
-  }
-
-  showCDPLoading("Verifying code...");
-
-  try {
-    // Verify OTP and get CDP token
-    const cdpToken = await window.CDPAuth.verifyOTP(
-      cdpAuthState.flowId,
-      otp,
-      cdpAuthState.method,
-    );
-
-    showCDPLoading("Creating your account...");
-
-    // Get the active endpoint for token exchange
-    const endpoint = await getActiveEndpoint();
-
-    // Exchange CDP token for Grove JWT
-    const result = await window.CDPAuth.exchangeForGroveJWT(cdpToken, endpoint);
-
-    // Store the JWT in the appropriate slot
-    const slotId = await getSlotForEndpoint(endpoint);
-    await KeyManager.setJWT(slotId, result.api_key);
-
-    // Store the CDP identity info for display in settings
-    await chrome.storage.local.set({
-      [STORAGE_KEYS.CDP_IDENTITY_TYPE]: cdpAuthState.method,
-      [STORAGE_KEYS.CDP_IDENTITY_VALUE]: cdpAuthState.destination,
-    });
-
-    // Close all modals
-    hideCDPModal(cdpLoadingModal);
-    hideCDPModal(cdpOtpModal);
-    await resetCDPAuthState();
-
-    // Refresh the UI to show connected state
-    await refreshUIState();
-
-    const welcomeMsg = result.is_new_account
-      ? "Account created!"
-      : "Welcome back!";
-    showToast(welcomeMsg + " You can now send tips.", "success");
-  } catch (error) {
-    hideCDPModal(cdpLoadingModal);
-    console.error("[CDPAuth] Error verifying OTP:", error);
-
-    // Check if this is a session/flow expired error
-    const errorMsg = error.message || "";
-    if (
-      errorMsg.toLowerCase().includes("expired") ||
-      errorMsg.toLowerCase().includes("invalid") ||
-      errorMsg.toLowerCase().includes("not found") ||
-      errorMsg.toLowerCase().includes("session")
-    ) {
-      // Clear stale state and prompt to restart
-      await resetCDPAuthState();
-      hideCDPModal(cdpOtpModal);
-      showToast("Session expired. Please request a new code.", "error");
-    } else {
-      showToast(error.message || "Verification failed", "error");
-    }
-  }
-}
-
-/**
- * Handle resending verification code
- */
-async function handleResendCode() {
-  if (cdpAuthState.resendCountdown > 0) return;
-
-  showCDPLoading("Resending code...");
-
-  try {
-    let result;
-    if (cdpAuthState.method === "email") {
-      result = await window.CDPAuth.startEmailAuth(cdpAuthState.destination);
-    } else {
-      result = await window.CDPAuth.startSmsAuth(cdpAuthState.destination);
-    }
-
-    cdpAuthState.flowId = result.flowId;
-    hideCDPModal(cdpLoadingModal);
-
-    startResendCooldown();
-    showToast("Code resent!", "success");
-  } catch (error) {
-    hideCDPModal(cdpLoadingModal);
-    console.error("[CDPAuth] Error resending code:", error);
-    showToast(error.message || "Failed to resend code", "error");
-  }
-}
-
-/**
- * Start the resend cooldown timer
- * @param {number} [seconds=60] - Optional starting countdown value (used when restoring state)
- */
-function startResendCooldown(seconds = 60) {
-  // Clear any existing timer to prevent memory leaks
-  if (cdpAuthState.resendTimer) {
-    clearInterval(cdpAuthState.resendTimer);
-  }
-
-  cdpAuthState.resendCountdown = seconds;
-  updateResendButton();
-
-  cdpAuthState.resendTimer = setInterval(() => {
-    cdpAuthState.resendCountdown--;
-    updateResendButton();
-
-    if (cdpAuthState.resendCountdown <= 0) {
-      clearInterval(cdpAuthState.resendTimer);
-      cdpAuthState.resendTimer = null;
-    }
-  }, 1000);
-}
-
-/**
- * Update the resend button text
- */
-function updateResendButton() {
-  if (!cdpResendCodeBtn) return;
-
-  if (cdpAuthState.resendCountdown > 0) {
-    cdpResendCodeBtn.textContent = `Resend code (${cdpAuthState.resendCountdown}s)`;
-    cdpResendCodeBtn.disabled = true;
-  } else {
-    cdpResendCodeBtn.textContent = "Resend code";
-    cdpResendCodeBtn.disabled = false;
-  }
-}
-
-/**
- * Reset CDP auth state
- */
-async function resetCDPAuthState() {
-  if (cdpAuthState.resendTimer) {
-    clearInterval(cdpAuthState.resendTimer);
-  }
-  cdpAuthState = {
-    method: null,
-    flowId: null,
-    destination: null,
-    resendTimer: null,
-    resendCountdown: 0,
-  };
-  // Clear persisted state
-  await chrome.storage.local.remove(STORAGE_KEYS.CDP_AUTH_STATE);
-}
-
-/**
- * Save CDP auth state to storage (for persistence across popup close)
- */
-async function saveCDPAuthState() {
-  const stateToSave = {
-    method: cdpAuthState.method,
-    flowId: cdpAuthState.flowId,
-    destination: cdpAuthState.destination,
-    timestamp: Date.now(),
-    // Save when cooldown expires (not the countdown itself) to handle popup close/reopen
-    resendCooldownUntil:
-      cdpAuthState.resendCountdown > 0
-        ? Date.now() + cdpAuthState.resendCountdown * 1000
-        : null,
-  };
-  await chrome.storage.local.set({
-    [STORAGE_KEYS.CDP_AUTH_STATE]: stateToSave,
-  });
-}
-
-/**
- * Restore CDP auth state from storage
- */
-async function restoreCDPAuthState() {
-  const result = await chrome.storage.local.get(STORAGE_KEYS.CDP_AUTH_STATE);
-  const savedState = result[STORAGE_KEYS.CDP_AUTH_STATE];
-
-  if (!savedState) return false;
-
-  // Validate restored state structure
-  if (
-    !["email", "sms"].includes(savedState.method) ||
-    typeof savedState.flowId !== "string" ||
-    !savedState.flowId ||
-    typeof savedState.destination !== "string" ||
-    !savedState.destination
-  ) {
-    await chrome.storage.local.remove(STORAGE_KEYS.CDP_AUTH_STATE);
-    return false;
-  }
-
-  // Check if state is too old (5 minutes)
-  const MAX_AGE = 5 * 60 * 1000;
-  if (Date.now() - savedState.timestamp > MAX_AGE) {
-    await chrome.storage.local.remove(STORAGE_KEYS.CDP_AUTH_STATE);
-    return false;
-  }
-
-  // Re-initialize CDP SDK (required after popup close/reopen)
-  try {
-    if (typeof window.CDPAuth !== "undefined" && window.CDPAuth.initializeCDP) {
-      await window.CDPAuth.initializeCDP();
-    }
-  } catch (error) {
-    console.error("[CDPAuth] Failed to reinitialize SDK:", error);
-    await chrome.storage.local.remove(STORAGE_KEYS.CDP_AUTH_STATE);
-    return false;
-  }
-
-  // Restore state
-  cdpAuthState.method = savedState.method;
-  cdpAuthState.flowId = savedState.flowId;
-  cdpAuthState.destination = savedState.destination;
-
-  // Restore resend cooldown if still active
-  if (savedState.resendCooldownUntil) {
-    const remainingMs = savedState.resendCooldownUntil - Date.now();
-    if (remainingMs > 0) {
-      startResendCooldown(Math.ceil(remainingMs / 1000));
-    }
-  }
-
-  // Show OTP modal
-  if (cdpOtpDestination) {
-    cdpOtpDestination.textContent = savedState.destination;
-  }
-  if (cdpOtpInput) {
-    cdpOtpInput.value = "";
-  }
-  showCDPModal(cdpOtpModal);
-  if (cdpOtpInput) {
-    cdpOtpInput.focus();
-  }
-
-  return true;
-}
-
-/**
- * Show a CDP modal
- */
-function showCDPModal(modal) {
-  if (modal) {
-    modal.classList.remove("hidden");
-  }
-}
-
-/**
- * Hide a CDP modal
- */
-function hideCDPModal(modal) {
-  if (modal) {
-    modal.classList.add("hidden");
-  }
-}
-
-/**
- * Show CDP loading modal with message
- */
-function showCDPLoading(message) {
-  if (cdpLoadingMessage) {
-    cdpLoadingMessage.textContent = message;
-  }
-  showCDPModal(cdpLoadingModal);
-}
-
-/**
- * Get the active API endpoint URL
- */
-async function getActiveEndpoint() {
-  const slotId = await KeyManager.getActiveSlotId();
-  const config = KeyManager.getEnvConfig(slotId);
-  return config?.apiUrl || "https://api.grove.city";
-}
-
-/**
- * Get the slot ID for a given endpoint URL
- */
-async function getSlotForEndpoint(endpoint) {
-  if (endpoint.includes("localhost")) return "localhost";
-  if (endpoint.includes("testnet")) return "testnet";
-  return "production";
 }
 
 /**

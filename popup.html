@@ -21,7 +21,6 @@
   <script src="src/utils/updateChecker.js"></script>
   <script src="src/storage/keyManager.js"></script>
   <script src="src/ui/prevKeysUI.js"></script>
-  <script src="dist/cdp-auth-bundle.js"></script>
   <script src="src/parsers/destination.js"></script>
   <script src="src/ui/constants.js"></script>
 </head>
@@ -108,99 +107,29 @@
             </button>
           </div>
 
-          <!-- Step 2: How it works -->
+          <!-- Step 2: Get Started -->
           <div class="onboarding-step" data-step="2">
             <div class="onboarding-content">
-              <h2 class="onboarding-title">How it works</h2>
-              <div class="feature-cards">
-                <div class="feature-card">
-                  <div class="feature-card-icon send-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M22 2L11 13"></path>
-                      <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
-                    </svg>
-                  </div>
-                  <div class="feature-card-content">
-                    <h3>Send tips</h3>
-                    <p>One click on any post</p>
-                  </div>
-                </div>
-                <div class="feature-card">
-                  <div class="feature-card-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <line x1="12" y1="1" x2="12" y2="23"></line>
-                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                    </svg>
-                  </div>
-                  <div class="feature-card-content">
-                    <h3>Earn from your posts</h3>
-                    <p>Create your profile to receive</p>
-                  </div>
-                </div>
-              </div>
+              <h2 class="onboarding-title">Get Started</h2>
+              <p class="onboarding-subtitle">Create your account at grove.city to start tipping and earning</p>
             </div>
-            <button class="onboarding-btn-next" data-next="3">
-              <span>Continue</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </button>
-          </div>
-
-          <!-- Step 3: Connect -->
-          <div class="onboarding-step" data-step="3">
-            <div class="onboarding-content">
-              <h2 class="onboarding-title">Sign In</h2>
-              <p class="onboarding-subtitle">Log in or sign up to start tipping</p>
-            </div>
-
-            <!-- CDP Auth Buttons -->
-            <div class="cdp-auth-methods">
-              <button class="cdp-auth-btn" id="emailAuthBtn">
-                <svg class="cdp-auth-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                  <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
-                <span>Continue with Email</span>
-              </button>
-
-              <button class="cdp-auth-btn" id="smsAuthBtn">
-                <svg class="cdp-auth-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-                  <line x1="12" y1="18" x2="12.01" y2="18"></line>
-                </svg>
-                <span>Continue with Phone</span>
-              </button>
-
-              <div class="cdp-auth-divider">
-                <span>or</span>
-              </div>
-
-              <a class="cdp-auth-btn cdp-auth-btn-secondary" id="walletSignInBtn" href="https://grove.city/" target="_blank" rel="noopener noreferrer">
-                <svg class="cdp-auth-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-                <span>Sign in with Wallet</span>
-                <svg class="cdp-auth-external" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <line x1="10" y1="14" x2="21" y2="3"></line>
-                </svg>
-              </a>
-            </div>
+            <a class="onboarding-btn-next onboarding-btn-primary" id="walletSignInBtn" href="https://grove.city/extension" target="_blank" rel="noopener noreferrer">
+              <span>Open grove.city</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </a>
           </div>
 
           <!-- Progress Dots (at bottom) -->
           <div class="onboarding-progress">
             <div class="progress-dot active" data-step="1"></div>
             <div class="progress-dot" data-step="2"></div>
-            <div class="progress-dot" data-step="3"></div>
           </div>
         </div>
       </div>
 
       <!-- Connected State -->
       <div id="connectedState">
-        <h2 class="page-title">Tip Jar</h2>
+        <h2 class="page-title">Home</h2>
 
         <!-- Unified Tipping Card -->
         <div class="section-card tipping-card" id="tippingCard">
@@ -226,6 +155,30 @@
                 <path d="M12 2v20m0-20L5 9m7-7l7 7" />
               </svg>
               <span>Top Up</span>
+            </a>
+          </div>
+
+          <!-- Earnings Row -->
+          <div class="tipping-row" id="earningsRow">
+            <div class="tipping-row-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+            </div>
+            <div class="tipping-row-content">
+              <div class="tipping-row-label">Earnings</div>
+              <div class="tipping-row-value amount-display" id="earningsDisplay">
+                <span class="currency-symbol">$</span>
+                <span class="amount-value" id="earningsAmount">0.00</span>
+                <div class="balance-spinner"></div>
+              </div>
+            </div>
+            <a href="https://grove.city/balances" target="_blank" class="card-action-btn secondary" id="withdrawBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v20m0 20L5 15m7 7l7-7" />
+              </svg>
+              <span>Withdraw</span>
             </a>
           </div>
 
@@ -284,9 +237,6 @@
             </label>
           </div>
         </div>
-
-        <!-- Spacer to push settings to bottom -->
-        <div class="home-spacer"></div>
 
         <!-- Username Card -->
         <button class="section-card section-card-btn settings-card-bottom" id="homeUsernameBtn">
@@ -501,131 +451,6 @@
         <div id="top-list" class="feed-list"></div>
       </div>
 
-    </div>
-
-    <!-- Earn Tips Page -->
-    <div class="page" id="tab-earn">
-      <h2 class="page-title">Earn Tips</h2>
-
-      <!-- Logged Out State -->
-      <div class="earn-logged-out hidden" id="earnLoggedOut">
-        <div class="earn-logged-out-icon">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="1" x2="12" y2="23"></line>
-            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-          </svg>
-        </div>
-        <h3 class="earn-logged-out-title">Earn for your content</h3>
-        <p class="earn-logged-out-desc">Set up your profile so anyone with the Grove extension can tip you anywhere on the web.</p>
-        <button class="earn-sign-in-btn" id="earnSignInBtn">
-          Sign In to Get Started
-        </button>
-      </div>
-
-      <!-- Logged In State -->
-      <div class="earn-logged-in hidden" id="earnLoggedIn">
-
-        <!-- Earnings Summary -->
-        <div class="section-card earn-stats-card" id="earnStatsCard">
-          <div class="earn-stats-row">
-            <div class="earn-stat">
-              <span class="earn-stat-value" id="earnTotalUsd">$0.00</span>
-              <span class="earn-stat-label">Earned</span>
-            </div>
-            <div class="earn-stat-divider"></div>
-            <div class="earn-stat">
-              <span class="earn-stat-value" id="earnTipCount">0</span>
-              <span class="earn-stat-label">Tips</span>
-            </div>
-            <div class="earn-stat-divider"></div>
-            <div class="earn-stat">
-              <span class="earn-stat-value" id="earnTipperCount">0</span>
-              <span class="earn-stat-label">Tippers</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Setup Checklist -->
-        <div class="section-card earn-card">
-
-          <!-- Step 1: Claim Username -->
-          <div class="earn-checklist-item" id="earnUsernameStep">
-            <div class="earn-checklist-icon" id="earnUsernameCheck">
-              <span class="earn-step-number">1</span>
-              <svg class="earn-check-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
-            </div>
-            <div class="earn-checklist-content">
-              <div class="earn-checklist-title">Claim your username</div>
-              <!-- Unclaimed: show input -->
-              <div class="earn-username-form" id="earnUsernameForm">
-                <div class="earn-username-input-row">
-                  <span class="earn-username-prefix">@</span>
-                  <input type="text" class="earn-username-input" id="earnUsernameInput" placeholder="username" maxlength="15" autocomplete="off" spellcheck="false" />
-                  <button class="earn-username-claim-btn" id="earnUsernameClaimBtn">Claim</button>
-                </div>
-                <p class="earn-username-hint">4-15 chars. Lowercase, numbers, underscores.</p>
-                <p class="earn-username-error hidden" id="earnUsernameError"></p>
-              </div>
-              <!-- Claimed: show handle -->
-              <div class="earn-username-claimed hidden" id="earnUsernameClaimed">
-                <span class="earn-username-value" id="earnUsernameValue"></span>
-              </div>
-            </div>
-          </div>
-
-          <div class="earn-checklist-divider"></div>
-
-          <!-- Step 2: Connect Accounts (links to web app) -->
-          <div class="earn-checklist-item" id="earnSocialStep">
-            <div class="earn-checklist-icon" id="earnSocialCheck">
-              <span class="earn-step-number">2</span>
-              <svg class="earn-check-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
-            </div>
-            <div class="earn-checklist-content">
-              <a class="earn-connect-accounts-link" id="earnConnectAccountsLink" href="#" target="_blank">
-                <div class="earn-connect-accounts-row">
-                  <div>
-                    <div class="earn-checklist-title" id="earnConnectAccountsTitle">Connect your accounts</div>
-                    <p class="earn-checklist-desc" id="earnConnectAccountsDesc">Add your social profiles on our web app so people can tip you.</p>
-                  </div>
-                  <svg class="earn-connect-external-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                  </svg>
-                </div>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <!-- View Profile Link -->
-        <a class="section-card section-card-btn settings-card-bottom earn-profile-link hidden" id="earnProfileLink" href="#" target="_blank">
-          <div class="card-row">
-            <div class="tipping-row-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-            </div>
-            <span class="settings-card-title">View Profile</span>
-            <div class="card-chevron">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-            </div>
-          </div>
-        </a>
-
-      </div>
     </div>
 
     <!-- Settings Page -->
@@ -1180,7 +1005,7 @@
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
         <polyline points="9 22 9 12 15 12 15 22"></polyline>
       </svg>
-      <span class="nav-label">Tip Jar</span>
+      <span class="nav-label">Home</span>
     </button>
     <button class="nav-item" data-target="tab-history">
       <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1195,17 +1020,6 @@
         <path d="M4 6h16M4 12h16M4 18h7"></path>
       </svg>
       <span class="nav-label">Feed</span>
-    </button>
-<button class="nav-item nav-item-with-badge" data-target="tab-earn">
-      <div class="nav-icon-wrapper">
-        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="2" x2="12" y2="22"></line>
-          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-        </svg>
-        <span class="nav-badge-dot hidden"></span>
-      </div>
-      <span class="nav-label">Earn</span>
     </button>
   </nav>
 
@@ -1227,7 +1041,7 @@
           </div>
         </div>
         <div class="tip-intro-actions">
-          <button class="btn-primary btn-full" id="tipIntroEarnBtn">Start Earning Tips</button>
+          <button class="btn-primary btn-full" id="tipIntroGotItBtn">Got it</button>
         </div>
       </div>
 
@@ -1235,68 +1049,6 @@
       <div class="tip-intro-indicators">
         <div class="tip-intro-dot active" data-page="1"></div>
       </div>
-    </div>
-  </div>
-
-  <!-- CDP Auth: Identity Input Modal -->
-  <div class="modal-overlay hidden" id="cdpIdentityModal">
-    <div class="modal-content cdp-modal">
-      <div class="cdp-modal-header">
-        <button class="cdp-modal-back" id="cdpCancelIdentityBtn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-        <h3 id="cdpIdentityLabel">Enter your email</h3>
-      </div>
-      <div class="cdp-modal-body">
-        <div class="cdp-input-group">
-          <input type="email" id="cdpIdentityInput" class="cdp-input" placeholder="you@example.com" autocomplete="email">
-        </div>
-        <p class="cdp-modal-hint" id="cdpIdentityHint">We'll send you a verification code</p>
-      </div>
-      <div class="cdp-modal-footer">
-        <button class="btn-primary btn-full" id="cdpSendCodeBtn">
-          <span>Send Code</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CDP Auth: OTP Verification Modal -->
-  <div class="modal-overlay hidden" id="cdpOtpModal">
-    <div class="modal-content cdp-modal">
-      <div class="cdp-modal-header">
-        <button class="cdp-modal-back" id="cdpCancelOtpBtn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-        <h3>Enter verification code</h3>
-      </div>
-      <div class="cdp-modal-body">
-        <p class="cdp-modal-subtitle" id="cdpOtpDestination">We sent a code to your email</p>
-        <div class="cdp-otp-input-group">
-          <input type="text" id="cdpOtpInput" class="cdp-otp-input" maxlength="6" placeholder="000000" inputmode="numeric" autocomplete="one-time-code">
-        </div>
-        <p class="cdp-modal-error hidden" id="cdpOtpError">Invalid code. Please try again.</p>
-      </div>
-      <div class="cdp-modal-footer">
-        <button class="btn-primary btn-full" id="cdpVerifyOtpBtn">
-          <span>Verify</span>
-        </button>
-        <button class="btn-text cdp-resend-btn" id="cdpResendCodeBtn">
-          <span>Resend code</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CDP Auth: Loading Modal -->
-  <div class="modal-overlay hidden" id="cdpLoadingModal">
-    <div class="modal-content cdp-modal cdp-loading-modal">
-      <div class="cdp-loading-spinner"></div>
-      <p id="cdpLoadingMessage">Creating your account...</p>
     </div>
   </div>
 
