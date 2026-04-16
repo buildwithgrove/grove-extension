@@ -139,6 +139,141 @@ describe('parseDestination', () => {
     });
   });
 
+  describe('YouTube URLs', () => {
+    it('should parse @handle profile', () => {
+      const result = parseDestination('https://youtube.com/@mkbhd');
+      expect(result).toEqual({ profileUrl: 'https://youtube.com/@mkbhd', postUrl: null, profileHandle: '@mkbhd' });
+    });
+
+    it('should parse /c/name channel', () => {
+      const result = parseDestination('https://youtube.com/c/LinusTechTips');
+      expect(result).toEqual({ profileUrl: 'https://youtube.com/c/LinusTechTips', postUrl: null, profileHandle: 'LinusTechTips' });
+    });
+
+    it('should parse watch URL as postUrl', () => {
+      const result = parseDestination('https://youtube.com/watch?v=abc123');
+      expect(result).toEqual({ profileUrl: null, postUrl: 'https://youtube.com/watch?v=abc123', profileHandle: null });
+    });
+  });
+
+  describe('Substack URLs', () => {
+    it('should parse substack.com/@author profile', () => {
+      const result = parseDestination('https://substack.com/@casey');
+      expect(result).toEqual({ profileUrl: 'https://substack.com/@casey', postUrl: null, profileHandle: '@casey' });
+    });
+
+    it('should parse author.substack.com profile', () => {
+      const result = parseDestination('casey.substack.com');
+      expect(result.profileUrl).toBe('https://casey.substack.com');
+      expect(result.profileHandle).toBe('casey');
+      expect(result.postUrl).toBeNull();
+    });
+
+    it('should parse author.substack.com/p/slug as post', () => {
+      const result = parseDestination('casey.substack.com/p/my-post');
+      expect(result.profileUrl).toBe('https://casey.substack.com');
+      expect(result.postUrl).toBe('https://casey.substack.com/p/my-post');
+    });
+  });
+
+  describe('SoundCloud URLs', () => {
+    it('should parse soundcloud.com/artist', () => {
+      const result = parseDestination('https://soundcloud.com/deadmau5');
+      expect(result).toEqual({ profileUrl: 'https://soundcloud.com/deadmau5', postUrl: null, profileHandle: 'deadmau5' });
+    });
+
+    it('should not parse reserved paths', () => {
+      const result = parseDestination('https://soundcloud.com/stream');
+      expect(result.profileHandle).toBeNull();
+    });
+  });
+
+  describe('GitHub URLs', () => {
+    it('should parse github.com/username', () => {
+      const result = parseDestination('https://github.com/torvalds');
+      expect(result).toEqual({ profileUrl: 'https://github.com/torvalds', postUrl: null, profileHandle: 'torvalds' });
+    });
+  });
+
+  describe('TikTok URLs', () => {
+    it('should parse tiktok.com/@handle', () => {
+      const result = parseDestination('https://tiktok.com/@charlidamelio');
+      expect(result).toEqual({ profileUrl: 'https://tiktok.com/@charlidamelio', postUrl: null, profileHandle: '@charlidamelio' });
+    });
+  });
+
+  describe('Twitch URLs', () => {
+    it('should parse twitch.tv/username', () => {
+      const result = parseDestination('https://twitch.tv/ninja');
+      expect(result).toEqual({ profileUrl: 'https://twitch.tv/ninja', postUrl: null, profileHandle: 'ninja' });
+    });
+  });
+
+  describe('Telegram URLs', () => {
+    it('should parse t.me/username', () => {
+      const result = parseDestination('https://t.me/durov');
+      expect(result).toEqual({ profileUrl: 'https://t.me/durov', postUrl: null, profileHandle: '@durov' });
+    });
+  });
+
+  describe('Instagram URLs', () => {
+    it('should parse instagram.com/username', () => {
+      const result = parseDestination('https://instagram.com/cristiano');
+      expect(result).toEqual({ profileUrl: 'https://instagram.com/cristiano', postUrl: null, profileHandle: '@cristiano' });
+    });
+
+    it('should not parse reserved paths', () => {
+      const result = parseDestination('https://instagram.com/p/abc123');
+      expect(result.profileHandle).toBeNull();
+    });
+  });
+
+  describe('LinkedIn URLs', () => {
+    it('should parse linkedin.com/in/username', () => {
+      const result = parseDestination('https://linkedin.com/in/satyanadella');
+      expect(result).toEqual({ profileUrl: 'https://linkedin.com/in/satyanadella', postUrl: null, profileHandle: 'satyanadella' });
+    });
+  });
+
+  describe('Medium URLs', () => {
+    it('should parse medium.com/@username profile', () => {
+      const result = parseDestination('https://medium.com/@ev');
+      expect(result).toEqual({ profileUrl: 'https://medium.com/@ev', postUrl: null, profileHandle: '@ev' });
+    });
+
+    it('should parse medium.com/@username/post as post', () => {
+      const result = parseDestination('https://medium.com/@ev/my-post-abc123');
+      expect(result.profileUrl).toBe('https://medium.com/@ev');
+      expect(result.postUrl).toBe('https://medium.com/@ev/my-post-abc123');
+    });
+  });
+
+  describe('Reddit URLs', () => {
+    it('should parse reddit.com/u/username', () => {
+      const result = parseDestination('https://reddit.com/u/spez');
+      expect(result).toEqual({ profileUrl: 'https://reddit.com/u/spez', postUrl: null, profileHandle: 'u/spez' });
+    });
+
+    it('should parse reddit.com/user/username', () => {
+      const result = parseDestination('https://reddit.com/user/spez');
+      expect(result.profileHandle).toBe('u/spez');
+    });
+  });
+
+  describe('Bluesky URLs', () => {
+    it('should parse bsky.app/profile/handle', () => {
+      const result = parseDestination('https://bsky.app/profile/jay.bsky.social');
+      expect(result).toEqual({ profileUrl: 'https://bsky.app/profile/jay.bsky.social', postUrl: null, profileHandle: 'jay.bsky.social' });
+    });
+  });
+
+  describe('Grove URLs', () => {
+    it('should parse grove.city/handle', () => {
+      const result = parseDestination('https://grove.city/arthursabintsev');
+      expect(result).toEqual({ profileUrl: 'https://grove.city/arthursabintsev', postUrl: null, profileHandle: 'arthursabintsev' });
+    });
+  });
+
   describe('other URLs', () => {
     it('should return postUrl for unknown URLs', () => {
       const result = parseDestination('example.com/some/path');

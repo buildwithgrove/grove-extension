@@ -844,7 +844,12 @@ const LeaderboardRenderer = {
       const RESERVED_X = new Set(['i','intent','search','hashtag','explore','home','settings','messages','notifications']);
       if (p === 'x' || p === 'twitter') return segments.length === 1 && !RESERVED_X.has(segments[0].toLowerCase());
       if (p === 'substack') return segments.length === 0;
-      if (p === 'youtube') return segments.length > 0 && (segments[0].startsWith('@') || segments[0] === 'c' || segments[0] === 'channel') && !parsed.searchParams.has('v');
+      if (p === 'youtube') {
+        if (parsed.searchParams.has('v')) return false;
+        if (segments.length === 1 && segments[0].startsWith('@')) return true;
+        if (segments.length === 2 && (segments[0] === 'c' || segments[0] === 'channel')) return true;
+        return false;
+      }
       if (p === 'github') return segments.length === 1;
       return false;
     } catch { return false; }

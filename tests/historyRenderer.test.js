@@ -17,6 +17,7 @@ beforeEach(() => {
 
   // Load dependencies in order
   loadBrowserScript('src/utils/formatUtils.js', context);
+  loadBrowserScript('src/parsers/destination.js', context);
   loadBrowserScript('src/ui/leaderboardRenderer.js', context);
 
   // Load HistoryRenderer
@@ -128,6 +129,79 @@ describe('HistoryRenderer', () => {
     it('should return empty span when no txHash', () => {
       const html = HistoryRenderer.buildTxLink('base', null);
       expect(html).toContain('history-tx-link-empty');
+    });
+  });
+
+  describe('renderHistoryEntry', () => {
+    it('should render a tip_sent transaction', () => {
+      const tx = {
+        type: 'tip_sent',
+        status: 'success',
+        amount_usd: '5.00',
+        amount: '5000000',
+        network: 'base',
+        tx_hash: '0xabc',
+        created_at: new Date().toISOString(),
+        destination: 'https://x.com/testuser',
+        context: {}
+      };
+      const html = HistoryRenderer.renderHistoryEntry(tx);
+      expect(html).toContain('transaction-item');
+      expect(html).toContain('tip_sent');
+      expect(html).toContain('Tipped');
+    });
+
+    it('should render a tip_received transaction', () => {
+      const tx = {
+        type: 'tip_received',
+        status: 'success',
+        amount_usd: '2.50',
+        amount: '2500000',
+        network: 'base',
+        tx_hash: '0xdef',
+        created_at: new Date().toISOString(),
+        destination: null,
+        context: { sender_username: 'alice' }
+      };
+      const html = HistoryRenderer.renderHistoryEntry(tx);
+      expect(html).toContain('transaction-item');
+      expect(html).toContain('tip_received');
+      expect(html).toContain('Earned');
+      expect(html).toContain('@alice');
+    });
+
+    it('should render a failed transaction with failed styling', () => {
+      const tx = {
+        type: 'tip_sent',
+        status: 'failed',
+        amount_usd: '1.00',
+        amount: '1000000',
+        network: 'base',
+        tx_hash: null,
+        created_at: new Date().toISOString(),
+        destination: null,
+        context: {}
+      };
+      const html = HistoryRenderer.renderHistoryEntry(tx);
+      expect(html).toContain('Tip Failed');
+      expect(html).toContain('class="transaction-item-icon failed"');
+    });
+
+    it('should use Grove handle when destination is grove.city URL', () => {
+      const tx = {
+        type: 'tip_sent',
+        status: 'success',
+        amount_usd: '1.00',
+        amount: '1000000',
+        network: 'base',
+        tx_hash: '0x123',
+        created_at: new Date().toISOString(),
+        destination: 'https://grove.city/arthursabintsev',
+        context: {}
+      };
+      const html = HistoryRenderer.renderHistoryEntry(tx);
+      expect(html).toContain('arthursabintsev');
+      expect(html).toContain('grove.city');
     });
   });
 });
