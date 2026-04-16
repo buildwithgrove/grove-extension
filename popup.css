@@ -158,6 +158,12 @@ body {
   object-fit: contain;
 }
 
+.logo-container a {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
 /* Test Mode Banner */
 .test-mode-banner {
   background-color: #f59e0b;
@@ -548,6 +554,116 @@ body {
   box-shadow: 0 4px 24px rgba(56, 159, 88, 0.08);
   background: linear-gradient(145deg, var(--color-surface) 0%, rgba(56, 159, 88, 0.04) 100%);
   padding: 20px;
+}
+
+/* Balance Hero */
+.balance-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0 16px;
+  gap: 6px;
+}
+
+.balance-hero-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--color-text-secondary);
+}
+
+.balance-hero-total {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.balance-hero-currency {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.balance-hero-amount {
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  color: var(--color-primary);
+  line-height: 1;
+  text-shadow: 0 2px 12px rgba(56, 159, 88, 0.25);
+}
+
+.balance-manage-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 22px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s;
+  margin-top: 4px;
+}
+
+.balance-manage-btn:hover {
+  background: var(--color-primary-hover);
+}
+
+/* Balance Breakdown */
+.balance-breakdown {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 0 4px;
+  border-top: 1px solid var(--color-border);
+  margin-top: 4px;
+}
+
+.balance-breakdown-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.balance-breakdown-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
+}
+
+.balance-breakdown-col .amount-display .currency-symbol,
+.balance-breakdown-col .amount-display .amount-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.balance-breakdown-sep {
+  width: 1px;
+  height: 36px;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+/* Home Header (title + My Profile link) */
+.home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.home-header .page-title {
+  margin: 0;
 }
 
 .tipping-row {

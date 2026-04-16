@@ -32,7 +32,7 @@ const confirmTipToggle = document.getElementById("confirmTipToggle");
 // Balance
 const balanceAmount = document.getElementById("balanceAmount");
 const balanceDisplay = document.getElementById("balanceDisplay");
-const topUpBtn = document.getElementById("topUpBtn");
+const manageBalanceBtn = document.getElementById("manageBalanceBtn");
 
 // Settings
 const devModeToggle = document.getElementById("devModeCheckbox");
@@ -196,7 +196,7 @@ async function init() {
 
     // Update chain UI
     updateChainUI(chain);
-    updateTopUpLink(chain);
+    updateManageBalanceLink();
     updateAppLinks();
     updateNetworkSelectorVisibility(environment);
     updateTestnetKeyVisibility(slotConfig?.isDevMode);
@@ -675,7 +675,7 @@ function setupEventListeners() {
       groveLog.log("Chain changed in storage, updating UI...");
       const newChain = changes[STORAGE_KEYS.CHAIN].newValue;
       updateChainUI(newChain);
-      updateTopUpLink(newChain);
+      updateManageBalanceLink();
       updateAppLinks();
       await fetchBalance();
     }
@@ -1064,7 +1064,7 @@ async function saveJwt() {
 
   // Update chain UI
   updateChainUI(chain);
-  updateTopUpLink(chain);
+  updateManageBalanceLink();
   updateAppLinks();
 
   await updateAuthState(token);
@@ -1551,7 +1551,14 @@ async function fetchBalance() {
         : FormatUtils.DEFAULT_BALANCE_DISPLAY;
     }
     if (earningsDisplay) earningsDisplay.classList.remove("loading");
-    if (earningsRow) earningsRow.classList.remove("hidden");
+
+    // Update total balance hero
+    const totalBalanceEl = document.getElementById("totalBalanceAmount");
+    if (totalBalanceEl) {
+      const tippingVal = parseFloat(chainBalance?.balance || 0);
+      const earningsVal = parseFloat(earningsChainBalance?.balance || 0);
+      totalBalanceEl.textContent = FormatUtils.formatBalance(tippingVal + earningsVal);
+    }
   } catch (e) {
     console.error("[Grove Extension] Balance fetch failed:", e);
   } finally {
@@ -1892,7 +1899,7 @@ async function handleDevModeToggle(e) {
     await loadEndpoint();
     setTestModeBannerText("testnet");
     updateChainUI(testnetChain);
-    updateTopUpLink(testnetChain);
+    updateManageBalanceLink();
     updateAppLinks();
     updateNetworkSelectorVisibility("testnet");
 
@@ -1932,7 +1939,7 @@ async function handleDevModeToggle(e) {
     await loadEndpoint();
     setTestModeBannerText("production");
     updateChainUI(prodChain);
-    updateTopUpLink(prodChain);
+    updateManageBalanceLink();
     updateAppLinks();
     updateNetworkSelectorVisibility("production");
 
@@ -2011,7 +2018,7 @@ async function handleEndpointChange(e) {
   const jwt = await getActiveJWT();
   await updateAuthState(jwt);
   updateChainUI(chain);
-  updateTopUpLink(chain);
+  updateManageBalanceLink();
   updateAppLinks();
   await fetchBalance();
 
@@ -2053,7 +2060,7 @@ async function loadChain() {
   }
 
   updateChainUI(chain);
-  updateTopUpLink(chain);
+  updateManageBalanceLink();
   updateAppLinks();
 }
 
@@ -2105,8 +2112,8 @@ function setTestModeBannerText(endpoint) {
   textNode.textContent = `Developer Mode (${label})`;
 }
 
-async function updateTopUpLink(chain) {
-  if (!topUpBtn) return;
+async function updateManageBalanceLink() {
+  if (!manageBalanceBtn) return;
 
   const result = await chrome.storage.local.get([
     STORAGE_KEYS.ENDPOINT,
@@ -2116,7 +2123,8 @@ async function updateTopUpLink(chain) {
     result[STORAGE_KEYS.ENVIRONMENT] || DEFAULT_ENV,
     result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT,
   );
-  topUpBtn.href = GroveEnv.topUpUrl(envId);
+  const appUrl = GroveEnv.get(envId).appUrl;
+  manageBalanceBtn.href = appUrl + '/balances';
 }
 
 /**
@@ -2143,6 +2151,12 @@ async function updateAppLinks() {
   const leaderboardAppLink = document.getElementById("leaderboardAppLink");
   if (leaderboardAppLink) {
     leaderboardAppLink.href = appUrl + "/leaderboard";
+  }
+
+  // Update grove logo link
+  const groveLogoLink = document.getElementById("groveLogoLink");
+  if (groveLogoLink) {
+    groveLogoLink.href = appUrl;
   }
 }
 

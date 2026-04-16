@@ -30,7 +30,9 @@
   <header class="header">
     <div class="header-left">
       <div class="logo-container">
-        <img src="icons/logo.png" alt="Grove" class="logo-full">
+        <a id="groveLogoLink" href="https://grove.city" target="_blank" rel="noopener noreferrer">
+          <img src="icons/logo.png" alt="Grove" class="logo-full">
+        </a>
       </div>
     </div>
 
@@ -129,57 +131,49 @@
 
       <!-- Connected State -->
       <div id="connectedState">
-        <h2 class="page-title">Home</h2>
+        <div class="home-header">
+          <h2 class="page-title">Home</h2>
+          <a class="page-action-btn hidden" id="homeProfileLink" href="#" target="_blank" rel="noopener noreferrer">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+            <span>My Profile</span>
+          </a>
+        </div>
 
         <!-- Unified Tipping Card -->
         <div class="section-card tipping-card" id="tippingCard">
-          <!-- Balance Row -->
-          <div class="tipping-row">
-            <div class="tipping-row-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
-                <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
-                <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
-              </svg>
+          <!-- Balance Hero -->
+          <div class="balance-hero">
+            <div class="balance-hero-label">Total Balance</div>
+            <div class="balance-hero-total">
+              <span class="balance-hero-currency">$</span>
+              <span class="balance-hero-amount" id="totalBalanceAmount">—</span>
             </div>
-            <div class="tipping-row-content">
-              <div class="tipping-row-label">Balance</div>
-              <div class="tipping-row-value amount-display" id="balanceDisplay">
-                <span class="currency-symbol">$</span>
-                <span class="amount-value" id="balanceAmount">0.00</span>
-                <div class="balance-spinner"></div>
-              </div>
-            </div>
-            <a href="https://grove.city/balances?action=topup" target="_blank" class="card-action-btn primary" id="topUpBtn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2v20m0-20L5 9m7-7l7 7" />
-              </svg>
-              <span>Top Up</span>
-            </a>
+            <a href="https://grove.city/balances" target="_blank" rel="noopener noreferrer" class="balance-manage-btn" id="manageBalanceBtn">Manage</a>
           </div>
 
-          <!-- Earnings Row -->
-          <div class="tipping-row" id="earningsRow">
-            <div class="tipping-row-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="1" x2="12" y2="23"></line>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-              </svg>
-            </div>
-            <div class="tipping-row-content">
-              <div class="tipping-row-label">Earnings</div>
-              <div class="tipping-row-value amount-display" id="earningsDisplay">
+          <!-- Balance Breakdown -->
+          <div class="balance-breakdown">
+            <div class="balance-breakdown-col">
+              <div class="balance-breakdown-label">Tipping</div>
+              <div class="amount-display" id="balanceDisplay">
                 <span class="currency-symbol">$</span>
-                <span class="amount-value" id="earningsAmount">0.00</span>
+                <span class="amount-value" id="balanceAmount">—</span>
                 <div class="balance-spinner"></div>
               </div>
             </div>
-            <a href="https://grove.city/balances" target="_blank" class="card-action-btn secondary" id="withdrawBtn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2v20m0 20L5 15m7 7l7-7" />
-              </svg>
-              <span>Withdraw</span>
-            </a>
+            <div class="balance-breakdown-sep"></div>
+            <div class="balance-breakdown-col">
+              <div class="balance-breakdown-label">Earnings</div>
+              <div class="amount-display" id="earningsDisplay">
+                <span class="currency-symbol">$</span>
+                <span class="amount-value" id="earningsAmount">—</span>
+                <div class="balance-spinner"></div>
+              </div>
+            </div>
           </div>
 
           <!-- Divider -->
@@ -276,25 +270,6 @@
           </div>
         </button>
 
-        <!-- Profile Link (visible when handle is claimed) -->
-        <a class="section-card section-card-btn settings-card-bottom hidden" id="homeProfileLink" href="#" target="_blank">
-          <div class="card-row">
-            <div class="tipping-row-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-            </div>
-            <span class="settings-card-title">Profile</span>
-            <div class="card-chevron">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-            </div>
-          </div>
-        </a>
 
       </div>
     </div>
