@@ -103,6 +103,9 @@ chrome.runtime.onMessageExternal.addListener(
           `${env} JWT received - ${envConfig.isDevMode ? "enabling" : "disabling"} developer mode`,
         );
 
+        // Clear logged-out flag — a new JWT from the web app overrides it
+        dataToStore[STORAGE_KEYS.LOGGED_OUT] = false;
+
         chrome.storage.local.set(dataToStore, () => {
           console.log(`JWT stored in ${env} slot`);
           sendResponse({
