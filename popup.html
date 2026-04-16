@@ -21,7 +21,6 @@
   <script src="src/utils/updateChecker.js"></script>
   <script src="src/storage/keyManager.js"></script>
   <script src="src/ui/prevKeysUI.js"></script>
-  <script src="dist/cdp-auth-bundle.js"></script>
   <script src="src/parsers/destination.js"></script>
   <script src="src/ui/constants.js"></script>
 </head>
@@ -31,7 +30,9 @@
   <header class="header">
     <div class="header-left">
       <div class="logo-container">
-        <img src="icons/logo.png" alt="Grove" class="logo-full">
+        <a id="groveLogoLink" href="https://grove.city" target="_blank" rel="noopener noreferrer">
+          <img src="icons/logo.png" alt="Grove" class="logo-full">
+        </a>
       </div>
     </div>
 
@@ -100,7 +101,7 @@
             </div>
             <div class="onboarding-content">
               <h2 class="onboarding-title">Welcome to Grove</h2>
-              <p class="onboarding-subtitle">Tip creators you love</p>
+              <p class="onboarding-subtitle">Get paid to create anywhere</p>
             </div>
             <button class="onboarding-btn-next" data-next="2">
               <span>Get Started</span>
@@ -108,130 +109,122 @@
             </button>
           </div>
 
-          <!-- Step 2: How it works -->
+          <!-- Step 2: Get Started -->
           <div class="onboarding-step" data-step="2">
             <div class="onboarding-content">
-              <h2 class="onboarding-title">How it works</h2>
-              <div class="feature-cards">
-                <div class="feature-card">
-                  <div class="feature-card-icon send-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M22 2L11 13"></path>
-                      <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
-                    </svg>
-                  </div>
-                  <div class="feature-card-content">
-                    <h3>Send tips</h3>
-                    <p>One click on any post</p>
+              <h2 class="onboarding-title">Get Started</h2>
+              <p class="onboarding-subtitle">Tip creators you love.<br>Get paid to create anywhere.</p>
+            </div>
+
+            <!-- Spinning social network orbit -->
+            <div class="social-orbit">
+              <div class="orbit-ring">
+                <div class="orbit-item" style="--i:0">
+                  <div class="orbit-icon">
+                    <!-- X / Twitter -->
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                   </div>
                 </div>
-                <div class="feature-card">
-                  <div class="feature-card-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <line x1="12" y1="1" x2="12" y2="23"></line>
-                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                    </svg>
+                <div class="orbit-item" style="--i:1">
+                  <div class="orbit-icon">
+                    <!-- YouTube -->
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
                   </div>
-                  <div class="feature-card-content">
-                    <h3>Earn from your posts</h3>
-                    <p>Create your profile to receive</p>
+                </div>
+                <div class="orbit-item" style="--i:2">
+                  <div class="orbit-icon">
+                    <!-- GitHub -->
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                  </div>
+                </div>
+                <div class="orbit-item" style="--i:3">
+                  <div class="orbit-icon">
+                    <!-- Instagram -->
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+                  </div>
+                </div>
+                <div class="orbit-item" style="--i:4">
+                  <div class="orbit-icon">
+                    <!-- TikTok -->
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+                  </div>
+                </div>
+                <div class="orbit-item" style="--i:5">
+                  <div class="orbit-icon">
+                    <!-- LinkedIn -->
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                  </div>
+                </div>
+                <div class="orbit-item" style="--i:6">
+                  <div class="orbit-icon">
+                    <!-- Twitch -->
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
+                  </div>
+                </div>
+                <div class="orbit-item" style="--i:7">
+                  <div class="orbit-icon">
+                    <!-- Reddit -->
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
                   </div>
                 </div>
               </div>
             </div>
-            <button class="onboarding-btn-next" data-next="3">
-              <span>Continue</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </button>
-          </div>
 
-          <!-- Step 3: Connect -->
-          <div class="onboarding-step" data-step="3">
-            <div class="onboarding-content">
-              <h2 class="onboarding-title">Sign In</h2>
-              <p class="onboarding-subtitle">Log in or sign up to start tipping</p>
-            </div>
-
-            <!-- CDP Auth Buttons -->
-            <div class="cdp-auth-methods">
-              <button class="cdp-auth-btn" id="emailAuthBtn">
-                <svg class="cdp-auth-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                  <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
-                <span>Continue with Email</span>
-              </button>
-
-              <button class="cdp-auth-btn" id="smsAuthBtn">
-                <svg class="cdp-auth-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-                  <line x1="12" y1="18" x2="12.01" y2="18"></line>
-                </svg>
-                <span>Continue with Phone</span>
-              </button>
-
-              <div class="cdp-auth-divider">
-                <span>or</span>
-              </div>
-
-              <a class="cdp-auth-btn cdp-auth-btn-secondary" id="walletSignInBtn" href="https://grove.city/" target="_blank" rel="noopener noreferrer">
-                <svg class="cdp-auth-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-                <span>Sign in with Wallet</span>
-                <svg class="cdp-auth-external" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <line x1="10" y1="14" x2="21" y2="3"></line>
-                </svg>
-              </a>
-            </div>
+            <a class="onboarding-btn-next onboarding-btn-primary" id="walletSignInBtn" href="https://grove.city/extension" target="_blank" rel="noopener noreferrer">
+              <span>Sign up at grove.city</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </a>
           </div>
 
           <!-- Progress Dots (at bottom) -->
           <div class="onboarding-progress">
             <div class="progress-dot active" data-step="1"></div>
             <div class="progress-dot" data-step="2"></div>
-            <div class="progress-dot" data-step="3"></div>
           </div>
         </div>
       </div>
 
       <!-- Connected State -->
       <div id="connectedState">
-        <h2 class="page-title">Tip Jar</h2>
+        <div class="home-header">
+          <h2 class="page-title">Home</h2>
+        </div>
 
-        <!-- Unified Tipping Card -->
+        <!-- Balance Card -->
         <div class="section-card tipping-card" id="tippingCard">
-          <!-- Balance Row -->
-          <div class="tipping-row">
-            <div class="tipping-row-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
-                <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
-                <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
-              </svg>
+          <div class="balance-layout">
+            <div class="balance-left">
+              <div class="balance-hero-label">Total Balance</div>
+              <div class="balance-hero-total">
+                <span class="balance-hero-currency">$</span>
+                <span class="balance-hero-amount" id="totalBalanceAmount">—</span>
+              </div>
+              <a href="https://grove.city/balances" target="_blank" rel="noopener noreferrer" class="balance-manage-btn" id="manageBalanceBtn">Manage</a>
             </div>
-            <div class="tipping-row-content">
-              <div class="tipping-row-label">Balance</div>
-              <div class="tipping-row-value amount-display" id="balanceDisplay">
-                <span class="currency-symbol">$</span>
-                <span class="amount-value" id="balanceAmount">0.00</span>
-                <div class="balance-spinner"></div>
+            <div class="balance-col-sep"></div>
+            <div class="balance-right">
+              <div class="balance-stat">
+                <div class="balance-stat-label">Tip Jar</div>
+                <div class="amount-display" id="balanceDisplay">
+                  <span class="currency-symbol">$</span>
+                  <span class="amount-value" id="balanceAmount">—</span>
+                  <div class="balance-spinner"></div>
+                </div>
+              </div>
+<div class="balance-stat">
+                <div class="balance-stat-label">Earnings</div>
+                <div class="amount-display" id="earningsDisplay">
+                  <span class="currency-symbol">$</span>
+                  <span class="amount-value" id="earningsAmount">—</span>
+                  <div class="balance-spinner"></div>
+                </div>
               </div>
             </div>
-            <a href="https://grove.city/balances?action=topup" target="_blank" class="card-action-btn primary" id="topUpBtn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2v20m0-20L5 9m7-7l7 7" />
-              </svg>
-              <span>Top Up</span>
-            </a>
           </div>
+        </div>
 
-          <!-- Divider -->
-          <div class="tipping-divider"></div>
-
+        <!-- Tipping Settings Card -->
+        <div class="section-card tipping-card">
           <!-- Default Tip Row -->
           <div class="tipping-row" id="defaultTipRow">
             <div class="tipping-row-icon">
@@ -242,13 +235,11 @@
             </div>
             <div class="tipping-row-content">
               <div class="tipping-row-label">Default Tip</div>
-              <!-- Display mode -->
               <div class="tipping-row-value" id="tipAmountDisplay">
                 <span class="currency-symbol">$</span>
                 <span class="amount-value">0.02</span>
               </div>
             </div>
-            <!-- Display mode button -->
             <button class="card-action-btn secondary" id="editDefaultTipBtn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
@@ -276,7 +267,7 @@
           <!-- Confirm Before Tipping Row -->
           <div class="tipping-row tipping-row-toggle">
             <div class="tipping-row-content">
-              <div class="tipping-row-label-text">Confirm before tipping</div>
+              <div class="tipping-row-label-text">Prompt before each tip</div>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="confirmTipToggle">
@@ -285,8 +276,25 @@
           </div>
         </div>
 
-        <!-- Spacer to push settings to bottom -->
-        <div class="home-spacer"></div>
+        <!-- View Profile Button -->
+        <a class="section-card section-card-btn settings-card-bottom hidden" id="homeProfileBtnBottom" href="#" target="_blank" rel="noopener noreferrer">
+          <div class="card-row">
+            <div class="tipping-row-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <span class="settings-card-title">View Profile</span>
+            <div class="card-chevron">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </div>
+          </div>
+        </a>
 
         <!-- Username Card -->
         <button class="section-card section-card-btn settings-card-bottom" id="homeUsernameBtn">
@@ -306,45 +314,7 @@
           </div>
         </button>
 
-        <!-- Referrals Card (anchored to bottom) -->
-        <button class="section-card section-card-btn settings-card-bottom" id="homeReferralsBtn">
-          <div class="card-row">
-            <div class="tipping-row-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="8.5" cy="7" r="4"></circle>
-                <line x1="20" y1="8" x2="20" y2="14"></line>
-                <line x1="23" y1="11" x2="17" y2="11"></line>
-              </svg>
-            </div>
-            <span class="settings-card-title">Referrals</span>
-            <div class="card-chevron">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          </div>
-        </button>
 
-        <!-- Profile Link (visible when handle is claimed) -->
-        <a class="section-card section-card-btn settings-card-bottom hidden" id="homeProfileLink" href="#" target="_blank">
-          <div class="card-row">
-            <div class="tipping-row-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-            </div>
-            <span class="settings-card-title">Profile</span>
-            <div class="card-chevron">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-            </div>
-          </div>
-        </a>
 
       </div>
     </div>
@@ -353,6 +323,9 @@
     <div class="page" id="tab-history">
       <h2 class="page-title">Activity</h2>
 
+      <!-- Stats Summary (lifetime, unaffected by filter) -->
+      <div class="history-stats-container hidden" id="history-stats"></div>
+
       <!-- Filter Tabs -->
       <div class="history-filter">
         <button class="filter-btn active" data-filter="all">All</button>
@@ -360,17 +333,6 @@
         <button class="filter-btn" data-filter="earned">Earned</button>
         <button class="filter-btn" data-filter="deposits">Deposits</button>
       </div>
-
-      <!-- Period Filter -->
-      <div class="history-period-filter">
-        <button class="period-btn" data-period="24h">24h</button>
-        <button class="period-btn" data-period="7d">7d</button>
-        <button class="period-btn" data-period="30d">30d</button>
-        <button class="period-btn active" data-period="all">Lifetime</button>
-      </div>
-
-      <!-- Stats Summary -->
-      <div class="history-stats-container hidden" id="history-stats"></div>
 
       <!-- Loading State -->
       <div class="history-loading" id="history-loading">
@@ -435,7 +397,7 @@
             <polyline points="15 3 21 3 21 9"></polyline>
             <line x1="10" y1="14" x2="21" y2="3"></line>
           </svg>
-          <span>View all</span>
+          <span>Open</span>
         </a>
       </div>
 
@@ -463,6 +425,7 @@
       <!-- Switcher -->
       <div class="leaderboard-switcher">
         <button class="switcher-btn active" data-view="live">Live</button>
+        <div class="switcher-sep"></div>
         <button class="switcher-btn" data-view="top">Top</button>
       </div>
 
@@ -501,131 +464,6 @@
         <div id="top-list" class="feed-list"></div>
       </div>
 
-    </div>
-
-    <!-- Earn Tips Page -->
-    <div class="page" id="tab-earn">
-      <h2 class="page-title">Earn Tips</h2>
-
-      <!-- Logged Out State -->
-      <div class="earn-logged-out hidden" id="earnLoggedOut">
-        <div class="earn-logged-out-icon">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="1" x2="12" y2="23"></line>
-            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-          </svg>
-        </div>
-        <h3 class="earn-logged-out-title">Earn for your content</h3>
-        <p class="earn-logged-out-desc">Set up your profile so anyone with the Grove extension can tip you anywhere on the web.</p>
-        <button class="earn-sign-in-btn" id="earnSignInBtn">
-          Sign In to Get Started
-        </button>
-      </div>
-
-      <!-- Logged In State -->
-      <div class="earn-logged-in hidden" id="earnLoggedIn">
-
-        <!-- Earnings Summary -->
-        <div class="section-card earn-stats-card" id="earnStatsCard">
-          <div class="earn-stats-row">
-            <div class="earn-stat">
-              <span class="earn-stat-value" id="earnTotalUsd">$0.00</span>
-              <span class="earn-stat-label">Earned</span>
-            </div>
-            <div class="earn-stat-divider"></div>
-            <div class="earn-stat">
-              <span class="earn-stat-value" id="earnTipCount">0</span>
-              <span class="earn-stat-label">Tips</span>
-            </div>
-            <div class="earn-stat-divider"></div>
-            <div class="earn-stat">
-              <span class="earn-stat-value" id="earnTipperCount">0</span>
-              <span class="earn-stat-label">Tippers</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Setup Checklist -->
-        <div class="section-card earn-card">
-
-          <!-- Step 1: Claim Username -->
-          <div class="earn-checklist-item" id="earnUsernameStep">
-            <div class="earn-checklist-icon" id="earnUsernameCheck">
-              <span class="earn-step-number">1</span>
-              <svg class="earn-check-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
-            </div>
-            <div class="earn-checklist-content">
-              <div class="earn-checklist-title">Claim your username</div>
-              <!-- Unclaimed: show input -->
-              <div class="earn-username-form" id="earnUsernameForm">
-                <div class="earn-username-input-row">
-                  <span class="earn-username-prefix">@</span>
-                  <input type="text" class="earn-username-input" id="earnUsernameInput" placeholder="username" maxlength="15" autocomplete="off" spellcheck="false" />
-                  <button class="earn-username-claim-btn" id="earnUsernameClaimBtn">Claim</button>
-                </div>
-                <p class="earn-username-hint">4-15 chars. Lowercase, numbers, underscores.</p>
-                <p class="earn-username-error hidden" id="earnUsernameError"></p>
-              </div>
-              <!-- Claimed: show handle -->
-              <div class="earn-username-claimed hidden" id="earnUsernameClaimed">
-                <span class="earn-username-value" id="earnUsernameValue"></span>
-              </div>
-            </div>
-          </div>
-
-          <div class="earn-checklist-divider"></div>
-
-          <!-- Step 2: Connect Accounts (links to web app) -->
-          <div class="earn-checklist-item" id="earnSocialStep">
-            <div class="earn-checklist-icon" id="earnSocialCheck">
-              <span class="earn-step-number">2</span>
-              <svg class="earn-check-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
-            </div>
-            <div class="earn-checklist-content">
-              <a class="earn-connect-accounts-link" id="earnConnectAccountsLink" href="#" target="_blank">
-                <div class="earn-connect-accounts-row">
-                  <div>
-                    <div class="earn-checklist-title" id="earnConnectAccountsTitle">Connect your accounts</div>
-                    <p class="earn-checklist-desc" id="earnConnectAccountsDesc">Add your social profiles on our web app so people can tip you.</p>
-                  </div>
-                  <svg class="earn-connect-external-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                  </svg>
-                </div>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <!-- View Profile Link -->
-        <a class="section-card section-card-btn settings-card-bottom earn-profile-link hidden" id="earnProfileLink" href="#" target="_blank">
-          <div class="card-row">
-            <div class="tipping-row-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-            </div>
-            <span class="settings-card-title">View Profile</span>
-            <div class="card-chevron">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-            </div>
-          </div>
-        </a>
-
-      </div>
     </div>
 
     <!-- Settings Page -->
@@ -1180,7 +1018,7 @@
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
         <polyline points="9 22 9 12 15 12 15 22"></polyline>
       </svg>
-      <span class="nav-label">Tip Jar</span>
+      <span class="nav-label">Home</span>
     </button>
     <button class="nav-item" data-target="tab-history">
       <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1195,17 +1033,6 @@
         <path d="M4 6h16M4 12h16M4 18h7"></path>
       </svg>
       <span class="nav-label">Feed</span>
-    </button>
-<button class="nav-item nav-item-with-badge" data-target="tab-earn">
-      <div class="nav-icon-wrapper">
-        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="2" x2="12" y2="22"></line>
-          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-        </svg>
-        <span class="nav-badge-dot hidden"></span>
-      </div>
-      <span class="nav-label">Earn</span>
     </button>
   </nav>
 
@@ -1227,7 +1054,7 @@
           </div>
         </div>
         <div class="tip-intro-actions">
-          <button class="btn-primary btn-full" id="tipIntroEarnBtn">Start Earning Tips</button>
+          <button class="btn-primary btn-full" id="tipIntroGotItBtn">Got it</button>
         </div>
       </div>
 
@@ -1235,68 +1062,6 @@
       <div class="tip-intro-indicators">
         <div class="tip-intro-dot active" data-page="1"></div>
       </div>
-    </div>
-  </div>
-
-  <!-- CDP Auth: Identity Input Modal -->
-  <div class="modal-overlay hidden" id="cdpIdentityModal">
-    <div class="modal-content cdp-modal">
-      <div class="cdp-modal-header">
-        <button class="cdp-modal-back" id="cdpCancelIdentityBtn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-        <h3 id="cdpIdentityLabel">Enter your email</h3>
-      </div>
-      <div class="cdp-modal-body">
-        <div class="cdp-input-group">
-          <input type="email" id="cdpIdentityInput" class="cdp-input" placeholder="you@example.com" autocomplete="email">
-        </div>
-        <p class="cdp-modal-hint" id="cdpIdentityHint">We'll send you a verification code</p>
-      </div>
-      <div class="cdp-modal-footer">
-        <button class="btn-primary btn-full" id="cdpSendCodeBtn">
-          <span>Send Code</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CDP Auth: OTP Verification Modal -->
-  <div class="modal-overlay hidden" id="cdpOtpModal">
-    <div class="modal-content cdp-modal">
-      <div class="cdp-modal-header">
-        <button class="cdp-modal-back" id="cdpCancelOtpBtn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-        <h3>Enter verification code</h3>
-      </div>
-      <div class="cdp-modal-body">
-        <p class="cdp-modal-subtitle" id="cdpOtpDestination">We sent a code to your email</p>
-        <div class="cdp-otp-input-group">
-          <input type="text" id="cdpOtpInput" class="cdp-otp-input" maxlength="6" placeholder="000000" inputmode="numeric" autocomplete="one-time-code">
-        </div>
-        <p class="cdp-modal-error hidden" id="cdpOtpError">Invalid code. Please try again.</p>
-      </div>
-      <div class="cdp-modal-footer">
-        <button class="btn-primary btn-full" id="cdpVerifyOtpBtn">
-          <span>Verify</span>
-        </button>
-        <button class="btn-text cdp-resend-btn" id="cdpResendCodeBtn">
-          <span>Resend code</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CDP Auth: Loading Modal -->
-  <div class="modal-overlay hidden" id="cdpLoadingModal">
-    <div class="modal-content cdp-modal cdp-loading-modal">
-      <div class="cdp-loading-spinner"></div>
-      <p id="cdpLoadingMessage">Creating your account...</p>
     </div>
   </div>
 

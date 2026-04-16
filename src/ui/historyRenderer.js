@@ -64,24 +64,6 @@ const HistoryRenderer = {
   },
 
   /**
-   * Check if URL is Twitter/X
-   * @param {string} url - URL to check
-   * @returns {boolean}
-   */
-  isTwitterUrl(url) {
-    return url && (url.includes('x.com') || url.includes('twitter.com'));
-  },
-
-  /**
-   * Check if URL is YouTube
-   * @param {string} url - URL to check
-   * @returns {boolean}
-   */
-  isYouTubeUrl(url) {
-    return url && url.includes('youtube.com');
-  },
-
-  /**
    * Build description HTML for a transaction
    * @param {Object} tx - Transaction object
    * @param {Object} parsed - Parsed destination
@@ -89,28 +71,68 @@ const HistoryRenderer = {
    * @returns {string} HTML string
    */
   buildDescriptionHtml(tx, parsed, ctx) {
+    // Helper: parse a handle from a URL
+    const socialParsed = tx.social_graph ? parseDestination(tx.social_graph) : null;
+
+    // Helper: check if a URL is a Grove profile and return its handle
+    const groveHandleFrom = (url) => {
+      if (!url) return null;
+      const p = parseDestination(url);
+      if (p && p.profileHandle && p.profileUrl && p.profileUrl.includes('grove.city')) {
+        return { handle: p.profileHandle, url: p.profileUrl };
+      }
+      return null;
+    };
+
+    // Helper: build a link element
+    const link = (href, label) =>
+      `<a href="${FormatUtils.escapeHtml(href)}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.escapeHtml(label)}</a>`;
+
     if (tx.type === 'tip_sent') {
+      // 1. Grove handle — from context profile URL or destination
+      const groveFromCtx = groveHandleFrom(ctx.recipient_profile_url);
+      if (groveFromCtx) return link(groveFromCtx.url, groveFromCtx.handle);
+      const groveFromDest = groveHandleFrom(tx.destination);
+      if (groveFromDest) return link(groveFromDest.url, groveFromDest.handle);
+      // 2. Social username from context — use parsed.profileUrl (from destination) before defaulting to x.com
       if (ctx.recipient_username) {
-        const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
-        return `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${FormatUtils.escapeHtml(ctx.recipient_username)}</a>`;
-      } else if (parsed.profileHandle && parsed.profileUrl) {
-        return `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
-      } else if (parsed.postUrl) {
-        return `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.truncateDestination(tx.destination)}</a>`;
-      } else if (tx.counterparty_address) {
-        const addressUrl = LeaderboardRenderer.getAddressExplorerUrl(tx.network, tx.counterparty_address);
-        return `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.formatAddress(tx.counterparty_address)}</a>`;
+        const profileUrl = ctx.recipient_profile_url || parsed.profileUrl || `https://x.com/${ctx.recipient_username}`;
+        return link(profileUrl, `@${ctx.recipient_username}`);
+      }
+      // 3. Handle parsed from destination URL
+      if (parsed.profileHandle && parsed.profileUrl) {
+        return link(parsed.profileUrl, parsed.profileHandle);
+      }
+      if (socialParsed && socialParsed.profileHandle && socialParsed.profileUrl) {
+        return link(socialParsed.profileUrl, socialParsed.profileHandle);
+      }
+      // 4. Link to post
+      if (parsed.postUrl) {
+        return link(parsed.postUrl, FormatUtils.truncateDestination(tx.destination));
+      }
+      // 5. Address
+      if (tx.counterparty_address) {
+        return link(LeaderboardRenderer.getAddressExplorerUrl(tx.network, tx.counterparty_address), FormatUtils.formatAddress(tx.counterparty_address));
       }
       return FormatUtils.formatNetwork(tx.network);
     } else if (tx.type === 'tip_received') {
+      // 1. Grove handle — from context profile URL
+      const groveFromCtx = groveHandleFrom(ctx.sender_profile_url);
+      if (groveFromCtx) return link(groveFromCtx.url, groveFromCtx.handle);
+      // 2. Social username from context
       if (ctx.sender_username) {
-        const profileUrl = ctx.sender_profile_url || `https://x.com/${ctx.sender_username}`;
-        return `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${FormatUtils.escapeHtml(ctx.sender_username)}</a>`;
-      } else if (tx.counterparty_address) {
-        const addressUrl = LeaderboardRenderer.getAddressExplorerUrl(tx.network, tx.counterparty_address);
-        return `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.formatAddress(tx.counterparty_address)}</a>`;
-      } else if (parsed.profileHandle && parsed.profileUrl) {
-        return `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
+        return link(ctx.sender_profile_url || `https://x.com/${ctx.sender_username}`, `@${ctx.sender_username}`);
+      }
+      // 3. Handle parsed from destination/social_graph
+      if (parsed.profileHandle && parsed.profileUrl) {
+        return link(parsed.profileUrl, parsed.profileHandle);
+      }
+      if (socialParsed && socialParsed.profileHandle && socialParsed.profileUrl) {
+        return link(socialParsed.profileUrl, socialParsed.profileHandle);
+      }
+      // 4. Address
+      if (tx.counterparty_address) {
+        return link(LeaderboardRenderer.getAddressExplorerUrl(tx.network, tx.counterparty_address), FormatUtils.formatAddress(tx.counterparty_address));
       }
       return FormatUtils.formatNetwork(tx.network);
     } else {
@@ -131,53 +153,43 @@ const HistoryRenderer = {
    * @returns {string} HTML string
    */
   buildPlatformLink(tx, parsed, ctx) {
-    const isTwitterFromContext = ctx.sender_platform === 'twitter' || ctx.sender_platform === 'x' ||
-      (ctx.source_post_url && this.isTwitterUrl(ctx.source_post_url));
-    const isTwitterFromDestination = this.isTwitterUrl(parsed.profileUrl);
-    const isTwitterFromSocialGraph = this.isTwitterUrl(tx.social_graph);
-    const isTwitter = isTwitterFromContext || isTwitterFromDestination || isTwitterFromSocialGraph;
+    // Normalize social graph URL
+    const socialGraphUrl = tx.social_graph
+      ? (tx.social_graph.startsWith('http') ? tx.social_graph : `https://${tx.social_graph}`)
+      : null;
 
-    // YouTube detection
-    const isYouTubeFromContext = ctx.sender_platform === 'youtube' ||
-      (ctx.source_post_url && this.isYouTubeUrl(ctx.source_post_url));
-    const isYouTubeFromDestination = this.isYouTubeUrl(parsed.profileUrl);
-    const isYouTubeFromSocialGraph = this.isYouTubeUrl(tx.social_graph);
-    const isYouTube = isYouTubeFromContext || isYouTubeFromDestination || isYouTubeFromSocialGraph;
+    // Candidate URLs in priority order
+    const candidates = [
+      ctx.source_post_url,
+      parsed.postUrl,
+      parsed.profileUrl,
+      socialGraphUrl,
+    ].filter(Boolean);
 
-    let platformUrl = null;
-    let platformTitle = null;
-    let platformIcon = null;
-
-    if (isTwitter) {
-      platformTitle = 'View on X';
-      platformIcon = this.icons.xPlatform;
-      if (ctx.source_post_url) {
-        platformUrl = ctx.source_post_url;
-        platformTitle = ctx.source_post_url.includes('/status/') ? 'View post' : 'View profile';
-      } else if (isTwitterFromDestination) {
-        platformUrl = parsed.postUrl || parsed.profileUrl;
-        platformTitle = parsed.postUrl ? 'View post' : 'View profile';
-      } else if (isTwitterFromSocialGraph) {
-        platformUrl = tx.social_graph.startsWith('http') ? tx.social_graph : `https://${tx.social_graph}`;
-        platformTitle = 'View source';
-      }
-    } else if (isYouTube) {
-      platformTitle = 'View on YouTube';
-      platformIcon = this.icons.youtube;
-      if (ctx.source_post_url) {
-        platformUrl = ctx.source_post_url;
-        platformTitle = 'View on YouTube';
-      } else if (isYouTubeFromDestination) {
-        platformUrl = parsed.postUrl || parsed.profileUrl;
-        platformTitle = 'View on YouTube';
-      } else if (isYouTubeFromSocialGraph) {
-        platformUrl = tx.social_graph.startsWith('http') ? tx.social_graph : `https://${tx.social_graph}`;
-        platformTitle = 'View on YouTube';
-      }
+    // Normalize explicit platform name from context
+    let platform = null;
+    if (ctx.sender_platform) {
+      const p = ctx.sender_platform.toLowerCase();
+      platform = (p === 'twitter') ? 'x' : p;
     }
 
-    if (platformIcon && platformUrl) {
-      return `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="${platformTitle}">${platformIcon}</a>`;
+    // Detect from URLs if no explicit platform
+    let platformUrl = ctx.source_post_url || null;
+    if (!platform) {
+      for (const url of candidates) {
+        const detected = LeaderboardRenderer.detectPlatform(url);
+        if (detected && detected !== 'website') {
+          platform = detected;
+          platformUrl = url;
+          break;
+        }
+      }
+    } else if (!platformUrl) {
+      platformUrl = candidates[0] || null;
+    }
+
+    if (platform && platformUrl) {
+      return LeaderboardRenderer.getPlatformIcon(platform, platformUrl);
     }
     return '<span class="history-platform-link history-platform-link-empty"></span>';
   },
