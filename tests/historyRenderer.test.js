@@ -80,24 +80,29 @@ describe('HistoryRenderer', () => {
     });
   });
 
-  describe('isTwitterUrl', () => {
-    it('should return true for x.com URLs', () => {
-      expect(HistoryRenderer.isTwitterUrl('https://x.com/user')).toBe(true);
-      expect(HistoryRenderer.isTwitterUrl('x.com/user/status/123')).toBe(true);
+  describe('buildPlatformLink', () => {
+    it('should return X icon for x.com source_post_url', () => {
+      const tx = { social_graph: null, destination: null };
+      const parsed = { profileUrl: null, postUrl: null };
+      const ctx = { source_post_url: 'https://x.com/user/status/123' };
+      const html = HistoryRenderer.buildPlatformLink(tx, parsed, ctx);
+      expect(html).toContain('platform-x');
     });
 
-    it('should return true for twitter.com URLs', () => {
-      expect(HistoryRenderer.isTwitterUrl('https://twitter.com/user')).toBe(true);
+    it('should return YouTube icon for youtube.com destination', () => {
+      const tx = { social_graph: null, destination: 'https://youtube.com/@channel' };
+      const parsed = { profileUrl: 'https://youtube.com/@channel', postUrl: null };
+      const ctx = {};
+      const html = HistoryRenderer.buildPlatformLink(tx, parsed, ctx);
+      expect(html).toContain('platform-youtube');
     });
 
-    it('should return false for other URLs', () => {
-      expect(HistoryRenderer.isTwitterUrl('https://facebook.com')).toBe(false);
-      expect(HistoryRenderer.isTwitterUrl('https://example.com')).toBe(false);
-    });
-
-    it('should return falsy for empty/null', () => {
-      expect(HistoryRenderer.isTwitterUrl(null)).toBeFalsy();
-      expect(HistoryRenderer.isTwitterUrl('')).toBeFalsy();
+    it('should return empty span when no platform detected', () => {
+      const tx = { social_graph: null, destination: null };
+      const parsed = { profileUrl: null, postUrl: null };
+      const ctx = {};
+      const html = HistoryRenderer.buildPlatformLink(tx, parsed, ctx);
+      expect(html).toContain('history-platform-link-empty');
     });
   });
 

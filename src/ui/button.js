@@ -234,10 +234,10 @@ class TipButton {
     this.button.className = 'grove-floating-button';
     this.button.id = 'grove-tip-button';
 
-    // Colors - always use dark theme for floating button for visibility
-    const bgColor = '#1a1a1a';
-    const bgHoverColor = '#252525';
-    const textColor = '#ffffff';
+    // Colors - match page color scheme
+    const bgColor = this.isDarkMode ? '#1a1a1a' : '#ffffff';
+    const bgHoverColor = this.isDarkMode ? '#252525' : '#f0f0f0';
+    const textColor = this.isDarkMode ? '#ffffff' : '#1a1a1a';
     this.bgColor = bgColor;
     this.bgHoverColor = bgHoverColor;
 

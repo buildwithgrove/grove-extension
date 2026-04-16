@@ -105,6 +105,73 @@ function parseDestination(destination) {
     }
   }
 
+  // GitHub: github.com/username
+  const githubMatch = bare.match(/^github\.com\/([^\/\?]+)\/?$/i);
+  if (githubMatch) {
+    return { profileUrl: fullUrl, postUrl: null, profileHandle: githubMatch[1] };
+  }
+
+  // TikTok: tiktok.com/@handle
+  const tiktokMatch = bare.match(/^tiktok\.com\/@([^\/\?]+)/i);
+  if (tiktokMatch) {
+    return { profileUrl: `https://tiktok.com/@${tiktokMatch[1]}`, postUrl: null, profileHandle: `@${tiktokMatch[1]}` };
+  }
+
+  // Twitch: twitch.tv/username
+  const twitchMatch = bare.match(/^twitch\.tv\/([^\/\?]+)\/?$/i);
+  if (twitchMatch) {
+    return { profileUrl: fullUrl, postUrl: null, profileHandle: twitchMatch[1] };
+  }
+
+  // Telegram: t.me/username
+  const telegramMatch = bare.match(/^t\.me\/([^\/\?]+)\/?$/i);
+  if (telegramMatch) {
+    return { profileUrl: fullUrl, postUrl: null, profileHandle: `@${telegramMatch[1]}` };
+  }
+
+  // Instagram: instagram.com/username
+  const instagramMatch = bare.match(/^instagram\.com\/([^\/\?]+)\/?$/i);
+  if (instagramMatch) {
+    const reserved = ['p', 'reel', 'stories', 'explore', 'accounts', 'direct'];
+    if (!reserved.includes(instagramMatch[1].toLowerCase())) {
+      return { profileUrl: fullUrl, postUrl: null, profileHandle: `@${instagramMatch[1]}` };
+    }
+  }
+
+  // LinkedIn: linkedin.com/in/username
+  const linkedinMatch = bare.match(/^linkedin\.com\/in\/([^\/\?]+)/i);
+  if (linkedinMatch) {
+    return { profileUrl: `https://linkedin.com/in/${linkedinMatch[1]}`, postUrl: null, profileHandle: linkedinMatch[1] };
+  }
+
+  // Medium: medium.com/@username or username.medium.com
+  const mediumProfile = bare.match(/^medium\.com\/@([^\/\?]+)\/?$/i);
+  if (mediumProfile) {
+    return { profileUrl: fullUrl, postUrl: null, profileHandle: `@${mediumProfile[1]}` };
+  }
+  const mediumPost = bare.match(/^medium\.com\/@([^\/\?]+)\/(.+)/i);
+  if (mediumPost) {
+    return { profileUrl: `https://medium.com/@${mediumPost[1]}`, postUrl: fullUrl, profileHandle: `@${mediumPost[1]}` };
+  }
+
+  // Reddit: reddit.com/u/username or reddit.com/user/username
+  const redditMatch = bare.match(/^reddit\.com\/(?:u|user)\/([^\/\?]+)/i);
+  if (redditMatch) {
+    return { profileUrl: `https://reddit.com/u/${redditMatch[1]}`, postUrl: null, profileHandle: `u/${redditMatch[1]}` };
+  }
+
+  // Bluesky: bsky.app/profile/handle
+  const blueskyMatch = bare.match(/^bsky\.app\/profile\/([^\/\?]+)/i);
+  if (blueskyMatch) {
+    return { profileUrl: `https://bsky.app/profile/${blueskyMatch[1]}`, postUrl: null, profileHandle: blueskyMatch[1] };
+  }
+
+  // Grove: grove.city/handle
+  const groveMatch = bare.match(/^grove\.city\/([^\/\?]+)\/?$/i);
+  if (groveMatch) {
+    return { profileUrl: fullUrl, postUrl: null, profileHandle: groveMatch[1] };
+  }
+
   // For other URLs, return as postUrl with no handle
   return { profileUrl: null, postUrl: fullUrl, profileHandle: null };
 }

@@ -149,6 +149,8 @@ class TipModal {
       border-radius: 16px;
       padding: 20px 24px;
       width: 320px;
+      max-height: calc(100dvh - 32px);
+      overflow-y: auto;
       box-shadow: ${theme.shadow};
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       animation: grove-modal-in 0.2s ease-out;
@@ -470,20 +472,21 @@ class TipModal {
       left = window.innerWidth - modalRect.width - 16;
     }
 
-    // Adjust if modal would go off-screen at the bottom
+    // Adjust if modal would go off-screen at the bottom — prefer above button
     if (top + modalRect.height > window.innerHeight - 16) {
-      // Position above the button instead
       top = rect.top - modalRect.height - 12;
     }
 
     // Ensure not off-screen to the left
-    if (left < 16) {
-      left = 16;
-    }
+    if (left < 16) left = 16;
 
     // Ensure not off-screen at the top
-    if (top < 16) {
-      top = 16;
+    if (top < 16) top = 16;
+
+    // Final pass: after all adjustments, ensure the bottom doesn't clip
+    // (handles the case where the modal is taller than the space above the button)
+    if (top + modalRect.height > window.innerHeight - 16) {
+      top = Math.max(16, window.innerHeight - modalRect.height - 16);
     }
 
     this.modal.style.top = `${top}px`;

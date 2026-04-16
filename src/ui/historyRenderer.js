@@ -64,24 +64,6 @@ const HistoryRenderer = {
   },
 
   /**
-   * Check if URL is Twitter/X
-   * @param {string} url - URL to check
-   * @returns {boolean}
-   */
-  isTwitterUrl(url) {
-    return url && (url.includes('x.com') || url.includes('twitter.com'));
-  },
-
-  /**
-   * Check if URL is YouTube
-   * @param {string} url - URL to check
-   * @returns {boolean}
-   */
-  isYouTubeUrl(url) {
-    return url && url.includes('youtube.com');
-  },
-
-  /**
    * Build description HTML for a transaction
    * @param {Object} tx - Transaction object
    * @param {Object} parsed - Parsed destination
@@ -139,53 +121,43 @@ const HistoryRenderer = {
    * @returns {string} HTML string
    */
   buildPlatformLink(tx, parsed, ctx) {
-    const isTwitterFromContext = ctx.sender_platform === 'twitter' || ctx.sender_platform === 'x' ||
-      (ctx.source_post_url && this.isTwitterUrl(ctx.source_post_url));
-    const isTwitterFromDestination = this.isTwitterUrl(parsed.profileUrl);
-    const isTwitterFromSocialGraph = this.isTwitterUrl(tx.social_graph);
-    const isTwitter = isTwitterFromContext || isTwitterFromDestination || isTwitterFromSocialGraph;
+    // Normalize social graph URL
+    const socialGraphUrl = tx.social_graph
+      ? (tx.social_graph.startsWith('http') ? tx.social_graph : `https://${tx.social_graph}`)
+      : null;
 
-    // YouTube detection
-    const isYouTubeFromContext = ctx.sender_platform === 'youtube' ||
-      (ctx.source_post_url && this.isYouTubeUrl(ctx.source_post_url));
-    const isYouTubeFromDestination = this.isYouTubeUrl(parsed.profileUrl);
-    const isYouTubeFromSocialGraph = this.isYouTubeUrl(tx.social_graph);
-    const isYouTube = isYouTubeFromContext || isYouTubeFromDestination || isYouTubeFromSocialGraph;
+    // Candidate URLs in priority order
+    const candidates = [
+      ctx.source_post_url,
+      parsed.postUrl,
+      parsed.profileUrl,
+      socialGraphUrl,
+    ].filter(Boolean);
 
-    let platformUrl = null;
-    let platformTitle = null;
-    let platformIcon = null;
-
-    if (isTwitter) {
-      platformTitle = 'View on X';
-      platformIcon = this.icons.xPlatform;
-      if (ctx.source_post_url) {
-        platformUrl = ctx.source_post_url;
-        platformTitle = ctx.source_post_url.includes('/status/') ? 'View post' : 'View profile';
-      } else if (isTwitterFromDestination) {
-        platformUrl = parsed.postUrl || parsed.profileUrl;
-        platformTitle = parsed.postUrl ? 'View post' : 'View profile';
-      } else if (isTwitterFromSocialGraph) {
-        platformUrl = tx.social_graph.startsWith('http') ? tx.social_graph : `https://${tx.social_graph}`;
-        platformTitle = 'View source';
-      }
-    } else if (isYouTube) {
-      platformTitle = 'View on YouTube';
-      platformIcon = this.icons.youtube;
-      if (ctx.source_post_url) {
-        platformUrl = ctx.source_post_url;
-        platformTitle = 'View on YouTube';
-      } else if (isYouTubeFromDestination) {
-        platformUrl = parsed.postUrl || parsed.profileUrl;
-        platformTitle = 'View on YouTube';
-      } else if (isYouTubeFromSocialGraph) {
-        platformUrl = tx.social_graph.startsWith('http') ? tx.social_graph : `https://${tx.social_graph}`;
-        platformTitle = 'View on YouTube';
-      }
+    // Normalize explicit platform name from context
+    let platform = null;
+    if (ctx.sender_platform) {
+      const p = ctx.sender_platform.toLowerCase();
+      platform = (p === 'twitter') ? 'x' : p;
     }
 
-    if (platformIcon && platformUrl) {
-      return `<a href="${platformUrl}" target="_blank" rel="noopener noreferrer" class="history-platform-link" title="${platformTitle}">${platformIcon}</a>`;
+    // Detect from URLs if no explicit platform
+    let platformUrl = ctx.source_post_url || null;
+    if (!platform) {
+      for (const url of candidates) {
+        const detected = LeaderboardRenderer.detectPlatform(url);
+        if (detected && detected !== 'website') {
+          platform = detected;
+          platformUrl = url;
+          break;
+        }
+      }
+    } else if (!platformUrl) {
+      platformUrl = candidates[0] || null;
+    }
+
+    if (platform && platformUrl) {
+      return LeaderboardRenderer.getPlatformIcon(platform, platformUrl);
     }
     return '<span class="history-platform-link history-platform-link-empty"></span>';
   },
