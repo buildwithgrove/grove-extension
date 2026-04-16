@@ -89,7 +89,10 @@ const HistoryRenderer = {
       `<a href="${FormatUtils.escapeHtml(href)}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.escapeHtml(label)}</a>`;
 
     if (tx.type === 'tip_sent') {
-      // 1. Grove handle — from context profile URL or destination
+      // 1. Grove handle — prefer resolved handle from context, then profile URL, then destination
+      if (ctx.recipient_grove_handle) {
+        return link(`https://grove.city/${encodeURIComponent(ctx.recipient_grove_handle)}`, `@${ctx.recipient_grove_handle}`);
+      }
       const groveFromCtx = groveHandleFrom(ctx.recipient_profile_url);
       if (groveFromCtx) return link(groveFromCtx.url, groveFromCtx.handle);
       const groveFromDest = groveHandleFrom(tx.destination);
@@ -116,7 +119,10 @@ const HistoryRenderer = {
       }
       return FormatUtils.formatNetwork(tx.network);
     } else if (tx.type === 'tip_received') {
-      // 1. Grove handle — from context profile URL
+      // 1. Grove handle — prefer resolved handle from context, then profile URL
+      if (ctx.sender_grove_handle) {
+        return link(`https://grove.city/${encodeURIComponent(ctx.sender_grove_handle)}`, `@${ctx.sender_grove_handle}`);
+      }
       const groveFromCtx = groveHandleFrom(ctx.sender_profile_url);
       if (groveFromCtx) return link(groveFromCtx.url, groveFromCtx.handle);
       // 2. Social username from context
