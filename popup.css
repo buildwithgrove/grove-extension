@@ -1418,7 +1418,7 @@ body {
   transform: translateY(0);
 }
 
-.onboarding-btn-next svg {
+.onboarding-step[data-step="1"] .onboarding-btn-next svg {
   animation: bounce-chevron 1.5s ease-in-out infinite;
 }
 
