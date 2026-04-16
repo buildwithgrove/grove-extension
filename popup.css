@@ -556,26 +556,32 @@ body {
   padding: 14px 16px;
 }
 
+#tippingCard {
+  padding: 20px;
+}
+
 /* Balance two-column layout */
 .balance-layout {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 0;
-  padding: 2px 0 10px;
+  padding: 2px 0 4px;
 }
 
 .balance-left {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 3px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0;
   flex: 1;
   min-width: 0;
+  padding: 8px 0;
 }
 
 .balance-col-sep {
   width: 1px;
-  height: 72px;
+  align-self: stretch;
   background: var(--color-border);
   flex-shrink: 0;
   margin: 0 16px;
@@ -585,38 +591,40 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0;
-  align-items: flex-start;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
 }
 
 .balance-stat {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  padding: 4px 0;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
 }
 
 .balance-stat + .balance-stat {
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 .balance-stat-label {
-  font-size: 10px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.6px;
   color: var(--color-text-secondary);
+  width: fit-content;
+  text-align: center;
 }
 
 .balance-right .amount-display .currency-symbol,
 .balance-right .amount-display .amount-value {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 23px;
+  font-weight: 700;
   color: var(--color-text-primary);
 }
 
-.balance-stat-sep {
-  display: none;
-}
 
 .balance-hero-label {
   font-size: 11px;
@@ -624,6 +632,9 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: var(--color-text-secondary);
+  white-space: nowrap;
+  width: fit-content;
+  text-align: center;
 }
 
 .balance-hero-total {
@@ -633,14 +644,14 @@ body {
 }
 
 .balance-hero-currency {
-  font-size: 16px;
+  font-size: 32px;
   font-weight: 700;
   color: var(--color-primary);
   line-height: 1;
 }
 
 .balance-hero-amount {
-  font-size: 30px;
+  font-size: 32px;
   font-weight: 700;
   letter-spacing: -1px;
   color: var(--color-primary);
@@ -652,6 +663,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  align-self: center;
   padding: 5px 14px;
   border-radius: var(--radius-full);
   background: var(--color-primary);
@@ -660,7 +672,7 @@ body {
   font-weight: 600;
   text-decoration: none;
   transition: background 0.2s;
-  margin-top: 5px;
+  margin-top: 0;
 }
 
 .balance-manage-btn:hover {
@@ -740,12 +752,6 @@ body {
   flex: 1;
 }
 
-.tipping-row-subtext {
-  font-size: 11px;
-  color: var(--color-text-tertiary);
-  margin-top: 2px;
-  white-space: nowrap;
-}
 
 .tipping-row-label-text {
   font-size: 13px;
@@ -862,6 +868,12 @@ body {
 .settings-card-bottom {
   margin-top: auto;
   padding: 10px 16px;
+}
+
+#homeProfileBtnBottom {
+  border-color: rgba(56, 159, 88, 0.25);
+  box-shadow: 0 4px 24px rgba(56, 159, 88, 0.08);
+  background: linear-gradient(145deg, var(--color-surface) 0%, rgba(56, 159, 88, 0.04) 100%);
 }
 
 .settings-card-bottom + .settings-card-bottom {

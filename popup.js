@@ -2216,7 +2216,8 @@ async function updateUsernameCard(handle) {
   }
 
   // Update profile link visibility and href
-  if (homeProfileLink) {
+  const homeProfileBtnBottom = document.getElementById("homeProfileBtnBottom");
+  if (homeProfileLink || homeProfileBtnBottom) {
     if (handle) {
       const result = await chrome.storage.local.get([
         STORAGE_KEYS.ENDPOINT,
@@ -2227,10 +2228,18 @@ async function updateUsernameCard(handle) {
         result[STORAGE_KEYS.ENDPOINT] || DEFAULT_ENDPOINT,
       );
       const appUrl = GroveEnv.get(envId).appUrl;
-      homeProfileLink.href = `${appUrl}/${encodeURIComponent(handle)}`;
-      homeProfileLink.classList.remove("hidden");
+      const profileUrl = `${appUrl}/${encodeURIComponent(handle)}`;
+      if (homeProfileLink) {
+        homeProfileLink.href = profileUrl;
+        homeProfileLink.classList.remove("hidden");
+      }
+      if (homeProfileBtnBottom) {
+        homeProfileBtnBottom.href = profileUrl;
+        homeProfileBtnBottom.classList.remove("hidden");
+      }
     } else {
-      homeProfileLink.classList.add("hidden");
+      if (homeProfileLink) homeProfileLink.classList.add("hidden");
+      if (homeProfileBtnBottom) homeProfileBtnBottom.classList.add("hidden");
     }
   }
 
@@ -2414,7 +2423,6 @@ let seenTxHashes = new Set();
  */
 let historyTransactions = [];
 let historyFilter = "all";
-let historyPeriod = "all";
 let historyCurrentPage = 0;
 let historyTotalCount = 0;
 const HISTORY_PAGE_SIZE = 10;
@@ -2641,9 +2649,6 @@ async function loadLeaderboardStats() {
  */
 function setupHistoryTab() {
   const filterBtns = document.querySelectorAll(".history-filter .filter-btn");
-  const periodBtns = document.querySelectorAll(
-    ".history-period-filter .period-btn",
-  );
   const prevBtn = document.getElementById("history-prev-btn");
   const nextBtn = document.getElementById("history-next-btn");
   const retryBtn = document.getElementById("history-retry-btn");
@@ -2656,20 +2661,6 @@ function setupHistoryTab() {
       historyCurrentPage = 0;
 
       filterBtns.forEach((b) => b.classList.remove("active"));
-      e.target.classList.add("active");
-
-      renderHistoryList();
-    });
-  });
-
-  // Period filter buttons (24h/7d/30d/All)
-  periodBtns.forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      const period = e.target.dataset.period;
-      historyPeriod = period;
-      historyCurrentPage = 0;
-
-      periodBtns.forEach((b) => b.classList.remove("active"));
       e.target.classList.add("active");
 
       renderHistoryList();
@@ -2820,17 +2811,6 @@ function getFilteredTransactions() {
     if (historyFilter === "earned" && tx.type !== "tip_received") return false;
     if (historyFilter === "deposits" && tx.type !== "deposit") return false;
 
-    // Period filter (24h/7d/30d/All)
-    if (historyPeriod !== "all") {
-      const txDate = new Date(tx.created_at);
-      const diffMs = now - txDate;
-      const diffDays = diffMs / (1000 * 60 * 60 * 24);
-
-      if (historyPeriod === "24h" && diffDays > 1) return false;
-      if (historyPeriod === "7d" && diffDays > 7) return false;
-      if (historyPeriod === "30d" && diffDays > 30) return false;
-    }
-
     return true;
   });
 }
@@ -2850,9 +2830,9 @@ function renderHistoryList() {
 
   const filtered = getFilteredTransactions();
 
-  // Calculate and render stats summary
-  if (statsContainer && filtered.length > 0) {
-    const summary = HistoryRenderer.calculateSummary(filtered);
+  // Calculate and render lifetime stats (always uses all transactions, ignores filter)
+  if (statsContainer && historyTransactions.length > 0) {
+    const summary = HistoryRenderer.calculateSummary(historyTransactions);
     statsContainer.innerHTML = HistoryRenderer.renderStatsSummary(summary);
     statsContainer.classList.remove("hidden");
   } else if (statsContainer) {
@@ -2871,13 +2851,6 @@ function renderHistoryList() {
       emptyMessage.textContent = "No tips earned yet";
     } else if (historyFilter === "deposits") {
       emptyMessage.textContent = "No deposits yet";
-    } else if (historyPeriod !== "all") {
-      const periodLabels = {
-        "24h": "24 hours",
-        "7d": "7 days",
-        "30d": "30 days",
-      };
-      emptyMessage.textContent = `No transactions in the last ${periodLabels[historyPeriod] || historyPeriod}`;
     } else {
       emptyMessage.textContent = "No transactions yet";
     }

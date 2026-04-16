@@ -188,14 +188,6 @@
       <div id="connectedState">
         <div class="home-header">
           <h2 class="page-title">Home</h2>
-          <a class="page-action-btn hidden" id="homeProfileLink" href="#" target="_blank" rel="noopener noreferrer">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <line x1="10" y1="14" x2="21" y2="3"></line>
-            </svg>
-            <span>My Profile</span>
-          </a>
         </div>
 
         <!-- Balance Card -->
@@ -219,8 +211,7 @@
                   <div class="balance-spinner"></div>
                 </div>
               </div>
-              <div class="balance-stat-sep"></div>
-              <div class="balance-stat">
+<div class="balance-stat">
                 <div class="balance-stat-label">Earnings</div>
                 <div class="amount-display" id="earningsDisplay">
                   <span class="currency-symbol">$</span>
@@ -276,8 +267,7 @@
           <!-- Confirm Before Tipping Row -->
           <div class="tipping-row tipping-row-toggle">
             <div class="tipping-row-content">
-              <div class="tipping-row-label-text">Confirm before tipping</div>
-              <div class="tipping-row-subtext">Prompt before each tip</div>
+              <div class="tipping-row-label-text">Prompt before each tip</div>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="confirmTipToggle">
@@ -285,6 +275,26 @@
             </label>
           </div>
         </div>
+
+        <!-- View Profile Button -->
+        <a class="section-card section-card-btn settings-card-bottom hidden" id="homeProfileBtnBottom" href="#" target="_blank" rel="noopener noreferrer">
+          <div class="card-row">
+            <div class="tipping-row-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <span class="settings-card-title">View Profile</span>
+            <div class="card-chevron">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </div>
+          </div>
+        </a>
 
         <!-- Username Card -->
         <button class="section-card section-card-btn settings-card-bottom" id="homeUsernameBtn">
@@ -313,6 +323,9 @@
     <div class="page" id="tab-history">
       <h2 class="page-title">Activity</h2>
 
+      <!-- Stats Summary (lifetime, unaffected by filter) -->
+      <div class="history-stats-container hidden" id="history-stats"></div>
+
       <!-- Filter Tabs -->
       <div class="history-filter">
         <button class="filter-btn active" data-filter="all">All</button>
@@ -320,17 +333,6 @@
         <button class="filter-btn" data-filter="earned">Earned</button>
         <button class="filter-btn" data-filter="deposits">Deposits</button>
       </div>
-
-      <!-- Period Filter -->
-      <div class="history-period-filter">
-        <button class="period-btn" data-period="24h">24h</button>
-        <button class="period-btn" data-period="7d">7d</button>
-        <button class="period-btn" data-period="30d">30d</button>
-        <button class="period-btn active" data-period="all">Lifetime</button>
-      </div>
-
-      <!-- Stats Summary -->
-      <div class="history-stats-container hidden" id="history-stats"></div>
 
       <!-- Loading State -->
       <div class="history-loading" id="history-loading">

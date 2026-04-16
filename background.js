@@ -74,75 +74,69 @@ chrome.runtime.onMessageExternal.addListener(
       // Wrap in async IIFE — onMessageExternal callbacks must return `true`
       // synchronously to keep the channel open; await is not valid here directly.
       (async () => {
-        // Block re-authentication if user explicitly logged out
-        const stored = await chrome.storage.local.get(STORAGE_KEYS.LOGGED_OUT);
-        const loggedOut = stored[STORAGE_KEYS.LOGGED_OUT];
-        if (loggedOut) {
-          console.log("[Grove] Ignoring SET_JWT — user is logged out");
-          sendResponse({ success: false, reason: "logged_out" });
-          return;
-        }
+        try {
+          // Determine which slot to store the JWT in based on environment
+          // Accept both 'local' and 'localhost' for local development
+          const env =
+            message.environment === "local"
+              ? "localhost"
+              : message.environment || "production";
+          const envConfig = GroveEnv.get(env) || GroveEnv.get("production");
 
-        // Determine which slot to store the JWT in based on environment
-        // Accept both 'local' and 'localhost' for local development
-        const env =
-          message.environment === "local"
-            ? "localhost"
-            : message.environment || "production";
-        const envConfig = GroveEnv.get(env) || GroveEnv.get("production");
+          const dataToStore = {
+            [envConfig.jwtStorageKey]: message.jwt,
+            groveEndpoint: env,
+            groveChain: envConfig.defaultChain,
+            groveEnvironment: envConfig.isDevMode ? "local" : "prod",
+            [STORAGE_KEYS.LAST_BALANCES]: {},
+            [STORAGE_KEYS.LOGGED_OUT]: false,
+          };
 
-        const dataToStore = {
-          [envConfig.jwtStorageKey]: message.jwt,
-          groveEndpoint: env,
-          groveChain: envConfig.defaultChain,
-          groveEnvironment: envConfig.isDevMode ? "local" : "prod",
-          [STORAGE_KEYS.LAST_BALANCES]: {},
-        };
+          console.log(
+            `${env} JWT received - ${envConfig.isDevMode ? "enabling" : "disabling"} developer mode`,
+          );
 
-        console.log(
-          `${env} JWT received - ${envConfig.isDevMode ? "enabling" : "disabling"} developer mode`,
-        );
-
-        // Clear logged-out flag — a new JWT from the web app overrides it
-        dataToStore[STORAGE_KEYS.LOGGED_OUT] = false;
-
-        chrome.storage.local.set(dataToStore, () => {
-          console.log(`JWT stored in ${env} slot`);
-          sendResponse({
-            success: true,
-            environment: env,
-            devModeEnabled: envConfig.isDevMode,
-          });
-
-          // Open the extension popup window so the user sees it's activated
-          chrome.windows
-            .getLastFocused()
-            .then((currentWindow) => {
-              const width = 360;
-              const height = 600;
-              const top = (currentWindow.top || 0) + 80;
-              const left =
-                (currentWindow.left || 0) +
-                (currentWindow.width || 1280) -
-                width -
-                20;
-              return chrome.windows.create({
-                url: chrome.runtime.getURL("popup.html"),
-                type: "popup",
-                width,
-                height,
-                top,
-                left,
-                focused: true,
-              });
-            })
-            .catch((err) => {
-              console.error(
-                "[Grove Extension] Failed to open popup window:",
-                err,
-              );
+          chrome.storage.local.set(dataToStore, () => {
+            console.log(`JWT stored in ${env} slot`);
+            sendResponse({
+              success: true,
+              environment: env,
+              devModeEnabled: envConfig.isDevMode,
             });
-        });
+
+            // Open the extension popup window so the user sees it's activated
+            chrome.windows
+              .getLastFocused()
+              .then((currentWindow) => {
+                const width = 360;
+                const height = 600;
+                const top = (currentWindow.top || 0) + 80;
+                const left =
+                  (currentWindow.left || 0) +
+                  (currentWindow.width || 1280) -
+                  width -
+                  20;
+                return chrome.windows.create({
+                  url: chrome.runtime.getURL("popup.html"),
+                  type: "popup",
+                  width,
+                  height,
+                  top,
+                  left,
+                  focused: true,
+                });
+              })
+              .catch((err) => {
+                console.error(
+                  "[Grove Extension] Failed to open popup window:",
+                  err,
+                );
+              });
+          });
+        } catch (err) {
+          console.error("[Grove Extension] SET_JWT handler error:", err);
+          sendResponse({ success: false, error: err.message });
+        }
       })();
       return true; // Keep channel open for async response
     }
