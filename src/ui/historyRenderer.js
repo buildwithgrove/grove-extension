@@ -89,12 +89,17 @@ const HistoryRenderer = {
    * @returns {string} HTML string
    */
   buildDescriptionHtml(tx, parsed, ctx) {
+    // Helper: try to parse a username out of social_graph URL as a last resort
+    const socialParsed = tx.social_graph ? parseDestination(tx.social_graph) : null;
+
     if (tx.type === 'tip_sent') {
       if (ctx.recipient_username) {
         const profileUrl = ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`;
         return `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${FormatUtils.escapeHtml(ctx.recipient_username)}</a>`;
       } else if (parsed.profileHandle && parsed.profileUrl) {
         return `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
+      } else if (socialParsed && socialParsed.profileHandle && socialParsed.profileUrl) {
+        return `<a href="${socialParsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${socialParsed.profileHandle}</a>`;
       } else if (parsed.postUrl) {
         return `<a href="${parsed.postUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.truncateDestination(tx.destination)}</a>`;
       } else if (tx.counterparty_address) {
@@ -106,11 +111,14 @@ const HistoryRenderer = {
       if (ctx.sender_username) {
         const profileUrl = ctx.sender_profile_url || `https://x.com/${ctx.sender_username}`;
         return `<a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">@${FormatUtils.escapeHtml(ctx.sender_username)}</a>`;
+      } else if (parsed.profileHandle && parsed.profileUrl) {
+        // profileHandle before counterparty_address — username always beats raw address
+        return `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
+      } else if (socialParsed && socialParsed.profileHandle && socialParsed.profileUrl) {
+        return `<a href="${socialParsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${socialParsed.profileHandle}</a>`;
       } else if (tx.counterparty_address) {
         const addressUrl = LeaderboardRenderer.getAddressExplorerUrl(tx.network, tx.counterparty_address);
         return `<a href="${addressUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${FormatUtils.formatAddress(tx.counterparty_address)}</a>`;
-      } else if (parsed.profileHandle && parsed.profileUrl) {
-        return `<a href="${parsed.profileUrl}" target="_blank" rel="noopener noreferrer" class="transaction-item-desc-link">${parsed.profileHandle}</a>`;
       }
       return FormatUtils.formatNetwork(tx.network);
     } else {
