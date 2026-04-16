@@ -556,13 +556,66 @@ body {
   padding: 14px 16px;
 }
 
-/* Balance Hero */
-.balance-hero {
+/* Balance two-column layout */
+.balance-layout {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 2px 0 10px;
+}
+
+.balance-left {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 4px 0 12px;
-  gap: 4px;
+  align-items: flex-start;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.balance-col-sep {
+  width: 1px;
+  height: 72px;
+  background: var(--color-border);
+  flex-shrink: 0;
+  margin: 0 16px;
+}
+
+.balance-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  align-items: flex-start;
+}
+
+.balance-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px 0;
+}
+
+.balance-stat + .balance-stat {
+  border-top: 1px solid var(--color-border);
+}
+
+.balance-stat-label {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--color-text-secondary);
+}
+
+.balance-right .amount-display .currency-symbol,
+.balance-right .amount-display .amount-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.balance-stat-sep {
+  display: none;
 }
 
 .balance-hero-label {
@@ -576,82 +629,42 @@ body {
 .balance-hero-total {
   display: flex;
   align-items: baseline;
-  gap: 2px;
+  gap: 1px;
 }
 
 .balance-hero-currency {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--color-primary);
   line-height: 1;
 }
 
 .balance-hero-amount {
-  font-size: 34px;
+  font-size: 30px;
   font-weight: 700;
   letter-spacing: -1px;
   color: var(--color-primary);
   line-height: 1;
-  text-shadow: 0 2px 12px rgba(56, 159, 88, 0.25);
+  text-shadow: 0 2px 12px rgba(56, 159, 88, 0.2);
 }
 
 .balance-manage-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 7px 22px;
+  padding: 5px 14px;
   border-radius: var(--radius-full);
   background: var(--color-primary);
   color: #fff;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   text-decoration: none;
   transition: background 0.2s;
-  margin-top: 4px;
+  margin-top: 5px;
 }
 
 .balance-manage-btn:hover {
   background: var(--color-primary-hover);
-}
-
-/* Balance Breakdown */
-.balance-breakdown {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 0 2px;
-  border-top: 1px solid var(--color-border);
-  margin-top: 2px;
-}
-
-.balance-breakdown-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.balance-breakdown-label {
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--color-text-secondary);
-}
-
-.balance-breakdown-col .amount-display .currency-symbol,
-.balance-breakdown-col .amount-display .amount-value {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.balance-breakdown-sep {
-  width: 1px;
-  height: 36px;
-  background: var(--color-border);
-  flex-shrink: 0;
 }
 
 /* Home Header (title + My Profile link) */
@@ -1332,7 +1345,6 @@ body {
 /* Step 2 specific */
 /* Step 2: Get Started */
 .onboarding-step[data-step="2"] {
-  display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -3214,6 +3226,14 @@ button.quick-access-item:hover .quick-access-icon {
 
 .switcher-btn:hover:not(.active) {
   color: var(--color-text-primary);
+}
+
+.switcher-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--color-border);
+  flex-shrink: 0;
+  align-self: center;
 }
 
 /* Leaderboard Views */

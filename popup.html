@@ -143,42 +143,42 @@
           </a>
         </div>
 
-        <!-- Unified Tipping Card -->
+        <!-- Balance Card -->
         <div class="section-card tipping-card" id="tippingCard">
-          <!-- Balance Hero -->
-          <div class="balance-hero">
-            <div class="balance-hero-label">Total Balance</div>
-            <div class="balance-hero-total">
-              <span class="balance-hero-currency">$</span>
-              <span class="balance-hero-amount" id="totalBalanceAmount">—</span>
+          <div class="balance-layout">
+            <div class="balance-left">
+              <div class="balance-hero-label">Total Balance</div>
+              <div class="balance-hero-total">
+                <span class="balance-hero-currency">$</span>
+                <span class="balance-hero-amount" id="totalBalanceAmount">—</span>
+              </div>
+              <a href="https://grove.city/balances" target="_blank" rel="noopener noreferrer" class="balance-manage-btn" id="manageBalanceBtn">Manage</a>
             </div>
-            <a href="https://grove.city/balances" target="_blank" rel="noopener noreferrer" class="balance-manage-btn" id="manageBalanceBtn">Manage</a>
-          </div>
-
-          <!-- Balance Breakdown -->
-          <div class="balance-breakdown">
-            <div class="balance-breakdown-col">
-              <div class="balance-breakdown-label">Tip Jar</div>
-              <div class="amount-display" id="balanceDisplay">
-                <span class="currency-symbol">$</span>
-                <span class="amount-value" id="balanceAmount">—</span>
-                <div class="balance-spinner"></div>
+            <div class="balance-col-sep"></div>
+            <div class="balance-right">
+              <div class="balance-stat">
+                <div class="balance-stat-label">Tip Jar</div>
+                <div class="amount-display" id="balanceDisplay">
+                  <span class="currency-symbol">$</span>
+                  <span class="amount-value" id="balanceAmount">—</span>
+                  <div class="balance-spinner"></div>
+                </div>
+              </div>
+              <div class="balance-stat-sep"></div>
+              <div class="balance-stat">
+                <div class="balance-stat-label">Earnings</div>
+                <div class="amount-display" id="earningsDisplay">
+                  <span class="currency-symbol">$</span>
+                  <span class="amount-value" id="earningsAmount">—</span>
+                  <div class="balance-spinner"></div>
+                </div>
               </div>
             </div>
-            <div class="balance-breakdown-sep"></div>
-            <div class="balance-breakdown-col">
-              <div class="balance-breakdown-label">Earnings</div>
-              <div class="amount-display" id="earningsDisplay">
-                <span class="currency-symbol">$</span>
-                <span class="amount-value" id="earningsAmount">—</span>
-                <div class="balance-spinner"></div>
-              </div>
-            </div>
           </div>
+        </div>
 
-          <!-- Divider -->
-          <div class="tipping-divider"></div>
-
+        <!-- Tipping Settings Card -->
+        <div class="section-card tipping-card">
           <!-- Default Tip Row -->
           <div class="tipping-row" id="defaultTipRow">
             <div class="tipping-row-icon">
@@ -189,13 +189,11 @@
             </div>
             <div class="tipping-row-content">
               <div class="tipping-row-label">Default Tip</div>
-              <!-- Display mode -->
               <div class="tipping-row-value" id="tipAmountDisplay">
                 <span class="currency-symbol">$</span>
                 <span class="amount-value">0.02</span>
               </div>
             </div>
-            <!-- Display mode button -->
             <button class="card-action-btn secondary" id="editDefaultTipBtn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
@@ -370,6 +368,7 @@
       <!-- Switcher -->
       <div class="leaderboard-switcher">
         <button class="switcher-btn active" data-view="live">Live</button>
+        <div class="switcher-sep"></div>
         <button class="switcher-btn" data-view="top">Top</button>
       </div>
 
