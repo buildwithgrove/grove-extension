@@ -94,9 +94,10 @@ const HistoryRenderer = {
       if (groveFromCtx) return link(groveFromCtx.url, groveFromCtx.handle);
       const groveFromDest = groveHandleFrom(tx.destination);
       if (groveFromDest) return link(groveFromDest.url, groveFromDest.handle);
-      // 2. Social username from context
+      // 2. Social username from context — use parsed.profileUrl (from destination) before defaulting to x.com
       if (ctx.recipient_username) {
-        return link(ctx.recipient_profile_url || `https://x.com/${ctx.recipient_username}`, `@${ctx.recipient_username}`);
+        const profileUrl = ctx.recipient_profile_url || parsed.profileUrl || `https://x.com/${ctx.recipient_username}`;
+        return link(profileUrl, `@${ctx.recipient_username}`);
       }
       // 3. Handle parsed from destination URL
       if (parsed.profileHandle && parsed.profileUrl) {
